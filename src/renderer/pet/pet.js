@@ -15,24 +15,31 @@ let S = { hunger: 80, happy: 80, energy: 80, clean: 80, bond: 10, asleep: false,
 let petName = 'Tama';
 let spec = null;          // active CharacterSpec
 let isEgg = false;        // unhatched: show the egg, no care actions (ONB-1)
+let focusing = false;     // focus timer running: quiet, glasses on (PROD-1)
 /** A random verbal tic from the character's speech style ("" if none). */
 const tic = () => (spec && spec.speech.tics.length ? ' ' + pick(spec.speech.tics) : '');
 const myEmoji = () => (spec && spec.speech.emoji.length ? pick(spec.speech.emoji) : '✨');
 /** Apply a { name, state } snapshot from the core. */
+let level = { index: 0, title: 'Stranger', emoji: '👀', progress: 0, xp: 0, next: 60 };
+let charging = false;
 function applySnapshot(snap) {
   if (!snap) return;
   const wasAsleep = S.asleep;
+  const wasKind = S.sleepKind;
+  const wasCharging = charging;
   S = snap.state; petName = snap.name || petName;
-  if (wasAsleep && !S.asleep) say('fully charged! ⚡ ohayou~');
+  if (snap.level) level = snap.level;
+  charging = !!snap.charging;
+  if (wasAsleep && !S.asleep) {
+    if (wasKind === 'auto') say(`ah! you're back~ okaeri!${tic()}`);
+    else if (wasKind === 'nap') say('power nap complete! ⚡ genki 100%!');
+    else say('fully charged! ⚡ ohayou~');
+  }
+  if (!wasCharging && charging && !S.asleep && spec) { emote('🔌', 1800); say('ooh, charging~ ⚡ that tickles', 2400); }
   checkNeeds(); renderMood();
   if (!$('#stats').classList.contains('hidden')) renderStats();
 }
 
-const BOND_TITLES = [
-  [0, 'Stranger-san 👀'], [20, 'Classmate 📚'], [40, 'Friend ✌️'],
-  [60, 'Best friend 💞'], [80, 'Senpai noticed you!! 💖'], [100, 'Soulmates 💍'],
-];
-const bondTitle = () => BOND_TITLES.filter(([n]) => S.bond >= n).pop()[1];
 
 // ---------------- click-through ----------------
 let capturing = false;
@@ -90,7 +97,7 @@ function renderMood() {
   const m = override && Date.now() < overrideUntil ? override : baseMood();
   petEl.className = petEl.className.replace(/\bmood-\w+/g, '').replace(/\s+/g, ' ').trim() + ' mood-' + m;
   petEl.classList.toggle('asleep', S.asleep);
-  petEl.classList.toggle('working', agentState !== 'idle');
+  petEl.classList.toggle('working', focusing || agentState !== 'idle');
 }
 function anim(cls, ms) {
   petEl.classList.remove(cls); void petEl.offsetWidth; petEl.classList.add(cls);
@@ -153,6 +160,25 @@ const actions = {
     particles('🫧', 8); express('happy', 1500); emote('✨');
     say('pika pika~ squeaky clean! ✨');
   },
+  async snack() {
+    const r = await T.act('snack');
+    if (!r.ok && r.reason === 'asleep') return say('zzz… (shh!)');
+    if (r.reason === 'cooldown') { express('pout', 1500); return say(`no more sugar for ${Math.ceil(r.retryInMs / 60000)} min… 🍬`); }
+    if (r.reason === 'full-energy') return say(`I'm already full of energy!${tic()} ⚡`);
+    particles(['⚡', '🍬', '🧃'], 5); express('sparkle', 1600); hop();
+    say(pick(['energy~ charged! ⚡', 'gulp gulp… GENKI! 🧃', 'sugar rush~!! 🍬']));
+  },
+  async nap() {
+    if (S.asleep) {
+      const r = await T.act('sleep');
+      S = r.state; renderMood();
+      return say('fuwaa~ ohayou! ☀️');
+    }
+    const r = await T.act('nap');
+    if (r.reason === 'not-tired') return say(`not sleepy at all!${tic()} ✨`);
+    S = r.state; renderMood();
+    say('just a little power nap… 10 min… 💤');
+  },
   async sleep() {
     const r = await T.act('sleep');
     S = r.state;
@@ -160,6 +186,12 @@ const actions = {
     renderMood();
   },
   stats() { togglePanel('stats'); },
+  async focus() {
+    const s = await T.prod.get();
+    if (s.focus.phase === 'focus') { await T.prod.focusStop(); return say('focus stopped. otsukare~'); }
+    const r = await T.prod.focusStart(25);
+    if (r.ok) { express('focus', 2000); say(`focus mode! 25 min, I'll be quiet~ ganbatte! ⏱️`, 3200, { force: true }); }
+  },
   wardrobe() { T.openOnboarding('restyle'); say(`ooh, new clothes?${tic()}`, 2000, { force: true }); },
   code() { T.showTerminal(); say('let\'s code! 💻✨', 2000, { force: true }); },
 };
@@ -279,7 +311,7 @@ function behave() {
   const busyUi = !!document.querySelector('.panel:not(.hidden)') || !menuEl.classList.contains('hidden');
   if (isEgg) {
     if (Math.random() < 0.6) anim('wobble', 900);
-  } else if (!busyUi && !walkTimer && !dragging && agentState === 'idle') {
+  } else if (!busyUi && !walkTimer && !dragging && agentState === 'idle' && !focusing) {
     const r = Math.random();
     if (r < 0.35) startWalking(2000 + Math.random() * 4000);
     else if (r < 0.55 && !S.asleep) say(pick([...BABBLE, ...(spec ? spec.speech.catchphrases : [])]) + tic(), 2400);
@@ -304,16 +336,51 @@ function checkNeeds() {
 }
 
 function renderStats() {
-  for (const k of ['hunger', 'happy', 'energy', 'clean', 'bond']) {
+  for (const k of ['hunger', 'happy', 'energy', 'clean']) {
     const el = document.getElementById('b-' + k);
     el.style.width = S[k] + '%';
-    if (k !== 'bond') el.className = S[k] < 25 ? 'low' : S[k] < 50 ? 'mid' : '';
+    el.className = S[k] < 25 ? 'low' : S[k] < 50 ? 'mid' : '';
   }
+  $('#b-bond').style.width = Math.round(level.progress * 100) + '%';
   const days = Math.floor((Date.now() - S.bornAt) / 86400000);
-  $('#statsTitle').textContent = `${petName} · Lv ${1 + Math.floor(S.xp / 5)}`;
-  $('#bondTitle').textContent = bondTitle();
-  $('#ageLine').textContent = `${days} day${days === 1 ? '' : 's'} together · ${S.xp} coding quests · ${S.pats} pats`;
+  $('#statsTitle').textContent = `${petName} · Lv ${level.index + 1}${charging ? ' · 🔌' : ''}${S.asleep ? ' · 💤' : ''}`;
+  $('#bondTitle').textContent = `${level.title} ${level.emoji}` + (level.next ? `  (${Math.floor(level.xp)} / ${level.next})` : '  (max!)');
+  const st = S.streak || { count: 0 };
+  $('#streakLine').textContent = st.count ? `🔥 ${st.count}-day streak` : 'do something productive today to start a streak 🔥';
+  $('#ageLine').textContent = `${days} day${days === 1 ? '' : 's'} together · ${S.xp} quests · ${S.pats} pats`;
 }
+
+// ---------------- productivity (PROD-1/2) ----------------
+
+T.prod.onFocus((f) => {
+  focusing = f.phase === 'focus';
+  petEl.classList.toggle('working', focusing || agentState !== 'idle');
+  if (f.completed) {
+    stopWalking(); hop(); express('sparkle', 2600); particles(['⏱️', '✨', '💗'], 8, 'burst');
+    say(`focus done!! otsukaresama~ break time ☕${tic()}`, 4000, { force: true });
+  } else if (f.breakOver) say('break over! one more round? ⏱️', 3000);
+});
+T.prod.onReminder((r) => {
+  stopWalking(); hop(); emote('⏰', 3000);
+  say(`⏰ ${r.text}`, 12000, { shout: true, force: true });
+});
+T.prod.onCommit((c) => { emote('💗', 1600); say(`nice commit in ${c.repo}~ ✨`, 2400); });
+T.prod.get().then((s) => { focusing = s.focus.phase === 'focus'; petEl.classList.toggle('working', focusing); });
+
+// Bond XP from care and productivity (BOND-1..3): floating hearts, streaks, level-ups.
+T.onBond((b) => {
+  if (isEgg) return;
+  if (b.levelUp) {
+    stopWalking(); hop(); express('sparkle', 3200); particles(['💖', '✨', '🎉', '💞'], 14, 'burst');
+    say(`LEVEL UP!! we're ${b.levelUp.title} now ${b.levelUp.emoji}${tic()}`, 5000, { shout: true, force: true });
+    T.notify(petName, `Bond level up: ${b.levelUp.title} ${b.levelUp.emoji}`);
+  } else if (b.streak && b.streak.count > 1) {
+    emote('🔥', 2000); say(`${b.streak.count}-day streak! ganbatta ne~ 🔥`, 3000);
+  } else if (b.gained >= 1 && ['commit', 'focus', 'todo'].includes(b.source)) {
+    particles(['💗'], Math.min(4, Math.ceil(b.gained)), 'rise');
+  }
+  if (!$('#stats').classList.contains('hidden')) renderStats();
+});
 
 // ---------------- reacting to the agent ----------------
 const TOOL_LINES = {

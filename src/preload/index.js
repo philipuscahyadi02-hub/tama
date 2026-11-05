@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** Main → renderer messages arrive on one 'ui' channel as (name, payload). */
-const UI_NAMES = new Set(['pet.state', 'summon', 'tray', 'agent.event', 'term.focus', 'character']);
+const UI_NAMES = new Set(['pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character']);
 /** @type {Map<string, Set<(p: any) => void>>} */
 const subs = new Map();
 ipcRenderer.on('ui', (_e, name, payload) => {
@@ -36,8 +36,23 @@ contextBridge.exposeInMainWorld('tama', {
   designerVoice: (/** @type {any} */ req) => ipcRenderer.invoke('designer:voice', req),
   characterSave: (/** @type {any} */ req) => ipcRenderer.invoke('character:save', req),
   closeSelf: () => ipcRenderer.send('win:closeSelf'),
+  openRoster: (/** @type {boolean} */ importNow) => ipcRenderer.send('roster:open', !!importNow),
+
+  // ---- My Tamas window ----
+  roster: {
+    list: () => ipcRenderer.invoke('roster:list'),
+    switchTo: (/** @type {string} */ id) => ipcRenderer.invoke('roster:switch', id),
+    hatchNew: () => ipcRenderer.invoke('roster:hatchNew'),
+    graduate: (/** @type {string} */ id) => ipcRenderer.invoke('roster:graduate', id),
+    restore: (/** @type {string} */ id) => ipcRenderer.invoke('roster:restore', id),
+    remove: (/** @type {string} */ id, /** @type {string} */ confirmName) => ipcRenderer.invoke('roster:delete', id, confirmName),
+    exportTama: (/** @type {any} */ opts) => ipcRenderer.invoke('roster:export', opts),
+    importPick: (/** @type {boolean} */ includeUser) => ipcRenderer.invoke('roster:importPick', includeUser),
+    importPassword: (/** @type {string} */ pw, /** @type {boolean} */ includeUser) => ipcRenderer.invoke('roster:importPassword', pw, includeUser),
+  },
   onCharacter: on('character'),
   onPetState: on('pet.state'),
+  onBond: on('pet.bond'),
   onSummon: on('summon'),
   onTray: on('tray'),
 
@@ -62,4 +77,22 @@ contextBridge.exposeInMainWorld('tama', {
 
   // ---- both ----
   onAgent: on('agent.event'),
+  prod: {
+    get: () => ipcRenderer.invoke('prod:get'),
+    todoAdd: (/** @type {string} */ t) => ipcRenderer.invoke('prod:todoAdd', t),
+    todoDone: (/** @type {string|number} */ ref) => ipcRenderer.invoke('prod:todoDone', ref),
+    todoRemove: (/** @type {string|number} */ ref) => ipcRenderer.invoke('prod:todoRemove', ref),
+    noteAdd: (/** @type {string} */ t) => ipcRenderer.invoke('prod:noteAdd', t),
+    remindAdd: (/** @type {string} */ input) => ipcRenderer.invoke('prod:remindAdd', input),
+    remindCancel: (/** @type {string} */ id) => ipcRenderer.invoke('prod:remindCancel', id),
+    focusStart: (/** @type {number} */ m) => ipcRenderer.invoke('prod:focusStart', m),
+    focusStop: () => ipcRenderer.invoke('prod:focusStop'),
+    watchAdd: (/** @type {string} */ p) => ipcRenderer.invoke('prod:watchAdd', p),
+    watchRemove: (/** @type {string} */ p) => ipcRenderer.invoke('prod:watchRemove', p),
+    watchList: () => ipcRenderer.invoke('prod:watchList'),
+    onChange: on('prod'),
+    onFocus: on('focus'),
+    onReminder: on('reminder'),
+    onCommit: on('commit'),
+  },
 });

@@ -52,6 +52,9 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-020 | Character rig: shared pure modules, slot-based SVG parts, palette CSS variables | Accepted |
 | D-021 | M1 designer: Claude Haiku with tools disabled + JSON schema, keyword fallback | Revisit at M3 |
 | D-022 | M8 voice: AivisSpeech local engine (anime voices), built-in TTS fallback | Accepted |
+| D-023 | Pet balance v2: easy energy, open-ended bond XP with levels, daily caps, streaks | Accepted |
+| D-024 | Productivity data is the user's (user/), git watch is per PC (device.json) | Accepted |
+| D-025 | Roster lifecycle via relaunch; .tama = gzip JSON, AES-256-GCM + scrypt when password-protected | Accepted |
 
 ---
 
@@ -209,3 +212,35 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** ElevenLabs (paid monthly, stays a possible optional add-on); VOICEVOX (similar, per-character credit terms); Kokoro (English, not anime; possible English fallback if needed).
 - **Consequences:** M8 must first test how AivisSpeech handles English text. If English sounds bad, use AivisSpeech for Japanese interjections and the fallback for English sentences. VoiceSpec gains an `engine` + `speakerId`, and the voice prompt maps to the closest AivisSpeech model/style.
 - **Refs:** VOICE-1, VOICE-3, D-004
+
+### D-023 — Pet balance v2: easy energy, open-ended bond XP with levels, daily caps, streaks
+- **Date:** 2026-11-05 · **Status:** Accepted
+- **Context:** Requirement: easier energy than kero-pet, and productivity should grow the bond (PET-3/4, BOND-1..3). kero-pet decayed fast and its bond was a 0..100 bar.
+- **Decision:**
+  - Awake decay per hour: hunger 6, mood 4, clean 3, energy 3 (was 8/6/4/5).
+  - Energy refills: snack +25 (20-min cooldown); 10-min power nap +50; bedtime sleep +25/h; auto-nap while the PC is idle ≥10 min or locked +30/h; +12/h while charging on AC; while the app is closed she "rests": +10/h energy, other needs at half speed (cap 48 h). A finished agent task costs only 1 energy.
+  - Bond is open-ended `bondXp` with levels Stranger 0 · Acquaintance 60 · Buddy 240 · Partner 600 · Soulmate 1200. XP per source with a daily cap: full XP up to the cap, 25% up to 2× the cap, then 0. Productive sources (agent, commit, focus, todo, calendar) keep a daily streak: +1/day, +5 on day 7, +15 on day 30.
+  - Migration: old bond × 12 (old 100 = Soulmate).
+- **Alternatives:** Keep 0..100 bond (no room for long-term growth); unlimited XP (farmable).
+- **Consequences:** Balance numbers live only in `services/pet/logic.js` + `bond.js` with table tests. Power and idle signals come from `platform/power.js` over the bus.
+- **Refs:** PET-1..4, BOND-1..3, src/main/services/pet
+
+### D-024 — Productivity data is the user's (user/), git watch is per PC (device.json)
+- **Date:** 2026-11-05 · **Status:** Accepted
+- **Context:** Todos, notes, reminders and the focus timer (PROD-1) must survive switching or graduating a Tama, and be shared by desktop and Telegram. Watched git repos (PROD-2) are local folder paths.
+- **Decision:** Productivity lives in `user/productivity.json` (store kind `productivity`), separate from any `tamas/<id>/`. Watched repos and the last-seen commit per repo live in `device.json` (`gitWatch`), because paths only exist on this PC. The watcher is read-only (`git log`, `git config user.email`), records a baseline on first sight, and only counts commits whose author email matches the repo's `user.email`. `focus-break` is a core-only pet action; the desktop channel accepts only an allow-list of user care actions.
+- **Alternatives:** Per-Tama todos (lost on switch); global git hook (needs writing into the user's repos).
+- **Consequences:** `.tama` export (M2c) may optionally include `user/`. The Telegram bot (M7) reuses the same `prod.*` bus requests.
+- **Refs:** PROD-1, PROD-2, BOND-1, src/main/services/productivity
+
+### D-025 — Roster lifecycle via relaunch; .tama = gzip JSON, AES-256-GCM + scrypt when password-protected
+- **Date:** 2026-11-05 · **Status:** Accepted
+- **Context:** PORT-3..5 and ONB-9: several Tamas, switch / hatch another / graduate / delete, and moving a Tama to another PC.
+- **Decision:**
+  - **Switching** writes `active.json` and **relaunches the app**, so every service starts cleanly for the new Tama. "At home" Tamas are paused: switching to one sets its `lastSeen = now`, so no decay is counted.
+  - **Graduate** sets `graduatedAt` (album, restorable); graduating the active Tama hatches a new egg first. **Delete** is permanent, needs the exact name typed, and never applies to the active Tama.
+  - **`.tama` file:** `"TAMA"` + version + flags + gzip'd JSON bundle of `tamas/<id>/` files (+ optional `user/`, + optional `telegram.*` secrets only when password-protected). With a password: scrypt (N=2^15) → AES-256-GCM (authenticated, so tampering is detected).
+  - **Import** always creates a new id (never overwrites), validates every file name (no `..`, no absolute paths, only .json/.md/.txt), and runs everything through the normal migrations and `normalizeSpec`. The desktop channel only imports the path the user picked in the OS dialog.
+- **Alternatives:** Hot-swap services without relaunch (more code paths, more bugs); a zip library (extra dependency; one bundle file is enough).
+- **Consequences:** PRD PORT-5 says "zip"; the file is a single gzip'd bundle instead (same user-facing result). Drive backup (PORT-6, M6) can upload the same `.tama` bytes.
+- **Refs:** PORT-3..5, ONB-9, src/main/services/roster/{lifecycle,bundle}.js

@@ -18,12 +18,12 @@ test('write stamps schemaVersion; read round-trips', () => {
   assert.equal(back.schemaVersion, currentVersion('tama-state'));
 });
 
-test('legacy kero-pet state (no schemaVersion) is migrated with defaults filled in', () => {
+test('legacy kero-pet state (no schemaVersion) is migrated all the way with defaults filled in', () => {
   const out = migrate('tama-state', { hunger: 10, bond: 77 });
-  assert.equal(out.bond, 77);
+  assert.equal(out.bondXp, 924);
   assert.equal(out.hunger, 10);
   assert.equal(out.energy, 80);
-  assert.equal(out.schemaVersion, 1);
+  assert.equal(out.schemaVersion, 2);
 });
 
 test('a file from a newer app version is refused, not silently downgraded', () => {

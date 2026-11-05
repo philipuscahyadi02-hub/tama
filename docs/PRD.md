@@ -5,8 +5,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.4 |
-| **Status** | v0.2.0 released (M0, M1). M2 in progress on `m2-pet-loop` |
+| **Version** | 0.5 |
+| **Status** | v0.3.0 released (M0–M2). M3 in progress on `m3-brain` |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-05 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -62,7 +62,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | ONB-6 | Free-text **voice prompt**; produces a `VoiceSpec` + playable preview; can regenerate. | P0 | M1 | ☑ |
 | ONB-7 | Detect & smoke-test engines (`claude`, `agy`); show login instructions if missing. | P0 | M3 | ☐ |
 | ONB-8 | Optional steps: Telegram pairing, Google sign-in. Skippable, available later in settings. | P1 | M6/M7 | ☐ |
-| ONB-9 | First screen offers "Hatch new 🥚" or "Bring my Tama 📦" (import/restore). | P0 | M2 | ☐ |
+| ONB-9 | First screen offers "Hatch new 🥚" or "Bring my Tama 📦" (import/restore). | P0 | M2 | ☑ |
 
 ### 4.2 Character & art (ART)
 | ID | Requirement | Pri | MS | Status |
@@ -77,10 +77,10 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.3 Pet loop (PET)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| PET-1 | Stats: Tummy, Mood, Energy, Clean, Bond. Real-time decay incl. while closed (cap 48h). | P0 | M2 | ◐ |
-| PET-2 | **Never dies.** Neglect → sad/sulky only. | P0 | M2 | ☐ |
-| PET-3 | Easy energy: snack/energy drink (+25, cooldown), 10-min power nap (+50), charging when on AC power, auto-nap when PC idle >10 min (+30/h), focus-break recharge. | P0 | M2 | ☐ |
-| PET-4 | Agent work drains little (−1 per coding task); chatting costs no energy. | P0 | M2 | ☐ |
+| PET-1 | Stats: Tummy, Mood, Energy, Clean, Bond. Real-time decay incl. while closed (cap 48h). | P0 | M2 | ☑ |
+| PET-2 | **Never dies.** Neglect → sad/sulky only. | P0 | M2 | ☑ |
+| PET-3 | Easy energy: snack/energy drink (+25, cooldown), 10-min power nap (+50), charging when on AC power, auto-nap when PC idle >10 min (+30/h), focus-break recharge. | P0 | M2 | ☑ |
+| PET-4 | Agent work drains little (−1 per coding task); chatting costs no energy. | P0 | M2 | ☑ |
 | PET-5 | Interactions from kero-pet kept: click menu, head-pat rub, cheek poke, drag, wander, babble. | P0 | M1 | ☑ |
 | PET-6 | Do-not-disturb: no babble during fullscreen apps, meetings (calendar), or focus sessions. | P1 | M5 | ☐ |
 | PET-7 | Wellbeing nudges: water, stretch, late-night "go to sleep". Toggleable. | P2 | M5 | ☐ |
@@ -89,12 +89,12 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.4 Bond & productivity (BOND / PROD)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| BOND-1 | Bond XP from productivity: agent task done +2, git commit in watched repo +1 (cap 10/day), focus session +3, todo done +1, daily streak +1 (bonus at 7/30), finished calendar focus block +2, pats/play small & capped. | P0 | M2 | ☐ |
-| BOND-2 | Diminishing returns after a daily cap (anti-farming). | P0 | M2 | ☐ |
-| BOND-3 | Levels: Stranger → Acquaintance → Buddy → Partner → Soulmate. Unlock outfits, themes, events, voice lines, proactive behaviors. | P1 | M2 | ☐ |
-| BOND-4 | **Bond never unlocks permissions** or weakens safety. | P0 | M2 | ☐ |
-| PROD-1 | Todos (`/todo`), focus timer (`/focus 25`), reminders (`/remind`), notes (`/note`). Shared across desktop & Telegram. | P0 | M2 | ☐ |
-| PROD-2 | Git commit watcher for user-chosen repos. | P1 | M2 | ☐ |
+| BOND-1 | Bond XP from productivity: agent task done +2, git commit in watched repo +1 (cap 10/day), focus session +3, todo done +1, daily streak +1 (bonus at 7/30), finished calendar focus block +2, pats/play small & capped. | P0 | M2 | ☑ |
+| BOND-2 | Diminishing returns after a daily cap (anti-farming). | P0 | M2 | ☑ |
+| BOND-3 | Levels: Stranger → Acquaintance → Buddy → Partner → Soulmate. Unlock outfits, themes, events, voice lines, proactive behaviors. | P1 | M2 | ◐ |
+| BOND-4 | **Bond never unlocks permissions** or weakens safety. | P0 | M2 | ☑ |
+| PROD-1 | Todos (`/todo`), focus timer (`/focus 25`), reminders (`/remind`), notes (`/note`). Shared across desktop & Telegram. | P0 | M2 | ☑ |
+| PROD-2 | Git commit watcher for user-chosen repos. | P1 | M2 | ☑ |
 | PROD-3 | Google Tasks sync for todos. | P2 | M6 | ☐ |
 
 ### 4.5 Events & conversations (EVT)
@@ -174,9 +174,9 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 |---|---|---|---|---|
 | PORT-1 | Storage split: Tama "soul" (`tamas/<id>/`) vs device config (`device.json`) vs secrets (`secrets.bin`, safeStorage). | P0 | M0 | ☑ |
 | PORT-2 | Every persisted file has `schemaVersion`; forward migrations run on load. | P0 | M0 | ☑ |
-| PORT-3 | Roster: multiple Tamas, one active; inactive ones pause decay. | P1 | M2 | ☐ |
-| PORT-4 | Restyle (keep all), Rebirth (redesign; choose keep/clear memory & bond), Hatch another, Graduate (album; restorable), Delete (typed confirm). | P1 | M2 | ◐ |
-| PORT-5 | `.tama` export/import: zip, password-encrypted by default; optional "include connections" (Telegram token). | P0 | M2 | ☐ |
+| PORT-3 | Roster: multiple Tamas, one active; inactive ones pause decay. | P1 | M2 | ☑ |
+| PORT-4 | Restyle (keep all), Rebirth (redesign; choose keep/clear memory & bond), Hatch another, Graduate (album; restorable), Delete (typed confirm). | P1 | M2 | ☑ |
+| PORT-5 | `.tama` export/import: single bundle file (D-025), password-encrypted by default; optional "include connections" (Telegram token). | P0 | M2 | ☑ |
 | PORT-6 | Daily Drive backup to `appDataFolder` (`drive.appdata`); restore offer on new PC. | P1 | M6 | ☐ |
 | PORT-7 | Single active device lock (lease file in Drive); "move her here?" takeover. | P1 | M6 | ☐ |
 | PORT-8 | New-PC checklist: log in `claude`/`agy`, Google sign-in, Telegram re-pair if needed. | P1 | M6 | ☐ |
@@ -200,7 +200,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 
 - [x] **M0 — Foundation.** *(code complete; NFR-2 needs a real mixed-DPI check)* Scaffold from kero-pet, service split, event bus, store/secrets/migrations, summon fix (SUM-1..4, PORT-1..2, SAFE-2, NFR-2).
 - [x] **M1 — Character & hatching.** *(code complete)* SVG rig, parts library, CharacterSpec, onboarding (ONB-1..6, ART-1..3, PET-5, VOICE-2).
-- [ ] **M2 — Pet loop v2 & lifecycle.** Energy, bond, productivity, roster, export/import (PET-1..4, BOND-*, PROD-1..2, PORT-3..5, ONB-9).
+- [x] **M2 — Pet loop v2 & lifecycle.** *(code complete; BOND-3 unlock effects arrive with themes in M4 and events in M5)* Energy, bond, productivity, roster, export/import (PET-1..4, BOND-*, PROD-1..2, PORT-3..5, ONB-9).
 - [ ] **M3 — Brain & engines.** Router, Claude + agy engines, PermissionGate, budget (BRAIN-*, ENG-1..5, SAFE-1, SAFE-5, ONB-7).
 - [ ] **M4 — Terminal v2.** Theming, chat/code modes, commands (TERM-*, ART-4, SAFE-4).
 - [ ] **M5 — Events & memory.** (EVT-*, PET-6..7, NFR-4, SUM-5).
@@ -217,6 +217,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.5 — 2026-11-05** — M2 implemented: PET-1..4, BOND-1/2/4, PROD-1/2, PORT-3..5, ONB-9 done; BOND-3 levels done, unlock effects in M4/M5.
 - **0.4 — 2026-11-05** — M1 implemented: ONB-1..6, ART-1..3, VOICE-2 done; PORT-4 partial (restyle + rebirth; graduate/delete in M2).
 - **0.3 — 2026-11-05** — M0 implemented: SUM-1..4, PORT-1..2, SAFE-2, PET-5 done; NFR-2 and PET-1 partial. SUM-2's Telegram trigger lands in M7.
 - **0.2 — 2026-11-05** — Q1 resolved: Gmail drafts only (D-014).

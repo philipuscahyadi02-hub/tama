@@ -1,7 +1,7 @@
 {
   "name": "tama",
   "productName": "Tama",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Tama - a chibi anime agentic tamagotchi desktop companion",
   "author": "philipuscahyadi02-hub",
   "main": "src/main/index.js",

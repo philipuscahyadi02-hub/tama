@@ -14,6 +14,10 @@ const MIGRATIONS = {
   active: [
     (d) => d,
   ],
+  // user/productivity.json — todos, notes, reminders, focus timer (D-024)
+  productivity: [
+    (d) => d,
+  ],
   // tamas/<id>/character.json
   character: [
     (d) => d,
@@ -32,6 +36,17 @@ const MIGRATIONS = {
       bornAt: Date.now(), lastSeen: Date.now(),
       ...d,
     }),
+    // 1 → 2 (M2, D-023): bond 0..100 becomes open-ended bondXp (x12, so old 100 = Soulmate);
+    // adds sleep kinds, snack cooldown, daily XP caps and streak.
+    (d) => {
+      const { bond = 10, ...rest } = d;
+      return {
+        ...rest,
+        bondXp: Math.round(Math.max(0, Math.min(100, Number(bond) || 0)) * 12),
+        sleepKind: d.asleep ? 'sleep' : null, napUntil: 0,
+        cooldowns: { snack: 0 }, daily: { day: '', xp: {} }, streak: { count: 0, lastDay: '' },
+      };
+    },
   ],
 };
 

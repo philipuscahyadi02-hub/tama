@@ -14,6 +14,22 @@ async function pickFolder(parent) {
   return r.canceled || !r.filePaths[0] ? null : r.filePaths[0];
 }
 
+/** @param {import('electron').BrowserWindow | null} parent @param {string} defaultName @returns {Promise<string | null>} */
+async function pickSaveTama(parent, defaultName) {
+  /** @type {import('electron').SaveDialogOptions} */
+  const opts = { title: 'Export your Tama', defaultPath: defaultName, filters: [{ name: 'Tama', extensions: ['tama'] }] };
+  const r = parent ? await dialog.showSaveDialog(parent, opts) : await dialog.showSaveDialog(opts);
+  return r.canceled || !r.filePath ? null : r.filePath;
+}
+
+/** @param {import('electron').BrowserWindow | null} parent @returns {Promise<string | null>} */
+async function pickOpenTama(parent) {
+  /** @type {import('electron').OpenDialogOptions} */
+  const opts = { title: 'Bring a Tama in', properties: ['openFile'], filters: [{ name: 'Tama', extensions: ['tama'] }] };
+  const r = parent ? await dialog.showOpenDialog(parent, opts) : await dialog.showOpenDialog(opts);
+  return r.canceled || !r.filePaths[0] ? null : r.filePaths[0];
+}
+
 /**
  * Register global hotkeys. Returns the accelerators that failed (already taken by another app).
  * @param {Record<string, () => void>} map  accelerator → handler
@@ -58,4 +74,4 @@ function createTray({ tooltip, onClick, items }) {
   return tray;
 }
 
-module.exports = { notify, pickFolder, registerHotkeys, unregisterHotkeys, createTray };
+module.exports = { notify, pickFolder, pickSaveTama, pickOpenTama, registerHotkeys, unregisterHotkeys, createTray };

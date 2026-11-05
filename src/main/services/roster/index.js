@@ -4,6 +4,7 @@
 // onboarding. Saving a character covers hatch / restyle / rebirth (PORT-4's first two cases).
 const { TOPICS } = require('../../bus-topics');
 const specMod = require('../../../shared/spec');
+const { createLifecycle } = require('./lifecycle');
 
 /** @typedef {import('../../../shared/spec').CharacterSpec} CharacterSpec */
 /** @typedef {'egg'|'hatched'} Stage */
@@ -16,9 +17,13 @@ const specMod = require('../../../shared/spec');
  *   legacySaveFiles?: string[],
  *   now?: () => number,
  *   newId?: () => string,
+ *   relaunch?: () => void,
+ *   files?: { readBuffer: (p: string) => Buffer, writeBuffer: (p: string, b: Buffer) => void },
+ *   secrets?: any,
+ *   appVersion?: string,
  * }} deps
  */
-function createRoster({ bus, store, legacySaveFiles = [], now = Date.now, newId = defaultId }) {
+function createRoster({ bus, store, legacySaveFiles = [], now = Date.now, newId = defaultId, relaunch = () => {}, files, secrets = null, appVersion }) {
   const charFile = (/** @type {string} */ id) => `tamas/${id}/character.json`;
 
   /** @param {string} id */
@@ -90,11 +95,17 @@ function createRoster({ bus, store, legacySaveFiles = [], now = Date.now, newId 
 
   /** @param {{id: string}} active */
   function start(active) {
+    const noFiles = { readBuffer: () => { throw new Error('files unavailable'); }, writeBuffer: () => { throw new Error('files unavailable'); } };
+    const life = createLifecycle({ store, activeId: () => active.id, relaunch, files: files || noFiles, secrets, now, newId, appVersion });
     const offs = [
-      bus.handle(TOPICS.ROSTER_GET, () => ({
-        activeTamaId: active.id,
-        tamas: store.listDirs('tamas').filter((id) => store.exists(charFile(id))).map(describe),
-      })),
+      bus.handle(TOPICS.ROSTER_GET, () => ({ activeTamaId: active.id, tamas: life.list() })),
+      bus.handle(TOPICS.ROSTER_SWITCH, (/** @type {any} */ p) => life.switchTo(p)),
+      bus.handle(TOPICS.ROSTER_HATCH_NEW, () => life.hatchNew()),
+      bus.handle(TOPICS.ROSTER_GRADUATE, (/** @type {any} */ p) => life.graduate(p)),
+      bus.handle(TOPICS.ROSTER_RESTORE, (/** @type {any} */ p) => life.restore(p)),
+      bus.handle(TOPICS.ROSTER_DELETE, (/** @type {any} */ p) => life.remove(p)),
+      bus.handle(TOPICS.ROSTER_EXPORT, (/** @type {any} */ p) => life.exportTama(p)),
+      bus.handle(TOPICS.ROSTER_IMPORT, (/** @type {any} */ p) => life.importTama(p)),
       bus.handle(TOPICS.CHARACTER_GET, () => {
         const c = readCharacter(active.id);
         return { tamaId: active.id, spec: c.spec, stage: c.stage };

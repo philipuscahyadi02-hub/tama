@@ -85,7 +85,44 @@ function createStore(rootDir) {
     try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
   }
 
-  return { rootDir, read, write, writeSoon, flush, exists, listDirs, readExternal };
+  /** All files under a folder, as paths relative to that folder ('/' separators). @param {string} rel */
+  function listFiles(rel) {
+    /** @type {string[]} */
+    const out = [];
+    const walk = (/** @type {string} */ dir, /** @type {string} */ prefix) => {
+      let entries;
+      try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+      for (const e of entries) {
+        if (e.isDirectory()) walk(path.join(dir, e.name), `${prefix}${e.name}/`);
+        else if (e.isFile() && !e.name.includes('.tmp-') && !e.name.includes('.corrupt-')) out.push(`${prefix}${e.name}`);
+      }
+    };
+    walk(abs(rel), '');
+    return out;
+  }
+
+  /** Raw text read/write for bundling files the store doesn't parse (e.g. diary .md). */
+  const readText = (/** @type {string} */ rel) => fs.readFileSync(abs(rel), 'utf8');
+  /** @param {string} rel @param {string} text */
+  function writeText(rel, text) {
+    const file = abs(rel);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const tmp = `${file}.tmp-${process.pid}`;
+    fs.writeFileSync(tmp, text);
+    fs.renameSync(tmp, file);
+  }
+
+  /** Delete a folder inside the store (never the root itself). @param {string} rel */
+  function removeDir(rel) {
+    const dir = abs(rel);
+    if (dir === path.resolve(rootDir)) throw new Error('store: refusing to delete the store root');
+    for (const k of [...pending.keys()]) {
+      if (abs(k).startsWith(dir + path.sep)) { clearTimeout(/** @type {NodeJS.Timeout} */ (timers.get(k))); timers.delete(k); pending.delete(k); }
+    }
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
+  return { rootDir, read, write, writeSoon, flush, exists, listDirs, listFiles, readText, writeText, removeDir, readExternal };
 }
 
 /** @typedef {ReturnType<typeof createStore>} Store */

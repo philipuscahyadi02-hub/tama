@@ -87,4 +87,5 @@ Debug env vars: `TAMA_DEBUG=1`, `TAMA_SHOT=<dir>` (screenshots, `TAMA_SHOT_TIMES
 `TAMA_DATA_DIR=<dir>` (use a scratch data folder; **always use this when testing** so real saves aren't touched),
 `TAMA_NO_LEGACY=1` (skip kero-pet import), `TAMA_SELFTEST=1` (live summon check, quits when done),
 `TAMA_GALLERY=designs|moods` (rig gallery window), `TAMA_OFFLINE_DESIGNER=1` (keyword designer, no AI),
-`TAMA_OPEN_ONBOARDING=hatch|restyle|rebirth`, `TAMA_ONBOARD_WALK=<dir>` (scripted onboarding run + screenshots).
+`TAMA_OPEN_ONBOARDING=hatch|restyle|rebirth`, `TAMA_ONBOARD_WALK=<dir>` (scripted onboarding run + screenshots),
+`TAMA_OPEN_ROSTER=1`, `TAMA_PET_EVAL=<js>` / `TAMA_TERM_EVAL=<js>` (run JS in the pet / terminal window after load).
