@@ -14,7 +14,7 @@ const { Bus } = require('../../bus');
 const FAKE = path.join(__dirname, '..', '..', '..', '..', 'fixtures', 'fake-acp-agent.js');
 
 /** Every engine a test creates; stopped after all tests even when an assertion fails. */
-const engines = /** @type {AgyEngine[]} */ ([]);
+const engines = /** @type {InstanceType<typeof AgyEngine>[]} */ ([]);
 test.after(() => { for (const e of engines) e.stop(); });
 
 function setup(role = /** @type {'lite'|'worker'} */ ('worker'), persona = '') {
