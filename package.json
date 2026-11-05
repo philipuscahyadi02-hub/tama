@@ -9,8 +9,8 @@
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "check": "tsc -p jsconfig.json && node --test",
-    "test": "node --test",
+    "check": "tsc -p jsconfig.json && node --test --test-timeout=30000",
+    "test": "node --test --test-timeout=30000",
     "changelog": "node scripts/changelog.js",
     "dist": "electron-builder --win portable"
   },
