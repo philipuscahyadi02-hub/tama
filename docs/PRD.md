@@ -6,7 +6,7 @@
 | | |
 |---|---|
 | **Version** | 0.4 |
-| **Status** | v0.1.0 released (M0). M1 code complete on `m1-character` (awaiting user check, then 0.2.0) |
+| **Status** | v0.2.0 released (M0, M1). M2 in progress on `m2-pet-loop` |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-05 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |

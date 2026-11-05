@@ -15,6 +15,9 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
 
 ## [Unreleased]
+_Nothing yet._
+
+## [0.2.0] — 2026-11-05 — M1 Character & hatching
 ### Added
 - **M1 character & hatching** (branch `m1-character`):
   - Shared character rig (`src/shared`): 5 back-hair, 4 front-hair, 6 headwear (frog/bunny/bear hoods, cat/fox ears + tails), 5 outfits, 3 shoes, 7 accessories, 3 eye styles. Every design gets the full expression set (ART-1..3).
