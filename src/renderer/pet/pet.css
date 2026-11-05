@@ -15,75 +15,12 @@ html, body {
 .hidden { display: none !important; }
 #stage { position: absolute; inset: 0; }
 
-/* ---------- pet ---------- */
+/* ---------- pet (window placement; character styling lives in ../shared/rig.css) ---------- */
 #pet {
   position: absolute; bottom: 0; left: 50%;
   width: 170px; height: 204px; margin-left: -85px; cursor: grab;
 }
 #pet.dragging { cursor: grabbing; }
-#pet.face-left #kero { transform: scaleX(-1); }
-#kero { width: 100%; height: 100%; overflow: visible; }
-
-#headGroup, #bodyGroup { transform-box: view-box; }
-#headGroup { transform-origin: 100px 160px; }
-#pet:not(.walking):not(.asleep) #headGroup { animation: tilt 3.2s ease-in-out infinite; }
-#pet.asleep #headGroup { animation: snooze 3s ease-in-out infinite; }
-#pet.walking #stageInner, #pet.walking svg { animation: waddle .42s ease-in-out infinite; transform-origin: 50% 100%; }
-#pet.walking.face-left svg { animation-name: waddle-l; }
-#pet.hop svg { animation: hop .45s cubic-bezier(.3,1.6,.6,1) 1 !important; }
-#pet.dragging svg { animation: dangle .7s ease-in-out infinite !important; transform-origin: 50% 0; }
-#pet.henshin svg { animation: henshin 1.1s ease-in-out 1 !important; }
-#pet.working #headGroup { animation: think 1.4s ease-in-out infinite; }
-
-@keyframes tilt { 0%,100% { transform: rotate(0); } 30% { transform: rotate(-2.5deg) translateY(1px); } 65% { transform: rotate(2deg); } }
-@keyframes snooze { 50% { transform: rotate(-6deg) translateY(3px); } }
-@keyframes think { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
-@keyframes waddle { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) translateY(-4px); } }
-@keyframes waddle-l { 0%,100% { transform: scaleX(-1) rotate(-4deg); } 50% { transform: scaleX(-1) rotate(4deg) translateY(-4px); } }
-@keyframes hop { 40% { transform: translateY(-36px) scale(1.03, .97); } 100% { transform: none; } }
-@keyframes dangle { 0%,100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
-@keyframes henshin {
-  0% { transform: none; filter: none; }
-  45% { transform: translateY(-30px) rotateY(540deg) scale(1.08); filter: brightness(2.2) drop-shadow(0 0 14px #fff6a8); }
-  100% { transform: none; filter: none; }
-}
-
-/* hair & accessories motion */
-.tail { transform-box: view-box; }
-.tail-l { transform-origin: 46px 126px; animation: swayL 2.8s ease-in-out infinite; }
-.tail-r { transform-origin: 154px 126px; animation: swayR 2.8s ease-in-out infinite; }
-#pet.walking .tail-l, #pet.walking .tail-r { animation-duration: .42s; }
-@keyframes swayL { 50% { transform: rotate(6deg); } }
-@keyframes swayR { 50% { transform: rotate(-6deg); } }
-.ahoge { transform-box: fill-box; transform-origin: 30% 100%; animation: ahoge 2.2s ease-in-out infinite; }
-@keyframes ahoge { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(10deg); } }
-.arm { transform-box: fill-box; transform-origin: 50% 10%; }
-#pet.hop .arm-r, #pet.mood-sparkle .arm-r { animation: wave .4s ease-in-out 3; }
-@keyframes wave { 50% { transform: rotate(-40deg); } }
-.hood-eyes { animation: blink 6s infinite 1.2s; transform-box: fill-box; transform-origin: center; }
-
-/* ---------- expressions ---------- */
-.eyes, .mouth, .lids, .brows, .tears, .glasses, .puff, .stars { display: none; }
-.eyes-open .eye { transform-box: fill-box; transform-origin: center; animation: blink 4.6s infinite; }
-@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 96.5% { transform: scaleY(.08); } }
-
-.mood-normal .eyes-open, .mood-normal .mouth-cat { display: inline; }
-.mood-happy .eyes-happy, .mood-happy .mouth-smile { display: inline; }
-.mood-sparkle .eyes-open, .mood-sparkle .stars, .mood-sparkle .mouth-smile { display: inline; }
-.mood-sparkle .hl { display: none; }
-.mood-sad .eyes-open, .mood-sad .tears, .mood-sad .brows-sad, .mood-sad .mouth-wobble { display: inline; }
-.mood-sleep .eyes-closed, .mood-sleep .mouth-o { display: inline; }
-.mood-eat .eyes-happy, .mood-eat .mouth-smile { display: inline; }
-.mood-focus .eyes-open, .mood-focus .lids, .mood-focus .brows-angry, .mood-focus .mouth-flat { display: inline; }
-.mood-smug .eyes-open, .mood-smug .lids, .mood-smug .mouth-cat { display: inline; }
-.mood-shock .eyes-shock, .mood-shock .mouth-o { display: inline; }
-.mood-pout .eyes-open, .mood-pout .brows-angry, .mood-pout .mouth-pout, .mood-pout .puff { display: inline; }
-.mood-dizzy .eyes-dizzy, .mood-dizzy .mouth-wobble { display: inline; }
-.mood-pat .eyes-happy, .mood-pat .mouth-cat { display: inline; }
-.mood-pat .blush, .mood-pout .blush { opacity: 1; filter: saturate(1.6); }
-#pet.working .glasses { display: inline; }
-.tears .stream { animation: tear 1s linear infinite; }
-@keyframes tear { 50% { opacity: .4; } }
 
 /* ---------- emotes ---------- */
 #emote {

@@ -36,6 +36,8 @@ const TOPICS = {
   SUMMON_DONE: 'summon.done',
   /** { action: 'feed'|'play' } — care action chosen from the tray menu */
   TRAY_ACTION: 'tray.action',
+  /** { tamaId, spec: CharacterSpec, stage: 'egg'|'hatched' } — look/name/voice changed (restyle, rebirth, hatch) */
+  CHARACTER_CHANGED: 'character.changed',
 
   // ---- requests ----
   /** () → { tamaId, name, state, hoursAway } */
@@ -44,6 +46,16 @@ const TOPICS = {
   PET_ACT: 'pet.act',
   /** () → { activeTamaId, tamas: {id,name}[] } */
   ROSTER_GET: 'roster.get',
+  /** () → { tamaId, spec: CharacterSpec, stage } for the active Tama */
+  CHARACTER_GET: 'character.get',
+  /** { spec, mode: 'hatch'|'restyle'|'rebirth', keepBond?: boolean } → { tamaId, spec } */
+  CHARACTER_SAVE: 'character.save',
+  /** { gender, prompt, name? } → { variants: CharacterSpec[3], source: 'ai'|'offline', warning? } */
+  DESIGNER_GENERATE: 'designer.generate',
+  /** { spec, instruction } → { variants: CharacterSpec[3], source, warning? } */
+  DESIGNER_REFINE: 'designer.refine',
+  /** { voicePrompt, gender, personality? } → { voice, speech|null, source } */
+  DESIGNER_VOICE: 'designer.voice',
   /** () → terminal init info { cwd, mode, model, busy, lastSessionId, totalCost, commands } */
   ENGINE_INFO: 'engine.info',
   /** text → void */

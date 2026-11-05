@@ -20,6 +20,8 @@ function createEngineHost({ bus, device, tamaName }) {
     if (ev.t === 'session') saveDevice({ lastSessionId: ev.sessionId });
   };
   const engine = new ClaudeCodeEngine(emit, { tamaName });
+  // The persona uses the Tama's name; a restyle/rebirth can rename her (applies to the next session).
+  bus.on(TOPICS.CHARACTER_CHANGED, (/** @type {any} */ c) => { engine.tamaName = c.spec.name; });
 
   const saved = () => device.get().engine || {};
   /** @param {Record<string, any>} patch */

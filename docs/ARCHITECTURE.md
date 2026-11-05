@@ -80,9 +80,23 @@ src/main/
   engines/claude/          session (Agent SDK), map-message (pure), find-exe, input-queue
   channels/desktop/        renderer IPC ↔ bus
   dev/selftest.js          TAMA_SELFTEST live summon check
+  dev/onboarding-walk.js   TAMA_ONBOARD_WALK scripted onboarding run with screenshots (M1)
+  services/designer/       prompt.js (schemas) + fallback.js (keyword designer) + index.js (M1)
+  engines/claude/oneshot.js  tool-less structured call for the designer (D-021)
+  platform/windows/page-window.js  framed pages (onboarding, dev gallery)
+src/shared/                pure modules for main AND renderer (D-020): palette, catalog, spec,
+                           rig/{kit,face,hair,headwear,outfit,accessories,compose}
 src/preload/index.js       window.tama allow-list
-src/renderer/pet|terminal  ported kero-pet views (Kero art until M1)
+src/renderer/shared/       rig.css (animations + expressions), rig-view.js (renderRig/renderEgg)
+src/renderer/pet|terminal  pet drawn by the rig from the CharacterSpec; terminal still kero-styled (M4)
+src/renderer/onboarding/   hatch / restyle / rebirth flow (M1)
+src/renderer/dev/          rig gallery (TAMA_GALLERY=designs|moods)
 ```
+
+### 2.2 Shared code rule
+`src/shared/**` must stay pure: no Node or Electron APIs and no DOM, only data in and strings out. Each file uses the
+UMD wrapper (`module.exports` in Node, `globalThis.TamaShared.<name>` in the renderer). Renderers load them
+with `<script>` tags in dependency order (see `onboarding.html`).
 
 ## 3. Dependency rules (enforced by review; lint rule later)
 
@@ -111,9 +125,9 @@ bus.on('engine.event', handler)
 - Channels forward a filtered set of topics to renderers / Telegram.
 
 ### Topics in use (M0)
-Events: `app.error`, `pet.state.changed`, `engine.event`, `summon.done`, `tray.action`.
-Requests: `pet.get`, `pet.act`, `roster.get`, `engine.{info,send,interrupt,clear,setMode,setModel,setCwd,answerPermission,resume}`, `summon`.
-Renderer messages arrive on one `ui` IPC channel: `pet.state`, `summon`, `tray`, `agent.event`, `term.focus`.
+Events: `app.error`, `pet.state.changed`, `engine.event`, `summon.done`, `tray.action`, `character.changed`.
+Requests: `pet.get`, `pet.act`, `roster.get`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setCwd,answerPermission,resume}`, `summon`.
+Renderer messages arrive on one `ui` IPC channel: `pet.state`, `summon`, `tray`, `agent.event`, `term.focus`, `character`.
 
 ## 5. Engine contract
 
@@ -152,7 +166,7 @@ stop(): void
 - Renderer: `contextIsolation: true`, `nodeIntegration: false`, CSP in every HTML file, preload exposes an allow-list.
 - Logs never contain secrets, tokens, or email bodies.
 
-## 8. Character rig
+## 8. Character rig (see D-020)
 - `CharacterSpec` (JSON) → rig composes layers from `assets/rig/<layer>/<part>.svg` and applies palette via CSS variables.
 - Expressions are rig-level (eyes/mouth/brows/effects), so every design gets all expressions.
 - Theme tokens (`--tama-primary`, `--tama-accent`, …) are derived from the spec and shared with terminal/onboarding.

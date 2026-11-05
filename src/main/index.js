@@ -12,6 +12,9 @@ const { createSummoner } = require('./platform/summon');
 const ipc = require('./platform/ipc');
 const shell = require('./platform/shell');
 const { createRoster } = require('./services/roster');
+const { createDesigner } = require('./services/designer');
+const { askJson } = require('./engines/claude/oneshot');
+const { openPage } = require('./platform/windows/page-window');
 const { createPetService } = require('./services/pet');
 const { createEngineHost } = require('./engines');
 const { createDesktopChannel } = require('./channels/desktop');
@@ -48,7 +51,12 @@ function boot() {
   bus.handle(TOPICS.SUMMON, (/** @type {{reason?: string}} */ p) => summon((p && p.reason) || 'bus'));
 
   // ---- channels ----
-  createDesktopChannel({ bus, ipc, shell, pet, term, summon }).start();
+  // Designer: Claude Haiku with tools disabled, keyword fallback (D-021). Moves to the M3 lite brain.
+  stoppers.push(createDesigner({ bus, askJson: process.env.TAMA_OFFLINE_DESIGNER ? null : askJson, log: debug }).start());
+  const openOnboarding = (/** @type {string} */ mode) =>
+    openPage('onboarding/onboarding.html', { width: 940, height: 700, title: 'Hatch your Tama', query: { mode } });
+
+  createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboarding }).start();
   shell.createTray({
     tooltip: `${active.name} (Tama)`,
     onClick: () => summon('tray-click'),
@@ -56,6 +64,8 @@ function boot() {
       { label: `Summon ${active.name}  (Ctrl+Alt+P)`, click: () => summon('tray-menu') },
       { label: 'Open terminal  (Ctrl+Alt+K)', click: () => term.show() },
       { label: 'Show / Hide', click: () => pet.toggleVisible() },
+      { label: 'Restyle…', click: () => openOnboarding('restyle') },
+      { label: 'Rebirth…', click: () => openOnboarding('rebirth') },
       { type: 'separator' },
       { label: 'Feed', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'feed' }) },
       { label: 'Play', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'play' }) },
@@ -73,6 +83,16 @@ function boot() {
 
   secondInstance = () => summon('second-instance');
   if (process.env.TAMA_SHOW_TERM) term.show();
+  if (process.env.TAMA_GALLERY) {
+    openPage('dev/gallery.html', { width: 1000, height: 760, frame: true, query: { set: process.env.TAMA_GALLERY } });
+  }
+  if (process.env.TAMA_OPEN_ONBOARDING) openOnboarding(process.env.TAMA_OPEN_ONBOARDING);
+  if (process.env.TAMA_ONBOARD_WALK) {
+    require('./dev/onboarding-walk').runOnboardingWalk({
+      openOnboarding, petWin: pet.win, outDir: process.env.TAMA_ONBOARD_WALK, quit: appShell.quit, log: console.log,
+      prompt: process.env.TAMA_WALK_PROMPT || 'a sleepy cat boy with headphones who loves coffee',
+    });
+  }
   if (process.env.TAMA_SELFTEST) {
     require('./dev/selftest').runSelfTest({ pet, summoner, workAreas: require('./platform/displays').workAreas, quit: appShell.quit });
   }

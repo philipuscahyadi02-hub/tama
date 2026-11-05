@@ -1,8 +1,12 @@
 // @ts-check
-// Roster: which Tamas exist and which one is active (PORT-1; full roster UI is PORT-3/M2).
-// M0: if there is no Tama yet, create one. If a kero-pet save exists, bring Kero-chan over
-// with her stats and bond, so upgrading from kero-pet doesn't lose your pet (D-016).
+// Roster: which Tamas exist, which one is active, and their CharacterSpec (PORT-1, ONB-1, D-016, D-020).
+// First run: with a kero-pet save → Kero-chan is imported already hatched; otherwise an egg waits for
+// onboarding. Saving a character covers hatch / restyle / rebirth (PORT-4's first two cases).
 const { TOPICS } = require('../../bus-topics');
+const specMod = require('../../../shared/spec');
+
+/** @typedef {import('../../../shared/spec').CharacterSpec} CharacterSpec */
+/** @typedef {'egg'|'hatched'} Stage */
 
 /**
  * legacySaveFiles: absolute paths to kero-pet pet-state.json candidates.
@@ -15,28 +19,37 @@ const { TOPICS } = require('../../bus-topics');
  * }} deps
  */
 function createRoster({ bus, store, legacySaveFiles = [], now = Date.now, newId = defaultId }) {
-  /** @returns {{ id: string, name: string }} */
+  const charFile = (/** @type {string} */ id) => `tamas/${id}/character.json`;
+
+  /** @param {string} id */
+  function readCharacter(id) {
+    const raw = store.read(charFile(id), 'character', () => ({}));
+    return { raw, spec: specMod.normalizeSpec(raw), stage: /** @type {Stage} */ (raw.stage === 'egg' ? 'egg' : 'hatched') };
+  }
+
+  /** @returns {{ id: string, name: string, stage: Stage }} */
   function ensureActive() {
     const active = store.read('active.json', 'active', () => ({ activeTamaId: null }));
-    if (active.activeTamaId && store.exists(`tamas/${active.activeTamaId}/character.json`)) {
-      return describe(active.activeTamaId);
-    }
-    const existing = store.listDirs('tamas').find((id) => store.exists(`tamas/${id}/character.json`));
+    if (active.activeTamaId && store.exists(charFile(active.activeTamaId))) return describe(active.activeTamaId);
+    const existing = store.listDirs('tamas').find((id) => store.exists(charFile(id)));
     if (existing) {
       store.write('active.json', 'active', { activeTamaId: existing });
       return describe(existing);
     }
-    return hatchFirst();
+    return createFirst();
   }
 
-  function hatchFirst() {
+  function createFirst() {
     const id = newId();
     const legacy = newestLegacySave();
-    // Until M1 onboarding exists, every Tama uses the built-in Kero-chan preset.
-    store.write(`tamas/${id}/character.json`, 'character', {
-      name: 'Kero-chan', preset: 'kero', gender: 'girl', createdAt: now(), importedFrom: legacy ? 'kero-pet' : null,
-    });
-    if (legacy) store.write(`tamas/${id}/state.json`, 'tama-state', legacy);
+    const meta = { createdAt: now(), importedFrom: legacy ? 'kero-pet' : null };
+    if (legacy) {
+      store.write(charFile(id), 'character', { ...specMod.preset('kero'), ...meta, stage: 'hatched' });
+      store.write(`tamas/${id}/state.json`, 'tama-state', legacy);
+    } else {
+      // An egg: the real design comes from onboarding (ONB-1). The placeholder spec is never shown.
+      store.write(charFile(id), 'character', { ...specMod.normalizeSpec({ name: 'Tama' }), ...meta, stage: 'egg' });
+    }
     store.write('active.json', 'active', { activeTamaId: id });
     return describe(id);
   }
@@ -52,16 +65,43 @@ function createRoster({ bus, store, legacySaveFiles = [], now = Date.now, newId 
 
   /** @param {string} id */
   function describe(id) {
-    const c = store.read(`tamas/${id}/character.json`, 'character', () => ({ name: 'Tama' }));
-    return { id, name: c.name };
+    const c = readCharacter(id);
+    return { id, name: c.spec.name, stage: c.stage };
   }
 
-  /** @param {{id: string, name: string}} active */
+  /**
+   * Save a design for the active Tama.
+   * - hatch:   egg → hatched, fresh stats (bornAt = now)
+   * - restyle: new look/voice, everything else kept
+   * - rebirth: new everything; stats reset unless keepBond (then bond/xp/pats survive)
+   * @param {string} activeId
+   * @param {{ spec: any, mode: 'hatch'|'restyle'|'rebirth', keepBond?: boolean }} req
+   */
+  function saveCharacter(activeId, { spec, mode, keepBond = true }) {
+    if (!['hatch', 'restyle', 'rebirth'].includes(mode)) throw new Error(`character.save: bad mode ${mode}`);
+    const { raw } = readCharacter(activeId);
+    const clean = specMod.normalizeSpec(spec);
+    const meta = { createdAt: raw.createdAt || now(), importedFrom: raw.importedFrom || null, updatedAt: now() };
+    store.write(charFile(activeId), 'character', { ...clean, ...meta, stage: 'hatched' });
+    const resetState = mode === 'hatch' || (mode === 'rebirth' && !keepBond) ? 'all' : mode === 'rebirth' ? 'keep-bond' : 'none';
+    bus.emit(TOPICS.CHARACTER_CHANGED, { tamaId: activeId, spec: clean, stage: 'hatched', mode, resetState });
+    return { tamaId: activeId, spec: clean };
+  }
+
+  /** @param {{id: string}} active */
   function start(active) {
-    return bus.handle(TOPICS.ROSTER_GET, () => ({
-      activeTamaId: active.id,
-      tamas: store.listDirs('tamas').filter((id) => store.exists(`tamas/${id}/character.json`)).map(describe),
-    }));
+    const offs = [
+      bus.handle(TOPICS.ROSTER_GET, () => ({
+        activeTamaId: active.id,
+        tamas: store.listDirs('tamas').filter((id) => store.exists(charFile(id))).map(describe),
+      })),
+      bus.handle(TOPICS.CHARACTER_GET, () => {
+        const c = readCharacter(active.id);
+        return { tamaId: active.id, spec: c.spec, stage: c.stage };
+      }),
+      bus.handle(TOPICS.CHARACTER_SAVE, (/** @type {any} */ req) => saveCharacter(active.id, req)),
+    ];
+    return () => { for (const off of offs) off(); };
   }
 
   return { ensureActive, start };

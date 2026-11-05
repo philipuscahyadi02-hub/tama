@@ -17,6 +17,28 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## [Unreleased]
 _Nothing yet._
 
+## [0.2.0] — 2026-11-05 — M1 Character & hatching
+### Added
+- **M1 character & hatching** (branch `m1-character`):
+  - Shared character rig (`src/shared`): 5 back-hair, 4 front-hair, 6 headwear (frog/bunny/bear hoods, cat/fox ears + tails), 5 outfits, 3 shoes, 7 accessories, 3 eye styles. Every design gets the full expression set (ART-1..3).
+  - CharacterSpec + `normalizeSpec` gate; palette derivation from 6 base colors; Kero-chan becomes a preset with her exact original colors.
+  - New users start with a wobbling **egg**; clicking it opens onboarding (ONB-1).
+  - **Onboarding window:** gender → describe → 3 variants (reroll or "change something" by chat) → name, personality sliders and colors → voice prompt with ▶ preview → hatch (ONB-2..6).
+  - **Restyle** (🪄 in the pet menu, tray) and **Rebirth** (tray, optional keep-bond) for existing Tamas, including your imported Kero-chan.
+  - Designer service: Claude Haiku with tools disabled and a JSON schema, plus an offline keyword designer (D-021).
+  - Pet lines use the character's own tics, catchphrases and emoji (VOICE-2).
+  - Dev tools: rig gallery (`TAMA_GALLERY`), scripted onboarding walkthrough (`TAMA_ONBOARD_WALK`), `TAMA_OFFLINE_DESIGNER`, `TAMA_OPEN_ONBOARDING`.
+### Changed
+- `character.json` schema v2 (full spec); M0 files migrate automatically.
+- Character CSS moved from `pet.css` to shared `renderer/shared/rig.css`.
+### Fixed
+- Spec gate: junk accessories could push out valid ones (found by tests).
+- Onboarding: refine/voice results showed only after the next click (stale re-render).
+### Decisions
+- D-022 — M8 voice: AivisSpeech local engine, built-in TTS fallback.
+- D-020 — Character rig architecture.
+- D-021 — M1 designer model choice and fallback.
+
 ## [0.1.0] — 2026-11-05 — M0 Foundation
 ### Added
 - **M0 foundation** (branch `m0-foundation`): Electron app ported from kero-pet into the layered layout (platform / services / engines / channels / renderer).
@@ -47,7 +69,10 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `17a22c0` | 2026-11-05 | feat | M1 character rig, hatching onboarding, restyle and rebirth |
+| `f3757b4` | 2026-11-05 | docs(changelog) | regenerate commit table for v0.1.0 |
 
 ### v0.1.0
 | Commit | Date | Type | Subject |

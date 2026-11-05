@@ -2,6 +2,7 @@
 // Forward-only migrations per file kind (ARCHITECTURE §6, D-011).
 // To change a file's shape: append a function to its list. Never edit or remove existing steps.
 // Step i upgrades data from schemaVersion i to i+1. Files without schemaVersion are version 0.
+const specMod = require('../../../../shared/spec');
 
 /** @type {Record<string, Array<(d: any) => any>>} */
 const MIGRATIONS = {
@@ -16,6 +17,13 @@ const MIGRATIONS = {
   // tamas/<id>/character.json
   character: [
     (d) => d,
+    // 1 → 2 (M1): M0 stored { name, preset, gender, createdAt, importedFrom }. Expand to a full
+    // CharacterSpec from the preset, keeping the name and meta fields (D-020).
+    (d) => {
+      const { preset, ...meta } = d;
+      const base = preset ? specMod.PRESETS[preset] || specMod.PRESETS.kero : {};
+      return { ...meta, ...specMod.normalizeSpec({ ...base, ...meta, name: d.name || base.name }), stage: 'hatched' };
+    },
   ],
   // tamas/<id>/state.json — v0 is kero-pet's pet-state.json, which already has the v1 fields.
   'tama-state': [
