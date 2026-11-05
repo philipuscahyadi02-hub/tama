@@ -59,11 +59,16 @@ const STEPS = {
   gender: {
     html: () => `<h1>Who's in the egg?</h1><p class="sub">This sets pronouns and starting styles. Any look works for anyone.</p>
       <div class="cards">${[['girl', '🎀', 'Girl', 'she / her'], ['boy', '🧢', 'Boy', 'he / him'], ['nonbinary', '🌈', 'Non-binary', 'they / them'], ['surprise', '🎲', 'Surprise me', 'random pick']]
-        .map(([g, e, t, s]) => `<div class="card ${st.gender === g ? 'sel' : ''}" data-g="${g}"><div class="big">${e}</div><b>${t}</b><small>${s}</small></div>`).join('')}</div>`,
-    bind: () => document.querySelectorAll('.card').forEach((c) => c.addEventListener('click', () => {
-      st.gender = c.dataset.g === 'surprise' ? ['girl', 'boy', 'nonbinary'][Math.floor(Math.random() * 3)] : c.dataset.g;
-      next();
-    })),
+        .map(([g, e, t, s]) => `<div class="card ${st.gender === g ? 'sel' : ''}" data-g="${g}"><div class="big">${e}</div><b>${t}</b><small>${s}</small></div>`).join('')}</div>
+      ${mode === 'hatch' ? '<p class="sub" style="margin-top:22px">Already have a Tama from another PC? <button id="bring" class="ghost">📦 Bring my Tama</button></p>' : ''}`,
+    bind: () => {
+      document.querySelectorAll('.card').forEach((c) => c.addEventListener('click', () => {
+        st.gender = c.dataset.g === 'surprise' ? ['girl', 'boy', 'nonbinary'][Math.floor(Math.random() * 3)] : c.dataset.g;
+        next();
+      }));
+      const bring = $('#bring');
+      if (bring) bring.addEventListener('click', () => { T.openRoster(true); T.closeSelf(); });
+    },
     ok: () => !!st.gender,
   },
 

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>My Tamas</title>
+  <link rel="stylesheet" href="../shared/rig.css" />
+  <link rel="stylesheet" href="../onboarding/onboarding.css" />
+  <link rel="stylesheet" href="roster.css" />
+</head>
+<body>
+  <header id="titlebar">
+    <span class="brand">🏡 <b>My Tamas</b></span>
+    <span class="spacer"></span>
+    <button id="hatch" class="ghost">🥚 Hatch another</button>
+    <button id="import" class="ghost">📦 Bring a Tama in</button>
+    <button id="close" class="x" title="Close">✕</button>
+  </header>
+  <main id="screen">
+    <div id="msg" class="warn hidden"></div>
+    <h2>On the desktop & at home</h2>
+    <div id="home" class="grid"></div>
+    <h2>Album 🎓 <small>graduated Tamas: restore anytime</small></h2>
+    <div id="album" class="grid"></div>
+  </main>
+  <div id="modal" class="hidden"><div class="box" id="modalBox"></div></div>
+
+  <script src="../../shared/palette.js"></script>
+  <script src="../../shared/catalog.js"></script>
+  <script src="../../shared/spec.js"></script>
+  <script src="../../shared/rig/kit.js"></script>
+  <script src="../../shared/rig/face.js"></script>
+  <script src="../../shared/rig/hair.js"></script>
+  <script src="../../shared/rig/headwear.js"></script>
+  <script src="../../shared/rig/outfit.js"></script>
+  <script src="../../shared/rig/accessories.js"></script>
+  <script src="../../shared/rig/compose.js"></script>
+  <script src="../shared/rig-view.js"></script>
+  <script src="roster.js"></script>
+</body>
+</html>

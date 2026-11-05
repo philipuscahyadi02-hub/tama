@@ -14,9 +14,12 @@ const USER_ACTIONS = new Set(['feed', 'snack', 'play', 'clean', 'sleep', 'nap', 
  *   term: import('../../platform/windows/terminal-window').TerminalWindow,
  *   summon: (reason: string) => void,
  *   openOnboarding: (mode: 'hatch'|'restyle'|'rebirth') => void,
+ *   openRoster: (importNow?: boolean) => unknown,
  * }} deps
  */
-function createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboarding }) {
+function createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboarding, openRoster }) {
+  /** The last .tama file the user picked; import only ever reads this path, never one sent by a page. */
+  let pickedImport = /** @type {string | null} */ (null);
   const both = () => [pet.win, term.window()];
   /** Fire-and-forget request; failures surface on app.error instead of becoming unhandled rejections. @param {string} topic @param {any} [payload] */
   const fire = (topic, payload) => { bus.request(topic, payload).catch((e) => bus.emit(TOPICS.APP_ERROR, { topic, message: String(e.message || e) })); };
@@ -82,6 +85,33 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboardi
     }));
     ipc.handle('character:save', (req) => bus.request(TOPICS.CHARACTER_SAVE, { spec: req?.spec, mode: String(req?.mode), keepBond: req?.keepBond !== false }));
     ipc.onFromWindow('win:closeSelf', (w) => w.close());
+    // ---- My Tamas window → core (PORT-3..5) ----
+    ipc.on('roster:open', (importNow) => openRoster(!!importNow));
+    ipc.handle('roster:list', () => bus.request(TOPICS.ROSTER_GET));
+    ipc.handle('roster:switch', (id) => bus.request(TOPICS.ROSTER_SWITCH, { id: String(id) }));
+    ipc.handle('roster:hatchNew', () => bus.request(TOPICS.ROSTER_HATCH_NEW));
+    ipc.handle('roster:graduate', (id) => bus.request(TOPICS.ROSTER_GRADUATE, { id: String(id) }));
+    ipc.handle('roster:restore', (id) => bus.request(TOPICS.ROSTER_RESTORE, { id: String(id) }));
+    ipc.handle('roster:delete', (id, confirmName) => bus.request(TOPICS.ROSTER_DELETE, { id: String(id), confirmName: String(confirmName || '') }));
+    ipc.handle('roster:export', async (o) => {
+      const list = (await bus.request(TOPICS.ROSTER_GET)).tamas;
+      const t = list.find((/** @type {any} */ x) => x.id === String(o?.id));
+      if (!t) return { error: 'No such Tama.' };
+      const filePath = await shell.pickSaveTama(null, `${t.name.replace(/[^\w -]/g, '') || 'Tama'}.tama`);
+      if (!filePath) return null;
+      return bus.request(TOPICS.ROSTER_EXPORT, {
+        id: t.id, filePath, password: String(o?.password || ''), includeUser: !!o?.includeUser, includeConnections: !!o?.includeConnections,
+      });
+    });
+    ipc.handle('roster:importPick', async (includeUser) => {
+      pickedImport = await shell.pickOpenTama(null);
+      if (!pickedImport) return null;
+      return bus.request(TOPICS.ROSTER_IMPORT, { filePath: pickedImport, includeUser: !!includeUser });
+    });
+    ipc.handle('roster:importPassword', (pw, includeUser) => {
+      if (!pickedImport) return { error: 'Pick a file first.' };
+      return bus.request(TOPICS.ROSTER_IMPORT, { filePath: pickedImport, password: String(pw || ''), includeUser: !!includeUser });
+    });
 
     // ---- terminal window → core ----
     ipc.handle('term:init', () => bus.request(TOPICS.ENGINE_INFO));

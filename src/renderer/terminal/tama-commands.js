@@ -25,7 +25,7 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
     '  /remind <when> <text>   e.g. /remind in 10m stretch · /remind 3pm call mom · /reminders',
     '  /note [text]     jot a note (no text = recent notes)',
     '  /watch [here|path]   earn bond from your commits in a repo (no arg = list) · /unwatch <here|path>',
-    '  /feed  /snack  /nap  take care of your Tama',
+    '  /feed  /snack  /nap  take care of your Tama · /tama  My Tamas (switch, hatch, export, import)',
   ];
 
   return {
@@ -70,6 +70,7 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
         const target = arg === 'here' || !arg ? getCwd() : arg;
         show(await P.watchRemove(target), () => `⎿  stopped watching ${target}`);
       }],
+      tama: ['My Tamas: switch, hatch, graduate, export, import', () => { K.openRoster(false); info('⎿  opened My Tamas'); }],
       feed: ['Feed your Tama', async () => show(await K.act('feed'), (r) => (r.ok ? '⎿  🍙 itadakimasu!' : `⎿  (${r.reason})`))],
       snack: ['Energy snack (+25)', async () => show(await K.act('snack'), (r) => (r.ok ? '⎿  ⚡ energy +25' : r.reason === 'cooldown' ? `⎿  snack again in ${Math.ceil(r.retryInMs / 60000)} min` : `⎿  (${r.reason})`))],
       nap: ['10-minute power nap', async () => show(await K.act('nap'), (r) => (r.ok ? '⎿  💤 power nap, 10 min' : `⎿  (${r.reason})`))],

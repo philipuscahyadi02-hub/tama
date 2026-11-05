@@ -25,6 +25,8 @@ function run({ boot, onSecondInstance, beforeQuit }) {
 }
 
 function quit() { quitting = true; app.quit(); }
+/** Restart the app (used after switching the active Tama). Shutdown hooks still run. */
+function relaunch() { app.relaunch(); quit(); }
 const isQuitting = () => quitting;
 
-module.exports = { paths, run, quit, isQuitting };
+module.exports = { paths, run, quit, relaunch, isQuitting, version: () => app.getVersion() };

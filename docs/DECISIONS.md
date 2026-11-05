@@ -54,6 +54,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-022 | M8 voice: AivisSpeech local engine (anime voices), built-in TTS fallback | Accepted |
 | D-023 | Pet balance v2: easy energy, open-ended bond XP with levels, daily caps, streaks | Accepted |
 | D-024 | Productivity data is the user's (user/), git watch is per PC (device.json) | Accepted |
+| D-025 | Roster lifecycle via relaunch; .tama = gzip JSON, AES-256-GCM + scrypt when password-protected | Accepted |
 
 ---
 
@@ -231,3 +232,15 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Per-Tama todos (lost on switch); global git hook (needs writing into the user's repos).
 - **Consequences:** `.tama` export (M2c) may optionally include `user/`. The Telegram bot (M7) reuses the same `prod.*` bus requests.
 - **Refs:** PROD-1, PROD-2, BOND-1, src/main/services/productivity
+
+### D-025 — Roster lifecycle via relaunch; .tama = gzip JSON, AES-256-GCM + scrypt when password-protected
+- **Date:** 2026-11-05 · **Status:** Accepted
+- **Context:** PORT-3..5 and ONB-9: several Tamas, switch / hatch another / graduate / delete, and moving a Tama to another PC.
+- **Decision:**
+  - **Switching** writes `active.json` and **relaunches the app**, so every service starts cleanly for the new Tama. "At home" Tamas are paused: switching to one sets its `lastSeen = now`, so no decay is counted.
+  - **Graduate** sets `graduatedAt` (album, restorable); graduating the active Tama hatches a new egg first. **Delete** is permanent, needs the exact name typed, and never applies to the active Tama.
+  - **`.tama` file:** `"TAMA"` + version + flags + gzip'd JSON bundle of `tamas/<id>/` files (+ optional `user/`, + optional `telegram.*` secrets only when password-protected). With a password: scrypt (N=2^15) → AES-256-GCM (authenticated, so tampering is detected).
+  - **Import** always creates a new id (never overwrites), validates every file name (no `..`, no absolute paths, only .json/.md/.txt), and runs everything through the normal migrations and `normalizeSpec`. The desktop channel only imports the path the user picked in the OS dialog.
+- **Alternatives:** Hot-swap services without relaunch (more code paths, more bugs); a zip library (extra dependency; one bundle file is enough).
+- **Consequences:** PRD PORT-5 says "zip"; the file is a single gzip'd bundle instead (same user-facing result). Drive backup (PORT-6, M6) can upload the same `.tama` bytes.
+- **Refs:** PORT-3..5, ONB-9, src/main/services/roster/{lifecycle,bundle}.js

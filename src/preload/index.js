@@ -36,6 +36,20 @@ contextBridge.exposeInMainWorld('tama', {
   designerVoice: (/** @type {any} */ req) => ipcRenderer.invoke('designer:voice', req),
   characterSave: (/** @type {any} */ req) => ipcRenderer.invoke('character:save', req),
   closeSelf: () => ipcRenderer.send('win:closeSelf'),
+  openRoster: (/** @type {boolean} */ importNow) => ipcRenderer.send('roster:open', !!importNow),
+
+  // ---- My Tamas window ----
+  roster: {
+    list: () => ipcRenderer.invoke('roster:list'),
+    switchTo: (/** @type {string} */ id) => ipcRenderer.invoke('roster:switch', id),
+    hatchNew: () => ipcRenderer.invoke('roster:hatchNew'),
+    graduate: (/** @type {string} */ id) => ipcRenderer.invoke('roster:graduate', id),
+    restore: (/** @type {string} */ id) => ipcRenderer.invoke('roster:restore', id),
+    remove: (/** @type {string} */ id, /** @type {string} */ confirmName) => ipcRenderer.invoke('roster:delete', id, confirmName),
+    exportTama: (/** @type {any} */ opts) => ipcRenderer.invoke('roster:export', opts),
+    importPick: (/** @type {boolean} */ includeUser) => ipcRenderer.invoke('roster:importPick', includeUser),
+    importPassword: (/** @type {string} */ pw, /** @type {boolean} */ includeUser) => ipcRenderer.invoke('roster:importPassword', pw, includeUser),
+  },
   onCharacter: on('character'),
   onPetState: on('pet.state'),
   onBond: on('pet.bond'),

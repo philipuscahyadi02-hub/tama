@@ -51,8 +51,22 @@ const TOPICS = {
   PET_ACT: 'pet.act',
   /** { source: 'agent'|'commit'|'focus'|'todo'|'calendar' } → { gained } — productivity bond XP (BOND-1) */
   PET_AWARD: 'pet.award',
-  /** () → { activeTamaId, tamas: {id,name}[] } */
+  /** () → { activeTamaId, tamas: RosterEntry[] } */
   ROSTER_GET: 'roster.get',
+  /** { id } → { ok, relaunching? } — make a Tama active (app relaunches) */
+  ROSTER_SWITCH: 'roster.switch',
+  /** () → { id, ok, relaunching } — new egg becomes active */
+  ROSTER_HATCH_NEW: 'roster.hatchNew',
+  /** { id } → { ok } — to the album (active one: a new egg is hatched first) */
+  ROSTER_GRADUATE: 'roster.graduate',
+  /** { id } → { ok } — back from the album to "home" */
+  ROSTER_RESTORE: 'roster.restore',
+  /** { id, confirmName } → { ok } | { error } — permanent */
+  ROSTER_DELETE: 'roster.delete',
+  /** { id, filePath, password?, includeUser?, includeConnections? } → { ok, filePath, encrypted } | { error } */
+  ROSTER_EXPORT: 'roster.export',
+  /** { filePath, password?, includeUser? } → { ok, id, name } | { error, code? } */
+  ROSTER_IMPORT: 'roster.import',
   /** () → { tamaId, spec: CharacterSpec, stage } for the active Tama */
   CHARACTER_GET: 'character.get',
   /** { spec, mode: 'hatch'|'restyle'|'rebirth', keepBond?: boolean } → { tamaId, spec } */

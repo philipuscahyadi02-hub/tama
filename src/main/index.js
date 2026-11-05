@@ -11,6 +11,7 @@ const { createTerminalWindow } = require('./platform/windows/terminal-window');
 const { createSummoner } = require('./platform/summon');
 const ipc = require('./platform/ipc');
 const shell = require('./platform/shell');
+const files = require('./platform/files');
 const { watchPower } = require('./platform/power');
 const { createRoster } = require('./services/roster');
 const { createDesigner } = require('./services/designer');
@@ -33,10 +34,13 @@ function boot() {
   const bus = new Bus();
   bus.on(TOPICS.APP_ERROR, (e) => console.error('[bus error]', e.topic, e.message));
   const store = createStore(appShell.paths.data());
-  createSecrets(appShell.paths.data(), electronCipher()); // ready for M6/M7; nothing stored in M0
 
   // ---- services ----
-  const roster = createRoster({ bus, store, legacySaveFiles: appShell.paths.legacyKeroSaves() });
+  const secrets = createSecrets(appShell.paths.data(), electronCipher());
+  const roster = createRoster({
+    bus, store, legacySaveFiles: appShell.paths.legacyKeroSaves(),
+    relaunch: appShell.relaunch, files, secrets, appVersion: appShell.version(),
+  });
   const active = roster.ensureActive();
   stoppers.push(roster.start(active));
   const petService = createPetService({ bus, store, tama: active });
@@ -60,7 +64,9 @@ function boot() {
   const openOnboarding = (/** @type {string} */ mode) =>
     openPage('onboarding/onboarding.html', { width: 940, height: 700, title: 'Hatch your Tama', query: { mode } });
 
-  createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboarding }).start();
+  const openRoster = (/** @type {boolean | undefined} */ importNow) =>
+    openPage('roster/roster.html', { width: 900, height: 660, title: 'My Tamas', query: importNow ? { import: '1' } : {} });
+  createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboarding, openRoster }).start();
   shell.createTray({
     tooltip: `${active.name} (Tama)`,
     onClick: () => summon('tray-click'),
@@ -68,6 +74,7 @@ function boot() {
       { label: `Summon ${active.name}  (Ctrl+Alt+P)`, click: () => summon('tray-menu') },
       { label: 'Open terminal  (Ctrl+Alt+K)', click: () => term.show() },
       { label: 'Show / Hide', click: () => pet.toggleVisible() },
+      { label: 'My Tamas…', click: () => openRoster(false) },
       { label: 'Restyle…', click: () => openOnboarding('restyle') },
       { label: 'Rebirth…', click: () => openOnboarding('rebirth') },
       { type: 'separator' },
@@ -108,6 +115,7 @@ function boot() {
     const tw = term.get();
     tw.webContents.once('did-finish-load', () => setTimeout(() => tw.webContents.executeJavaScript(String(process.env.TAMA_TERM_EVAL)).catch(console.error), 1500));
   }
+  if (process.env.TAMA_OPEN_ROSTER) openRoster(false);
   if (process.env.TAMA_OPEN_ONBOARDING) openOnboarding(process.env.TAMA_OPEN_ONBOARDING);
   if (process.env.TAMA_ONBOARD_WALK) {
     require('./dev/onboarding-walk').runOnboardingWalk({

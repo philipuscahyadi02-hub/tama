@@ -74,8 +74,12 @@ src/main/
     secrets/               safeStorage-encrypted secrets.bin
     summon/                geometry.js (pure) + index.js (summon + watchdog)
     windows/               pet-window, terminal-window, debug hooks
-  services/pet/            logic.js (pure stat math) + index.js (tick, persist, react)
-  services/roster/         active Tama, first-run hatch, kero-pet import
+  services/pet/            logic.js (needs/energy) + bond.js (XP, levels, caps, streaks) + index.js (M2)
+  services/roster/         active Tama, first-run hatch, kero-pet import; lifecycle.js + bundle.js (.tama) (M2)
+  services/productivity/   todos, notes, reminders (when.js parser), focus timer, git-watcher.js (M2)
+  platform/power.js        AC/battery + idle/lock → bus (easy energy)
+  platform/git.js          read-only git log / user.email
+  platform/files.js        whole-file read/write for user-picked paths
   engines/index.js         engine host (bus handlers, engine settings in device.json)
   engines/claude/          session (Agent SDK), map-message (pure), find-exe, input-queue
   channels/desktop/        renderer IPC ↔ bus
@@ -90,6 +94,8 @@ src/preload/index.js       window.tama allow-list
 src/renderer/shared/       rig.css (animations + expressions), rig-view.js (renderRig/renderEgg)
 src/renderer/pet|terminal  pet drawn by the rig from the CharacterSpec; terminal still kero-styled (M4)
 src/renderer/onboarding/   hatch / restyle / rebirth flow (M1)
+src/renderer/roster/       My Tamas: switch, hatch, graduate, restore, delete, export, import (M2)
+src/renderer/terminal/tama-commands.js  /todo /focus /remind /note /watch /feed /snack /nap /tama (M2)
 src/renderer/dev/          rig gallery (TAMA_GALLERY=designs|moods)
 ```
 
@@ -125,9 +131,9 @@ bus.on('engine.event', handler)
 - Channels forward a filtered set of topics to renderers / Telegram.
 
 ### Topics in use (M0)
-Events: `app.error`, `pet.state.changed`, `engine.event`, `summon.done`, `tray.action`, `character.changed`.
-Requests: `pet.get`, `pet.act`, `roster.get`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setCwd,answerPermission,resume}`, `summon`.
-Renderer messages arrive on one `ui` IPC channel: `pet.state`, `summon`, `tray`, `agent.event`, `term.focus`, `character`.
+Events: `app.error`, `pet.state.changed`, `pet.bond.changed`, `engine.event`, `summon.done`, `tray.action`, `character.changed`, `device.{power,idle}.changed`, `prod.{changed,focus.phase,reminder.due,commit.seen}`.
+Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,delete,export,import}`, `prod.*`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setCwd,answerPermission,resume}`, `summon`.
+Renderer messages arrive on one `ui` IPC channel: `pet.state`, `pet.bond`, `prod`, `focus`, `reminder`, `commit`, `summon`, `tray`, `agent.event`, `term.focus`, `character`.
 
 ## 5. Engine contract
 
@@ -150,7 +156,8 @@ stop(): void
 ```
 %APPDATA%\tama\
   tamas\<tamaId>\ character.json state.json events.json memory\facts.json memory\diary\*.md
-  device.json      engines, routing, hotkeys, window positions (this PC only)
+  user/productivity.json  todos, notes, reminders, focus (the user's, not a Tama's; D-024)
+  device.json      engines, routing, hotkeys, window positions, watched git repos (this PC only)
   secrets.bin      safeStorage-encrypted (Telegram token, Google tokens)
   active.json      { activeTamaId }
   logs\

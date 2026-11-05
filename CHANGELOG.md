@@ -15,7 +15,19 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
 
 ## [Unreleased]
-_Nothing yet._
+### Added
+- **M2 pet loop v2 & lifecycle** (branch `m2-pet-loop`):
+  - **Easy energy (PET-3/4):** ⚡ snack (+25, 20-min cooldown), 💤 10-min power nap (+50), bedtime sleep, auto-nap while you're away or the screen is locked, charging on AC, resting while the app is closed; agent tasks cost only 1 energy; gentler decay.
+  - **Bond (BOND-1..3):** open-ended XP with levels Stranger → Acquaintance → Buddy → Partner → Soulmate; XP from agent tasks, git commits, focus sessions, todos (daily caps); productive-day streaks with day 7/30 bonuses; level-up and streak celebrations.
+  - **Productivity (PROD-1/2):** todos, notes, natural-time reminders, pomodoro focus (pet goes quiet with glasses, break gives energy), git commit watcher; terminal commands `/todo /done /todel /focus /remind /reminders /note /watch /unwatch /feed /snack /nap /tama`; ⏱️ in the pet menu.
+  - **My Tamas (PORT-3..5, ONB-9):** several Tamas (those at home are paused), switch, hatch another, graduate to an album, restore, delete (typed name), password-encrypted `.tama` export/import (optionally with todos and Telegram connection), "Bring my Tama" on the first onboarding screen; tray → My Tamas….
+### Changed
+- `tama-state.json` schema v2 (bond 0..100 → bondXp ×12). New `user/productivity.json`.
+- Renderer care actions are limited to an allow-list.
+### Decisions
+- D-023 — Pet balance v2.
+- D-024 — Productivity data location; git watch per PC.
+- D-025 — Roster lifecycle via relaunch; .tama format.
 
 ## [0.2.0] — 2026-11-05 — M1 Character & hatching
 ### Added
