@@ -47,8 +47,13 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
+_No commits._
+
+### v0.1.0
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `cdb2ff2` | 2026-11-05 | chore(release) | 0.1.0 |
+| `e891597` | 2026-11-05 | docs(changelog) | regenerate commit table |
 | `1a1a8bb` | 2026-11-05 | feat | M0 foundation, layered core ported from kero-pet with working summon |
 | `6911a56` | 2026-11-05 | docs | add CHANGELOG with generated commit table, scope decision log to this repo |
 
