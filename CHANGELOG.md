@@ -81,7 +81,12 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `48dcf7e` | 2026-11-05 | feat(roster) | M2c several Tamas, graduate/restore/delete, .tama export and import |
+| `d333c50` | 2026-11-05 | feat(productivity) | M2b todos, focus timer, reminders, notes, git watcher |
+| `2ce8864` | 2026-11-05 | feat(pet) | M2a easy energy, bond levels, daily caps and streaks |
+| `57142a1` | 2026-11-05 | docs(changelog) | regenerate commit table for v0.2.0 |
 
 ### v0.2.0
 | Commit | Date | Type | Subject |
