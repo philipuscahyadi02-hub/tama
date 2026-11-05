@@ -67,6 +67,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `17a22c0` | 2026-11-05 | feat | M1 character rig, hatching onboarding, restyle and rebirth |
 | `f3757b4` | 2026-11-05 | docs(changelog) | regenerate commit table for v0.1.0 |
 
 ### v0.1.0
