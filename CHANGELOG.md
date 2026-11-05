@@ -32,6 +32,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - Spec gate: junk accessories could push out valid ones (found by tests).
 - Onboarding: refine/voice results showed only after the next click (stale re-render).
 ### Decisions
+- D-022 — M8 voice: AivisSpeech local engine, built-in TTS fallback.
 - D-020 — Character rig architecture.
 - D-021 — M1 designer model choice and fallback.
 

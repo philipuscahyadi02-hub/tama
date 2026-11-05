@@ -164,9 +164,9 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.11 Voice (VOICE)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| VOICE-1 | `VoiceProvider` interface; v1 = built-in Windows / Web Speech TTS with voice, pitch, rate mapped from `VoiceSpec`. | P0 | M8 | ☐ |
+| VOICE-1 | `VoiceProvider` interface; main provider = **AivisSpeech** local engine (anime voices, D-022); fallback = built-in Windows / Web Speech TTS (pitch, rate from `VoiceSpec`). | P0 | M8 | ☐ |
 | VOICE-2 | Speaking style (tics, catchphrase frequency) from the same voice prompt. | P0 | M1 | ☑ |
-| VOICE-3 | Premium providers (e.g. ElevenLabs Voice Design) pluggable later. | P2 | later | ☐ |
+| VOICE-3 | Other providers pluggable later (e.g. ElevenLabs Voice Design, paid; Kokoro for English). | P2 | later | ☐ |
 | VOICE-4 | STT for Telegram voice notes (local whisper.cpp, optional download). | P2 | later | ☐ |
 
 ### 4.12 Portability & lifecycle (PORT)
