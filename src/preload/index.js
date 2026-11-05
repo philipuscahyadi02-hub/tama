@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** Main → renderer messages arrive on one 'ui' channel as (name, payload). */
-const UI_NAMES = new Set(['pet.state', 'summon', 'tray', 'agent.event', 'term.focus', 'character']);
+const UI_NAMES = new Set(['pet.state', 'pet.bond', 'summon', 'tray', 'agent.event', 'term.focus', 'character']);
 /** @type {Map<string, Set<(p: any) => void>>} */
 const subs = new Map();
 ipcRenderer.on('ui', (_e, name, payload) => {
@@ -38,6 +38,7 @@ contextBridge.exposeInMainWorld('tama', {
   closeSelf: () => ipcRenderer.send('win:closeSelf'),
   onCharacter: on('character'),
   onPetState: on('pet.state'),
+  onBond: on('pet.bond'),
   onSummon: on('summon'),
   onTray: on('tray'),
 

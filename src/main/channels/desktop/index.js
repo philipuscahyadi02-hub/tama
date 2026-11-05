@@ -23,6 +23,7 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboardi
   function start() {
     // ---- bus → renderers ----
     bus.on(TOPICS.PET_STATE_CHANGED, (p) => ipc.sendUi(pet.win, 'pet.state', p));
+    bus.on(TOPICS.PET_BOND_CHANGED, (p) => ipc.sendUi(pet.win, 'pet.bond', p));
     bus.on(TOPICS.SUMMON_DONE, (p) => ipc.sendUi(pet.win, 'summon', p));
     bus.on(TOPICS.TRAY_ACTION, (p) => ipc.sendUi(pet.win, 'tray', p.action));
     bus.on(TOPICS.CHARACTER_CHANGED, (p) => toAll('character', { spec: p.spec, stage: p.stage }));

@@ -52,6 +52,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-020 | Character rig: shared pure modules, slot-based SVG parts, palette CSS variables | Accepted |
 | D-021 | M1 designer: Claude Haiku with tools disabled + JSON schema, keyword fallback | Revisit at M3 |
 | D-022 | M8 voice: AivisSpeech local engine (anime voices), built-in TTS fallback | Accepted |
+| D-023 | Pet balance v2: easy energy, open-ended bond XP with levels, daily caps, streaks | Accepted |
 
 ---
 
@@ -209,3 +210,15 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** ElevenLabs (paid monthly, stays a possible optional add-on); VOICEVOX (similar, per-character credit terms); Kokoro (English, not anime; possible English fallback if needed).
 - **Consequences:** M8 must first test how AivisSpeech handles English text. If English sounds bad, use AivisSpeech for Japanese interjections and the fallback for English sentences. VoiceSpec gains an `engine` + `speakerId`, and the voice prompt maps to the closest AivisSpeech model/style.
 - **Refs:** VOICE-1, VOICE-3, D-004
+
+### D-023 — Pet balance v2: easy energy, open-ended bond XP with levels, daily caps, streaks
+- **Date:** 2026-11-05 · **Status:** Accepted
+- **Context:** Requirement: easier energy than kero-pet, and productivity should grow the bond (PET-3/4, BOND-1..3). kero-pet decayed fast and its bond was a 0..100 bar.
+- **Decision:**
+  - Awake decay per hour: hunger 6, mood 4, clean 3, energy 3 (was 8/6/4/5).
+  - Energy refills: snack +25 (20-min cooldown); 10-min power nap +50; bedtime sleep +25/h; auto-nap while the PC is idle ≥10 min or locked +30/h; +12/h while charging on AC; while the app is closed she "rests": +10/h energy, other needs at half speed (cap 48 h). A finished agent task costs only 1 energy.
+  - Bond is open-ended `bondXp` with levels Stranger 0 · Acquaintance 60 · Buddy 240 · Partner 600 · Soulmate 1200. XP per source with a daily cap: full XP up to the cap, 25% up to 2× the cap, then 0. Productive sources (agent, commit, focus, todo, calendar) keep a daily streak: +1/day, +5 on day 7, +15 on day 30.
+  - Migration: old bond × 12 (old 100 = Soulmate).
+- **Alternatives:** Keep 0..100 bond (no room for long-term growth); unlimited XP (farmable).
+- **Consequences:** Balance numbers live only in `services/pet/logic.js` + `bond.js` with table tests. Power and idle signals come from `platform/power.js` over the bus.
+- **Refs:** PET-1..4, BOND-1..3, src/main/services/pet

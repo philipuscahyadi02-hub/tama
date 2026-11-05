@@ -19,20 +19,26 @@ let isEgg = false;        // unhatched: show the egg, no care actions (ONB-1)
 const tic = () => (spec && spec.speech.tics.length ? ' ' + pick(spec.speech.tics) : '');
 const myEmoji = () => (spec && spec.speech.emoji.length ? pick(spec.speech.emoji) : '✨');
 /** Apply a { name, state } snapshot from the core. */
+let level = { index: 0, title: 'Stranger', emoji: '👀', progress: 0, xp: 0, next: 60 };
+let charging = false;
 function applySnapshot(snap) {
   if (!snap) return;
   const wasAsleep = S.asleep;
+  const wasKind = S.sleepKind;
+  const wasCharging = charging;
   S = snap.state; petName = snap.name || petName;
-  if (wasAsleep && !S.asleep) say('fully charged! ⚡ ohayou~');
+  if (snap.level) level = snap.level;
+  charging = !!snap.charging;
+  if (wasAsleep && !S.asleep) {
+    if (wasKind === 'auto') say(`ah! you're back~ okaeri!${tic()}`);
+    else if (wasKind === 'nap') say('power nap complete! ⚡ genki 100%!');
+    else say('fully charged! ⚡ ohayou~');
+  }
+  if (!wasCharging && charging && !S.asleep && spec) { emote('🔌', 1800); say('ooh, charging~ ⚡ that tickles', 2400); }
   checkNeeds(); renderMood();
   if (!$('#stats').classList.contains('hidden')) renderStats();
 }
 
-const BOND_TITLES = [
-  [0, 'Stranger-san 👀'], [20, 'Classmate 📚'], [40, 'Friend ✌️'],
-  [60, 'Best friend 💞'], [80, 'Senpai noticed you!! 💖'], [100, 'Soulmates 💍'],
-];
-const bondTitle = () => BOND_TITLES.filter(([n]) => S.bond >= n).pop()[1];
 
 // ---------------- click-through ----------------
 let capturing = false;
@@ -152,6 +158,25 @@ const actions = {
     if (!r.ok) return say('zzz…');
     particles('🫧', 8); express('happy', 1500); emote('✨');
     say('pika pika~ squeaky clean! ✨');
+  },
+  async snack() {
+    const r = await T.act('snack');
+    if (!r.ok && r.reason === 'asleep') return say('zzz… (shh!)');
+    if (r.reason === 'cooldown') { express('pout', 1500); return say(`no more sugar for ${Math.ceil(r.retryInMs / 60000)} min… 🍬`); }
+    if (r.reason === 'full-energy') return say(`I'm already full of energy!${tic()} ⚡`);
+    particles(['⚡', '🍬', '🧃'], 5); express('sparkle', 1600); hop();
+    say(pick(['energy~ charged! ⚡', 'gulp gulp… GENKI! 🧃', 'sugar rush~!! 🍬']));
+  },
+  async nap() {
+    if (S.asleep) {
+      const r = await T.act('sleep');
+      S = r.state; renderMood();
+      return say('fuwaa~ ohayou! ☀️');
+    }
+    const r = await T.act('nap');
+    if (r.reason === 'not-tired') return say(`not sleepy at all!${tic()} ✨`);
+    S = r.state; renderMood();
+    say('just a little power nap… 10 min… 💤');
   },
   async sleep() {
     const r = await T.act('sleep');
@@ -304,16 +329,34 @@ function checkNeeds() {
 }
 
 function renderStats() {
-  for (const k of ['hunger', 'happy', 'energy', 'clean', 'bond']) {
+  for (const k of ['hunger', 'happy', 'energy', 'clean']) {
     const el = document.getElementById('b-' + k);
     el.style.width = S[k] + '%';
-    if (k !== 'bond') el.className = S[k] < 25 ? 'low' : S[k] < 50 ? 'mid' : '';
+    el.className = S[k] < 25 ? 'low' : S[k] < 50 ? 'mid' : '';
   }
+  $('#b-bond').style.width = Math.round(level.progress * 100) + '%';
   const days = Math.floor((Date.now() - S.bornAt) / 86400000);
-  $('#statsTitle').textContent = `${petName} · Lv ${1 + Math.floor(S.xp / 5)}`;
-  $('#bondTitle').textContent = bondTitle();
-  $('#ageLine').textContent = `${days} day${days === 1 ? '' : 's'} together · ${S.xp} coding quests · ${S.pats} pats`;
+  $('#statsTitle').textContent = `${petName} · Lv ${level.index + 1}${charging ? ' · 🔌' : ''}${S.asleep ? ' · 💤' : ''}`;
+  $('#bondTitle').textContent = `${level.title} ${level.emoji}` + (level.next ? `  (${Math.floor(level.xp)} / ${level.next})` : '  (max!)');
+  const st = S.streak || { count: 0 };
+  $('#streakLine').textContent = st.count ? `🔥 ${st.count}-day streak` : 'do something productive today to start a streak 🔥';
+  $('#ageLine').textContent = `${days} day${days === 1 ? '' : 's'} together · ${S.xp} quests · ${S.pats} pats`;
 }
+
+// Bond XP from care and productivity (BOND-1..3): floating hearts, streaks, level-ups.
+T.onBond((b) => {
+  if (isEgg) return;
+  if (b.levelUp) {
+    stopWalking(); hop(); express('sparkle', 3200); particles(['💖', '✨', '🎉', '💞'], 14, 'burst');
+    say(`LEVEL UP!! we're ${b.levelUp.title} now ${b.levelUp.emoji}${tic()}`, 5000, { shout: true, force: true });
+    T.notify(petName, `Bond level up: ${b.levelUp.title} ${b.levelUp.emoji}`);
+  } else if (b.streak && b.streak.count > 1) {
+    emote('🔥', 2000); say(`${b.streak.count}-day streak! ganbatta ne~ 🔥`, 3000);
+  } else if (b.gained >= 1 && ['commit', 'focus', 'todo'].includes(b.source)) {
+    particles(['💗'], Math.min(4, Math.ceil(b.gained)), 'rise');
+  }
+  if (!$('#stats').classList.contains('hidden')) renderStats();
+});
 
 // ---------------- reacting to the agent ----------------
 const TOOL_LINES = {

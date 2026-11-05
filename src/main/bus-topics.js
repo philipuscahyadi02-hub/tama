@@ -4,19 +4,10 @@
 // Requests: <area>.<verb>               (bus.handle / bus.request)
 
 /**
- * @typedef {Object} PetStats
- * @property {number} hunger  0..100 (shown as "Tummy")
- * @property {number} happy   0..100 (shown as "Mood")
- * @property {number} energy  0..100
- * @property {number} clean   0..100
- * @property {number} bond    0..100
+ * (PetState lives with its logic in services/pet/logic.js.)
  */
 
-/**
- * @typedef {PetStats & {
- *   schemaVersion: number, asleep: boolean, bornAt: number, lastSeen: number, xp: number, pats: number
- * }} PetState
- */
+/** @typedef {import('./services/pet/logic').PetState} PetState */
 
 /**
  * @typedef {Object} EngineEvent  Normalized engine output (ARCHITECTURE §5)
@@ -28,22 +19,30 @@ const TOPICS = {
   // ---- events ----
   /** { topic, message } — a listener or handler failed */
   APP_ERROR: 'app.error',
-  /** { tamaId, name, state: PetState, hoursAway: number } */
+  /** PetSnapshot { tamaId, name, egg, state: PetState, hoursAway, level, charging } */
   PET_STATE_CHANGED: 'pet.state.changed',
+  /** { source, gained, levelUp: null|Level, streak: null|{count, bonus} } — bond XP was awarded */
+  PET_BOND_CHANGED: 'pet.bond.changed',
+  /** { onAC: boolean } — laptop plugged in / unplugged (platform/power) */
+  DEVICE_POWER_CHANGED: 'device.power.changed',
+  /** { idle: boolean, idleSeconds: number } — user away from the PC for > IDLE_NAP_SECONDS (platform/power) */
+  DEVICE_IDLE_CHANGED: 'device.idle.changed',
   /** { engine: string, ev: EngineEvent } */
   ENGINE_EVENT: 'engine.event',
   /** { reason: string } — pet window was brought back on screen by summon() */
   SUMMON_DONE: 'summon.done',
-  /** { action: 'feed'|'play' } — care action chosen from the tray menu */
+  /** { action: 'feed'|'play'|'snack'|'sleep' } — care action chosen from the tray menu */
   TRAY_ACTION: 'tray.action',
   /** { tamaId, spec: CharacterSpec, stage: 'egg'|'hatched' } — look/name/voice changed (restyle, rebirth, hatch) */
   CHARACTER_CHANGED: 'character.changed',
 
   // ---- requests ----
-  /** () → { tamaId, name, state, hoursAway } */
+  /** () → PetSnapshot */
   PET_GET: 'pet.get',
-  /** { action: 'feed'|'play'|'clean'|'sleep'|'pat' } → { ok, reason?, state } */
+  /** { action: 'feed'|'snack'|'play'|'clean'|'sleep'|'nap'|'pat' } → { ok, reason?, retryInMs?, state } */
   PET_ACT: 'pet.act',
+  /** { source: 'agent'|'commit'|'focus'|'todo'|'calendar' } → { gained } — productivity bond XP (BOND-1) */
+  PET_AWARD: 'pet.award',
   /** () → { activeTamaId, tamas: {id,name}[] } */
   ROSTER_GET: 'roster.get',
   /** () → { tamaId, spec: CharacterSpec, stage } for the active Tama */

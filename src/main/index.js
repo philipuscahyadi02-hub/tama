@@ -11,6 +11,7 @@ const { createTerminalWindow } = require('./platform/windows/terminal-window');
 const { createSummoner } = require('./platform/summon');
 const ipc = require('./platform/ipc');
 const shell = require('./platform/shell');
+const { watchPower } = require('./platform/power');
 const { createRoster } = require('./services/roster');
 const { createDesigner } = require('./services/designer');
 const { askJson } = require('./engines/claude/oneshot');
@@ -69,6 +70,8 @@ function boot() {
       { type: 'separator' },
       { label: 'Feed', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'feed' }) },
       { label: 'Play', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'play' }) },
+      { label: 'Energy snack', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'snack' }) },
+      { label: 'Bedtime (sleep / wake)', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'sleep' }) },
       { type: 'separator' },
       { label: 'Quit', click: appShell.quit },
     ],
@@ -77,6 +80,11 @@ function boot() {
   if (failed.length) shell.notify('Tama', `Hotkey already in use by another app: ${failed.join(', ')}`);
 
   petService.start();
+  // Easy energy (PET-3): charging on AC, auto-nap while you're away.
+  stoppers.push(watchPower({
+    onPower: (onAC) => bus.emit(TOPICS.DEVICE_POWER_CHANGED, { onAC }),
+    onIdle: (idle, idleSeconds) => bus.emit(TOPICS.DEVICE_IDLE_CHANGED, { idle, idleSeconds }),
+  }));
   engines.start();
   summoner.startWatchdog();
   stoppers.push(() => summoner.stop(), () => engines.stop(), () => petService.stop(), () => store.flush(), shell.unregisterHotkeys);
@@ -85,6 +93,10 @@ function boot() {
   if (process.env.TAMA_SHOW_TERM) term.show();
   if (process.env.TAMA_GALLERY) {
     openPage('dev/gallery.html', { width: 1000, height: 760, frame: true, query: { set: process.env.TAMA_GALLERY } });
+  }
+  if (process.env.TAMA_PET_EVAL) {
+    // Dev: run JS in the pet window after load (e.g. "actions.stats()") for screenshots.
+    pet.win.webContents.once('did-finish-load', () => setTimeout(() => pet.win.webContents.executeJavaScript(String(process.env.TAMA_PET_EVAL)).catch(console.error), 1500));
   }
   if (process.env.TAMA_OPEN_ONBOARDING) openOnboarding(process.env.TAMA_OPEN_ONBOARDING);
   if (process.env.TAMA_ONBOARD_WALK) {
