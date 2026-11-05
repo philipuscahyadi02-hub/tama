@@ -46,6 +46,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `1a1a8bb` | 2026-11-05 | feat | M0 foundation, layered core ported from kero-pet with working summon |
 | `6911a56` | 2026-11-05 | docs | add CHANGELOG with generated commit table, scope decision log to this repo |
 
 ### v0.0.0
