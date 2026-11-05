@@ -63,7 +63,7 @@ past decisions → `docs/DECISIONS.md`.
 ## 4. Safety rules
 
 - Default to ask-before-tools for every engine, and stricter for remote (Telegram) sessions.
-- `agy` must never run in `always-proceed`; assert on its init event (D-007).
+- `agy` runs only via ACP with Tama-owned settings; lite brain is deny-all in its own folder; agy coding only in git repos (D-026). Re-run `npm run probe:agy` after agy updates.
 - Telegram: drop anything not from the paired chat ID.
 - Google: minimal scopes; no delete or share tools; edits to existing files need approval; no email sending at all (D-014).
 - Never extract or reuse another app's OAuth tokens (D-006).

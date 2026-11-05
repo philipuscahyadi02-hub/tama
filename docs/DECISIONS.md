@@ -36,7 +36,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-004 | Built-in TTS first | Accepted (M1–M7); M8 voice in D-022 |
 | D-005 | Plain JavaScript + JSDoc + `// @ts-check`, no build step | Revisit at M3 |
 | D-006 | Engines run official CLIs/SDKs with their own logins; never reuse OAuth tokens | Accepted |
-| D-007 | `agy` headless must never run `always-proceed` | Accepted |
+| D-007 | `agy` headless must never run `always-proceed` | Superseded by D-026 |
 | D-008 | Telegram via long polling, no server | Accepted |
 | D-009 | Google via user's own Desktop OAuth client, Production (unverified) status | Accepted |
 | D-010 | Google scopes: minimal; Drive via `drive.file` + optional `drive.readonly` + `drive.appdata` | Accepted |
@@ -55,6 +55,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-023 | Pet balance v2: easy energy, open-ended bond XP with levels, daily caps, streaks | Accepted |
 | D-024 | Productivity data is the user's (user/), git watch is per PC (device.json) | Accepted |
 | D-025 | Roster lifecycle via relaunch; .tama = gzip JSON, AES-256-GCM + scrypt when password-protected | Accepted |
+| D-026 | agy via ACP with Tama-owned settings; lite brain sandboxed; agy coding only in git repos | Accepted · Supersedes D-007 |
 
 ---
 
@@ -101,7 +102,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Refs:** ENG-5
 
 ### D-007 — `agy` headless must never run `always-proceed`
-- **Date:** 2026-11-05 · **Status:** Accepted
+- **Date:** 2026-11-05 · **Status:** Superseded by D-026
 - **Context:** Tested `agy` 1.4.12: `-p --output-format stream-json` reports `"permission_mode":"always-proceed"` in its init event.
 - **Decision:** `AgyEngine` must start in an approval-requiring mode (or `plan` + read-only tools) and route approvals through PermissionGate. Add a startup assertion: if the init event says `always-proceed`, abort the session.
 - **Consequences:** M3 task: discover how `agy` surfaces permission requests in stream-json and how to answer them.
@@ -244,3 +245,20 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Hot-swap services without relaunch (more code paths, more bugs); a zip library (extra dependency; one bundle file is enough).
 - **Consequences:** PRD PORT-5 says "zip"; the file is a single gzip'd bundle instead (same user-facing result). Drive backup (PORT-6, M6) can upload the same `.tama` bytes.
 - **Refs:** PORT-3..5, ONB-9, src/main/services/roster/{lifecycle,bundle}.js
+
+### D-026 — agy via ACP with Tama-owned settings; lite brain sandboxed; agy coding only in git repos
+- **Date:** 2026-11-05 · **Status:** Accepted · Supersedes D-007
+- **Context:** M3 research on `agy` 1.5.1 (probes kept in `scripts/agy-permission-probe.js`):
+  - The user's own `~/.gemini/antigravity-cli/settings.json` has `toolPermission: always-proceed` + `agentMode: accept-edits`, so headless/ACP `agy` normally asks for nothing.
+  - `agy acp` (Agent Client Protocol over stdio) sends real `session/request_permission` requests for **shell commands** when `toolPermission` is `request-review`; rejecting them really blocks them.
+  - `agy acp --cli_dir_name tama-acp` reads settings from `~/.gemini/antigravity-cli/tama-acp/settings.json` while keeping the user's login. Verified: same command auto-ran with the user's settings, and asked with Tama's.
+  - Valid values: `toolPermission` ∈ {request-review, always-proceed, agent-decides}; `agentMode` ∈ {accept-edits, plan} (unset = default). An invalid value makes agy ignore the file.
+  - **Writes inside the session's working folder are never gated** (even when the client offers `fs/write_text_file`); writes outside it are blocked by agy.
+- **Decision:**
+  - `AgyEngine` speaks ACP to `agy acp --cli_dir_name tama-acp`. On every start Tama (re)writes that file to exactly `{"toolPermission": "request-review"}`. The user's own agy settings are never modified.
+  - Every `session/request_permission` goes through `brain/PermissionGate`.
+  - **Lite brain** (chat, events, diary) runs agy in an empty Tama-owned folder (`<data>/agy-workspace`) with policy **deny-all tools**.
+  - **agy coding work** (user's choice, 2026-11-05): only when the working folder is a **git repo**. The UI warns that agy edits files without per-edit approval, shows a changed-files summary (`git status`) after each task, and shell commands still need the user's ✅.
+- **Alternatives:** agy chat/plan only (safer, more Claude tokens); a per-task confirmation; print mode with `--settings` (no way to answer permission requests).
+- **Consequences:** After every agy update, re-run `npm run probe:agy` to check these guarantees still hold. Login stays with agy (D-006).
+- **Refs:** ENG-2, ENG-3, SAFE-1, BRAIN-2

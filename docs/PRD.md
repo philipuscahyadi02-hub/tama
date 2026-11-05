@@ -114,8 +114,8 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | BRAIN-4 | Budget fallback: near Claude limits, auto-route to `agy` with an in-character notice. | P1 | M3 | ☐ |
 | BRAIN-5 | Persona: cute in chat, **never** in code, commit messages, or file contents. | P0 | M3 | ☐ |
 | ENG-1 | `ClaudeCodeEngine` via Claude Agent SDK (ported from kero-pet `agent.js`): streaming, permissions, interrupt, modes, model, resume. | P0 | M3 | ☐ |
-| ENG-2 | `AgyEngine` drives `agy` CLI headless (`-p --output-format stream-json --input-format stream-json`), persistent process per session. | P0 | M3 | ☐ |
-| ENG-3 | **`agy` must never run in `always-proceed`** (its headless default). Force ask/plan mode; all tool approvals go through Tama's PermissionGate. | P0 | M3 | ☐ |
+| ENG-2 | `AgyEngine` drives `agy acp` (Agent Client Protocol over stdio), one persistent process per session (D-026). | P0 | M3 | ☐ |
+| ENG-3 | `agy` via ACP with Tama-owned settings (`toolPermission: request-review`); commands need approval via PermissionGate; lite brain sandboxed + deny-all; agy coding only in git repos with changed-files summary (D-026). | P0 | M3 | ☐ |
 | ENG-4 | Uniform engine event contract (`text-delta`, `tool`, `tool-result`, `permission`, `todo`, `result`, `status`, `error`). | P0 | M3 | ☐ |
 | ENG-5 | Never extract or reuse another app's OAuth tokens; each engine uses its own CLI login. | P0 | M3 | ☐ |
 | ENG-6 | Additional engines (Codex, Gemini CLI) via the same interface. | P2 | later | ☐ |
