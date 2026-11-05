@@ -1,0 +1,17 @@
+{
+  "name": "tama",
+  "productName": "Tama",
+  "version": "0.0.0",
+  "description": "Tama - a chibi anime agentic tamagotchi desktop companion",
+  "author": "philipuscahyadi02-hub",
+  "main": "src/main/index.js",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "check": "tsc -p jsconfig.json && node --test",
+    "test": "node --test",
+    "changelog": "node scripts/changelog.js",
+    "dist": "electron-builder --win portable"
+  }
+}

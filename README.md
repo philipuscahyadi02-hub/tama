@@ -10,6 +10,7 @@ Drive, and talks to you on Telegram. No server: everything runs on your PC.
 - [docs/PRD.md](docs/PRD.md): what we're building (requirements, milestones)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how it's structured
 - [docs/DECISIONS.md](docs/DECISIONS.md): why: the decision log, read this before coding
+- [CHANGELOG.md](CHANGELOG.md): every version, its changes and commits
 - [AGENTS.md](AGENTS.md): rules for AI coding sessions (Claude Code reads it via CLAUDE.md)
 
 ## Vibe-coding loop

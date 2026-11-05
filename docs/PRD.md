@@ -9,7 +9,7 @@
 | **Status** | Planning — M0 not started |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-05 |
-| **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) |
+| **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
 
 ---
 

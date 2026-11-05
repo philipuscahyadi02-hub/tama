@@ -1,5 +1,7 @@
 # Tama — Decision Log
 
+> **Scope: the Tama repo only.** Decisions here apply to this repository; never log Tama decisions elsewhere or other projects' decisions here.
+>
 > **Every AI coding session reads this file before changing code, and appends to it when a key decision is made.**
 > Append-only: never rewrite history. To change a decision, add a new entry that says
 > `Supersedes D-00X`, and mark the old one's status `Superseded by D-00Y`.
@@ -42,6 +44,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-012 | Gmail sending | Superseded by D-014 |
 | D-013 | Docs: PRD + ARCHITECTURE + DECISIONS, AGENTS.md as the shared rulebook | Accepted |
 | D-014 | Gmail: drafts only, no send tool | Accepted |
+| D-015 | Versioning, CHANGELOG with commit table, repo-scoped decision log | Accepted |
 
 ---
 
@@ -136,3 +139,11 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Send after explicit approval (declined by user).
 - **Consequences:** Telegram/desktop replies link to the draft. Adding sending later needs a new decision.
 - **Refs:** GOOG-4, PRD Q1
+
+### D-015 — Versioning, CHANGELOG with commit table, repo-scoped decision log
+- **Date:** 2026-11-05 · **Status:** Accepted
+- **Context:** User wants a per-version record of changes including which commit made them, and wants decision logging locked to this repo.
+- **Decision:** SemVer with milestone = minor (M0 → 0.1.0 …), fixes = patch, 1.0.0 = all P0 done; release = tag `vX.Y.Z`. `CHANGELOG.md` has hand-written sections per version plus a generated commit table (`npm run changelog`, from `git log` grouped by tags). The `log-decision` skill and DECISIONS.md are scoped to this repo only (the skill checks the git root).
+- **Alternatives:** Hand-written hashes (drift, a commit can't contain its own hash); git hooks (not shared by clones).
+- **Consequences:** The generated table lags one commit until the next run; release steps are in CHANGELOG.md.
+- **Refs:** CHANGELOG.md, scripts/changelog.js, .claude/skills/log-decision
