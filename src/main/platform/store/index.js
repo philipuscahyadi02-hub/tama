@@ -1,0 +1,93 @@
+// @ts-check
+// The only way to persist data (AGENTS.md rule 8): atomic JSON writes, schemaVersion, migrations.
+const fs = require('fs');
+const path = require('path');
+const { migrate } = require('./migrations');
+
+/**
+ * @param {string} rootDir  e.g. %APPDATA%\Tama
+ */
+function createStore(rootDir) {
+  /** @type {Map<string, NodeJS.Timeout>} */
+  const timers = new Map();
+  /** @type {Map<string, () => void>} */
+  const pending = new Map();
+
+  /** @param {string} rel */
+  const abs = (rel) => {
+    const root = path.resolve(rootDir);
+    const p = path.resolve(root, rel);
+    if (p !== root && !p.startsWith(root + path.sep)) throw new Error(`store: path escapes root: ${rel}`);
+    return p;
+  };
+
+  /**
+   * Read + migrate a JSON file. Returns `fallback()` if missing or unreadable.
+   * A corrupt file is kept aside as <name>.corrupt-<ts> instead of being silently overwritten.
+   * Returns untyped JSON; callers annotate the shape they expect.
+   * @param {string} rel @param {string} kind @param {() => any} fallback @returns {any}
+   */
+  function read(rel, kind, fallback) {
+    const file = abs(rel);
+    let raw;
+    try { raw = fs.readFileSync(file, 'utf8'); } catch { return fallback(); }
+    try {
+      return migrate(kind, JSON.parse(raw));
+    } catch (e) {
+      try { fs.renameSync(file, `${file}.corrupt-${Date.now()}`); } catch { /* ignore */ }
+      console.error(`[store] could not read ${rel}:`, /** @type {Error} */ (e).message);
+      return fallback();
+    }
+  }
+
+  /**
+   * Atomic write: tmp file + rename. Stamps the current schemaVersion for `kind`.
+   * @param {string} rel @param {string} kind @param {object} data
+   */
+  function write(rel, kind, data) {
+    const file = abs(rel);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const body = JSON.stringify(migrate(kind, data, { stampOnly: true }), null, 2);
+    const tmp = `${file}.tmp-${process.pid}`;
+    fs.writeFileSync(tmp, body);
+    fs.renameSync(tmp, file);
+  }
+
+  /**
+   * Debounced write; the latest `getData()` wins. Call flush() on quit.
+   * @param {string} rel @param {string} kind @param {() => object} getData @param {number} [ms]
+   */
+  function writeSoon(rel, kind, getData, ms = 2000) {
+    const run = () => { timers.delete(rel); pending.delete(rel); write(rel, kind, getData()); };
+    pending.set(rel, run);
+    if (!timers.has(rel)) timers.set(rel, setTimeout(run, ms));
+  }
+
+  function flush() {
+    for (const t of timers.values()) clearTimeout(t);
+    timers.clear();
+    for (const run of [...pending.values()]) {
+      try { run(); } catch (e) { console.error('[store] flush failed', e); }
+    }
+    pending.clear();
+  }
+
+  /** @param {string} rel */
+  const exists = (rel) => fs.existsSync(abs(rel));
+
+  /** List sub-directory names. @param {string} rel */
+  function listDirs(rel) {
+    try { return fs.readdirSync(abs(rel), { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name); } catch { return []; }
+  }
+
+  /** Read a JSON file outside the store root (e.g. a legacy kero-pet save). Never throws. @param {string} file */
+  function readExternal(file) {
+    try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
+  }
+
+  return { rootDir, read, write, writeSoon, flush, exists, listDirs, readExternal };
+}
+
+/** @typedef {ReturnType<typeof createStore>} Store */
+
+module.exports = { createStore };

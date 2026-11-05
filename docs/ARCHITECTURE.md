@@ -60,6 +60,30 @@ tama/
   test/                     cross-module tests, fixtures
 ```
 
+### 2.1 What exists today (M0)
+```
+src/main/
+  index.js                 bootstrap (wiring only)
+  bus.js  bus-topics.js    event bus + topic registry
+  platform/
+    app.js                 lifecycle, paths (TAMA_DATA_DIR override), single instance
+    displays.js            screen adapter: work areas, cursor, display-change events
+    ipc.js                 ipcMain wrapper, rejects non-file:// senders
+    shell.js               notifications, folder picker, global hotkeys, tray
+    store/                 atomic JSON + migrations/ + device.js (single-writer device.json)
+    secrets/               safeStorage-encrypted secrets.bin
+    summon/                geometry.js (pure) + index.js (summon + watchdog)
+    windows/               pet-window, terminal-window, debug hooks
+  services/pet/            logic.js (pure stat math) + index.js (tick, persist, react)
+  services/roster/         active Tama, first-run hatch, kero-pet import
+  engines/index.js         engine host (bus handlers, engine settings in device.json)
+  engines/claude/          session (Agent SDK), map-message (pure), find-exe, input-queue
+  channels/desktop/        renderer IPC ↔ bus
+  dev/selftest.js          TAMA_SELFTEST live summon check
+src/preload/index.js       window.tama allow-list
+src/renderer/pet|terminal  ported kero-pet views (Kero art until M1)
+```
+
 ## 3. Dependency rules (enforced by review; lint rule later)
 
 ```
@@ -85,6 +109,11 @@ bus.on('engine.event', handler)
 - Topic names: `<area>.<noun>.<verb-past>` for events, `<area>.<verb>` for requests.
 - Every topic + payload shape is listed in `src/main/bus-topics.js` (JSDoc typedefs). Add new topics there first.
 - Channels forward a filtered set of topics to renderers / Telegram.
+
+### Topics in use (M0)
+Events: `app.error`, `pet.state.changed`, `engine.event`, `summon.done`, `tray.action`.
+Requests: `pet.get`, `pet.act`, `roster.get`, `engine.{info,send,interrupt,clear,setMode,setModel,setCwd,answerPermission,resume}`, `summon`.
+Renderer messages arrive on one `ui` IPC channel: `pet.state`, `summon`, `tray`, `agent.event`, `term.focus`.
 
 ## 5. Engine contract
 

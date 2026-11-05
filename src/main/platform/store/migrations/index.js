@@ -1,0 +1,53 @@
+// @ts-check
+// Forward-only migrations per file kind (ARCHITECTURE §6, D-011).
+// To change a file's shape: append a function to its list. Never edit or remove existing steps.
+// Step i upgrades data from schemaVersion i to i+1. Files without schemaVersion are version 0.
+
+/** @type {Record<string, Array<(d: any) => any>>} */
+const MIGRATIONS = {
+  // device.json — this PC's settings
+  device: [
+    (d) => d, // 0 → 1: initial shape
+  ],
+  // active.json — { activeTamaId }
+  active: [
+    (d) => d,
+  ],
+  // tamas/<id>/character.json
+  character: [
+    (d) => d,
+  ],
+  // tamas/<id>/state.json — v0 is kero-pet's pet-state.json, which already has the v1 fields.
+  'tama-state': [
+    (d) => ({
+      hunger: 80, happy: 80, energy: 80, clean: 80, bond: 10, asleep: false, xp: 0, pats: 0,
+      bornAt: Date.now(), lastSeen: Date.now(),
+      ...d,
+    }),
+  ],
+};
+
+/** @param {string} kind */
+function currentVersion(kind) {
+  const list = MIGRATIONS[kind];
+  if (!list) throw new Error(`migrations: unknown kind "${kind}"`);
+  return list.length;
+}
+
+/**
+ * Upgrade `data` to the current schemaVersion for `kind`.
+ * With stampOnly, just sets schemaVersion (used on write, where data is already current).
+ * @param {string} kind @param {any} data @param {{stampOnly?: boolean}} [opts]
+ */
+function migrate(kind, data, opts = {}) {
+  const target = currentVersion(kind);
+  if (opts.stampOnly) return { ...data, schemaVersion: target };
+  let v = Number.isInteger(data && data.schemaVersion) ? data.schemaVersion : 0;
+  if (v > target) throw new Error(`${kind} file is from a newer Tama (v${v} > v${target}); update the app`);
+  let out = { ...data };
+  for (; v < target; v++) out = MIGRATIONS[kind][v](out);
+  out.schemaVersion = target;
+  return out;
+}
+
+module.exports = { migrate, currentVersion, MIGRATIONS };

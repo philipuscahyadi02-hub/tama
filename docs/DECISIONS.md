@@ -1,5 +1,7 @@
 # Tama — Decision Log
 
+> **Scope: the Tama repo only.** Decisions here apply to this repository; never log Tama decisions elsewhere or other projects' decisions here.
+>
 > **Every AI coding session reads this file before changing code, and appends to it when a key decision is made.**
 > Append-only: never rewrite history. To change a decision, add a new entry that says
 > `Supersedes D-00X`, and mark the old one's status `Superseded by D-00Y`.
@@ -42,6 +44,11 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-012 | Gmail sending | Superseded by D-014 |
 | D-013 | Docs: PRD + ARCHITECTURE + DECISIONS, AGENTS.md as the shared rulebook | Accepted |
 | D-014 | Gmail: drafts only, no send tool | Accepted |
+| D-015 | Versioning, CHANGELOG with commit table, repo-scoped decision log | Accepted |
+| D-016 | First run imports the kero-pet save as the first Tama | Accepted |
+| D-017 | Pet stats live in the main-process pet service from M0 | Accepted |
+| D-018 | Type-check config for TypeScript 7 on plain JS | Accepted |
+| D-019 | Summon = show + raise + place on cursor's display; watchdog respects user-hide | Accepted |
 
 ---
 
@@ -136,3 +143,42 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Send after explicit approval (declined by user).
 - **Consequences:** Telegram/desktop replies link to the draft. Adding sending later needs a new decision.
 - **Refs:** GOOG-4, PRD Q1
+
+### D-015 — Versioning, CHANGELOG with commit table, repo-scoped decision log
+- **Date:** 2026-11-05 · **Status:** Accepted
+- **Context:** User wants a per-version record of changes including which commit made them, and wants decision logging locked to this repo.
+- **Decision:** SemVer with milestone = minor (M0 → 0.1.0 …), fixes = patch, 1.0.0 = all P0 done; release = tag `vX.Y.Z`. `CHANGELOG.md` has hand-written sections per version plus a generated commit table (`npm run changelog`, from `git log` grouped by tags). The `log-decision` skill and DECISIONS.md are scoped to this repo only (the skill checks the git root).
+- **Alternatives:** Hand-written hashes (drift, a commit can't contain its own hash); git hooks (not shared by clones).
+- **Consequences:** The generated table lags one commit until the next run; release steps are in CHANGELOG.md.
+- **Refs:** CHANGELOG.md, scripts/changelog.js, .claude/skills/log-decision
+
+### D-016 — First run imports the kero-pet save as the first Tama
+- **Date:** 2026-11-05 · **Status:** Accepted
+- **Context:** The user already has a Kero-chan with bond/xp in kero-pet (`%APPDATA%\Kero-chan` or `\kero-pet`).
+- **Decision:** When no Tama exists, the roster creates one with the built-in `kero` preset and copies the newest kero-pet `pet-state.json` (read-only, never modified) as its state; `character.json` records `importedFrom: "kero-pet"`. Later runs never re-import.
+- **Alternatives:** Always start fresh (loses bond); keep reading kero-pet's file live (couples the apps).
+- **Consequences:** M1 onboarding must offer to restyle/rebirth this imported Tama instead of forcing a new hatch. `TAMA_NO_LEGACY=1` disables the import for tests.
+- **Refs:** PORT-1, src/main/services/roster
+
+### D-017 — Pet stats live in the main-process pet service from M0
+- **Date:** 2026-11-05 · **Status:** Accepted
+- **Context:** kero-pet computed decay and actions inside the pet renderer. Telegram (M7) and other channels need the same state.
+- **Decision:** Ported the stat math unchanged into `services/pet/logic.js` (pure) + `services/pet/index.js` (ticks every 5 s, saves every 10 s, listens to engine results). The renderer is a read-only copy: it calls `tama.act()` and picks lines/animations from the returned `reason`.
+- **Alternatives:** Keep the logic in the renderer until M2 (would break AGENTS rule 3 and need a second rewrite).
+- **Consequences:** Balance changes (PET-3/4) only touch `logic.js` + its table tests.
+- **Refs:** PET-1, PET-5, ARCHITECTURE §3
+
+### D-018 — Type-check config for TypeScript 7 on plain JS
+- **Date:** 2026-11-05 · **Status:** Accepted
+- **Context:** TS 7 removed `moduleResolution: node`; `jsconfig.json` also type-checks JS inside node_modules by default.
+- **Decision:** `module`/`moduleResolution: node16`, `maxNodeModuleJsDepth: 0`, `strict` with `noImplicitAny: false`. Cross-file class types are exported as JSDoc typedefs (e.g. `BusInstance`), because `import('x').Class` doesn't resolve for CommonJS object exports. `store.read` returns untyped JSON (`any`); callers annotate.
+- **Alternatives:** Pin TypeScript 5 (ages badly); full TS build (D-005).
+- **Refs:** jsconfig.json, D-005
+
+### D-019 — Summon semantics and watchdog
+- **Date:** 2026-11-05 · **Status:** Accepted
+- **Context:** Root causes of kero-pet's broken "bring back": no vertical/any drag clamp, reset only moved the window (never re-showed or re-raised it), tray click opened the terminal, saved positions not checked against current monitors.
+- **Decision:** All moves go through `geometry.clampToScreen` (the 170x204 body must be fully inside one work area) using `setBounds` with a fixed size (mixed-DPI safety). `summon()` clears user-hide, restores, places the pet on the cursor's display, `showInactive()` (doesn't steal focus), re-asserts `screen-saver` always-on-top + `moveTop`. A watchdog (every 30 s, on display changes, resume and unlock) fixes off-screen or lost-topmost, but leaves a pet the user hid via "Show / Hide" alone. Triggers: Ctrl+Alt+P, tray left-click, tray menu, `/summon`, second launch.
+- **Alternatives:** Re-show on every watchdog tick (would fight the user's Hide).
+- **Consequences:** If the body rect changes with the M1 rig, update `geometry.BODY`. Real mixed-DPI hardware test still pending (NFR-2).
+- **Refs:** SUM-1..4, NFR-2, src/main/platform/summon, src/main/dev/selftest.js

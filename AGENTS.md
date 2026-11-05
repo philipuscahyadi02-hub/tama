@@ -1,6 +1,6 @@
 # AGENTS.md — Rules for building Tama
 
-Shared rulebook for **every** AI coding tool used on this repo (Claude Code, `agy`, others).
+Shared rulebook for **every** AI coding tool used on this repo (Claude Code, `agy`, others). These rules and `docs/DECISIONS.md` apply to **this repo only**.
 Keep it short and binding. Product scope → `docs/PRD.md` · structure → `docs/ARCHITECTURE.md` ·
 past decisions → `docs/DECISIONS.md`.
 
@@ -21,6 +21,7 @@ past decisions → `docs/DECISIONS.md`.
 1. PRD: update the status of the requirements you touched (☐ → ◐ → ☑), bump "Last updated", and add a changelog line if scope changed.
 2. DECISIONS: make sure every key decision is logged and the index table is updated.
 3. ARCHITECTURE: update it if structure, bus topics, the engine contract or storage changed.
+3b. CHANGELOG: add lines under `## [Unreleased]` for what this change did, then run `npm run changelog` (D-015).
 4. Run `npm run check` (types + tests). Report failures honestly; never skip or delete tests to get green.
 5. Give the user a 3-line summary: what changed, decisions logged (IDs), what's next.
 
@@ -81,4 +82,6 @@ npm start          # run the app (dev)
 npm run check      # tsc --checkJs + node --test
 npm run dist       # portable exe
 ```
-Debug env vars: `TAMA_DEBUG=1`, `TAMA_SHOT=<dir>` (screenshots), `TAMA_SHOW_TERM=1`.
+Debug env vars: `TAMA_DEBUG=1`, `TAMA_SHOT=<dir>` (screenshots, `TAMA_SHOT_TIMES=ms,ms`), `TAMA_SHOW_TERM=1`,
+`TAMA_DATA_DIR=<dir>` (use a scratch data folder; **always use this when testing** so real saves aren't touched),
+`TAMA_NO_LEGACY=1` (skip kero-pet import), `TAMA_SELFTEST=1` (live summon check, quits when done).
