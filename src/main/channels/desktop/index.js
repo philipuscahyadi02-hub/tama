@@ -2,6 +2,9 @@
 // Desktop channel: translates between the two renderer windows and the bus. No business rules here.
 const { TOPICS } = require('../../bus-topics');
 
+/** Care actions a renderer may request. Others (e.g. 'focus-break') are core-only. */
+const USER_ACTIONS = new Set(['feed', 'snack', 'play', 'clean', 'sleep', 'nap', 'pat']);
+
 /**
  * @param {{
  *   bus: import('../../bus').BusInstance,
@@ -27,6 +30,13 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboardi
     bus.on(TOPICS.SUMMON_DONE, (p) => ipc.sendUi(pet.win, 'summon', p));
     bus.on(TOPICS.TRAY_ACTION, (p) => ipc.sendUi(pet.win, 'tray', p.action));
     bus.on(TOPICS.CHARACTER_CHANGED, (p) => toAll('character', { spec: p.spec, stage: p.stage }));
+    bus.on(TOPICS.PROD_CHANGED, (p) => toAll('prod', p));
+    bus.on(TOPICS.PROD_FOCUS_PHASE, (p) => toAll('focus', p));
+    bus.on(TOPICS.PROD_COMMIT_SEEN, (p) => ipc.sendUi(pet.win, 'commit', p));
+    bus.on(TOPICS.PROD_REMINDER_DUE, (p) => {
+      toAll('reminder', p);
+      shell.notify('⏰ Reminder', String(p.text));
+    });
     bus.on(TOPICS.ENGINE_EVENT, ({ ev }) => {
       toAll('agent.event', ev);
       // Tell the user via Windows notifications when they can't see the terminal.
@@ -40,11 +50,27 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboardi
     ipc.handle('pet:walk', (dx) => pet.walk(Number(dx) || 0));
     ipc.on('pet:dragBy', (dx, dy) => pet.dragBy(Number(dx) || 0, Number(dy) || 0));
     ipc.handle('pet:get', () => bus.request(TOPICS.PET_GET));
-    ipc.handle('pet:act', (action) => bus.request(TOPICS.PET_ACT, { action: String(action) }));
+    ipc.handle('pet:act', (action) => {
+      if (!USER_ACTIONS.has(String(action))) return { ok: false, reason: 'unknown-action' };
+      return bus.request(TOPICS.PET_ACT, { action: String(action) });
+    });
     ipc.on('notify', (title, body) => shell.notify(String(title), String(body)));
     ipc.on('term:show', () => term.show());
     ipc.on('summon', () => summon('ui'));
     ipc.handle('character:get', () => bus.request(TOPICS.CHARACTER_GET));
+    // ---- productivity (pet + terminal) ----
+    ipc.handle('prod:get', () => bus.request(TOPICS.PROD_GET));
+    ipc.handle('prod:todoAdd', (t) => bus.request(TOPICS.PROD_TODO_ADD, { text: String(t || '') }));
+    ipc.handle('prod:todoDone', (ref) => bus.request(TOPICS.PROD_TODO_DONE, { ref }));
+    ipc.handle('prod:todoRemove', (ref) => bus.request(TOPICS.PROD_TODO_REMOVE, { ref }));
+    ipc.handle('prod:noteAdd', (t) => bus.request(TOPICS.PROD_NOTE_ADD, { text: String(t || '') }));
+    ipc.handle('prod:remindAdd', (input) => bus.request(TOPICS.PROD_REMIND_ADD, { input: String(input || '') }));
+    ipc.handle('prod:remindCancel', (id) => bus.request(TOPICS.PROD_REMIND_CANCEL, { id: String(id || '') }));
+    ipc.handle('prod:focusStart', (m) => bus.request(TOPICS.PROD_FOCUS_START, { minutes: Number(m) || 25 }));
+    ipc.handle('prod:focusStop', () => bus.request(TOPICS.PROD_FOCUS_STOP));
+    ipc.handle('prod:watchAdd', (p) => bus.request(TOPICS.PROD_WATCH_ADD, { path: String(p || '') }));
+    ipc.handle('prod:watchRemove', (p) => bus.request(TOPICS.PROD_WATCH_REMOVE, { path: String(p || '') }));
+    ipc.handle('prod:watchList', () => bus.request(TOPICS.PROD_WATCH_LIST));
     ipc.on('onboarding:open', (mode) => openOnboarding(['restyle', 'rebirth'].includes(mode) ? mode : 'hatch'));
     // ---- onboarding window → core ----
     ipc.handle('designer:generate', (req) => bus.request(TOPICS.DESIGNER_GENERATE, {

@@ -27,6 +27,14 @@ const TOPICS = {
   DEVICE_POWER_CHANGED: 'device.power.changed',
   /** { idle: boolean, idleSeconds: number } — user away from the PC for > IDLE_NAP_SECONDS (platform/power) */
   DEVICE_IDLE_CHANGED: 'device.idle.changed',
+  /** ProductivitySnapshot { todos, notes, reminders (pending), focus } */
+  PROD_CHANGED: 'prod.changed',
+  /** { phase: 'focus'|'break'|'idle', endsAt?, minutes?, completed?, gained?, stopped?, breakOver? } */
+  PROD_FOCUS_PHASE: 'prod.focus.phase',
+  /** { id, text, late } — a reminder is due now */
+  PROD_REMINDER_DUE: 'prod.reminder.due',
+  /** { repo, subject } — a new commit by the user in a watched repo (bond XP awarded) */
+  PROD_COMMIT_SEEN: 'prod.commit.seen',
   /** { engine: string, ev: EngineEvent } */
   ENGINE_EVENT: 'engine.event',
   /** { reason: string } — pet window was brought back on screen by summon() */
@@ -55,6 +63,29 @@ const TOPICS = {
   DESIGNER_REFINE: 'designer.refine',
   /** { voicePrompt, gender, personality? } → { voice, speech|null, source } */
   DESIGNER_VOICE: 'designer.voice',
+  /** () → ProductivitySnapshot */
+  PROD_GET: 'prod.get',
+  /** { text } → { ok, todo } | { error } */
+  PROD_TODO_ADD: 'prod.todo.add',
+  /** { ref: id | 1-based number } → { ok, todo, gained } | { error } */
+  PROD_TODO_DONE: 'prod.todo.done',
+  /** { ref } → { ok } | { error } */
+  PROD_TODO_REMOVE: 'prod.todo.remove',
+  /** { text } → { ok, note } | { error } */
+  PROD_NOTE_ADD: 'prod.note.add',
+  /** { input } | { at, text } → { ok, reminder, when } | { error } */
+  PROD_REMIND_ADD: 'prod.remind.add',
+  /** { id } → { ok } | { error } */
+  PROD_REMIND_CANCEL: 'prod.remind.cancel',
+  /** { minutes?, breakMinutes? } → { ok, focus } */
+  PROD_FOCUS_START: 'prod.focus.start',
+  PROD_FOCUS_STOP: 'prod.focus.stop',
+  /** { path } → { ok, repo, repos } | { error } */
+  PROD_WATCH_ADD: 'prod.watch.add',
+  /** { path } → { ok, repos } */
+  PROD_WATCH_REMOVE: 'prod.watch.remove',
+  /** () → { repos } */
+  PROD_WATCH_LIST: 'prod.watch.list',
   /** () → terminal init info { cwd, mode, model, busy, lastSessionId, totalCost, commands } */
   ENGINE_INFO: 'engine.info',
   /** text → void */

@@ -53,6 +53,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-021 | M1 designer: Claude Haiku with tools disabled + JSON schema, keyword fallback | Revisit at M3 |
 | D-022 | M8 voice: AivisSpeech local engine (anime voices), built-in TTS fallback | Accepted |
 | D-023 | Pet balance v2: easy energy, open-ended bond XP with levels, daily caps, streaks | Accepted |
+| D-024 | Productivity data is the user's (user/), git watch is per PC (device.json) | Accepted |
 
 ---
 
@@ -222,3 +223,11 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Keep 0..100 bond (no room for long-term growth); unlimited XP (farmable).
 - **Consequences:** Balance numbers live only in `services/pet/logic.js` + `bond.js` with table tests. Power and idle signals come from `platform/power.js` over the bus.
 - **Refs:** PET-1..4, BOND-1..3, src/main/services/pet
+
+### D-024 — Productivity data is the user's (user/), git watch is per PC (device.json)
+- **Date:** 2026-11-05 · **Status:** Accepted
+- **Context:** Todos, notes, reminders and the focus timer (PROD-1) must survive switching or graduating a Tama, and be shared by desktop and Telegram. Watched git repos (PROD-2) are local folder paths.
+- **Decision:** Productivity lives in `user/productivity.json` (store kind `productivity`), separate from any `tamas/<id>/`. Watched repos and the last-seen commit per repo live in `device.json` (`gitWatch`), because paths only exist on this PC. The watcher is read-only (`git log`, `git config user.email`), records a baseline on first sight, and only counts commits whose author email matches the repo's `user.email`. `focus-break` is a core-only pet action; the desktop channel accepts only an allow-list of user care actions.
+- **Alternatives:** Per-Tama todos (lost on switch); global git hook (needs writing into the user's repos).
+- **Consequences:** `.tama` export (M2c) may optionally include `user/`. The Telegram bot (M7) reuses the same `prod.*` bus requests.
+- **Refs:** PROD-1, PROD-2, BOND-1, src/main/services/productivity

@@ -15,6 +15,7 @@ let S = { hunger: 80, happy: 80, energy: 80, clean: 80, bond: 10, asleep: false,
 let petName = 'Tama';
 let spec = null;          // active CharacterSpec
 let isEgg = false;        // unhatched: show the egg, no care actions (ONB-1)
+let focusing = false;     // focus timer running: quiet, glasses on (PROD-1)
 /** A random verbal tic from the character's speech style ("" if none). */
 const tic = () => (spec && spec.speech.tics.length ? ' ' + pick(spec.speech.tics) : '');
 const myEmoji = () => (spec && spec.speech.emoji.length ? pick(spec.speech.emoji) : '✨');
@@ -96,7 +97,7 @@ function renderMood() {
   const m = override && Date.now() < overrideUntil ? override : baseMood();
   petEl.className = petEl.className.replace(/\bmood-\w+/g, '').replace(/\s+/g, ' ').trim() + ' mood-' + m;
   petEl.classList.toggle('asleep', S.asleep);
-  petEl.classList.toggle('working', agentState !== 'idle');
+  petEl.classList.toggle('working', focusing || agentState !== 'idle');
 }
 function anim(cls, ms) {
   petEl.classList.remove(cls); void petEl.offsetWidth; petEl.classList.add(cls);
@@ -185,6 +186,12 @@ const actions = {
     renderMood();
   },
   stats() { togglePanel('stats'); },
+  async focus() {
+    const s = await T.prod.get();
+    if (s.focus.phase === 'focus') { await T.prod.focusStop(); return say('focus stopped. otsukare~'); }
+    const r = await T.prod.focusStart(25);
+    if (r.ok) { express('focus', 2000); say(`focus mode! 25 min, I'll be quiet~ ganbatte! ⏱️`, 3200, { force: true }); }
+  },
   wardrobe() { T.openOnboarding('restyle'); say(`ooh, new clothes?${tic()}`, 2000, { force: true }); },
   code() { T.showTerminal(); say('let\'s code! 💻✨', 2000, { force: true }); },
 };
@@ -304,7 +311,7 @@ function behave() {
   const busyUi = !!document.querySelector('.panel:not(.hidden)') || !menuEl.classList.contains('hidden');
   if (isEgg) {
     if (Math.random() < 0.6) anim('wobble', 900);
-  } else if (!busyUi && !walkTimer && !dragging && agentState === 'idle') {
+  } else if (!busyUi && !walkTimer && !dragging && agentState === 'idle' && !focusing) {
     const r = Math.random();
     if (r < 0.35) startWalking(2000 + Math.random() * 4000);
     else if (r < 0.55 && !S.asleep) say(pick([...BABBLE, ...(spec ? spec.speech.catchphrases : [])]) + tic(), 2400);
@@ -342,6 +349,23 @@ function renderStats() {
   $('#streakLine').textContent = st.count ? `🔥 ${st.count}-day streak` : 'do something productive today to start a streak 🔥';
   $('#ageLine').textContent = `${days} day${days === 1 ? '' : 's'} together · ${S.xp} quests · ${S.pats} pats`;
 }
+
+// ---------------- productivity (PROD-1/2) ----------------
+
+T.prod.onFocus((f) => {
+  focusing = f.phase === 'focus';
+  petEl.classList.toggle('working', focusing || agentState !== 'idle');
+  if (f.completed) {
+    stopWalking(); hop(); express('sparkle', 2600); particles(['⏱️', '✨', '💗'], 8, 'burst');
+    say(`focus done!! otsukaresama~ break time ☕${tic()}`, 4000, { force: true });
+  } else if (f.breakOver) say('break over! one more round? ⏱️', 3000);
+});
+T.prod.onReminder((r) => {
+  stopWalking(); hop(); emote('⏰', 3000);
+  say(`⏰ ${r.text}`, 12000, { shout: true, force: true });
+});
+T.prod.onCommit((c) => { emote('💗', 1600); say(`nice commit in ${c.repo}~ ✨`, 2400); });
+T.prod.get().then((s) => { focusing = s.focus.phase === 'focus'; petEl.classList.toggle('working', focusing); });
 
 // Bond XP from care and productivity (BOND-1..3): floating hearts, streaks, level-ups.
 T.onBond((b) => {

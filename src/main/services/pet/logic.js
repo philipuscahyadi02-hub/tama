@@ -133,6 +133,8 @@ function act(s, action, now) {
       if (s.asleep) return { ok: false, reason: 'already-asleep', state: s };
       if (s.energy >= 95) return { ok: false, reason: 'not-tired', state: s };
       return { ok: true, reason: 'napping', state: { ...s, asleep: true, sleepKind: 'nap', napUntil: now + NAP_MS } };
+    case 'focus-break': // finishing a focus session gives a small energy treat (PET-3); core-only action
+      return { ok: true, state: { ...s, energy: clamp(s.energy + 10) } };
     case 'pat': {
       const b = bond.award({ ...s, pats: s.pats + 1, happy: clamp(s.happy + 3) }, 'pat', now);
       return { ok: true, state: b.state, bond: b };

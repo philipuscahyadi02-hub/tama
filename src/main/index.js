@@ -14,6 +14,9 @@ const shell = require('./platform/shell');
 const { watchPower } = require('./platform/power');
 const { createRoster } = require('./services/roster');
 const { createDesigner } = require('./services/designer');
+const { createProductivity } = require('./services/productivity');
+const { createGitWatcher } = require('./services/productivity/git-watcher');
+const git = require('./platform/git');
 const { askJson } = require('./engines/claude/oneshot');
 const { openPage } = require('./platform/windows/page-window');
 const { createPetService } = require('./services/pet');
@@ -80,6 +83,8 @@ function boot() {
   if (failed.length) shell.notify('Tama', `Hotkey already in use by another app: ${failed.join(', ')}`);
 
   petService.start();
+  // Productivity (PROD-1/2): todos, focus timer, reminders, notes, git commit watcher.
+  stoppers.push(createProductivity({ bus, store }).start(), createGitWatcher({ bus, device, git }).start());
   // Easy energy (PET-3): charging on AC, auto-nap while you're away.
   stoppers.push(watchPower({
     onPower: (onAC) => bus.emit(TOPICS.DEVICE_POWER_CHANGED, { onAC }),
@@ -97,6 +102,11 @@ function boot() {
   if (process.env.TAMA_PET_EVAL) {
     // Dev: run JS in the pet window after load (e.g. "actions.stats()") for screenshots.
     pet.win.webContents.once('did-finish-load', () => setTimeout(() => pet.win.webContents.executeJavaScript(String(process.env.TAMA_PET_EVAL)).catch(console.error), 1500));
+  }
+  if (process.env.TAMA_TERM_EVAL) {
+    // Dev: run JS in the terminal window after load (e.g. type commands) for screenshots.
+    const tw = term.get();
+    tw.webContents.once('did-finish-load', () => setTimeout(() => tw.webContents.executeJavaScript(String(process.env.TAMA_TERM_EVAL)).catch(console.error), 1500));
   }
   if (process.env.TAMA_OPEN_ONBOARDING) openOnboarding(process.env.TAMA_OPEN_ONBOARDING);
   if (process.env.TAMA_ONBOARD_WALK) {

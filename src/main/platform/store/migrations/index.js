@@ -14,6 +14,10 @@ const MIGRATIONS = {
   active: [
     (d) => d,
   ],
+  // user/productivity.json — todos, notes, reminders, focus timer (D-024)
+  productivity: [
+    (d) => d,
+  ],
   // tamas/<id>/character.json
   character: [
     (d) => d,

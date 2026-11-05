@@ -323,6 +323,7 @@ function answer(choice, feedback) {
 }
 
 // ---------------- slash commands ----------------
+const TAMA = window.makeTamaCommands(K, { info: (t) => info(t), error: (t) => error(t), getCwd: () => st.cwd });
 const LOCAL = {
   help: ['Show help', () => {
     info([
@@ -341,6 +342,7 @@ const LOCAL = {
       '  /cost            show session cost',
       '  /summon          bring your Tama back on screen (also Ctrl+Alt+P)',
       '  /exit            hide this window',
+      ...TAMA.help,
       '',
       'Any other /command (e.g. /init, /compact, /review, your skills) is passed to Claude Code.',
     ].join('\n'));
@@ -365,7 +367,14 @@ const LOCAL = {
   cost: ['Show session cost', () => info(`⎿  Session cost: $${st.totalCost.toFixed(4)}`)],
   summon: ['Bring your Tama back on screen', () => { K.summon(); info('⎿  Summoned! (Ctrl+Alt+P works anywhere)'); }],
   exit: ['Hide the terminal', () => K.win.close()],
+  ...TAMA.commands,
 };
+// Reminders and finished focus sessions also show up here.
+K.prod.onReminder((r) => info(`⏰ Reminder: ${r.text}`));
+K.prod.onFocus((f) => {
+  if (f.completed) info(`⏱️ Focus session done!${f.gained ? ` (+${f.gained} bond 💗)` : ''} Take a break~`);
+  else if (f.breakOver) info('⏱️ Break over. Ready for another /focus?');
+});
 
 function slashMatches(prefix) {
   const local = Object.entries(LOCAL).map(([c, [d]]) => ({ c, d }));
