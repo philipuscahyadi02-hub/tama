@@ -5,8 +5,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.3 |
-| **Status** | v0.1.0 released (M0). M1 in progress on `m1-character` |
+| **Version** | 0.4 |
+| **Status** | v0.1.0 released (M0). M1 code complete on `m1-character` (awaiting user check, then 0.2.0) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-05 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -54,12 +54,12 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.1 Onboarding — "Hatching" (ONB)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| ONB-1 | First launch shows a wobbling egg on the desktop; clicking starts onboarding. | P0 | M1 | ☐ |
-| ONB-2 | Choose gender: Girl / Boy / Non-binary / Surprise me. Drives body/hair base, pronouns, default voice range. | P0 | M1 | ☐ |
-| ONB-3 | Free-text **design prompt** ("describe your companion") with example chips; the lite brain turns it into a `CharacterSpec`. | P0 | M1 | ☐ |
-| ONB-4 | Show 3 variants; pick / reroll / refine by chat ("make hair blue"). | P1 | M1 | ☐ |
-| ONB-5 | Name + personality sliders (energy, tsundere, formality, chaos), prefilled from spec. | P0 | M1 | ☐ |
-| ONB-6 | Free-text **voice prompt**; produces a `VoiceSpec` + playable preview; can regenerate. | P0 | M1 | ☐ |
+| ONB-1 | First launch shows a wobbling egg on the desktop; clicking starts onboarding. | P0 | M1 | ☑ |
+| ONB-2 | Choose gender: Girl / Boy / Non-binary / Surprise me. Drives body/hair base, pronouns, default voice range. | P0 | M1 | ☑ |
+| ONB-3 | Free-text **design prompt** ("describe your companion") with example chips; the lite brain turns it into a `CharacterSpec`. | P0 | M1 | ☑ |
+| ONB-4 | Show 3 variants; pick / reroll / refine by chat ("make hair blue"). | P1 | M1 | ☑ |
+| ONB-5 | Name + personality sliders (energy, tsundere, formality, chaos), prefilled from spec. | P0 | M1 | ☑ |
+| ONB-6 | Free-text **voice prompt**; produces a `VoiceSpec` + playable preview; can regenerate. | P0 | M1 | ☑ |
 | ONB-7 | Detect & smoke-test engines (`claude`, `agy`); show login instructions if missing. | P0 | M3 | ☐ |
 | ONB-8 | Optional steps: Telegram pairing, Google sign-in. Skippable, available later in settings. | P1 | M6/M7 | ☐ |
 | ONB-9 | First screen offers "Hatch new 🥚" or "Bring my Tama 📦" (import/restore). | P0 | M2 | ☐ |
@@ -67,9 +67,9 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.2 Character & art (ART)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| ART-1 | Chibi anime style only. Layered SVG rig: base body (per gender), hair, motif headwear (hood/ears/tail), outfit, accessories, palette. | P0 | M1 | ☐ |
-| ART-2 | The model **selects and recolors** parts from the library; it never free-draws the core body. | P0 | M1 | ☐ |
-| ART-3 | Full expression set works for every design: happy, sparkle, blush, pout, teary, shock, dizzy, smug, sleep, focus (glasses), sad. | P0 | M1 | ☐ |
+| ART-1 | Chibi anime style only. Layered SVG rig: base body (per gender), hair, motif headwear (hood/ears/tail), outfit, accessories, palette. | P0 | M1 | ☑ |
+| ART-2 | The model **selects and recolors** parts from the library; it never free-draws the core body. | P0 | M1 | ☑ |
+| ART-3 | Full expression set works for every design: happy, sparkle, blush, pout, teary, shock, dizzy, smug, sleep, focus (glasses), sad. | P0 | M1 | ☑ |
 | ART-4 | Character palette/motif drives UI theme tokens (terminal, menus, bubbles). | P0 | M4 | ☐ |
 | ART-5 | Render current expression to PNG (for Telegram status/stickers). | P1 | M7 | ☐ |
 | ART-6 | Optional model-generated accessory SVG, sanitized and bounded. | P2 | later | ☐ |
@@ -165,7 +165,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
 | VOICE-1 | `VoiceProvider` interface; v1 = built-in Windows / Web Speech TTS with voice, pitch, rate mapped from `VoiceSpec`. | P0 | M8 | ☐ |
-| VOICE-2 | Speaking style (tics, catchphrase frequency) from the same voice prompt. | P0 | M1 | ☐ |
+| VOICE-2 | Speaking style (tics, catchphrase frequency) from the same voice prompt. | P0 | M1 | ☑ |
 | VOICE-3 | Premium providers (e.g. ElevenLabs Voice Design) pluggable later. | P2 | later | ☐ |
 | VOICE-4 | STT for Telegram voice notes (local whisper.cpp, optional download). | P2 | later | ☐ |
 
@@ -175,7 +175,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | PORT-1 | Storage split: Tama "soul" (`tamas/<id>/`) vs device config (`device.json`) vs secrets (`secrets.bin`, safeStorage). | P0 | M0 | ☑ |
 | PORT-2 | Every persisted file has `schemaVersion`; forward migrations run on load. | P0 | M0 | ☑ |
 | PORT-3 | Roster: multiple Tamas, one active; inactive ones pause decay. | P1 | M2 | ☐ |
-| PORT-4 | Restyle (keep all), Rebirth (redesign; choose keep/clear memory & bond), Hatch another, Graduate (album; restorable), Delete (typed confirm). | P1 | M2 | ☐ |
+| PORT-4 | Restyle (keep all), Rebirth (redesign; choose keep/clear memory & bond), Hatch another, Graduate (album; restorable), Delete (typed confirm). | P1 | M2 | ◐ |
 | PORT-5 | `.tama` export/import: zip, password-encrypted by default; optional "include connections" (Telegram token). | P0 | M2 | ☐ |
 | PORT-6 | Daily Drive backup to `appDataFolder` (`drive.appdata`); restore offer on new PC. | P1 | M6 | ☐ |
 | PORT-7 | Single active device lock (lease file in Drive); "move her here?" takeover. | P1 | M6 | ☐ |
@@ -199,7 +199,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 Check off when *all P0 rows* for that milestone are ☑. Update the "Status" line at the top.
 
 - [x] **M0 — Foundation.** *(code complete; NFR-2 needs a real mixed-DPI check)* Scaffold from kero-pet, service split, event bus, store/secrets/migrations, summon fix (SUM-1..4, PORT-1..2, SAFE-2, NFR-2).
-- [ ] **M1 — Character & hatching.** SVG rig, parts library, CharacterSpec, onboarding (ONB-1..6, ART-1..3, PET-5, VOICE-2).
+- [x] **M1 — Character & hatching.** *(code complete)* SVG rig, parts library, CharacterSpec, onboarding (ONB-1..6, ART-1..3, PET-5, VOICE-2).
 - [ ] **M2 — Pet loop v2 & lifecycle.** Energy, bond, productivity, roster, export/import (PET-1..4, BOND-*, PROD-1..2, PORT-3..5, ONB-9).
 - [ ] **M3 — Brain & engines.** Router, Claude + agy engines, PermissionGate, budget (BRAIN-*, ENG-1..5, SAFE-1, SAFE-5, ONB-7).
 - [ ] **M4 — Terminal v2.** Theming, chat/code modes, commands (TERM-*, ART-4, SAFE-4).
@@ -217,6 +217,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.4 — 2026-11-05** — M1 implemented: ONB-1..6, ART-1..3, VOICE-2 done; PORT-4 partial (restyle + rebirth; graduate/delete in M2).
 - **0.3 — 2026-11-05** — M0 implemented: SUM-1..4, PORT-1..2, SAFE-2, PET-5 done; NFR-2 and PET-1 partial. SUM-2's Telegram trigger lands in M7.
 - **0.2 — 2026-11-05** — Q1 resolved: Gmail drafts only (D-014).
 - **0.1 — 2026-11-05** — Initial draft from planning sessions (requirements 1–9 + engines, Google incl. Drive, portability).

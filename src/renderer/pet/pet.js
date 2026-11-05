@@ -1,6 +1,7 @@
 /* Tama pet window. Ported from kero-pet/renderer/pet.js.
    This is a view: stats live in the pet service (src/main/services/pet). We render the state we
-   receive and send intents via window.tama.act(). The Kero-chan art stays until the M1 rig. */
+   receive and send intents via window.tama.act(). The character is drawn by the shared rig from
+   the active Tama's CharacterSpec (src/shared); lines use the spec's speech tics/catchphrases. */
 const $ = (s) => document.querySelector(s);
 const petEl = $('#pet');
 const svgEl = $('#kero');
@@ -11,7 +12,12 @@ const T = window.tama;
 
 // ---------------- state (read-only copy of the pet service's state) ----------------
 let S = { hunger: 80, happy: 80, energy: 80, clean: 80, bond: 10, asleep: false, bornAt: Date.now(), xp: 0, pats: 0 };
-let petName = 'Kero-chan';
+let petName = 'Tama';
+let spec = null;          // active CharacterSpec
+let isEgg = false;        // unhatched: show the egg, no care actions (ONB-1)
+/** A random verbal tic from the character's speech style ("" if none). */
+const tic = () => (spec && spec.speech.tics.length ? ' ' + pick(spec.speech.tics) : '');
+const myEmoji = () => (spec && spec.speech.emoji.length ? pick(spec.speech.emoji) : '✨');
 /** Apply a { name, state } snapshot from the core. */
 function applySnapshot(snap) {
   if (!snap) return;
@@ -24,7 +30,7 @@ function applySnapshot(snap) {
 
 const BOND_TITLES = [
   [0, 'Stranger-san 👀'], [20, 'Classmate 📚'], [40, 'Friend ✌️'],
-  [60, 'Best friend 💞'], [80, 'Senpai noticed you!! 💖'], [100, 'Soulmates (kero) 🐸💍'],
+  [60, 'Best friend 💞'], [80, 'Senpai noticed you!! 💖'], [100, 'Soulmates 💍'],
 ];
 const bondTitle = () => BOND_TITLES.filter(([n]) => S.bond >= n).pop()[1];
 
@@ -61,9 +67,8 @@ function emote(sym, ms = 1600, side = 'right') {
 
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const BABBLE = [
-  'kero kero~ ♪', 'nyaa~?', 'ehehe~', 'kerokero desu!', '*hums anime opening*', 'ganbarimasu! 💪',
-  'sugoi… the desktop is so big', 'boop! (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧', 'is it lunch time? 🍙', 'fufu~ 😼', 'ribbit ribbit ✨',
-  '(｡•̀ᴗ-)✧', 'want to code together? 💻', 'my hood has eyes too, see? 👀',
+  'ehehe~', '*hums anime opening*', 'ganbarimasu! 💪', 'sugoi… the desktop is so big',
+  'boop! (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧', 'is it lunch time? 🍙', 'fufu~ 😼', '(｡•̀ᴗ-)✧', 'want to code together? 💻',
 ];
 
 // ---------------- expressions ----------------
@@ -155,6 +160,7 @@ const actions = {
     renderMood();
   },
   stats() { togglePanel('stats'); },
+  wardrobe() { T.openOnboarding('restyle'); say(`ooh, new clothes?${tic()}`, 2000, { force: true }); },
   code() { T.showTerminal(); say('let\'s code! 💻✨', 2000, { force: true }); },
 };
 
@@ -173,7 +179,7 @@ menuEl.addEventListener('click', (e) => {
   menuEl.classList.add('hidden');
   actions[b.dataset.act]();
 });
-T.onTray((a) => actions[a] && actions[a]());
+T.onTray((a) => !isEgg && actions[a] && actions[a]());
 
 // ---------------- pointer: click / drag / head-pat / cheek-poke ----------------
 function svgPoint(e) {
@@ -185,7 +191,7 @@ function svgPoint(e) {
 const onHead = (p) => p.y < 80 && Math.abs(p.x - 100) < 75;
 const onCheek = (p) => p.y > 118 && p.y < 152 && Math.abs(p.x - 100) > 22 && Math.abs(p.x - 100) < 52;
 
-// Head pats: rub the mouse left-right over the hood (no click needed).
+// Head pats: rub the mouse left-right over the head (no click needed).
 let patDir = 0, patLastX = null, patFlips = 0, patT0 = 0;
 petEl.addEventListener('mousemove', (e) => {
   if (down || dragging) return;
@@ -203,12 +209,13 @@ petEl.addEventListener('mousemove', (e) => {
 });
 let lastPat = 0;
 function headPat() {
+  if (isEgg) { anim('wobble', 900); say('*crack…?* 🥚'); return; }
   if (S.asleep) { say('mmh… ehehe… (sleep-smiling)'); return; }
   if (Date.now() - lastPat < 1200) return;
   lastPat = Date.now();
   T.act('pat');
   express('pat', 2200); emote('♡'); particles(['💗', '💕', '✨'], 3);
-  say(pick(['ehehe~ nade nade ♡', 'f-fueee… (≧◡≦)', 'more pats pls…', 'k-kero… *blushes*', 'nyaa~ ♡']));
+  say(pick(['ehehe~ nade nade ♡', 'f-fueee… (≧◡≦)', 'more pats pls…', `*blushes*${tic()}`, `${myEmoji()} ♡`]));
 }
 
 let down = null;
@@ -233,7 +240,11 @@ window.addEventListener('mouseup', () => {
   if (!down) return;
   if (down.moved) {
     dragging = false; petEl.classList.remove('dragging');
-    override = null; hop(); emote('💧', 1400, 'left'); say('…phew. kero.');
+    override = null; hop(); emote('💧', 1400, 'left'); say(isEgg ? '*wobble*' : `…phew.${tic()}`);
+  } else if (isEgg) {
+    // The egg is the onboarding entry point (ONB-1).
+    anim('wobble', 900); say('✨ something is hatching… ✨', 2500, { force: true });
+    T.openOnboarding();
   } else if (onCheek(down.p) && !S.asleep) {
     // cheek poke → puffed-cheek pout
     express('pout', 1800); emote('💢');
@@ -251,8 +262,8 @@ window.addEventListener('mouseup', () => {
 let walkTimer = null;
 let dir = 1;
 function startWalking(ms) {
-  if (S.asleep || agentState !== 'idle' || dragging) return;
-  dir = Math.random() < 0.5 ? -1 : 1;
+  if (S.asleep || isEgg || agentState !== 'idle' || dragging) return;
+  dir =Math.random() < 0.5 ? -1 : 1;
   petEl.classList.add('walking');
   petEl.classList.toggle('face-left', dir < 0);
   const end = Date.now() + ms;
@@ -266,10 +277,12 @@ function stopWalking() { clearInterval(walkTimer); walkTimer = null; petEl.class
 
 function behave() {
   const busyUi = !!document.querySelector('.panel:not(.hidden)') || !menuEl.classList.contains('hidden');
-  if (!busyUi && !walkTimer && !dragging && agentState === 'idle') {
+  if (isEgg) {
+    if (Math.random() < 0.6) anim('wobble', 900);
+  } else if (!busyUi && !walkTimer && !dragging && agentState === 'idle') {
     const r = Math.random();
     if (r < 0.35) startWalking(2000 + Math.random() * 4000);
-    else if (r < 0.55 && !S.asleep) say(pick(BABBLE), 2400);
+    else if (r < 0.55 && !S.asleep) say(pick([...BABBLE, ...(spec ? spec.speech.catchphrases : [])]) + tic(), 2400);
     else if (r < 0.62 && !S.asleep) { express('smug', 1800); emote('♪'); }
   }
   setTimeout(behave, 5000 + Math.random() * 7000);
@@ -278,13 +291,14 @@ function behave() {
 // ---------------- needs ----------------
 const warned = {};
 function checkNeeds() {
+  if (isEgg) return;
   const needs = [
-    ['hunger', 'onaka suita… I\'m hungwy 🍙', 'Kero-chan is hungry!'],
-    ['clean', 'I feel icky… bath pls 🛁', 'Kero-chan needs a bath'],
-    ['happy', 'h-hmph! it\'s not like I want to play with you or anything… 💢', 'Kero-chan is sulking'],
+    ['hunger', 'onaka suita… I\'m hungwy 🍙', 'is hungry!'],
+    ['clean', 'I feel icky… bath pls 🛁', 'needs a bath'],
+    ['happy', 'h-hmph! it\'s not like I want to play with you or anything… 💢', 'is sulking'],
   ];
   for (const [k, line, note] of needs) {
-    if (S[k] < 25 && !warned[k]) { warned[k] = true; say(line, 4500); T.notify(petName, note.replace('Kero-chan', petName)); }
+    if (S[k] < 25 && !warned[k]) { warned[k] = true; say(line, 4500); T.notify(petName, `${petName} ${note}`); }
     else if (S[k] > 40) warned[k] = false;
   }
 }
@@ -301,7 +315,7 @@ function renderStats() {
   $('#ageLine').textContent = `${days} day${days === 1 ? '' : 's'} together · ${S.xp} coding quests · ${S.pats} pats`;
 }
 
-// ---------------- reacting to Kero Code (the agent) ----------------
+// ---------------- reacting to the agent ----------------
 const TOOL_LINES = {
   Read: '📖 reading', Glob: '🔎 looking for', Grep: '🔍 searching', Edit: '✏️ editing', MultiEdit: '✏️ editing',
   Write: '📝 writing', Bash: '💻 running', WebFetch: '🌐 reading', WebSearch: '🌐 searching', TodoWrite: '📋 planning',
@@ -338,9 +352,9 @@ T.onAgent((ev) => {
       }
       break;
     case 'mode':
-      if (ev.mode === 'acceptEdits') henshin('HENSHIN! ✨ Edit-mode Kero!');
+      if (ev.mode === 'acceptEdits') henshin(`HENSHIN! ✨ Edit-mode ${petName}!`);
       else if (ev.mode === 'plan') henshin('Strategy mode… 📋 fufu~');
-      else if (ev.mode === 'default') { express('happy', 1200); say('back to normal~ kero!'); }
+      else if (ev.mode === 'default') { express('happy', 1200); say(`back to normal~${tic()}`); }
       break;
     case 'error':
       express('dizzy', 2200); emote('💧', 2000, 'left');
@@ -364,17 +378,38 @@ function greeting() {
 // Summoned back on screen (Ctrl+Alt+P, tray click, /summon…): play a little "tadaa".
 T.onSummon(() => {
   stopWalking(); hop(); express('sparkle', 1800); particles(['✨', '⭐', '💫'], 8, 'burst');
-  say(pick(['tadaa~! I\'m here! ✨', 'you called? (｡•̀ᴗ-)✧', 'kero! reporting for duty~ 🫡']), 2600, { force: true });
+  say(pick(['tadaa~! I\'m here! ✨', 'you called? (｡•̀ᴗ-)✧', `${petName}, reporting for duty~ 🫡`]), 2600, { force: true });
 });
 T.onPetState(applySnapshot);
 
+// ---------------- character (rig) ----------------
+/** Draw the egg or the hatched character from { spec, stage }. */
+function applyCharacter(ch) {
+  isEgg = ch.stage === 'egg';
+  petEl.classList.toggle('egg', isEgg);
+  if (isEgg) { window.TamaShared.renderEgg(petEl, svgEl); return; }
+  spec = window.TamaShared.renderRig(petEl, svgEl, ch.spec);
+  petName = spec.name;
+  renderMood();
+}
+// Hatched, restyled or reborn from onboarding.
+T.onCharacter((ch) => {
+  const wasEgg = isEgg;
+  applyCharacter(ch);
+  stopWalking(); hop(); express('sparkle', 2600); particles(['✨', '⭐', '💖', '🌸'], 12, 'burst');
+  say(wasEgg ? `hajimemashite! I'm ${petName} ${myEmoji()}\nclick me! (rub my head for pats~)` : `ta-da~ how do I look?${tic()} ${myEmoji()}`, 5000, { force: true });
+});
+
 (async function boot() {
+  applyCharacter(await T.getCharacter());
   const snap = await T.getPet();
   applySnapshot(snap);
   const s = snap.state;
   const firstMeet = s.xp === 0 && s.pats === 0 && Date.now() - s.bornAt < 60000;
-  if (firstMeet) {
-    setTimeout(() => { express('sparkle', 2500); say(`hajimemashite! I'm ${petName} 🐸🎀\nclick me! (rub my hood for pats~)`, 6000); }, 800);
+  if (isEgg) {
+    setTimeout(() => say('*wobble wobble*\n(click the egg!)', 6000), 800);
+  } else if (firstMeet) {
+    setTimeout(() => { express('sparkle', 2500); say(`hajimemashite! I'm ${petName} ${myEmoji()}\nclick me! (rub my head for pats~)`, 6000); }, 800);
   } else if (snap.hoursAway > 2) {
     setTimeout(() => { express('sad', 2500); say(`${Math.round(snap.hoursAway)} hours… I was lonely 🥺`, 4500); }, 800);
   } else {

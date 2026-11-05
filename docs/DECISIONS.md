@@ -49,6 +49,8 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-017 | Pet stats live in the main-process pet service from M0 | Accepted |
 | D-018 | Type-check config for TypeScript 7 on plain JS | Accepted |
 | D-019 | Summon = show + raise + place on cursor's display; watchdog respects user-hide | Accepted |
+| D-020 | Character rig: shared pure modules, slot-based SVG parts, palette CSS variables | Accepted |
+| D-021 | M1 designer: Claude Haiku with tools disabled + JSON schema, keyword fallback | Revisit at M3 |
 
 ---
 
@@ -182,3 +184,19 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Re-show on every watchdog tick (would fight the user's Hide).
 - **Consequences:** If the body rect changes with the M1 rig, update `geometry.BODY`. Real mixed-DPI hardware test still pending (NFR-2).
 - **Refs:** SUM-1..4, NFR-2, src/main/platform/summon, src/main/dev/selftest.js
+
+### D-020 — Character rig: shared pure modules, slot-based SVG parts, palette CSS variables
+- **Date:** 2026-11-05 · **Status:** Accepted
+- **Context:** M1 needs prompt-designed characters that keep every expression and animation from kero-pet (D-002, ART-1..3).
+- **Decision:** `src/shared/` holds pure, dependency-free modules (palette, catalog, spec, rig/*) that run in Node (tests, validation) and in renderers via plain `<script>` (each file registers on `globalThis.TamaShared`). Parts return SVG fragments per **slot** (`kit.SLOTS`), composed in a fixed order inside shared `bodyGroup`/`headGroup` groups on Kero-chan's skeleton, so hit areas and animations work for every design. Colors are `style="fill:var(--token)"`; 6 base colors derive ~30 tokens (`palette.derive`), and presets may pin exact tokens (`paletteOverrides`). Gradient ids are prefixed per rig. Expression visibility stays in CSS (`renderer/shared/rig.css`). `character.json` v2 = full CharacterSpec + meta (`stage`, `createdAt`, `importedFrom`).
+- **Alternatives:** Per-character hand-drawn SVG (no prompt design); image generation (inconsistent, no expressions).
+- **Consequences:** New part = draw it in `src/shared/rig/*` + list it in `catalog.js` (+ gallery check with `TAMA_GALLERY=designs`). `normalizeSpec` is the only way a spec enters the system.
+- **Refs:** ART-1..3, ONB-3, src/shared, src/renderer/shared
+
+### D-021 — M1 designer: Claude Haiku with tools disabled + JSON schema, keyword fallback
+- **Date:** 2026-11-05 · **Status:** Revisit at M3
+- **Context:** D-003 makes `agy` the lite brain, but `agy`'s headless mode auto-approves tools (D-007) and its permission handling is M3 research. M1 still needs a model to design characters.
+- **Decision:** `engines/claude/oneshot.askJson` runs the Agent SDK with `tools: []`, `settingSources: []`, `persistSession: false`, model `haiku`, and `outputFormat: json_schema` whose part fields are catalog **enums**. Output always goes through `normalizeSpec`. If the call fails (offline, not logged in, timeout), `services/designer/fallback.js` designs from keywords, and the UI shows a warning. `TAMA_OFFLINE_DESIGNER=1` forces the fallback.
+- **Alternatives:** `agy` now (unsafe until D-007 is solved); no AI at all (designs too samey).
+- **Consequences:** About 26 s and a few cents of Claude usage per "hatch ideas" call. M3 moves this onto the router's lite brain (Gemini Flash via `agy`).
+- **Refs:** ONB-3..6, D-003, D-007

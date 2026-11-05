@@ -10,9 +10,10 @@ const { TOPICS } = require('../../bus-topics');
  *   pet: import('../../platform/windows/pet-window').PetWindow,
  *   term: import('../../platform/windows/terminal-window').TerminalWindow,
  *   summon: (reason: string) => void,
+ *   openOnboarding: (mode: 'hatch'|'restyle'|'rebirth') => void,
  * }} deps
  */
-function createDesktopChannel({ bus, ipc, shell, pet, term, summon }) {
+function createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboarding }) {
   const both = () => [pet.win, term.window()];
   /** Fire-and-forget request; failures surface on app.error instead of becoming unhandled rejections. @param {string} topic @param {any} [payload] */
   const fire = (topic, payload) => { bus.request(topic, payload).catch((e) => bus.emit(TOPICS.APP_ERROR, { topic, message: String(e.message || e) })); };
@@ -24,6 +25,7 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, summon }) {
     bus.on(TOPICS.PET_STATE_CHANGED, (p) => ipc.sendUi(pet.win, 'pet.state', p));
     bus.on(TOPICS.SUMMON_DONE, (p) => ipc.sendUi(pet.win, 'summon', p));
     bus.on(TOPICS.TRAY_ACTION, (p) => ipc.sendUi(pet.win, 'tray', p.action));
+    bus.on(TOPICS.CHARACTER_CHANGED, (p) => toAll('character', { spec: p.spec, stage: p.stage }));
     bus.on(TOPICS.ENGINE_EVENT, ({ ev }) => {
       toAll('agent.event', ev);
       // Tell the user via Windows notifications when they can't see the terminal.
@@ -41,6 +43,18 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, summon }) {
     ipc.on('notify', (title, body) => shell.notify(String(title), String(body)));
     ipc.on('term:show', () => term.show());
     ipc.on('summon', () => summon('ui'));
+    ipc.handle('character:get', () => bus.request(TOPICS.CHARACTER_GET));
+    ipc.on('onboarding:open', (mode) => openOnboarding(['restyle', 'rebirth'].includes(mode) ? mode : 'hatch'));
+    // ---- onboarding window → core ----
+    ipc.handle('designer:generate', (req) => bus.request(TOPICS.DESIGNER_GENERATE, {
+      gender: String(req?.gender || 'girl'), prompt: String(req?.prompt || '').slice(0, 600), name: req?.name ? String(req.name).slice(0, 24) : undefined,
+    }));
+    ipc.handle('designer:refine', (req) => bus.request(TOPICS.DESIGNER_REFINE, { spec: req?.spec, instruction: String(req?.instruction || '').slice(0, 400) }));
+    ipc.handle('designer:voice', (req) => bus.request(TOPICS.DESIGNER_VOICE, {
+      voicePrompt: String(req?.voicePrompt || '').slice(0, 400), gender: String(req?.gender || 'girl'), personality: req?.personality,
+    }));
+    ipc.handle('character:save', (req) => bus.request(TOPICS.CHARACTER_SAVE, { spec: req?.spec, mode: String(req?.mode), keepBond: req?.keepBond !== false }));
+    ipc.onFromWindow('win:closeSelf', (w) => w.close());
 
     // ---- terminal window → core ----
     ipc.handle('term:init', () => bus.request(TOPICS.ENGINE_INFO));

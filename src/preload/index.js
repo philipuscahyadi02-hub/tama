@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** Main → renderer messages arrive on one 'ui' channel as (name, payload). */
-const UI_NAMES = new Set(['pet.state', 'summon', 'tray', 'agent.event', 'term.focus']);
+const UI_NAMES = new Set(['pet.state', 'summon', 'tray', 'agent.event', 'term.focus', 'character']);
 /** @type {Map<string, Set<(p: any) => void>>} */
 const subs = new Map();
 ipcRenderer.on('ui', (_e, name, payload) => {
@@ -27,6 +27,16 @@ contextBridge.exposeInMainWorld('tama', {
   notify: (/** @type {string} */ t, /** @type {string} */ b) => ipcRenderer.send('notify', t, b),
   showTerminal: () => ipcRenderer.send('term:show'),
   summon: () => ipcRenderer.send('summon'),
+  getCharacter: () => ipcRenderer.invoke('character:get'),
+  openOnboarding: (/** @type {string} */ mode) => ipcRenderer.send('onboarding:open', mode || 'hatch'),
+
+  // ---- onboarding window ----
+  designerGenerate: (/** @type {any} */ req) => ipcRenderer.invoke('designer:generate', req),
+  designerRefine: (/** @type {any} */ req) => ipcRenderer.invoke('designer:refine', req),
+  designerVoice: (/** @type {any} */ req) => ipcRenderer.invoke('designer:voice', req),
+  characterSave: (/** @type {any} */ req) => ipcRenderer.invoke('character:save', req),
+  closeSelf: () => ipcRenderer.send('win:closeSelf'),
+  onCharacter: on('character'),
   onPetState: on('pet.state'),
   onSummon: on('summon'),
   onTray: on('tray'),

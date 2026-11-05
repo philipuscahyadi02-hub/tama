@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>Tama rig gallery (dev)</title>
+  <link rel="stylesheet" href="../shared/rig.css" />
+  <style>
+    body { margin: 0; padding: 10px; background: #fffaf3; font: 11px "Segoe UI", sans-serif; color: #3a2a4d; }
+    #grid { display: grid; grid-template-columns: repeat(auto-fill, 150px); gap: 6px; }
+    .cell { background: #fff; border: 1px solid #eadff0; border-radius: 10px; padding: 4px; text-align: center; }
+    .cell .tama-rig { width: 130px; height: 156px; margin: 0 auto; }
+    .cell .tama-rig * { animation: none !important; }
+    .cap { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  </style>
+</head>
+<body>
+  <div id="grid"></div>
+  <script src="../../shared/palette.js"></script>
+  <script src="../../shared/catalog.js"></script>
+  <script src="../../shared/spec.js"></script>
+  <script src="../../shared/rig/kit.js"></script>
+  <script src="../../shared/rig/face.js"></script>
+  <script src="../../shared/rig/hair.js"></script>
+  <script src="../../shared/rig/headwear.js"></script>
+  <script src="../../shared/rig/outfit.js"></script>
+  <script src="../../shared/rig/accessories.js"></script>
+  <script src="../../shared/rig/compose.js"></script>
+  <script src="../shared/rig-view.js"></script>
+  <script src="gallery.js"></script>
+</body>
+</html>

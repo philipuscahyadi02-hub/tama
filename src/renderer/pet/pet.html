@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
-  <title>Kero-chan</title>
+  <title>Tama</title>
+  <link rel="stylesheet" href="../shared/rig.css" />
   <link rel="stylesheet" href="pet.css" />
 </head>
 <body>
@@ -32,196 +33,31 @@
       <button data-act="clean" title="Bath">🛁</button>
       <button data-act="sleep" title="Sleep / wake">💤</button>
       <button data-act="stats" title="Stats">📊</button>
-      <button data-act="code" title="Open Kero Code (Ctrl+Alt+K)">💻</button>
+      <button data-act="wardrobe" title="Restyle">🪄</button>
+      <button data-act="code" title="Open the terminal (Ctrl+Alt+K)">💻</button>
     </div>
 
     <div id="fx"></div>
 
-    <div id="pet" class="hit mood-normal">
+    <div id="pet" class="hit tama-rig mood-normal">
       <div id="emote"></div>
       <div id="gloom"><i></i><i></i><i></i><i></i></div>
       <div id="noseBubble"></div>
       <div id="zzz">z<span>z</span><span>Z</span></div>
-      <svg id="kero" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="iris" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#1c5e3f" />
-            <stop offset=".55" stop-color="#36a865" />
-            <stop offset="1" stop-color="#a8f5aa" />
-          </linearGradient>
-          <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#ff8fbf" />
-            <stop offset="1" stop-color="#ffb8d6" />
-          </linearGradient>
-          <linearGradient id="hood" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#93dc7b" />
-            <stop offset="1" stop-color="#74c75f" />
-          </linearGradient>
-          <g id="star"><path d="M0 -5 L1.3 -1.3 L5 0 L1.3 1.3 L0 5 L-1.3 1.3 L-5 0 L-1.3 -1.3 Z" fill="#fff" /></g>
-        </defs>
-
-        <ellipse cx="100" cy="235" rx="48" ry="5" fill="rgba(0,0,0,.16)" />
-
-        <!-- twin tails (behind) -->
-        <g class="tail tail-l">
-          <path d="M46 124 C20 140 14 176 28 208 C32 217 26 224 18 229 C42 231 54 211 52 189 C50 166 60 146 58 128 Z" fill="url(#hair)" stroke="#e8729f" stroke-width="1.5" />
-          <path d="M44 140 C32 160 30 186 38 206" stroke="#ff7fb0" stroke-width="2" fill="none" opacity=".7" />
-        </g>
-        <g class="tail tail-r">
-          <path d="M154 124 C180 140 186 176 172 208 C168 217 174 224 182 229 C158 231 146 211 148 189 C150 166 140 146 142 128 Z" fill="url(#hair)" stroke="#e8729f" stroke-width="1.5" />
-          <path d="M156 140 C168 160 170 186 162 206" stroke="#ff7fb0" stroke-width="2" fill="none" opacity=".7" />
-        </g>
-
-        <!-- legs + rain boots -->
-        <rect x="86" y="208" width="9" height="14" fill="#ffe6d8" />
-        <rect x="105" y="208" width="9" height="14" fill="#ffe6d8" />
-        <rect x="84" y="216" width="13" height="7" rx="2" fill="#fff" />
-        <rect x="103" y="216" width="13" height="7" rx="2" fill="#fff" />
-        <rect x="76" y="221" width="23" height="12" rx="6" fill="#ffcf4a" stroke="#e7a92a" stroke-width="1.5" />
-        <rect x="101" y="221" width="23" height="12" rx="6" fill="#ffcf4a" stroke="#e7a92a" stroke-width="1.5" />
-
-        <g id="bodyGroup">
-          <!-- raincoat dress -->
-          <path d="M74 148 Q66 180 54 210 Q100 220 146 210 Q134 180 126 148 Z" fill="url(#hood)" stroke="#5fb04c" stroke-width="1.5" />
-          <path d="M54 210 Q59.6 218 65.2 211.6 Q70.8 219.6 76.4 213 Q82 220.6 87.6 213.8 Q93.2 221 98.8 214 Q104.4 221 110 213.8 Q115.6 220.6 121.2 213 Q126.8 219.6 132.4 211.6 Q138 218 146 210 Q100 222 54 210 Z" fill="#c4f0b4" />
-          <circle cx="100" cy="186" r="2.6" fill="#5fb04c" />
-          <circle cx="100" cy="198" r="2.6" fill="#5fb04c" />
-          <!-- sailor collar -->
-          <path d="M78 147 L100 160 L88 172 Q78 162 78 147 Z" fill="#fff" stroke="#d9e6f5" stroke-width="1" />
-          <path d="M122 147 L100 160 L112 172 Q122 162 122 147 Z" fill="#fff" stroke="#d9e6f5" stroke-width="1" />
-          <!-- bow -->
-          <path d="M100 163 Q86 154 87 167 Q89 174 100 167 Z" fill="#ffd34f" stroke="#e7a92a" stroke-width="1.2" />
-          <path d="M100 163 Q114 154 113 167 Q111 174 100 167 Z" fill="#ffd34f" stroke="#e7a92a" stroke-width="1.2" />
-          <path d="M98 166 L94 177 M102 166 L106 177" stroke="#e7a92a" stroke-width="2.4" stroke-linecap="round" />
-          <circle cx="100" cy="165" r="3.4" fill="#f0b429" />
-          <!-- arms -->
-          <g class="arm arm-l">
-            <ellipse cx="68" cy="170" rx="9.5" ry="17" transform="rotate(18 68 170)" fill="url(#hood)" stroke="#5fb04c" stroke-width="1.2" />
-            <circle cx="62" cy="185" r="6.5" fill="#ffe6d8" />
-          </g>
-          <g class="arm arm-r">
-            <ellipse cx="132" cy="170" rx="9.5" ry="17" transform="rotate(-18 132 170)" fill="url(#hood)" stroke="#5fb04c" stroke-width="1.2" />
-            <circle cx="138" cy="185" r="6.5" fill="#ffe6d8" />
-          </g>
-        </g>
-
-        <g id="headGroup">
-          <!-- ahoge -->
-          <path class="ahoge" d="M101 26 Q94 8 110 3 Q103 13 106 25 Z" fill="url(#hair)" stroke="#e8729f" stroke-width="1.2" />
-          <!-- frog hood -->
-          <circle cx="56" cy="34" r="22" fill="url(#hood)" />
-          <circle cx="144" cy="34" r="22" fill="url(#hood)" />
-          <circle cx="100" cy="90" r="68" fill="url(#hood)" />
-          <g class="hood-eyes">
-            <circle cx="56" cy="32" r="14" fill="#fff" />
-            <circle cx="144" cy="32" r="14" fill="#fff" />
-            <circle cx="58" cy="34" r="7" fill="#2b2340" />
-            <circle cx="142" cy="34" r="7" fill="#2b2340" />
-            <circle cx="60" cy="31" r="2.5" fill="#fff" />
-            <circle cx="144" cy="31" r="2.5" fill="#fff" />
-          </g>
-          <ellipse cx="74" cy="56" rx="6" ry="3" fill="#ff9fb8" opacity=".5" />
-          <ellipse cx="126" cy="56" rx="6" ry="3" fill="#ff9fb8" opacity=".5" />
-
-          <!-- hood rim + face -->
-          <path d="M45 100 Q45 160 100 162 Q155 160 155 100 Q155 55 100 55 Q45 55 45 100 Z" fill="#62b84e" />
-          <path d="M50 101 Q50 154 100 156 Q150 154 150 101 Q150 62 100 62 Q50 62 50 101 Z" fill="#ffe6d8" />
-
-          <!-- side locks -->
-          <path d="M55 86 Q44 120 50 152 Q57 140 59 122 Q61 104 64 92 Z" fill="url(#hair)" />
-          <path d="M145 86 Q156 120 150 152 Q143 140 141 122 Q139 104 136 92 Z" fill="url(#hair)" />
-
-          <!-- bangs -->
-          <path d="M50 103 Q47 66 100 61 Q153 66 150 103 Q145 93 141 85 Q137 99 128 105 Q127 91 118 82 Q114 99 104 105 Q102 89 96 80 Q88 97 78 103 Q80 89 76 82 Q66 95 58 105 Q60 93 62 87 Q54 95 50 103 Z" fill="url(#hair)" stroke="#e8729f" stroke-width="1.2" stroke-linejoin="round" />
-          <path d="M66 76 Q100 64 134 76" stroke="#ffe0ee" stroke-width="3.2" fill="none" stroke-linecap="round" opacity=".9" />
-          <path d="M72 82 L74 76 M126 82 L124 76" stroke="#ffe0ee" stroke-width="2" stroke-linecap="round" />
-
-          <!-- blush -->
-          <g class="blush">
-            <ellipse cx="62" cy="133" rx="11" ry="6" fill="#ff9fb8" opacity=".55" />
-            <ellipse cx="138" cy="133" rx="11" ry="6" fill="#ff9fb8" opacity=".55" />
-            <path d="M56 136 L59 130 M61 136 L64 130 M66 136 L69 130 M132 136 L135 130 M137 136 L140 130 M142 136 L145 130" stroke="#ff6f96" stroke-width="1.5" stroke-linecap="round" />
-          </g>
-
-          <!-- EYES -->
-          <g class="eyes eyes-open">
-            <g class="eye">
-              <ellipse cx="77" cy="114" rx="12.5" ry="15" fill="#fff" />
-              <ellipse cx="77" cy="116" rx="11" ry="13.5" fill="url(#iris)" />
-              <ellipse cx="77" cy="117" rx="5" ry="7" fill="#123a28" />
-              <ellipse cx="77" cy="124" rx="7" ry="3.2" fill="#d2ffd6" opacity=".55" />
-              <g class="hl"><ellipse cx="72.5" cy="107.5" rx="4.6" ry="5.6" fill="#fff" /><circle cx="81" cy="121" r="2.2" fill="#fff" /></g>
-              <g class="stars"><use href="#star" transform="translate(72 108) scale(1.4)" /><use href="#star" transform="translate(81.5 121) scale(.7)" /></g>
-            </g>
-            <g class="eye">
-              <ellipse cx="123" cy="114" rx="12.5" ry="15" fill="#fff" />
-              <ellipse cx="123" cy="116" rx="11" ry="13.5" fill="url(#iris)" />
-              <ellipse cx="123" cy="117" rx="5" ry="7" fill="#123a28" />
-              <ellipse cx="123" cy="124" rx="7" ry="3.2" fill="#d2ffd6" opacity=".55" />
-              <g class="hl"><ellipse cx="118.5" cy="107.5" rx="4.6" ry="5.6" fill="#fff" /><circle cx="127" cy="121" r="2.2" fill="#fff" /></g>
-              <g class="stars"><use href="#star" transform="translate(118 108) scale(1.4)" /><use href="#star" transform="translate(127.5 121) scale(.7)" /></g>
-            </g>
-            <g stroke="#2b2340" stroke-width="4.2" fill="none" stroke-linecap="round">
-              <path d="M63 106 Q77 93 91 104" /><path d="M64 106 L58.5 101.5" />
-              <path d="M109 104 Q123 93 137 106" /><path d="M136 106 L141.5 101.5" />
-            </g>
-          </g>
-          <!-- half lids (smug / focus) -->
-          <g class="lids">
-            <path d="M61 103 Q77 90 93 103 L93 112 Q77 106 61 112 Z" fill="#ffe6d8" />
-            <path d="M107 103 Q123 90 139 103 L139 112 Q123 106 107 112 Z" fill="#ffe6d8" />
-            <path d="M62 112 Q77 106 92 112 M108 112 Q123 106 138 112" stroke="#2b2340" stroke-width="3.6" fill="none" stroke-linecap="round" />
-          </g>
-          <g class="eyes eyes-happy" stroke="#2b2340" stroke-width="4.5" fill="none" stroke-linecap="round">
-            <path d="M65 117 Q77 102 89 117" /><path d="M111 117 Q123 102 135 117" />
-          </g>
-          <g class="eyes eyes-closed" stroke="#2b2340" stroke-width="3.8" fill="none" stroke-linecap="round">
-            <path d="M65 112 Q77 122 89 112" /><path d="M66 113 L61 110" />
-            <path d="M111 112 Q123 122 135 112" /><path d="M134 113 L139 110" />
-          </g>
-          <g class="eyes eyes-dizzy" stroke="#2b2340" stroke-width="2.6" fill="none" stroke-linecap="round">
-            <path d="M77 114 m-2 0 a2 2 0 1 1 4 0 a4 4 0 1 1 -8 0 a6 6 0 1 1 12 0 a8 8 0 1 1 -16 0" />
-            <path d="M123 114 m-2 0 a2 2 0 1 1 4 0 a4 4 0 1 1 -8 0 a6 6 0 1 1 12 0 a8 8 0 1 1 -16 0" />
-          </g>
-          <g class="eyes eyes-shock">
-            <ellipse cx="77" cy="114" rx="11" ry="14" fill="#fff" stroke="#2b2340" stroke-width="2.6" />
-            <ellipse cx="123" cy="114" rx="11" ry="14" fill="#fff" stroke="#2b2340" stroke-width="2.6" />
-            <circle cx="77" cy="115" r="3.6" fill="#2b2340" /><circle cx="123" cy="115" r="3.6" fill="#2b2340" />
-          </g>
-          <!-- brows (drawn over hair, anime-style) -->
-          <g class="brows brows-angry" stroke="#c9507e" stroke-width="3" stroke-linecap="round"><path d="M64 96 L86 102" /><path d="M136 96 L114 102" /></g>
-          <g class="brows brows-sad" stroke="#c9507e" stroke-width="3" stroke-linecap="round"><path d="M64 101 L86 95" /><path d="M136 101 L114 95" /></g>
-          <!-- tears -->
-          <g class="tears">
-            <ellipse cx="77" cy="127" rx="10" ry="3" fill="#bfe9ff" opacity=".9" />
-            <ellipse cx="123" cy="127" rx="10" ry="3" fill="#bfe9ff" opacity=".9" />
-            <path class="stream" d="M69 129 Q66 141 70 152" stroke="#8fd3ff" stroke-width="3.2" fill="none" stroke-linecap="round" />
-            <path class="stream" d="M131 129 Q134 141 130 152" stroke="#8fd3ff" stroke-width="3.2" fill="none" stroke-linecap="round" />
-          </g>
-          <!-- glasses (work mode) -->
-          <g class="glasses" stroke="#8a5a44" stroke-width="2.8" fill="rgba(200,230,255,.18)">
-            <circle cx="77" cy="114" r="16.5" /><circle cx="123" cy="114" r="16.5" />
-            <path d="M93.5 111 Q100 106 106.5 111 M60.5 111 L51 106 M139.5 111 L149 106" fill="none" />
-            <path d="M66 104 L71 100 M112 104 L117 100" stroke="#fff" stroke-width="2.2" stroke-linecap="round" />
-          </g>
-
-          <!-- MOUTHS -->
-          <path class="mouth mouth-cat" d="M92 139 Q96 144 100 139 Q104 144 108 139" stroke="#a33c55" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-          <g class="mouth mouth-smile">
-            <path d="M90 137 Q100 152 110 137 Z" fill="#c2405c" stroke="#a33c55" stroke-width="1.5" stroke-linejoin="round" />
-            <path d="M94.5 143.5 Q100 148.5 105.5 143.5 Q100 141 94.5 143.5 Z" fill="#ff8fa3" />
-            <path d="M93 137.5 L95.5 141 L97.5 137.8 Z" fill="#fff" />
-          </g>
-          <ellipse class="mouth mouth-o" cx="100" cy="142" rx="4" ry="4.6" fill="#a33c55" />
-          <path class="mouth mouth-wobble" d="M90 143 Q94 139 98 143 Q102 147 106 143 Q108 141 110 142" stroke="#a33c55" stroke-width="2.6" fill="none" stroke-linecap="round" />
-          <path class="mouth mouth-pout" d="M98 136 Q105 138 99 141.5 Q105 145 98 147" stroke="#a33c55" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-          <path class="mouth mouth-flat" d="M94 141 Q100 143 106 141" stroke="#a33c55" stroke-width="2.6" fill="none" stroke-linecap="round" />
-          <!-- puffed cheek -->
-          <ellipse class="puff" cx="134" cy="136" rx="13" ry="10" fill="#ffd9cc" />
-        </g>
-      </svg>
+      <svg id="kero" class="rig-svg" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
   </div>
+  <script src="../../shared/palette.js"></script>
+  <script src="../../shared/catalog.js"></script>
+  <script src="../../shared/spec.js"></script>
+  <script src="../../shared/rig/kit.js"></script>
+  <script src="../../shared/rig/face.js"></script>
+  <script src="../../shared/rig/hair.js"></script>
+  <script src="../../shared/rig/headwear.js"></script>
+  <script src="../../shared/rig/outfit.js"></script>
+  <script src="../../shared/rig/accessories.js"></script>
+  <script src="../../shared/rig/compose.js"></script>
+  <script src="../shared/rig-view.js"></script>
   <script src="pet.js"></script>
 </body>
 </html>

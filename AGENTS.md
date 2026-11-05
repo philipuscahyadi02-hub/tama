@@ -37,7 +37,8 @@ past decisions → `docs/DECISIONS.md`.
 8. **Persistence only via `platform/store`**: atomic writes, `schemaVersion` on every file, and a migration for any shape change. Never break an existing user's save.
 9. **Secrets only via `platform/secrets`**: never in JSON, logs, errors, exports (unless password-encrypted), or commit history.
 10. **Keep the soul portable**: anything in `tamas/<id>/` must make sense on another PC. Device paths and tokens never go there.
-11. **Data over code** for content: event decks, rig parts, bond tables and unlocks live in `assets/` as JSON/SVG, not hard-coded.
+11. **`src/shared` stays pure** (no Node, Electron or DOM; UMD wrapper) because it runs in both processes (D-020). Any spec from outside (LLM, file, UI) goes through `normalizeSpec`.
+12. **Data over code** for content: event decks, rig parts, bond tables and unlocks live in `assets/` as JSON/SVG, not hard-coded.
 
 ## 2. Code rules
 
@@ -84,4 +85,6 @@ npm run dist       # portable exe
 ```
 Debug env vars: `TAMA_DEBUG=1`, `TAMA_SHOT=<dir>` (screenshots, `TAMA_SHOT_TIMES=ms,ms`), `TAMA_SHOW_TERM=1`,
 `TAMA_DATA_DIR=<dir>` (use a scratch data folder; **always use this when testing** so real saves aren't touched),
-`TAMA_NO_LEGACY=1` (skip kero-pet import), `TAMA_SELFTEST=1` (live summon check, quits when done).
+`TAMA_NO_LEGACY=1` (skip kero-pet import), `TAMA_SELFTEST=1` (live summon check, quits when done),
+`TAMA_GALLERY=designs|moods` (rig gallery window), `TAMA_OFFLINE_DESIGNER=1` (keyword designer, no AI),
+`TAMA_OPEN_ONBOARDING=hatch|restyle|rebirth`, `TAMA_ONBOARD_WALK=<dir>` (scripted onboarding run + screenshots).

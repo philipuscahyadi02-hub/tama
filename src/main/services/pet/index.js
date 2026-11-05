@@ -12,7 +12,7 @@ const SAVE_MS = 10000;
  * @param {{
  *   bus: import('../../bus').BusInstance,
  *   store: import('../../platform/store').Store,
- *   tama: { id: string, name: string },
+ *   tama: { id: string, name: string, stage?: 'egg'|'hatched' },
  *   now?: () => number,
  * }} deps
  */
@@ -20,6 +20,9 @@ function createPetService({ bus, store, tama, now = Date.now }) {
   const file = `tamas/${tama.id}/state.json`;
   /** @type {PetState} */
   let state = store.read(file, 'tama-state', () => logic.defaultState(now()));
+  let name = tama.name;
+  /** An unhatched egg doesn't get hungry or lonely (ONB-1). */
+  let isEgg = tama.stage === 'egg';
   let last = now();
   /** Hours the app was closed before this run (for the "I was lonely" greeting). */
   let hoursAway = 0;
@@ -27,7 +30,7 @@ function createPetService({ bus, store, tama, now = Date.now }) {
   let timer = null;
   const offs = /** @type {Array<() => void>} */ ([]);
 
-  const snapshot = () => ({ tamaId: tama.id, name: tama.name, state, hoursAway });
+  const snapshot = () => ({ tamaId: tama.id, name, egg: isEgg, state, hoursAway });
   const persist = () => store.writeSoon(file, 'tama-state', () => ({ ...state, lastSeen: now() }), SAVE_MS);
 
   /** @param {PetState} next */
@@ -39,6 +42,7 @@ function createPetService({ bus, store, tama, now = Date.now }) {
 
   function tick() {
     const t = now();
+    if (isEgg) { last = t; return; }
     let next = logic.applyTime(state, (t - last) / 3600000);
     last = t;
     const w = logic.autoWake(next);
@@ -46,9 +50,11 @@ function createPetService({ bus, store, tama, now = Date.now }) {
   }
 
   function start() {
-    const caught = logic.catchUp(state, now());
-    state = caught.state;
-    hoursAway = caught.hoursAway;
+    if (!isEgg) {
+      const caught = logic.catchUp(state, now());
+      state = caught.state;
+      hoursAway = caught.hoursAway;
+    }
     last = now();
 
     offs.push(bus.handle(TOPICS.PET_GET, () => snapshot()));
@@ -58,7 +64,16 @@ function createPetService({ bus, store, tama, now = Date.now }) {
       return { ok: r.ok, reason: r.reason, state };
     }));
     offs.push(bus.on(TOPICS.ENGINE_EVENT, (/** @type {{ev: any}} */ { ev }) => {
-      if (ev.t === 'result' && !ev.isError) set(logic.questDone(state));
+      if (ev.t === 'result' && !ev.isError && !isEgg) set(logic.questDone(state));
+    }));
+    offs.push(bus.on(TOPICS.CHARACTER_CHANGED, (/** @type {any} */ c) => {
+      if (c.tamaId !== tama.id) return;
+      name = c.spec.name;
+      isEgg = c.stage === 'egg';
+      hoursAway = 0;
+      if (c.resetState === 'all') set(logic.defaultState(now()));
+      else if (c.resetState === 'keep-bond') set({ ...logic.defaultState(now()), bond: state.bond, xp: state.xp, pats: state.pats });
+      else set(state);
     }));
     timer = setInterval(tick, TICK_MS);
     bus.emit(TOPICS.PET_STATE_CHANGED, snapshot());
