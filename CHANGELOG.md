@@ -103,7 +103,13 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `e71df33` | 2026-11-06 | feat(brain) | M3 lite chat brain, hand-off to Claude Code, read-only agy, budget |
+| `e0aa9fa` | 2026-11-05 | test(engines) | fix JSDoc type in agy engine test |
+| `096380c` | 2026-11-05 | feat(engines) | ACP client, agy engine and PermissionGate (M3a) |
+| `677f2d5` | 2026-11-05 | docs(decisions) | D-026 agy via ACP with Tama-owned settings (supersedes D-007) |
+| `7363bb4` | 2026-11-05 | docs(changelog) | regenerate commit table for v0.3.0 |
 
 ### v0.3.0
 | Commit | Date | Type | Subject |
