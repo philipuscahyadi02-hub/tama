@@ -69,8 +69,14 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
+_No commits._
+
+### v0.2.0
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `847c821` | 2026-11-05 | chore(release) | 0.2.0 |
+| `817a2a5` | 2026-11-05 | docs(decisions) | add D-022, AivisSpeech as the M8 voice engine |
+| `9b8fab9` | 2026-11-05 | docs(changelog) | regenerate commit table |
 | `17a22c0` | 2026-11-05 | feat | M1 character rig, hatching onboarding, restyle and rebirth |
 | `f3757b4` | 2026-11-05 | docs(changelog) | regenerate commit table for v0.1.0 |
 
