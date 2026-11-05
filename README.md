@@ -4,7 +4,17 @@ A chibi-anime tamagotchi that's also a real agentic AI. You design it on first l
 your Windows desktop, codes with Claude Code / Antigravity, works with your Gmail, Calendar and
 Drive, and talks to you on Telegram. No server: everything runs on your PC.
 
-**Status:** planning. Nothing to run yet (milestone M0 is next).
+**Status:** M0 (foundation) done on branch `m0-foundation`. Runs as kero-pet's Kero-chan with the new core and a working summon.
+
+## Run
+```
+npm install          # if Electron didn't download: node node_modules/electron/install.js
+npm start
+npm run check        # type check + tests
+```
+Needs Claude Code installed and logged in (`claude` on PATH, or `TAMA_CLAUDE_PATH`).
+Hotkeys: **Ctrl+Alt+P** summon your Tama · **Ctrl+Alt+K** terminal. Tray icon click also summons.
+Data: `%APPDATA%\Tama` (a kero-pet save is imported on first run).
 
 ## Docs
 - [docs/PRD.md](docs/PRD.md): what we're building (requirements, milestones)

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>Tama</title>
+  <link rel="stylesheet" href="terminal.css" />
+</head>
+<body>
+  <header id="titlebar">
+    <svg class="avatar" viewBox="0 0 40 40" aria-hidden="true">
+      <circle cx="10" cy="9" r="6" fill="#86d36f" /><circle cx="30" cy="9" r="6" fill="#86d36f" />
+      <circle cx="10" cy="8.5" r="3.6" fill="#fff" /><circle cx="30" cy="8.5" r="3.6" fill="#fff" />
+      <circle cx="10.6" cy="9" r="1.8" fill="#2b2340" /><circle cx="29.4" cy="9" r="1.8" fill="#2b2340" />
+      <circle cx="20" cy="22" r="16" fill="#86d36f" />
+      <ellipse cx="20" cy="24" rx="12" ry="11" fill="#ffe6d8" />
+      <path d="M8 23 Q8 13 20 12 Q32 13 32 23 Q29 19 27 17 Q25 22 21 23 Q20 18 18 16 Q15 22 11 23 Q11 20 12 18 Z" fill="#ff8fbf" />
+      <ellipse cx="15.5" cy="26" rx="2.4" ry="3" fill="#2f8f57" /><ellipse cx="24.5" cy="26" rx="2.4" ry="3" fill="#2f8f57" />
+      <circle cx="14.8" cy="25" r=".9" fill="#fff" /><circle cx="23.8" cy="25" r=".9" fill="#fff" />
+      <ellipse cx="12.5" cy="29.5" rx="2.2" ry="1.2" fill="#ff9fb8" /><ellipse cx="27.5" cy="29.5" rx="2.2" ry="1.2" fill="#ff9fb8" />
+    </svg>
+    <span class="title">Kero Code</span>
+    <span id="titleCwd" class="dim"></span>
+    <span class="spacer"></span>
+    <button class="wbtn" id="wMin" title="Minimize">─</button>
+    <button class="wbtn" id="wMax" title="Maximize">☐</button>
+    <button class="wbtn close" id="wClose" title="Hide (Ctrl+Alt+K)">✕</button>
+  </header>
+
+  <main id="screen">
+    <div id="transcript"></div>
+    <div id="spinner" class="hidden"><span id="spinGlyph">✻</span> <span id="spinVerb">Kero-ing…</span> <span id="spinMeta" class="dim"></span></div>
+  </main>
+
+  <footer id="bottom">
+    <div id="perm" class="hidden"></div>
+    <div id="slash" class="hidden"></div>
+    <div id="inputBox">
+      <span class="caret">&gt;</span>
+      <textarea id="input" rows="1" spellcheck="false" placeholder='Try "explain this repo" · /help for commands'></textarea>
+    </div>
+    <div id="hints">
+      <span id="modeHint"></span>
+      <span class="spacer"></span>
+      <span id="statusLine" class="dim"></span>
+    </div>
+  </footer>
+  <script src="terminal.js"></script>
+</body>
+</html>

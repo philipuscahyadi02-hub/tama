@@ -82,4 +82,6 @@ npm start          # run the app (dev)
 npm run check      # tsc --checkJs + node --test
 npm run dist       # portable exe
 ```
-Debug env vars: `TAMA_DEBUG=1`, `TAMA_SHOT=<dir>` (screenshots), `TAMA_SHOW_TERM=1`.
+Debug env vars: `TAMA_DEBUG=1`, `TAMA_SHOT=<dir>` (screenshots, `TAMA_SHOT_TIMES=ms,ms`), `TAMA_SHOW_TERM=1`,
+`TAMA_DATA_DIR=<dir>` (use a scratch data folder; **always use this when testing** so real saves aren't touched),
+`TAMA_NO_LEGACY=1` (skip kero-pet import), `TAMA_SELFTEST=1` (live summon check, quits when done).

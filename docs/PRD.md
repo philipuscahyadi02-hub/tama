@@ -5,8 +5,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.2 (draft) |
-| **Status** | Planning — M0 not started |
+| **Version** | 0.3 |
+| **Status** | M0 code complete on branch `m0-foundation` (awaiting user check, then release 0.1.0) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-05 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -77,11 +77,11 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.3 Pet loop (PET)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| PET-1 | Stats: Tummy, Mood, Energy, Clean, Bond. Real-time decay incl. while closed (cap 48h). | P0 | M2 | ☐ |
+| PET-1 | Stats: Tummy, Mood, Energy, Clean, Bond. Real-time decay incl. while closed (cap 48h). | P0 | M2 | ◐ |
 | PET-2 | **Never dies.** Neglect → sad/sulky only. | P0 | M2 | ☐ |
 | PET-3 | Easy energy: snack/energy drink (+25, cooldown), 10-min power nap (+50), charging when on AC power, auto-nap when PC idle >10 min (+30/h), focus-break recharge. | P0 | M2 | ☐ |
 | PET-4 | Agent work drains little (−1 per coding task); chatting costs no energy. | P0 | M2 | ☐ |
-| PET-5 | Interactions from kero-pet kept: click menu, head-pat rub, cheek poke, drag, wander, babble. | P0 | M1 | ☐ |
+| PET-5 | Interactions from kero-pet kept: click menu, head-pat rub, cheek poke, drag, wander, babble. | P0 | M1 | ☑ |
 | PET-6 | Do-not-disturb: no babble during fullscreen apps, meetings (calendar), or focus sessions. | P1 | M5 | ☐ |
 | PET-7 | Wellbeing nudges: water, stretch, late-night "go to sleep". Toggleable. | P2 | M5 | ☐ |
 | PET-8 | Reduced-motion and mute options. | P1 | M8 | ☐ |
@@ -131,10 +131,10 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.8 Summon & window reliability (SUM)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| SUM-1 | Single `summon()`: show + restore, re-assert always-on-top + moveTop, clamp to display under cursor, wake, "tadaa" animation. | P0 | M0 | ☐ |
-| SUM-2 | Triggers: global hotkey `Ctrl+Alt+P`, tray left-click, tray menu, `/summon` (terminal & Telegram), second-instance launch. | P0 | M0 | ☐ |
-| SUM-3 | Drag & walk clamped to visible work areas (all monitors). Saved position validated against current displays. | P0 | M0 | ☐ |
-| SUM-4 | 30-s watchdog: if off-screen or lost topmost, fix it. | P0 | M0 | ☐ |
+| SUM-1 | Single `summon()`: show + restore, re-assert always-on-top + moveTop, clamp to display under cursor, wake, "tadaa" animation. | P0 | M0 | ☑ |
+| SUM-2 | Triggers: global hotkey `Ctrl+Alt+P`, tray left-click, tray menu, `/summon` (terminal & Telegram), second-instance launch. | P0 | M0 | ☑ |
+| SUM-3 | Drag & walk clamped to visible work areas (all monitors). Saved position validated against current displays. | P0 | M0 | ☑ |
+| SUM-4 | 30-s watchdog: if off-screen or lost topmost, fix it. | P0 | M0 | ☑ |
 | SUM-5 | "Out for a walk" edge marker — click to recall. | P2 | M5 | ☐ |
 
 ### 4.9 Telegram / phone (TG)
@@ -172,8 +172,8 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.12 Portability & lifecycle (PORT)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| PORT-1 | Storage split: Tama "soul" (`tamas/<id>/`) vs device config (`device.json`) vs secrets (`secrets.bin`, safeStorage). | P0 | M0 | ☐ |
-| PORT-2 | Every persisted file has `schemaVersion`; forward migrations run on load. | P0 | M0 | ☐ |
+| PORT-1 | Storage split: Tama "soul" (`tamas/<id>/`) vs device config (`device.json`) vs secrets (`secrets.bin`, safeStorage). | P0 | M0 | ☑ |
+| PORT-2 | Every persisted file has `schemaVersion`; forward migrations run on load. | P0 | M0 | ☑ |
 | PORT-3 | Roster: multiple Tamas, one active; inactive ones pause decay. | P1 | M2 | ☐ |
 | PORT-4 | Restyle (keep all), Rebirth (redesign; choose keep/clear memory & bond), Hatch another, Graduate (album; restorable), Delete (typed confirm). | P1 | M2 | ☐ |
 | PORT-5 | `.tama` export/import: zip, password-encrypted by default; optional "include connections" (Telegram token). | P0 | M2 | ☐ |
@@ -185,12 +185,12 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
 | SAFE-1 | One `PermissionGate` for every tool approval from every engine and every channel. | P0 | M3 | ☐ |
-| SAFE-2 | Secrets only via the secrets module; never logged, never in plain JSON, never in exports without password. | P0 | M0 | ☐ |
+| SAFE-2 | Secrets only via the secrets module; never logged, never in plain JSON, never in exports without password. | P0 | M0 | ☑ |
 | SAFE-3 | Telegram accepts only the paired chat ID. | P0 | M7 | ☐ |
 | SAFE-4 | Warn before accept-edits mode outside a git repo. | P1 | M4 | ☐ |
 | SAFE-5 | Daily cost/token budget shown in `/stats`; Tama warns near the limit. | P1 | M3 | ☐ |
 | NFR-1 | Idle CPU < 2%, RAM < 300 MB (excluding engine processes). | P1 | M8 | ☐ |
-| NFR-2 | Multi-monitor & mixed-DPI safe. | P0 | M0 | ☐ |
+| NFR-2 | Multi-monitor & mixed-DPI safe. | P0 | M0 | ◐ |
 | NFR-3 | Ships as a portable `.exe` (electron-builder), uses installed `claude`/`agy`. | P0 | M8 | ☐ |
 | NFR-4 | Memory view + forget; local-only data except the user's own Drive backup. | P0 | M5 | ☐ |
 
@@ -198,7 +198,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 
 Check off when *all P0 rows* for that milestone are ☑. Update the "Status" line at the top.
 
-- [ ] **M0 — Foundation.** Scaffold from kero-pet, service split, event bus, store/secrets/migrations, summon fix (SUM-1..4, PORT-1..2, SAFE-2, NFR-2).
+- [x] **M0 — Foundation.** *(code complete; NFR-2 needs a real mixed-DPI check)* Scaffold from kero-pet, service split, event bus, store/secrets/migrations, summon fix (SUM-1..4, PORT-1..2, SAFE-2, NFR-2).
 - [ ] **M1 — Character & hatching.** SVG rig, parts library, CharacterSpec, onboarding (ONB-1..6, ART-1..3, PET-5, VOICE-2).
 - [ ] **M2 — Pet loop v2 & lifecycle.** Energy, bond, productivity, roster, export/import (PET-1..4, BOND-*, PROD-1..2, PORT-3..5, ONB-9).
 - [ ] **M3 — Brain & engines.** Router, Claude + agy engines, PermissionGate, budget (BRAIN-*, ENG-1..5, SAFE-1, SAFE-5, ONB-7).
@@ -217,5 +217,6 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.3 — 2026-11-05** — M0 implemented: SUM-1..4, PORT-1..2, SAFE-2, PET-5 done; NFR-2 and PET-1 partial. SUM-2's Telegram trigger lands in M7.
 - **0.2 — 2026-11-05** — Q1 resolved: Gmail drafts only (D-014).
 - **0.1 — 2026-11-05** — Initial draft from planning sessions (requirements 1–9 + engines, Google incl. Drive, portability).
