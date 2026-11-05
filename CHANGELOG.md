@@ -15,6 +15,9 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
 
 ## [Unreleased]
+_Nothing yet._
+
+## [0.3.0] — 2026-11-05 — M2 Pet loop v2 & lifecycle
 ### Added
 - **M2 pet loop v2 & lifecycle** (branch `m2-pet-loop`):
   - **Easy energy (PET-3/4):** ⚡ snack (+25, 20-min cooldown), 💤 10-min power nap (+50), bedtime sleep, auto-nap while you're away or the screen is locked, charging on AC, resting while the app is closed; agent tasks cost only 1 energy; gentler decay.
