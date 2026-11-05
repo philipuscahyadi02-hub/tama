@@ -15,7 +15,26 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
 
 ## [Unreleased]
-_Nothing yet._
+### Added
+- **M3 brain & engines** (branch `m3-brain`):
+  - **Chat brain** (♡): Gemini Flash via `agy` (read-only plan mode) in your Tama's persona, aware of her stats and your day; falls back to Claude Haiku. Plain chat uses no Claude tokens.
+  - **Hand-off:** real work requests are passed to Claude Code automatically (the chat brain replies `[[ESCALATE]]`, which is never shown).
+  - **agy reviewer** (◆): `@agy …` or budget fallback; read-only review & plan; warns if files change anyway.
+  - **PermissionGate:** one place for every tool approval; chat brain tools are auto-denied.
+  - **Budget:** daily Claude usage (≈USD), 75% warning, auto read-only agy fallback when Claude is tight or rate-limited; `/budget`.
+  - Terminal: `/auto /chat /code`, `@chat @code @claude @agy`, `/engine`, `/engines`, `/budget`; ♡/●/◆ markers. Pet: chat replies in her speech bubble, brain notices.
+  - Onboarding shows which brains were found (ONB-7).
+  - `npm run probe:agy` re-checks agy's safety behavior against the real CLI.
+### Changed
+- The M0 engine host is replaced by `src/main/brain`. Claude Code permission prompts go through the gate.
+- Chatting no longer needs a project folder; only real work does.
+- Test runs with `TAMA_DATA_DIR` use their own Electron profile.
+### Fixed
+- Pet tests could keep the test runner alive after a failure; `npm test` now has per-test timeouts.
+### Decisions
+- D-026 — agy via ACP with Tama-owned settings (worker part superseded).
+- D-027 — agy is read-only (plan mode) everywhere; edits only via Claude Code.
+- D-028 — Brain design.
 
 ## [0.3.0] — 2026-11-05 — M2 Pet loop v2 & lifecycle
 ### Added

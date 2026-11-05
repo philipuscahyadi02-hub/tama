@@ -20,6 +20,8 @@ class AgyEngine {
    *   persona?: string,
    *   model?: string | null,
    *   thoughtLevel?: 'low'|'medium'|'high',
+   *   mode?: 'default'|'acceptEdits'|'plan',
+   *   lockMode?: boolean,
    *   spawnAgent?: (cwd: string) => any,
    *   prepare?: () => void,
    * }} opts
@@ -34,7 +36,11 @@ class AgyEngine {
     this.spawnAgent = opts.spawnAgent || defaultSpawn;
     this.prepare = opts.prepare || (() => { ensureTamaAgySettings(); });
     /** @type {string | null} */ this.cwd = null;
-    this.mode = 'default';
+    /** @type {string} */
+    this.mode = opts.mode || 'default';
+    /** Locked engines ignore mode changes (D-027: agy always runs in read-only plan mode). */
+    /** @type {string | null} */
+    this.lockedMode = opts.lockMode ? this.mode : null;
     /** @type {string | null} */ this.sessionId = null;
     /** @type {import('../acp/client').AcpClient | null} */ this.client = null;
     this.busy = false;
@@ -53,6 +59,7 @@ class AgyEngine {
 
   /** @param {string} mode */
   async setMode(mode) {
+    if (this.lockedMode) mode = this.lockedMode;
     this.mode = mode;
     if (this.client && this.sessionId) {
       try { await this.client.request('session/set_mode', { sessionId: this.sessionId, modeId: MODE_MAP[/** @type {keyof typeof MODE_MAP} */ (mode)] || 'default' }); } catch (e) { this.emitError(e); }

@@ -35,8 +35,10 @@ const TOPICS = {
   PROD_REMINDER_DUE: 'prod.reminder.due',
   /** { repo, subject } — a new commit by the user in a watched repo (bond XP awarded) */
   PROD_COMMIT_SEEN: 'prod.commit.seen',
-  /** { engine: string, ev: EngineEvent } */
+  /** { engine: 'claude'|'agy'|'tama', role: 'worker'|'lite'|'brain', ev: EngineEvent } */
   ENGINE_EVENT: 'engine.event',
+  /** { text, kind: 'info'|'warn' } — brain messages worth a pet bubble (fallbacks, budget, agy warning) */
+  BRAIN_NOTICE: 'brain.notice',
   /** { reason: string } — pet window was brought back on screen by summon() */
   SUMMON_DONE: 'summon.done',
   /** { action: 'feed'|'play'|'snack'|'sleep' } — care action chosen from the tray menu */
@@ -112,8 +114,12 @@ const TOPICS = {
   ENGINE_SET_MODEL: 'engine.setModel',
   /** dir → { t:'cwd', cwd, isGit } | { error } */
   ENGINE_SET_CWD: 'engine.setCwd',
-  /** { id, choice, feedback } → void   (moves to brain/PermissionGate in M3) */
+  /** { id, choice: 'yes'|'always'|'no', feedback? } → boolean — answered by brain/PermissionGate (SAFE-1) */
   ENGINE_ANSWER_PERMISSION: 'engine.answerPermission',
+  /** () → { chatMode, codeEngine, liteEngine, available, usage, dailyClaudeUsd, claudeTight } */
+  BRAIN_STATUS: 'brain.status',
+  /** { chatMode?, codeEngine?, liteEngine?, dailyClaudeUsd? } → status */
+  BRAIN_SET: 'brain.set',
   /** sessionId|null → { ok } | { error } */
   ENGINE_RESUME: 'engine.resume',
   /** { reason } → void — bring the pet back on screen */

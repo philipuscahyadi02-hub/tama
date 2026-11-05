@@ -122,6 +122,10 @@ test('migration: kero-pet bond 13 → 156 XP (Acquaintance), new fields added', 
 });
 
 // ---------------- service ----------------
+/** Services started by tests; always stopped so their timers can't keep the test run alive. */
+const services = /** @type {Array<{ stop: () => void }>} */ ([]);
+test.after(() => { for (const x of services) { try { x.stop(); } catch { /* already stopped */ } } });
+
 function setup() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tama-pet-'));
   const bus = new Bus();
@@ -129,6 +133,7 @@ function setup() {
   let t = T0;
   const svc = createPetService({ bus, store, tama: { id: 't1', name: 'Mochi' }, now: () => t });
   svc.start();
+  services.push(svc);
   return { bus, store, svc, advance: (/** @type {number} */ ms) => { t += ms; } };
 }
 
@@ -140,7 +145,9 @@ test('service: productivity awards bond and announces it; care-only sources are 
   assert.equal(r.gained, 4); // 3 + day-1 streak
   assert.equal(events[0].source, 'focus');
   assert.equal((await bus.request('pet.award', { source: 'pat' })).gained, 0);
-  bus.emit('engine.event', { engine: 'claude', ev: { t: 'result', isError: false } });
+  bus.emit('engine.event', { engine: 'claude', role: 'lite', ev: { t: 'result', isError: false } });
+  assert.equal(svc.getState().xp, 0); // chatting is not a quest
+  bus.emit('engine.event', { engine: 'claude', role: 'worker', ev: { t: 'result', isError: false } });
   assert.equal(svc.getState().xp, 1);
   svc.stop();
 });
@@ -152,7 +159,7 @@ test('service: idle → auto-nap, back → wake; failed agent task gives nothing
   bus.emit('device.idle.changed', { idle: false, idleSeconds: 0 });
   assert.equal(svc.getState().asleep, false);
   const xp = svc.getState().bondXp;
-  bus.emit('engine.event', { engine: 'claude', ev: { t: 'result', isError: true } });
+  bus.emit('engine.event', { engine: 'claude', role: 'worker', ev: { t: 'result', isError: true } });
   assert.equal(svc.getState().bondXp, xp);
   await bus.request('pet.act', { action: 'clean' });
   svc.stop();

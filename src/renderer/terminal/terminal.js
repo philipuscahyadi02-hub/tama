@@ -173,7 +173,12 @@ function flushText() {
   if (st.textEl) { st.textEl.querySelector('.body').innerHTML = md(st.textBuf); scroll(); }
 }
 
+/** Who is talking: ♡ chat brain, ● Claude Code, ◆ agy (M3; full badges come with the M4 terminal). */
+const dotFor = (ev) => (ev.role === 'lite' ? '♡' : ev.engine === 'agy' ? '◆' : '●');
 K.onAgent((ev) => {
+  // Only Claude Code drives the status bar (mode/model/session). The chat brain and the read-only
+  // agy reviewer have their own sessions whose housekeeping must not overwrite it.
+  if ((ev.role === 'lite' || ev.engine === 'agy') && ['init', 'session', 'mode', 'model', 'cwd'].includes(ev.t)) return;
   switch (ev.t) {
     case 'status':
       if (ev.state === 'idle') setBusy(false);
@@ -181,11 +186,11 @@ K.onAgent((ev) => {
       break;
     case 'text-start':
       endText();
-      st.textEl = add('<span class="dot">●</span><div class="body md"></div>', 'msg');
+      st.textEl = add(`<span class="dot">${dotFor(ev)}</span><div class="body md"></div>`, ev.role === 'lite' ? 'msg lite' : 'msg');
       st.textBuf = '';
       break;
     case 'text-delta':
-      if (!st.textEl) st.textEl = add('<span class="dot">●</span><div class="body md"></div>', 'msg');
+      if (!st.textEl) st.textEl = add(`<span class="dot">${dotFor(ev)}</span><div class="body md"></div>`, ev.role === 'lite' ? 'msg lite' : 'msg');
       st.textBuf += ev.text;
       if (!rafPending) { rafPending = true; requestAnimationFrame(flushText); }
       break;
@@ -227,6 +232,7 @@ K.onAgent((ev) => {
       break;
     case 'result': {
       endText();
+      if (ev.role === 'lite') { setBusy(false); break; } // chat replies don't need a "Done in…" line
       for (const t of st.tools.values()) t.el.classList.remove('running');
       st.totalCost = ev.totalCost || st.totalCost;
       if (ev.isError && ev.subtype !== 'success') {
@@ -417,7 +423,7 @@ function submit() {
     LOCAL[m[1]][1](m[2].trim());
     return;
   }
-  if (!st.cwd) { add(esc(text), 'user'); error('✗ Pick a project folder first: /cd'); return; }
+  // No folder check here: chat needs none; the brain asks for /cd only when real work needs one (M3).
   add(esc(text) + (st.busy ? ' <span class="q">(queued)</span>' : ''), 'user');
   scroll(true);
   K.send(text);

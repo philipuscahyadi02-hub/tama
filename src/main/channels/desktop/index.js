@@ -40,8 +40,10 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboardi
       toAll('reminder', p);
       shell.notify('⏰ Reminder', String(p.text));
     });
-    bus.on(TOPICS.ENGINE_EVENT, ({ ev }) => {
-      toAll('agent.event', ev);
+    bus.on(TOPICS.BRAIN_NOTICE, (p) => ipc.sendUi(pet.win, 'brain.notice', p));
+    bus.on(TOPICS.ENGINE_EVENT, ({ ev, engine, role }) => {
+      toAll('agent.event', { ...ev, engine, role });
+      if (role !== 'worker') return;
       // Tell the user via Windows notifications when they can't see the terminal.
       if (!term.isHidden()) return;
       if (ev.t === 'permission') shell.notify('Tama needs permission 🥺', `${ev.name}: open the terminal to answer`);
@@ -62,6 +64,11 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboardi
     ipc.on('summon', () => summon('ui'));
     ipc.handle('character:get', () => bus.request(TOPICS.CHARACTER_GET));
     // ---- productivity (pet + terminal) ----
+    ipc.handle('brain:status', () => bus.request(TOPICS.BRAIN_STATUS));
+    ipc.handle('brain:set', (p) => bus.request(TOPICS.BRAIN_SET, {
+      chatMode: p?.chatMode, codeEngine: p?.codeEngine, liteEngine: p?.liteEngine,
+      dailyClaudeUsd: p?.dailyClaudeUsd == null ? undefined : Number(p.dailyClaudeUsd),
+    }));
     ipc.handle('prod:get', () => bus.request(TOPICS.PROD_GET));
     ipc.handle('prod:todoAdd', (t) => bus.request(TOPICS.PROD_TODO_ADD, { text: String(t || '') }));
     ipc.handle('prod:todoDone', (ref) => bus.request(TOPICS.PROD_TODO_DONE, { ref }));

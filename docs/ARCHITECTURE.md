@@ -80,8 +80,11 @@ src/main/
   platform/power.js        AC/battery + idle/lock → bus (easy energy)
   platform/git.js          read-only git log / user.email
   platform/files.js        whole-file read/write for user-picked paths
-  engines/index.js         engine host (bus handlers, engine settings in device.json)
-  engines/claude/          session (Agent SDK), map-message (pure), find-exe, input-queue
+  brain/                   M3: index.js (owns engines, routes, engine.* requests), router.js (pure rules),
+                           persona.js, budget.js, permission-gate.js (SAFE-1)
+  engines/claude/          session (Agent SDK; worker + lite profiles), map-message (pure), find-exe, input-queue, oneshot
+  engines/acp/client.js    generic Agent Client Protocol JSON-RPC client
+  engines/agy/             AgyEngine (ACP, plan mode locked), map-update (pure), setup (exe + Tama-owned settings)
   channels/desktop/        renderer IPC ↔ bus
   dev/selftest.js          TAMA_SELFTEST live summon check
   dev/onboarding-walk.js   TAMA_ONBOARD_WALK scripted onboarding run with screenshots (M1)
@@ -112,7 +115,8 @@ renderer  ──IPC──►  channels/desktop  ──►  bus  ◄──  servi
                                                      platform ◄── anyone in main
 ```
 - `services/*` may import: other services' **public `index.js`**, `bus`, `platform/store`. **Never** `electron`, never `engines/*` directly (they ask the brain via the bus).
-- `engines/*` may import: `platform/*`, `bus`. Never services, never channels.
+- `engines/*` may import: `platform/*`, `bus`, `brain/permission-gate` (type only). Never services, never channels.
+- `brain/*` may import `engines/*`, `platform/*`, `bus`. Services and channels reach the brain only via bus topics.
 - `channels/*` translate between the outside world and bus messages. No business rules in channels.
 - `renderer/*` never imports Node; only `window.tama.*` from preload.
 - Only `platform/*` imports `electron`, `fs`, `child_process` for app data. (Engines may spawn their CLI.)
@@ -136,6 +140,9 @@ Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,d
 Renderer messages arrive on one `ui` IPC channel: `pet.state`, `pet.bond`, `prod`, `focus`, `reminder`, `commit`, `summon`, `tray`, `agent.event`, `term.focus`, `character`.
 
 ## 5. Engine contract
+
+Events reach the bus as `{ engine: 'claude'|'agy'|'tama', role: 'worker'|'lite'|'brain', ev }` (D-028). Permission requests
+are raised by `brain/permission-gate`, not by engines.
 
 ```js
 /** @interface Engine */

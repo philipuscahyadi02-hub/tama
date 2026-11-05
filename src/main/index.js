@@ -21,7 +21,15 @@ const git = require('./platform/git');
 const { askJson } = require('./engines/claude/oneshot');
 const { openPage } = require('./platform/windows/page-window');
 const { createPetService } = require('./services/pet');
-const { createEngineHost } = require('./engines');
+const { createBrain } = require('./brain');
+const { createPermissionGate } = require('./brain/permission-gate');
+const { ClaudeCodeEngine, CLAUDE_EXE } = require('./engines/claude/session');
+const { AgyEngine } = require('./engines/agy/session');
+const { findAgyExecutable } = require('./engines/agy/setup');
+const pathMod = require('path');
+
+const AGY_REVIEWER = 'You are a read-only reviewer and planner inside the Tama app. You cannot edit files or run commands. '
+  + 'Analyze, explain, review and propose concrete step-by-step plans or diffs in your reply; the user will hand edits to Claude Code.';
 const { createDesktopChannel } = require('./channels/desktop');
 
 const HOTKEYS = { summon: 'CommandOrControl+Alt+P', terminal: 'CommandOrControl+Alt+K' };
@@ -45,7 +53,19 @@ function boot() {
   stoppers.push(roster.start(active));
   const petService = createPetService({ bus, store, tama: active });
   const device = createDeviceSettings(store);
-  const engines = createEngineHost({ bus, device, tamaName: active.name });
+  // Brain (M3): lite chat brain + coding workers behind one PermissionGate (D-026, D-027).
+  const gate = createPermissionGate({ bus });
+  const brain = createBrain({
+    bus, device, gate, git, scratchDir: pathMod.join(appShell.paths.data(), 'agy-workspace'),
+    available: { claude: !!CLAUDE_EXE, agy: !!findAgyExecutable() },
+    factories: {
+      claudeWorker: (emit) => new ClaudeCodeEngine(emit, { role: 'worker', gate, tamaName: active.name }),
+      claudeLite: (emit, persona) => new ClaudeCodeEngine(emit, { role: 'lite', gate, persona, model: 'haiku' }),
+      // agy always runs in read-only PLAN mode (verified: no commands, no file writes; npm run probe:agy, D-027).
+      agyWorker: (emit) => new AgyEngine(emit, { role: 'worker', gate, mode: 'plan', lockMode: true, persona: AGY_REVIEWER }),
+      agyLite: (emit, persona) => new AgyEngine(emit, { role: 'lite', gate, persona, model: 'gemini-3.8-flash-low', thoughtLevel: 'low', mode: 'plan', lockMode: true }),
+    },
+  });
 
   // ---- windows ----
   const win = device.get().windows || {};
@@ -87,7 +107,7 @@ function boot() {
     ],
   });
   const failed = shell.registerHotkeys({ [HOTKEYS.summon]: () => summon('hotkey'), [HOTKEYS.terminal]: () => term.toggle() });
-  if (failed.length) shell.notify('Tama', `Hotkey already in use by another app: ${failed.join(', ')}`);
+  if (failed.length && !process.env.TAMA_DATA_DIR) shell.notify('Tama', `Hotkey already in use by another app: ${failed.join(', ')}`);
 
   petService.start();
   // Productivity (PROD-1/2): todos, focus timer, reminders, notes, git commit watcher.
@@ -97,9 +117,9 @@ function boot() {
     onPower: (onAC) => bus.emit(TOPICS.DEVICE_POWER_CHANGED, { onAC }),
     onIdle: (idle, idleSeconds) => bus.emit(TOPICS.DEVICE_IDLE_CHANGED, { idle, idleSeconds }),
   }));
-  engines.start();
+  stoppers.push(brain.start());
   summoner.startWatchdog();
-  stoppers.push(() => summoner.stop(), () => engines.stop(), () => petService.stop(), () => store.flush(), shell.unregisterHotkeys);
+  stoppers.push(() => summoner.stop(), () => petService.stop(), () => store.flush(), shell.unregisterHotkeys);
 
   secondInstance = () => summon('second-instance');
   if (process.env.TAMA_SHOW_TERM) term.show();

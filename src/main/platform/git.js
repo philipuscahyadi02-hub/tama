@@ -35,4 +35,10 @@ async function recentCommits(repo, n = 30) {
   }) : [];
 }
 
-module.exports = { isRepo, userEmail, recentCommits };
+/** Paths changed in the working tree ("M src/a.js", "?? new.txt"). @param {string} repo */
+async function changedFiles(repo) {
+  const out = await git(repo, ['status', '--porcelain', '--untracked-files=normal']);
+  return out ? out.split('\n').map((l) => `${l.slice(0, 2).trim()} ${l.slice(3)}`.trim()) : [];
+}
+
+module.exports = { isRepo, userEmail, recentCommits, changedFiles };

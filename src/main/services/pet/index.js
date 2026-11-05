@@ -82,8 +82,9 @@ function createPetService({ bus, store, tama, now = Date.now }) {
         if (isEgg || !['commit', 'focus', 'todo', 'calendar'].includes(source)) return { gained: 0 };
         return applyBond(bond.award(state, source, now()), source);
       }),
-      bus.on(TOPICS.ENGINE_EVENT, (/** @type {{ev: any}} */ { ev }) => {
-        if (ev.t === 'result' && !ev.isError && !isEgg) applyBond(logic.questDone(state, now()), 'agent');
+      bus.on(TOPICS.ENGINE_EVENT, (/** @type {{ev: any, role?: string}} */ { ev, role }) => {
+        // Only real agent work counts as a quest; chat with the lite brain does not (PET-4).
+        if (ev.t === 'result' && !ev.isError && !isEgg && role === 'worker') applyBond(logic.questDone(state, now()), 'agent');
       }),
       bus.on(TOPICS.DEVICE_POWER_CHANGED, (/** @type {{onAC: boolean}} */ { onAC }) => { charging = onAC; bus.emit(TOPICS.PET_STATE_CHANGED, snapshot()); }),
       bus.on(TOPICS.DEVICE_IDLE_CHANGED, (/** @type {{idle: boolean}} */ { idle }) => {

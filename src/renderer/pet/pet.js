@@ -390,7 +390,20 @@ const TOOL_LINES = {
 };
 const short = (s) => String(s || '').split(/[\\/]/).pop().slice(0, 28);
 let lastToolSay = 0;
+T.onBrainNotice((n) => { if (!isEgg) { emote(n.kind === 'warn' ? '💭' : '✨', 1800); say(n.text, 6000); } });
+let liteReply = '';
 T.onAgent((ev) => {
+  if (ev.role === 'lite') {
+    // Chat brain: show the reply in the bubble (desktop chat), no quest celebration (PET-4).
+    if (ev.t === 'text-start') liteReply = '';
+    else if (ev.t === 'text-delta') liteReply += ev.text;
+    else if (ev.t === 'result' && !ev.isError && liteReply.trim()) {
+      const t = liteReply.trim();
+      say(t.length > 220 ? `${t.slice(0, 217)}…` : t, Math.min(14000, 4000 + t.length * 45), { force: true });
+    }
+    return;
+  }
+  if (ev.role === 'brain') return;
   switch (ev.t) {
     case 'status':
       if (ev.state !== agentState) {

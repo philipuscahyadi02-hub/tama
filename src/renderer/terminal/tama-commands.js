@@ -26,6 +26,12 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
     '  /note [text]     jot a note (no text = recent notes)',
     '  /watch [here|path]   earn bond from your commits in a repo (no arg = list) · /unwatch <here|path>',
     '  /feed  /snack  /nap  take care of your Tama · /tama  My Tamas (switch, hatch, export, import)',
+    '',
+    '  Brain   ♡ chat brain (cheap)  ● Claude Code (edits, asks first)  ◆ agy (read-only review & plan)',
+    '  /auto           chat brain answers, hands real work to a coding agent (default)',
+    '  /chat  /code    always chat brain / always coding agent     @chat @code @claude @agy <msg>  one-off',
+    '  /engine [auto|claude|agy]   work agent (auto = Claude; agy reviews/plans when Claude is tight)',
+    '  /engine chat [auto|agy|claude]   chat brain engine · /engines  status · /budget [usd]  daily Claude budget',
   ];
 
   return {
@@ -69,6 +75,31 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
       unwatch: ['Stop watching a repo', async (arg) => {
         const target = arg === 'here' || !arg ? getCwd() : arg;
         show(await P.watchRemove(target), () => `⎿  stopped watching ${target}`);
+      }],
+      auto: ['Chat brain answers and hands real work to a coding agent', async () => { await K.brain.set({ chatMode: 'auto' }); info('⎿  ♡ auto: I chat, and hand real work to a coding agent'); }],
+      chat: ['Always talk to the chat brain', async () => { await K.brain.set({ chatMode: 'chat' }); info('⎿  ♡ chat mode: just us talking (use @code for work)'); }],
+      code: ['Always send to the coding agent', async () => { await K.brain.set({ chatMode: 'code' }); info('⎿  ● code mode: everything goes to the coding agent (use @chat to talk)'); }],
+      engine: ['Pick the coding agent / chat engine', async (arg) => {
+        const [a, b] = String(arg || '').split(/\s+/);
+        if (a === 'chat' && ['auto', 'agy', 'claude'].includes(b)) { await K.brain.set({ liteEngine: b }); return info(`⎿  chat brain engine: ${b}`); }
+        if (['auto', 'claude', 'agy'].includes(a)) { await K.brain.set({ codeEngine: a }); return info(`⎿  work agent: ${a}${a === 'agy' ? ' (read-only: reviews and plans; use @claude for edits)' : ''}`); }
+        const s = await K.brain.status();
+        info(`⎿  coding agent: ${s.codeEngine} · chat brain: ${s.liteEngine} · mode: ${s.chatMode}  (/engine auto|claude|agy · /engine chat auto|agy|claude)`);
+      }],
+      engines: ['Show brain status', async () => {
+        const s = await K.brain.status();
+        const u = s.usage;
+        info([
+          `  Claude Code   ${s.available.claude ? '✓ found' : '✗ not found'}    agy   ${s.available.agy ? '✓ found' : '✗ not found'}`,
+          `  chat brain    ${s.liteEngine} (preference: ${s.litePreference})    coding agent: ${s.codeEngine}    mode: ${s.chatMode}`,
+          `  today         Claude ${u.claudeTurns} turns ≈$${u.claudeUsd.toFixed(2)} / $${s.dailyClaudeUsd} · agy ${u.agyTurns} turns · chat ${u.liteTurns} turns`,
+          s.claudeTight.tight ? `  ⚠ Claude is resting: ${s.claudeTight.reason} (auto mode lets agy review/plan, read-only)` : '',
+        ].filter(Boolean).join('\n'));
+      }],
+      budget: ['Daily Claude budget (USD, API-equivalent)', async (arg) => {
+        if (arg) { const s = await K.brain.set({ dailyClaudeUsd: Number(arg) }); return info(`⎿  daily Claude budget: $${s.dailyClaudeUsd}`); }
+        const s = await K.brain.status();
+        info(`⎿  Claude today ≈$${s.usage.claudeUsd.toFixed(2)} of $${s.dailyClaudeUsd} (API-equivalent estimate). /budget <usd> to change, 0 = no limit.`);
       }],
       tama: ['My Tamas: switch, hatch, graduate, export, import', () => { K.openRoster(false); info('⎿  opened My Tamas'); }],
       feed: ['Feed your Tama', async () => show(await K.act('feed'), (r) => (r.ok ? '⎿  🍙 itadakimasu!' : `⎿  (${r.reason})`))],
