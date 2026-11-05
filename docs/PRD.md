@@ -6,7 +6,7 @@
 | | |
 |---|---|
 | **Version** | 0.3 |
-| **Status** | M0 code complete on branch `m0-foundation` (awaiting user check, then release 0.1.0) |
+| **Status** | v0.1.0 released (M0). M1 in progress on `m1-character` |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-05 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |

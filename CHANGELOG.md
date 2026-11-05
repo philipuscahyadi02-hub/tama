@@ -15,6 +15,9 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
 
 ## [Unreleased]
+_Nothing yet._
+
+## [0.1.0] — 2026-11-05 — M0 Foundation
 ### Added
 - **M0 foundation** (branch `m0-foundation`): Electron app ported from kero-pet into the layered layout (platform / services / engines / channels / renderer).
 - Event bus + topic registry; atomic JSON store with `schemaVersion` migrations; single-writer `device.json`; safeStorage secrets module (SAFE-2, PORT-1, PORT-2).
