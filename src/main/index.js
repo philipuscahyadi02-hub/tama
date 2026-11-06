@@ -13,7 +13,7 @@ const { createSummoner } = require('./platform/summon');
 const ipc = require('./platform/ipc');
 const shell = require('./platform/shell');
 const files = require('./platform/files');
-const { watchPower } = require('./platform/power');
+const { watchPower, keepAwake } = require('./platform/power');
 const { createRoster } = require('./services/roster');
 const { createDesigner } = require('./services/designer');
 const { createProductivity } = require('./services/productivity');
@@ -23,6 +23,9 @@ const { createEvents } = require('./services/events');
 const EVENT_DECK = require('../../assets/events/deck.json');
 const { createGoogle } = require('./services/google');
 const googleOAuth = require('./platform/google-oauth');
+const { createTelegram } = require('./services/telegram');
+const { createChatTools } = require('./brain/chat-tools');
+const { startToolBridge } = require('./platform/tool-bridge');
 const os = require('os');
 const { createGitWatcher } = require('./services/productivity/git-watcher');
 const git = require('./platform/git');
@@ -33,6 +36,7 @@ const { createBrain } = require('./brain');
 const { createPermissionGate } = require('./brain/permission-gate');
 const { ClaudeCodeEngine, CLAUDE_EXE } = require('./engines/claude/session');
 const { AgyEngine } = require('./engines/agy/session');
+const { CHAT_ALLOW, DENY_ALL } = require('./engines/agy/setup');
 const { findAgyExecutable } = require('./engines/agy/setup');
 const pathMod = require('path');
 // M5 extras (D-035): weather, fullscreen do-not-disturb, "out for a walk" marker.
@@ -73,13 +77,29 @@ function boot() {
     bus, secrets, device, oauth: googleOAuth, openExternal: shell.openExternal, tama: active, deviceName: os.hostname(),
   });
   gate.addRule(google.gateRule);
+  // Google tools for the chat brain (D-037): served by a localhost bridge; agy reaches it through a tiny MCP relay.
+  const chatTools = createChatTools({ bus, tools: () => (google.status().signedIn ? google.tools : []) });
+  /** @type {{ url: string, key: string, close: () => void } | null} */
+  let bridge = null;
+  const relay = pathMod.join(__dirname, 'engines', 'agy', 'mcp-relay.js').replace(`app.asar${pathMod.sep}`, `app.asar.unpacked${pathMod.sep}`);
+  const chatMcp = () => (bridge && google.status().signedIn ? [{
+    name: 'tama', command: process.execPath, args: [relay],
+    env: [{ name: 'ELECTRON_RUN_AS_NODE', value: '1' }, { name: 'TAMA_BRIDGE_URL', value: bridge.url }, { name: 'TAMA_BRIDGE_KEY', value: bridge.key }],
+  }] : []);
   const brain = createBrain({
     bus, device, gate, git, scratchDir: pathMod.join(appShell.paths.data(), 'agy-workspace'),
     available: { claude: !!CLAUDE_EXE, agy: !!findAgyExecutable() },
     factories: {
       claudeWorker: (emit) => new ClaudeCodeEngine(emit, { role: 'worker', gate, tamaName: active.name, mcp: () => google.mcpServers() }),
       // agy always runs in read-only PLAN mode (verified: no commands, no file writes; npm run probe:agy, D-027).
-      agyChat: (emit, persona) => new AgyEngine(emit, { role: 'lite', gate, persona, model: 'gemini-3.8-flash-low', thoughtLevel: 'low', mode: 'plan', lockMode: true }),
+      // Hard lock (D-037): a PreToolUse hook in the session folder denies every tool except Tama's own + web search.
+      agyChat: (emit, persona) => new AgyEngine(emit, {
+        role: 'lite', gate, persona, model: 'gemini-3.8-flash-low', thoughtLevel: 'low', mode: 'plan', lockMode: true, mcpServers: chatMcp, guard: CHAT_ALLOW,
+      }),
+      // Events + diary text: no tools at all.
+      agyCompose: (emit, persona) => new AgyEngine(emit, {
+        role: 'lite', gate, persona, model: 'gemini-3.8-flash-low', thoughtLevel: 'low', mode: 'plan', lockMode: true, guard: DENY_ALL,
+      }),
     },
   });
 
@@ -140,7 +160,13 @@ function boot() {
     onPower: (onAC) => bus.emit(TOPICS.DEVICE_POWER_CHANGED, { onAC }),
     onIdle: (idle, idleSeconds) => bus.emit(TOPICS.DEVICE_IDLE_CHANGED, { idle, idleSeconds }),
   }));
-  stoppers.push(brain.start(), createUiPrefs({ bus, device }).start(), google.start());
+  stoppers.push(brain.start(), createUiPrefs({ bus, device }).start(), google.start(), chatTools.start());
+  startToolBridge(chatTools).then((b) => { bridge = b; stoppers.push(() => b.close()); }).catch((e) => console.error('[tama] tool bridge failed', e));
+  // Telegram (M7, D-008, D-036): long polling from this PC; one paired chat; /code via the same Claude session.
+  // Tama's desk: an empty folder of her own, so phone tasks that need no project (Google, questions) have a safe place to run.
+  const desk = pathMod.join(appShell.paths.data(), 'desk');
+  require('fs').mkdirSync(desk, { recursive: true });
+  stoppers.push(createTelegram({ bus, secrets, device, git, snapshot: () => pet.snapshot(), keepAwake, tama: active, desk }).start());
   // Events & memory (M5, D-033): facts + diary per Tama, event deck from assets/events.
   stoppers.push(createMemory({ bus, store, tamaId: active.id }).start(), createEvents({ bus, store, tamaId: active.id, deck: EVENT_DECK }).start());
   // ---- M5 extras (D-035) ----

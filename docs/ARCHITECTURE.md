@@ -81,8 +81,10 @@ src/main/
   services/memory/         facts.json + diary/*.md in tamas/<id>/memory (M5, D-033)
   services/events/         triggers.js (pure) + index.js (tick, fire, answers, diary) over assets/events/deck.json (M5, D-033)
   services/google/         index (sign-in state, calendar watch, brief, chat context), api (token refresh), calendar, gmail (no send),
-                           drive (+ Docs/Sheets, appData), markdown, tools (13 tools + gate policy), backup (appData + lease) (M6, D-034)
+                           drive (+ Docs/Sheets, appData), markdown, tools (+ gate policy), backup (appData + lease) (M6, D-034),
+                           maps (pasted Maps links, Google Places lookup, D-039)
   platform/google-oauth.js loopback + PKCE desktop OAuth (M6)
+  services/telegram/       api (long polling, uploads), format (pure), remote (/code bridge), index (pairing, routing, daily) (M7, D-036)
   platform/power.js        AC/battery + idle/lock → bus (easy energy)
   platform/git.js          read-only git log / user.email
   platform/files.js        whole-file read/write for user-picked paths
@@ -92,7 +94,10 @@ src/main/
   engines/claude/          session (Agent SDK), map-message (pure; text/tool/thinking progress), find-exe, input-queue, oneshot,
                            mcp.js (tool descriptions → in-process MCP server, D-034)
   engines/acp/client.js    generic Agent Client Protocol JSON-RPC client
-  engines/agy/             AgyEngine (ACP, plan mode locked), map-update (pure), setup (exe + Tama-owned settings)
+  engines/agy/             AgyEngine (ACP, plan mode locked), map-update (pure), setup (exe + Tama-owned settings + workspace guard),
+                           guard.js (PreToolUse hard lock), mcp-relay.js (stdio MCP → tool bridge) (D-037)
+  platform/tool-bridge.js  localhost tool bridge for agent CLIs (random key per run) (D-037)
+  brain/chat-tools.js      Google tools for the chat brain with Tama-side confirmations (D-037)
   channels/desktop/        renderer IPC ↔ bus
   dev/selftest.js          TAMA_SELFTEST live summon check
   dev/onboarding-walk.js   TAMA_ONBOARD_WALK scripted onboarding run with screenshots (M1)
@@ -151,8 +156,8 @@ bus.on('engine.event', handler)
 - Channels forward a filtered set of topics to renderers / Telegram.
 
 ### Topics in use (M0)
-Events: `app.error`, `pet.state.changed`, `pet.bond.changed`, `engine.event`, `chat.event`, `brain.notice`, `ui.prefs.changed`, `memory.changed`, `event.shown`, `google.changed`, `google.meeting.soon`, `summon.done`, `tray.action`, `character.changed`, `device.{power,idle}.changed`, `prod.{changed,focus.phase,reminder.due,commit.seen}`.
-Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,delete,export,import}`, `prod.*`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setEffort,setCwd,answerPermission,resume}`, `chat.{send,history,interrupt,clear,push}`, `ui.prefs.{get,set}`, `memory.{get,add,forget}`, `diary.{write,list,read}`, `events.{answer,trigger}`, `brain.compose`, `google.{status,setClient,login,logout,set,brief,context,backupNow,backups,restore}`, `brain.{status,set}`, `summon`.
+Events: `app.error`, `pet.state.changed`, `pet.bond.changed`, `engine.event`, `chat.event`, `brain.notice`, `ui.prefs.changed`, `memory.changed`, `event.shown`, `google.changed`, `google.meeting.soon`, `telegram.changed`, `summon.done`, `tray.action`, `character.changed`, `device.{power,idle}.changed`, `prod.{changed,focus.phase,reminder.due,commit.seen}`.
+Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,delete,export,import}`, `prod.*`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setEffort,setCwd,answerPermission,resume}`, `chat.{send,history,interrupt,clear,push,confirm}`, `ui.prefs.{get,set}`, `memory.{get,add,forget}`, `diary.{write,list,read}`, `events.{answer,trigger}`, `brain.compose`, `google.{status,setClient,login,logout,set,brief,context,backupNow,backups,restore}`, `telegram.{status,setup,newCode,unpair,set}`, `brain.{status,set}`, `summon`.
 M5 extras (D-035): requests `weather.{get,set}`, `device.fullscreen.get`.
 Renderer messages arrive on one `ui` IPC channel: `pet.state`, `pet.bond`, `prod`, `focus`, `reminder`, `commit`, `summon`, `tray`, `agent.event`, `term.focus`, `character`.
 

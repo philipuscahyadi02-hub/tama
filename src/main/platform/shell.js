@@ -75,7 +75,7 @@ function createTray({ tooltip, onClick, items }) {
 }
 
 /** Hosts Tama may open in the user's browser (Google sign-in, setup help, links Tama created). */
-const EXTERNAL_HOSTS = ['accounts.google.com', 'console.cloud.google.com', 'myaccount.google.com', 'docs.google.com', 'drive.google.com', 'mail.google.com', 'calendar.google.com', 'support.google.com', 'developers.google.com'];
+const EXTERNAL_HOSTS = ['accounts.google.com', 'console.cloud.google.com', 'myaccount.google.com', 'docs.google.com', 'drive.google.com', 'mail.google.com', 'calendar.google.com', 'support.google.com', 'developers.google.com', 't.me'];
 /** @param {string} url */
 function openExternal(url) {
   const u = new URL(url);

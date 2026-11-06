@@ -43,7 +43,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-011 | Storage split: soul / device / secrets, with schemaVersion migrations | Accepted |
 | D-012 | Gmail sending | Superseded by D-014 |
 | D-013 | Docs: PRD + ARCHITECTURE + DECISIONS, AGENTS.md as the shared rulebook | Accepted |
-| D-014 | Gmail: drafts only, no send tool | Accepted |
+| D-014 | Gmail: drafts only, no send tool | Superseded by D-038 |
 | D-015 | Versioning, CHANGELOG with commit table, repo-scoped decision log | Accepted |
 | D-016 | First run imports the kero-pet save as the first Tama | Accepted |
 | D-017 | Pet stats live in the main-process pet service from M0 | Accepted |
@@ -56,7 +56,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-024 | Productivity data is the user's (user/), git watch is per PC (device.json) | Accepted |
 | D-025 | Roster lifecycle via relaunch; .tama = gzip JSON, AES-256-GCM + scrypt when password-protected | Accepted |
 | D-026 | agy via ACP with Tama-owned settings; lite brain sandboxed; agy coding only in git repos | Superseded by D-027 (worker part) |
-| D-027 | agy runs only read-only (plan mode): chat brain + review/plan worker; all edits via Claude Code | Accepted · Supersedes D-026 · worker part superseded by D-029 (agy is chat-only) |
+| D-027 | agy runs only read-only (plan mode): chat brain + review/plan worker; all edits via Claude Code | Accepted · Supersedes D-026 · worker part superseded by D-029; its "plan mode is enough" premise superseded by D-037 (hard guard) |
 | D-028 | Brain: lite chat brain with [[ESCALATE]] hand-off, status line, budget fallback, designer stays on Haiku | Partly superseded by D-029 (routing) |
 | D-029 | Two surfaces: terminal = Claude Code only, chat window = agy only (with web search) | Accepted · Supersedes D-028 routing |
 | D-030 | M3 ships as 0.3.1; milestone = minor resumes with M4 = 0.4.0 | Accepted |
@@ -65,6 +65,10 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-033 | Events & memory: deck JSON + pure triggers, agy composer, hidden [[remember]] markers, facts + diary in the Tama's folder | Accepted |
 | D-034 | Google: own OAuth client (loopback+PKCE), plain-fetch APIs, MCP tools for Claude Code with a gate policy, read-only context for chat, appData backups | Accepted |
 | D-035 | M5 extras: Open-Meteo weather per PC, fullscreen DND via one hidden PowerShell helper, "out for a walk" edge marker | Accepted |
+| D-036 | Telegram: long polling, one-time-code pairing to one chat, chat → agy, /code → shared Claude session in allow-listed folders with inline permission buttons | Accepted |
+| D-037 | Chat brain does Google itself: MCP relay → local bridge, Tama-side confirmations, and a hard PreToolUse guard (plan mode is only advisory) | Accepted · Supersedes D-027 ("plan mode = no side effects") |
+| D-038 | Sending allowed after the user confirms the full draft/invitation (only Tama's own drafts; never automatic) | Accepted · Supersedes D-014 |
+| D-039 | Event places: resolve pasted Maps links; otherwise look the place up and ask the user to confirm it before creating the event | Accepted |
 
 ---
 
@@ -153,7 +157,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Refs:** AGENTS.md
 
 ### D-014 — Gmail: drafts only, no send tool
-- **Date:** 2026-11-05 · **Status:** Accepted · Supersedes D-012
+- **Date:** 2026-11-05 · **Status:** Superseded by D-038 (user decision 2026-11-06) · Supersedes D-012
 - **Context:** User answered PRD Q1.
 - **Decision:** The Google MCP server exposes `gmail_create_draft` only. No send tool exists in any engine or channel; the user sends from Gmail themselves.
 - **Alternatives:** Send after explicit approval (declined by user).
@@ -383,3 +387,61 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** OpenWeatherMap and similar (need an API key); IP-based location (imprecise, sends the IP to another service); a native addon or `ffi` for user32 (new native dependency); spawning PowerShell per query (about 1 s and a console flash risk each minute); `SHQueryUserNotificationState` (misses borderless games and browser video).
 - **Consequences:** Weather events only appear after the user sets a city. A maximized window without a title bar, on a monitor with an auto-hide taskbar, can read as fullscreen (it also hides the pet's moments, which is acceptable). Meetings (calendar) as quiet time arrive with M6. Telegram (M7) can reuse `weather.*`; the walk marker has no Telegram equivalent.
 - **Refs:** EVT-1, PET-6, SUM-5, D-019, D-033, src/main/services/weather, src/main/platform/fullscreen.js, src/main/platform/windows/walk-marker.js, src/renderer/marker, assets/events/deck.json
+
+### D-036 — Telegram: long polling, one-time-code pairing to one chat, chat → agy, /code → shared Claude session in allow-listed folders with inline permission buttons
+- **Date:** 2026-11-06 · **Status:** Accepted
+- **Context:** M7 (TG-1..8, SAFE-3, ART-5): talk to the Tama and give Claude Code work from the phone, with no server (D-008) and stricter rules for remote sessions (AGENTS §4).
+- **Decision:**
+  - **Transport:** `services/telegram/api.js` uses plain `fetch` `getUpdates` long polling (50 s) from the PC, with exponential backoff, `retry_after`, and a full stop on 401/404. The bot token is redacted from every error. There is no webhook and no extra dependency (multipart uses Node's FormData/Blob).
+  - **Pairing (TG-2, SAFE-3):** `/phone setup <token>` checks the token with `getMe`, then shows a deep link `t.me/<bot>?start=<code>` and the 6-character one-time code (valid 15 minutes). The first private chat that sends the code becomes the only paired chat (`telegram.chatId` in secrets). Every other chat and button press is ignored and counted. `/phone code` makes a new code; `/phone unpair` forgets the chat.
+  - **Routing:** plain text → the chat brain (`chat.send`, prefixed 📱 so the desktop chat shows where it came from), and the bot replies with the next Tama message. Commands: `/status` (stats + a PNG of how she looks right now, ART-5: `pet-window.snapshot()` via capturePage), `/feed /snack /nap /summon`, `/todo /todos /done /focus /remind`, `/brief`, `/code /stop /repos /cd /remote`.
+  - **Remote coding (TG-6/7):** `/code` uses the **same** Claude Code session as the terminal (one conversation, visible on the desktop). It only runs when the current folder is on the allow-list, and the allow-list is only editable on the PC (`/phone allow here`). Each remote turn switches the session to `default` mode (ask before every tool). Permission prompts become inline Yes / Always / No buttons, answered on the phone or the desktop, whichever comes first; the message is then edited to show the outcome. Progress is one message edited every 3 s. The result text comes with `git diff` (read-only) as `changes.diff`. `/stop` interrupts. `/remote off` (phone) or `/phone remote off` (PC) is the kill switch. Every remote action is announced in the terminal and the pet bubble.
+  - **Hand-off button (user feedback, same day):** plain phone messages that ask for real work (code, Google drafts/Docs/Sheets/calendar) make the chat brain add a hidden `[[work: <task>]]` marker; the bot shows a "💻 Let Claude do it" button that runs it as `/code` (one use, last 20 kept). The terminal still never auto-escalates (D-029); this is an explicit tap.
+  - **Tama's desk:** `<data>/desk`, an empty folder that is always allowed. If the current folder isn't allow-listed, a remote task moves there (announced), so Google tasks and questions work from the phone without exposing any project. Projects still need `/phone allow here` on the PC.
+  - **Daily:** a morning brief (Google brief if connected, else todos) after 08:00, and an evening recap after 21:30 (tonight's diary page), once a day each.
+  - **TG-8:** the bot's short description is set to "awake" on start and "sleeping" on quit (best effort). `/phone awake on` keeps the PC from sleeping (`powerSaveBlocker`).
+- **Alternatives:** A separate remote Claude session (would hide remote work from the desktop and duplicate context); allowing any folder (too risky from a phone); QR code pairing (needs a QR encoder dependency; the deep link + code covers the same need).
+- **Consequences:** The bot only answers while the PC is on and Tama runs. Voice notes are M8 (TG-3 voice part). Telegram secrets travel in `.tama` exports only when password-protected (D-025).
+- **Refs:** TG-1..8, SAFE-3, ART-5, D-008, D-025, D-029, src/main/services/telegram, src/main/platform/{git,power}.js, src/main/platform/windows/pet-window.js
+
+### D-037 — Chat brain does Google itself: MCP relay → local bridge, Tama-side confirmations, and a hard PreToolUse guard (plan mode is only advisory)
+- **Date:** 2026-11-06 · **Status:** Accepted · Supersedes D-027's premise that plan mode alone is a safe lock; supersedes D-034's "chat gets no Google tools"
+- **Context:** The user found it redundant that Google tasks from the chat/phone were handed to Claude. Probes (now in `npm run probe:agy`) showed:
+  - agy accepts MCP servers in ACP `session/new` (stdio only) and calls their tools in plan mode. It never asks permission for MCP tools.
+  - **Plan mode is advisory, not a lock.** With a persuasive system prompt ("act directly, don't plan"), agy in plan mode wrote files inside and outside its folder without asking; commands stayed gated. The old probe only used polite prompts.
+  - agy runs `PreToolUse` hooks from `<working folder>/.agent/hooks.json` (not from the Tama-owned settings folder). A `deny` decision hard-blocks the tool before any permission step; a failing hook also blocks (fail-closed). It runs the command through cmd.exe with escaped quotes and not from the hooks.json folder, so the launcher path must be absolute and space-free.
+  - `permissions.deny` in settings.json had no effect on file writes.
+- **Decision:**
+  - **Hard guard:** every Tama agy session gets `<its scratch folder>/.agent/hooks.json` → `guard.cmd` (Electron in node mode) → `engines/agy/guard.js`, which allows only `^(mcp_tama_…|search_web|read_url_content)$` for chat and **nothing** for the events/diary composer (its own session now). Plan mode stays on as a second layer. The guard is only ever written into Tama's own folders.
+  - **Google for the chat brain:** `platform/tool-bridge.js` serves the Google tools on 127.0.0.1 with a random per-run key; agy starts `engines/agy/mcp-relay.js` (stdio MCP) which forwards to it, so tokens never leave Tama. Tools appear while Google is signed in; the chat session restarts when that flips.
+  - **Confirmations live in Tama** (`brain/chat-tools.js`): reads run; every create/edit waits for a tap ("✅ Yes, do it") in the chat window, or on Telegram when the message came from the phone; no answer in 2.5 minutes = no (agy itself abandons MCP calls after 3 minutes). Still no send/delete/share tools. The chat persona tells Gemini to act with its tools instead of handing Google tasks to Claude; the 💻 hand-off button remains for code.
+- **Alternatives:** Gemini CLI with its tool allow-list (needs another install/login; agy works); agy default mode (writes ungated); Tama-only HTTP MCP (agy declares no HTTP MCP support).
+- **Consequences:** `npm run probe:agy` now also checks "pushy prompt + guard = no writes/commands" and "guard + Tama tools = tool works". If a future agy changes hook loading, the probe fails and the chat must not be used until fixed. Google use from chat costs agy/Gemini quota instead of Claude.
+- **Refs:** GOOG-2, GOOG-7, BRAIN-2, ENG-3, TG-3, D-014, D-027, D-029, D-034, src/main/engines/agy/{guard,mcp-relay,setup}.js, src/main/platform/tool-bridge.js, src/main/brain/chat-tools.js
+
+### D-038 — Sending allowed after the user confirms the full draft/invitation (only Tama's own drafts; never automatic)
+- **Date:** 2026-11-06 · **Status:** Accepted · Supersedes D-014 (drafts only)
+- **Context:** The user asked to remove "never send to other people" and replace it with: Tama drafts, shows the draft to the user, and sends after the user confirms it from the chat (desktop or Telegram). Trigger: inviting a friend to tennis from the phone.
+- **Decision:**
+  - New tool `gmail_send_draft` (policy **send**): it only sends drafts Tama itself created (`device.json` `google.tamaDrafts`, newest 200), never other drafts in the mailbox. Before sending, the user sees the **full** email (To/Cc/Bcc/Subject/body) and taps "✅ Send it" (chat window card or Telegram buttons). No answer or "Don't send" = nothing is sent.
+  - `gmail_create_draft` is policy **draft**: it runs without a tap (a draft only sits in the user's Gmail) and is announced.
+  - `calendar_create_event` takes optional `attendees`; with guests it is policy **send** (`sendUpdates=all`, Google emails the invitations), and the confirm card says so explicitly. Without guests it stays **create**.
+  - Policies are computed per call (`policyFor`). Claude Code (PermissionGate rule): **send** and **edit** always ask; read/draft/create auto + announced. Chat brain (chat-tools): **create/edit/send** ask. There is no mode that sends without a tap. Still no delete/share tools.
+  - Scopes are unchanged (`gmail.compose` already covers sending drafts).
+- **Alternatives:** Keep drafts only (the user explicitly declined); let the model send directly after a "yes" in text (a free-text "yes" is easier to fake via prompt injection than a button on the exact content).
+- **Consequences:** Prompt injection from an untrusted email could try to make the chat brain send mail; the confirm card always shows the real recipient and body, so the user is the final check. PRD GOOG-4 changes; AGENTS §4 updated.
+- **Refs:** GOOG-3, GOOG-4, GOOG-7, D-014, D-034, D-037, src/main/services/google/{gmail,calendar,tools}.js, src/main/brain/chat-tools.js
+
+### D-039 — Event places: resolve pasted Maps links; otherwise look the place up and ask the user to confirm it before creating the event
+- **Date:** 2026-11-06 · **Status:** Accepted
+- **Context:** The user wants Tama to double-check a typed location against Google Maps before invitations go out, and to use a pasted Google Maps link directly.
+- **Decision:**
+  - `services/google/maps.js`:
+    - **`maps_resolve_link`** follows a pasted Maps link (including `maps.app.goo.gl`) only through Google hosts, and reads the place name and pin coordinates. The place is used directly; the user's own link is kept.
+    - **`maps_find_place`** uses Google Places API (New) Text Search when the user sets an optional Maps Platform key (`/google maps-key`, stored in secrets), biased to the weather city (D-035).
+    - Without a key it returns a Google Maps search link plus the city, and the chat brain finds the official name and address with `search_web`. OpenStreetMap was tested and rejected: it returned sports venues in Russia and Brazil for a Jakarta venue.
+  - The persona requires: typed place → look up → show name, address and map link → **ask "is this the right place?"** → only then create the event, with `location` = "Name, full address" and `placeLink` = the map link (stored in the event notes; only Google links are accepted).
+  - The event confirm card always shows 📍 the place and 🗺️ the link, or "⚠️ place not checked on a map".
+- **Alternatives:** Always use OpenStreetMap (poor coverage for local venues); require a Maps key (billing setup for every user).
+- **Consequences:** The live test caught a real mix-up ("Grand Sport Central" → "Grand Central Sport Center", with its address) before anything was created. Without a key, accuracy depends on web search; the user verifies by tapping the map link.
+- **Refs:** GOOG-3, D-035, D-038, src/main/services/google/maps.js

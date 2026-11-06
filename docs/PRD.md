@@ -5,8 +5,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.10 |
-| **Status** | v0.6.0 released (M0–M6). M7 in progress on `m7-telegram` |
+| **Version** | 0.14 |
+| **Status** | v0.7.0 released (M0–M7). M8 (usage & accounts dashboard) next; voice moved to M9 |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-06 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -61,7 +61,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | ONB-5 | Name + personality sliders (energy, tsundere, formality, chaos), prefilled from spec. | P0 | M1 | ☑ |
 | ONB-6 | Free-text **voice prompt**; produces a `VoiceSpec` + playable preview; can regenerate. | P0 | M1 | ☑ |
 | ONB-7 | Detect & smoke-test engines (`claude`, `agy`); show login instructions if missing. | P0 | M3 | ☑ |
-| ONB-8 | Optional steps: Telegram pairing, Google sign-in. Skippable, available later in settings. | P1 | M6/M7 | ☐ |
+| ONB-8 | Optional steps: Telegram pairing, Google sign-in. Skippable, available later in settings. | P1 | M6/M7 | ◐ |
 | ONB-9 | First screen offers "Hatch new 🥚" or "Bring my Tama 📦" (import/restore). | P0 | M2 | ☑ |
 
 ### 4.2 Character & art (ART)
@@ -71,7 +71,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | ART-2 | The model **selects and recolors** parts from the library; it never free-draws the core body. | P0 | M1 | ☑ |
 | ART-3 | Full expression set works for every design: happy, sparkle, blush, pout, teary, shock, dizzy, smug, sleep, focus (glasses), sad. | P0 | M1 | ☑ |
 | ART-4 | Character palette/motif drives UI theme tokens (terminal, menus, bubbles). | P0 | M4 | ☑ |
-| ART-5 | Render current expression to PNG (for Telegram status/stickers). | P1 | M7 | ☐ |
+| ART-5 | Render current expression to PNG (for Telegram status/stickers). | P1 | M7 | ☑ |
 | ART-6 | Optional model-generated accessory SVG, sanitized and bounded. | P2 | later | ☐ |
 
 ### 4.3 Pet loop (PET)
@@ -109,7 +109,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
 | BRAIN-1 | Two surfaces (D-029): the **terminal** sends everything to Claude Code (Tama's own `/commands` run locally, unknown `/x` forwarded); the **chat window** talks to the chat brain. | P0 | M3 | ☑ |
-| BRAIN-2 | Chat brain: Gemini Flash via `agy` only (read-only, web search); no Claude fallback (D-029). | P0 | M3 | ☑ |
+| BRAIN-2 | Chat brain: Gemini Flash via `agy` only (no files/commands: hard guard hook; web search; Google tools with confirmations); no Claude fallback (D-029, D-037). | P0 | M3 | ☑ |
 | BRAIN-3 | Fixed policy (D-029): chat/events/diary → agy; code & productivity work → Claude Code. Speed controls in the terminal: `/model`, `/effort` (D-031). | P0 | M3 | ☑ |
 | BRAIN-4 | Budget: daily Claude usage estimate, 75% warning and an in-character heads-up when tight; no automatic engine switch (D-029). | P1 | M3 | ☑ |
 | BRAIN-5 | Persona: cute in chat, **never** in code, commit messages, or file contents. | P0 | M3 | ☑ |
@@ -141,25 +141,25 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.9 Telegram / phone (TG)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| TG-1 | Bot API **long polling** from the PC; no webhook, no server. | P0 | M7 | ☐ |
-| TG-2 | Pairing: paste BotFather token → QR / deep link with one-time code → bind to one chat ID; ignore all others. | P0 | M7 | ☐ |
-| TG-3 | Chat with the Tama in character; voice notes both ways. | P0 / P1 | M7/M8 | ☐ |
-| TG-4 | Productivity: `/todo /focus /remind`, morning brief, evening recap. | P0 | M7 | ☐ |
-| TG-5 | Pet: `/feed /nap /status` (status replies with expression PNG). `/summon`. | P1 | M7 | ☐ |
-| TG-6 | Remote control: `/code <task>` in allow-listed repos; progress updates; **permission prompts as inline buttons** (Yes / Always / No); diffs as file attachments; `/stop`. | P0 | M7 | ☐ |
-| TG-7 | Remote sessions default to ask-every-tool; kill switch; desktop announces every remote action. | P0 | M7 | ☐ |
-| TG-8 | On quit, bot bio set to "💤 sleeping"; optional keep-PC-awake while remote mode is on. | P2 | M7 | ☐ |
+| TG-1 | Bot API **long polling** from the PC; no webhook, no server. | P0 | M7 | ☑ |
+| TG-2 | Pairing: paste BotFather token → QR / deep link with one-time code → bind to one chat ID; ignore all others. | P0 | M7 | ☑ |
+| TG-3 | Chat with the Tama in character; voice notes both ways. *(Text chat done in M7; voice notes in M8.)* | P0 / P1 | M7/M8 | ◐ |
+| TG-4 | Productivity: `/todo /focus /remind`, morning brief, evening recap. | P0 | M7 | ☑ |
+| TG-5 | Pet: `/feed /nap /status` (status replies with expression PNG). `/summon`. | P1 | M7 | ☑ |
+| TG-6 | Remote control: `/code <task>` in allow-listed repos; progress updates; **permission prompts as inline buttons** (Yes / Always / No); diffs as file attachments; `/stop`. | P0 | M7 | ☑ |
+| TG-7 | Remote sessions default to ask-every-tool; kill switch; desktop announces every remote action. | P0 | M7 | ☑ |
+| TG-8 | On quit, bot bio set to "💤 sleeping"; optional keep-PC-awake while remote mode is on. | P2 | M7 | ☑ |
 
 ### 4.10 Google (GOOG)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
 | GOOG-1 | Desktop OAuth (loopback + PKCE) with the user's own Google Cloud client in **Production (unverified)** status (Testing expires tokens in 7 days). Tokens in `secrets` only. | P0 | M6 | ☑ |
-| GOOG-2 | Google tools exposed as an MCP server, plugged into **every** engine. *(Claude Code gets the tools; the read-only agy chat gets a calendar/mail context line instead, D-034.)* | P0 | M6 | ◐ |
-| GOOG-3 | Calendar: read, create/edit events; meeting reminders (sleeve-tug 5 min before) and DND during meetings. | P0 | M6 | ☑ |
-| GOOG-4 | Gmail: read/search, summarize, create drafts. **No sending** (D-014). | P0 | M6 | ☑ |
+| GOOG-2 | Google tools exposed as an MCP server, plugged into **every** engine. *(Claude Code in-process; the agy chat brain via a local relay with Tama-side confirmations, D-034, D-037.)* | P0 | M6 | ☑ |
+| GOOG-3 | Calendar: read, create/edit events (places checked against Google Maps / pasted Maps links, D-039); meeting reminders (sleeve-tug 5 min before) and DND during meetings. | P0 | M6 | ☑ |
+| GOOG-4 | Gmail: read/search, summarize, create drafts; **send only after the user confirms the full draft** (D-038, was drafts-only D-014). | P0 | M6 | ☑ |
 | GOOG-5 | Drive: `drive.file` by default (create/edit own files); optional `drive.readonly` toggle for search/read across Drive. | P0 | M6 | ☑ |
 | GOOG-6 | Docs: create from Markdown, append, replace section. Sheets: create with tabs/headers/formulas, write range, append rows. *(All but "replace section".)* | P0 | M6 | ◐ |
-| GOOG-7 | All created files go to a "Tama Drafts" folder; creation auto-allowed + announced; edits of existing files require approval; **no delete/share tools exist**. | P0 | M6 | ☑ |
+| GOOG-7 | All created files go to a "Tama Drafts" folder; creation announced (chat brain: confirmed); edits and anything that sends (email, invitations) require approval; **no delete/share tools exist** (D-038). | P0 | M6 | ☑ |
 | GOOG-8 | Morning brief: today's events, important unread mail, todos (desktop + Telegram). | P1 | M6 | ☑ |
 
 ### 4.11 Voice (VOICE)
@@ -187,7 +187,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 |---|---|---|---|---|
 | SAFE-1 | One `PermissionGate` for every tool approval from every engine and every channel. | P0 | M3 | ☑ |
 | SAFE-2 | Secrets only via the secrets module; never logged, never in plain JSON, never in exports without password. | P0 | M0 | ☑ |
-| SAFE-3 | Telegram accepts only the paired chat ID. | P0 | M7 | ☐ |
+| SAFE-3 | Telegram accepts only the paired chat ID. | P0 | M7 | ☑ |
 | SAFE-4 | Warn before accept-edits mode outside a git repo. | P1 | M4 | ☑ |
 | SAFE-5 | Daily cost/token budget shown in `/stats`; Tama warns near the limit. | P1 | M3 | ☑ |
 | NFR-1 | Idle CPU < 2%, RAM < 300 MB (excluding engine processes). | P1 | M8 | ☐ |
@@ -206,7 +206,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M4 — Terminal v2.** *(released as 0.4.0)* Theming from the CharacterSpec (no more hard-coded Kero), commands, first-run tour (TERM-*, ART-4, SAFE-4).
 - [x] **M5 — Events & memory.** *(released as 0.5.0; weather, fullscreen DND and SUM-5 deferred)* (EVT-*, PET-6..7, NFR-4, SUM-5).
 - [x] **M6 — Google.** *(released as 0.6.0; Tasks sync, Docs replace-section and a hard device lock deferred)* OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
-- [ ] **M7 — Telegram.** (TG-*, ART-5, SAFE-3).
+- [x] **M7 — Telegram.** *(released as 0.7.0; voice notes in M9)* (TG-*, ART-5, SAFE-3).
 - [ ] **M8 — Voice & polish.** (VOICE-1, PET-8, NFR-1, NFR-3).
 
 ## 6. Open questions
@@ -218,6 +218,10 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.14 — 2026-11-06** — Event places verified on Google Maps before creating (D-039).
+- **0.13 — 2026-11-06** — Sending email and calendar invitations allowed after the user confirms the full content (D-038 supersedes D-014).
+- **0.12 — 2026-11-06** — Chat brain does Google itself with confirmations; hard read-only guard for agy (D-037). GOOG-2 done.
+- **0.11 — 2026-11-06** — M7 implemented: TG-1,2,4..8, SAFE-3, ART-5 done; TG-3 text done (voice in M8) (D-036).
 - **0.10 — 2026-11-06** — M6 implemented: GOOG-1,3,4,5,7,8, PORT-6, PORT-8 done; GOOG-2, GOOG-6, PORT-7 partial; PROD-3 open (D-034).
 - **0.9 — 2026-11-06** — M5 implemented: EVT-2..4, NFR-4, PET-7 done; EVT-1 and PET-6 partial (D-033).
 - **0.8 — 2026-11-06** — M4 implemented: TERM-1..4, ART-4, SAFE-4; BOND-3 terminal themes (D-032).

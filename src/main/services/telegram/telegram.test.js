@@ -1,0 +1,242 @@
+// @ts-check
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { createTelegram } = require('.');
+const { createBotApi } = require('./api');
+const fmt = require('./format');
+const { Bus } = require('../../bus');
+
+const TOKEN = '123456789:AAAbbbCCCdddEEEfffGGGhhhIIIjjjKKKlll';
+
+/** Fake Telegram Bot API: records calls; getUpdates serves a queue. */
+function fakeTelegram() {
+  /** @type {Array<{ method: string, body: any }>} */ const calls = [];
+  /** @type {any[]} */ const queue = [];
+  let msgId = 100;
+  /** @param {any} url @param {any} [init] */
+  async function f(url, init = {}) {
+    const method = String(url).split('/').pop() || '';
+    let body = {};
+    if (typeof init.body === 'string') body = JSON.parse(init.body);
+    else if (init.body && typeof init.body.get === 'function') body = { form: Object.fromEntries([...init.body.keys()].map((k) => [k, init.body.get(k)])) };
+    calls.push({ method, body });
+    const ok = (/** @type {any} */ result) => ({ ok: true, status: 200, json: async () => ({ ok: true, result }) });
+    if (method === 'getMe') return ok({ id: 1, username: 'tama_test_bot' });
+    if (method === 'getUpdates') {
+      if (init.signal && init.signal.aborted) throw new Error('aborted');
+      const out = queue.splice(0);
+      if (!out.length) await new Promise((r) => setTimeout(r, 5));
+      return ok(out);
+    }
+    if (method === 'sendMessage' || method === 'sendPhoto' || method === 'sendDocument') return ok({ message_id: ++msgId });
+    return ok(true);
+  }
+  const sent = () => calls.filter((c) => c.method === 'sendMessage').map((c) => c.body.text);
+  return { fetch: /** @type {any} */ (f), calls, queue, sent };
+}
+
+function setup(/** @type {{ desk?: string, work?: string }} */ o = {}) {
+  const tg = fakeTelegram();
+  const bus = new Bus();
+  /** @type {Record<string, string>} */ const secrets = {};
+  let dev = /** @type {Record<string, any>} */ ({});
+  const device = { get: () => dev, patch: (/** @type {string|null} */ s, /** @type {any} */ p) => { dev = s ? { ...dev, [s]: { ...(dev[s] || {}), ...p } } : { ...dev, ...p }; } };
+  /** @type {any[]} */ const seen = [];
+  const cwd = { value: 'C:\\code\\app', mode: 'acceptEdits' };
+  bus.handle('engine.info', () => ({ cwd: cwd.value, mode: cwd.mode }));
+  bus.handle('engine.setMode', (m) => { seen.push(['mode', m]); cwd.mode = m; });
+  bus.handle('engine.send', (t) => { seen.push(['send', t]); });
+  bus.handle('engine.setCwd', (d) => { cwd.value = d; return { t: 'cwd', cwd: d }; });
+  bus.handle('engine.interrupt', () => { seen.push(['interrupt']); });
+  bus.handle('engine.answerPermission', (a) => { seen.push(['answer', a.id, a.choice]); return true; });
+  bus.handle('pet.get', () => ({ name: 'Kero-chan', state: { hunger: 50, happy: 80, energy: 60, clean: 90, streak: { count: 3 } }, level: { title: 'Buddy', emoji: '✌️' } }));
+  bus.handle('pet.act', (p) => { seen.push(['act', p.action]); return { ok: true }; });
+  bus.handle('prod.todo.add', (p) => ({ ok: true, todo: { text: p.text } }));
+  /** @type {{ fn: ((t: string) => any) | null }} */ const chatImpl = { fn: null };
+  bus.handle('chat.send', (t) => {
+    if (chatImpl.fn) return chatImpl.fn(t);
+    seen.push(['chat', t]);
+    setTimeout(() => {
+      bus.emit('chat.event', { t: 'message', message: { role: 'user', text: t } });
+      bus.emit('chat.event', { t: 'message', message: { role: 'tama', text: 'hi from Gemini~', work: o.work } });
+    }, 5);
+    return { ok: true };
+  });
+  /** @type {any[]} */ const notices = [];
+  bus.on('brain.notice', (n) => notices.push(n.text));
+  const telegram = createTelegram({
+    bus, secrets: { get: (k) => secrets[k] ?? null, set: (k, v) => { secrets[k] = v; }, delete: (k) => { delete secrets[k]; } },
+    device: /** @type {any} */ (device), git: { isRepo: () => true, diff: async () => 'diff --git a/x b/x\n+hello' },
+    snapshot: async () => null, keepAwake: (on) => on, tama: { name: 'Kero-chan' }, desk: /** @type {any} */ (o.desk), fetch: tg.fetch,
+  });
+  const stop = telegram.start();
+  const msg = (/** @type {number} */ chat, /** @type {string} */ text) => ({ update_id: 1, message: { chat: { id: chat, type: 'private' }, text } });
+  return { tg, bus, telegram, secrets, seen, notices, cwd, stop, msg, chatImpl, dev: () => dev };
+}
+
+test('pairing: token checked, one-time code binds exactly one chat; everyone else is ignored (TG-2, SAFE-3)', async () => {
+  const s = setup();
+  assert.match((await s.bus.request('telegram.setup', { token: 'nope' })).error, /bot token/);
+  const st = await s.bus.request('telegram.setup', { token: TOKEN });
+  assert.equal(st.bot, 'tama_test_bot');
+  assert.match(st.pairing.link, /^https:\/\/t\.me\/tama_test_bot\?start=[0-9A-F]{6}$/);
+  await s.telegram.onUpdate(s.msg(666, '/start WRONG1'));
+  assert.equal(s.secrets['telegram.chatId'], undefined);
+  await s.telegram.onUpdate(s.msg(42, `/start ${st.pairing.code}`));
+  assert.equal(s.secrets['telegram.chatId'], '42');
+  assert.ok(s.tg.sent().some((t) => /Paired!/.test(t)));
+  assert.ok(s.tg.calls.some((c) => c.method === 'setMyCommands'));
+  const before = s.tg.calls.length;
+  await s.telegram.onUpdate(s.msg(666, '/feed'));      // a stranger, after pairing
+  await s.telegram.onUpdate(s.msg(666, st.pairing.code)); // and the old code is spent
+  assert.equal(s.tg.calls.slice(before).filter((c) => c.method !== 'getUpdates').length, 0);
+  assert.equal(s.secrets['telegram.chatId'], '42');
+  assert.equal((await s.bus.request('telegram.status')).ignored, 3);
+  s.stop();
+});
+
+async function paired(/** @type {{ desk?: string, work?: string }} */ o = {}) {
+  const s = setup(o);
+  const st = await s.bus.request('telegram.setup', { token: TOKEN });
+  await s.telegram.onUpdate(s.msg(42, st.pairing.code));
+  return s;
+}
+
+test('chat goes to the chat brain and the reply comes back (TG-3); pet + todo commands work and are announced (TG-4/5)', async () => {
+  const s = await paired();
+  await s.telegram.onUpdate(s.msg(42, 'how are you?'));
+  assert.deepEqual(s.seen.find((x) => x[0] === 'chat'), ['chat', '📱 how are you?']);
+  assert.equal(s.tg.sent().at(-1), 'hi from Gemini~');
+  await s.telegram.onUpdate(s.msg(42, '/feed'));
+  assert.ok(s.seen.some((x) => x[0] === 'act' && x[1] === 'feed'));
+  assert.ok(s.notices.some((n) => /feed from your phone/.test(n)));
+  await s.telegram.onUpdate(s.msg(42, '/todo buy milk'));
+  assert.equal(s.tg.sent().at(-1), '☐ added: buy milk');
+  await s.telegram.onUpdate(s.msg(42, '/status'));
+  assert.match(s.tg.sent().at(-1), /Kero-chan · Buddy/);
+  s.stop();
+});
+
+test('/code: only in allowed folders, forces ask-every-tool, permission buttons, result + diff file (TG-6, TG-7)', async () => {
+  const s = await paired();
+  await s.telegram.onUpdate(s.msg(42, '/code fix the test'));
+  assert.match(s.tg.sent().at(-1), /isn't allowed for remote work/);
+  assert.equal(s.seen.filter((x) => x[0] === 'send').length, 0);
+  await s.bus.request('telegram.set', { allow: 'C:\\code\\app' });
+  await s.telegram.onUpdate(s.msg(42, '/code fix the test'));
+  assert.deepEqual(s.seen.filter((x) => x[0] !== 'chat').slice(0, 2), [['mode', 'default'], ['send', 'fix the test']]);
+  assert.ok(s.notices.some((n) => /from your phone: \/code fix the test/.test(n)));
+  // permission prompt → inline buttons → answered from the phone
+  s.bus.emit('engine.event', { engine: 'claude', role: 'worker', ev: { t: 'permission', id: 7, name: 'Edit', tool: 'Edit', input: { file_path: 'a.js', old_string: 'x', new_string: 'y' } } });
+  await new Promise((r) => setTimeout(r, 10));
+  const prompt = s.tg.calls.filter((c) => c.method === 'sendMessage').at(-1);
+  assert.match(prompt?.body.text, /Claude wants to use Edit/);
+  assert.deepEqual(prompt?.body.reply_markup.inline_keyboard[0].map((b) => b.callback_data), ['perm:7:yes', 'perm:7:always', 'perm:7:no']);
+  await s.telegram.onUpdate({ update_id: 2, callback_query: { id: 'cb1', data: 'perm:7:yes', message: { chat: { id: 42 } } } });
+  assert.deepEqual(s.seen.find((x) => x[0] === 'answer'), ['answer', 7, 'yes']);
+  // a stranger's button press is ignored
+  await s.telegram.onUpdate({ update_id: 3, callback_query: { id: 'cb2', data: 'perm:7:always', message: { chat: { id: 666 } } } });
+  assert.equal(s.seen.filter((x) => x[0] === 'answer').length, 1);
+  // result + diff
+  s.bus.emit('engine.event', { engine: 'claude', role: 'worker', ev: { t: 'text-start' } });
+  s.bus.emit('engine.event', { engine: 'claude', role: 'worker', ev: { t: 'text-delta', text: 'Fixed it.' } });
+  s.bus.emit('engine.event', { engine: 'claude', role: 'worker', ev: { t: 'result', isError: false } });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(s.tg.sent().some((t) => /done!\n\nFixed it\./.test(t)));
+  assert.ok(s.tg.calls.some((c) => c.method === 'sendDocument'));
+  // kill switch
+  await s.telegram.onUpdate(s.msg(42, '/remote off'));
+  await s.telegram.onUpdate(s.msg(42, '/code again'));
+  assert.match(s.tg.sent().at(-1), /switched off/);
+  s.stop();
+});
+
+test('poll loop: delivers updates in order, advances the offset, stops on a bad token', async () => {
+  const tg = fakeTelegram();
+  tg.queue.push({ update_id: 10, message: { chat: { id: 1 }, text: 'a' } }, { update_id: 11, message: { chat: { id: 1 }, text: 'b' } });
+  const api = createBotApi({ token: () => TOKEN, fetch: tg.fetch });
+  /** @type {string[]} */ const got = [];
+  const stop = api.poll((u) => { got.push(u.message.text); }, { timeout: 0 });
+  await new Promise((r) => setTimeout(r, 40));
+  stop();
+  assert.deepEqual(got, ['a', 'b']);
+  assert.ok(tg.calls.filter((c) => c.method === 'getUpdates').some((c) => c.body.offset === 12));
+  const bad = createBotApi({ token: () => TOKEN, fetch: /** @type {any} */ (async () => ({ ok: false, status: 401, json: async () => ({ ok: false, error_code: 401, description: `Unauthorized ${TOKEN}` }) })) });
+  /** @type {string[]} */ const errs = [];
+  bad.poll(() => {}, { onError: (e) => errs.push(e.message), sleep: async () => {} });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(errs.length, 1); // stopped instead of retrying
+  assert.doesNotMatch(errs[0], /AAAbbb/); // token redacted
+});
+
+test('format helpers', () => {
+  assert.equal(fmt.toolLine({ name: 'Edit', input: { file_path: 'C:\\x\\app.js' } }), '✏️ edit app.js');
+  assert.equal(fmt.toolLine({ name: 'mcp__google__docs_create' }), '🔧 google · docs_create');
+  assert.match(fmt.permissionText({ name: 'Bash', input: { command: 'npm test' } }), /\$ npm test/);
+  assert.equal(fmt.clip('x'.repeat(5000)).length, fmt.MAX);
+});
+
+test('real work asked in plain words gets a "Let Claude do it" button; the tap runs it at Tama\'s desk (D-036)', async () => {
+  const s = await paired({ desk: 'C:\\tama\\desk', work: 'Create a Google Sheet named Gym with columns Day and Minutes' });
+  await s.telegram.onUpdate(s.msg(42, 'make me a gym sheet in google'));
+  const offer = s.tg.calls.filter((c) => c.method === 'sendMessage').at(-1);
+  assert.equal(offer?.body.text, 'hi from Gemini~');
+  const btn = offer?.body.reply_markup.inline_keyboard[0][0];
+  assert.equal(btn.text, '💻 Let Claude do it');
+  await s.telegram.onUpdate({ update_id: 5, callback_query: { id: 'c', data: btn.callback_data, message: { chat: { id: 42 }, message_id: 1 } } });
+  // the current folder (C:\code\app) is not allowed, so the task moves to the desk and goes to Claude in ask-every-tool mode
+  assert.equal(s.cwd.value, 'C:\\tama\\desk');
+  assert.ok(s.seen.some((x) => x[0] === 'send' && /Google Sheet named Gym/.test(x[1])));
+  assert.ok(s.tg.sent().some((t) => /at my desk/.test(t)));
+  assert.ok(s.notices.some((n) => /moved to Tama's desk/.test(n)));
+  // the same button can't be used twice
+  await s.telegram.onUpdate({ update_id: 6, callback_query: { id: 'c2', data: btn.callback_data, message: { chat: { id: 42 }, message_id: 1 } } });
+  assert.match(s.tg.sent().at(-1), /expired|still working/);
+  s.stop();
+});
+
+test('a Google confirm from the chat brain during a phone chat becomes buttons on the phone (D-037)', async () => {
+  const s = await paired();
+  /** @type {any[]} */ const answers = [];
+  s.bus.handle('chat.confirm', (p) => { answers.push(p); s.bus.emit('chat.event', { t: 'confirm-done', id: p.id, yes: p.yes }); return { ok: true }; });
+  // the chat brain asks for confirmation while answering the phone message
+  s.chatImpl.fn = () => {
+    setTimeout(() => s.bus.emit('chat.event', { t: 'confirm', id: 9, text: '📊 Create a Google Sheet "Gym"' }), 5);
+    return { ok: true };
+  };
+  const chatting = s.telegram.onUpdate(s.msg(42, 'make a gym sheet'));
+  await new Promise((r) => setTimeout(r, 30));
+  const ask = s.tg.calls.filter((c) => c.method === 'sendMessage').at(-1);
+  assert.match(ask?.body.text, /Create a Google Sheet "Gym"/);
+  assert.deepEqual(ask?.body.reply_markup.inline_keyboard[0].map((b) => b.callback_data), ['cfm:9:y', 'cfm:9:n']);
+  await s.telegram.onUpdate({ update_id: 9, callback_query: { id: 'q', data: 'cfm:9:y', message: { chat: { id: 42 } } } });
+  assert.deepEqual(answers, [{ id: 9, yes: true }]);
+  await new Promise((r) => setTimeout(r, 10));
+  assert.ok(s.tg.calls.some((c) => c.method === 'editMessageText' && /doing it/.test(c.body.text)));
+  s.bus.emit('chat.event', { t: 'message', message: { role: 'tama', text: 'made it!' } });
+  await chatting;
+  assert.equal(s.tg.sent().at(-1), 'made it!');
+  s.stop();
+});
+
+test('regression: a ✅ tap is handled while the message that asked for it is still waiting (no poll deadlock)', async () => {
+  const s = await paired();
+  /** @type {any[]} */ const answers = [];
+  /** @type {(v?: any) => void} */ let release = () => {};
+  s.bus.handle('chat.confirm', (p) => { answers.push(p); release(); return { ok: true }; });
+  s.chatImpl.fn = () => {
+    // like the real chat brain: ask for confirmation, and only answer after the user decided
+    setTimeout(() => s.bus.emit('chat.event', { t: 'confirm', id: 5, text: '📅 Add "Tennis with Ardy"' }), 5);
+    new Promise((r) => { release = r; }).then(() => s.bus.emit('chat.event', { t: 'message', message: { role: 'tama', text: 'added! ✨' } }));
+    return { ok: true };
+  };
+  // Both arrive through the real long-polling loop, one after the other.
+  s.tg.queue.push({ update_id: 50, message: { chat: { id: 42, type: 'private' }, text: 'invite Ardy to tennis tomorrow 7pm' } });
+  await new Promise((r) => setTimeout(r, 60));
+  assert.ok(s.tg.sent().some((t) => /Tennis with Ardy/.test(t)), 'confirm buttons were sent');
+  s.tg.queue.push({ update_id: 51, callback_query: { id: 'cb', data: 'cfm:5:y', message: { chat: { id: 42 } } } });
+  await new Promise((r) => setTimeout(r, 80));
+  assert.deepEqual(answers, [{ id: 5, yes: true }]);
+  assert.equal(s.tg.sent().at(-1), 'added! ✨');
+  s.stop();
+});

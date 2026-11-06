@@ -22,7 +22,7 @@ function fakeGoogle() {
   /** @type {Record<string, { name: string, data: Buffer, modifiedTime: string }>} */
   const appData = {};
   let nextId = 1;
-  const state = { failNext401: false, events: /** @type {any[]} */ ([]), folder: /** @type {string | null} */ (null) };
+  const state = { failNext401: false, events: /** @type {any[]} */ ([]), folder: /** @type {string | null} */ (null), sent: /** @type {string[]} */ ([]) };
   const res = (/** @type {number} */ status, /** @type {any} */ body) => ({
     ok: status < 400, status, json: async () => body, text: async () => (typeof body === 'string' ? body : JSON.stringify(body)),
     arrayBuffer: async () => (Buffer.isBuffer(body) ? body : Buffer.from(String(body))),
@@ -41,6 +41,8 @@ function fakeGoogle() {
       return res(200, {});
     }
     if (state.failNext401) { state.failNext401 = false; return res(401, { error: { message: 'expired' } }); }
+    if (p.endsWith('/gmail/v1/users/me/drafts/send')) { state.sent.push(JSON.parse(body).id); return res(200, { id: 'sent1', threadId: 't1' }); }
+    if (p.includes('/gmail/v1/users/me/drafts/')) return res(200, { id: p.split('/').pop(), message: { payload: { headers: [{ name: 'To', value: 'ardy@example.com' }, { name: 'Subject', value: 'Tennis?' }], mimeType: 'text/plain', body: { data: Buffer.from('See you at 7!').toString('base64') } } } });
     if (p.endsWith('/gmail/v1/users/me/drafts')) return res(200, { id: 'd1', message: { id: 'm1' } });
     if (p.endsWith('/gmail/v1/users/me/profile')) return res(200, { emailAddress: 'me@example.com' });
     if (p.endsWith('/gmail/v1/users/me/messages')) return res(200, { messages: [{ id: 'm9' }] });
@@ -120,10 +122,10 @@ test('API: refreshes an expired token, retries once on 401', async () => {
   assert.equal(r.emailAddress, 'me@example.com');
 });
 
-test('Gmail: drafts only (no send function exists), header injection refused (GOOG-4, D-014)', async () => {
+test('Gmail: drafts, header injection refused; the only send is sendDraft (GOOG-4, D-038)', async () => {
   const g = fakeGoogle();
   const gm = createGmail(apiWith(g).api);
-  assert.deepEqual(Object.keys(gm).filter((k) => /send/i.test(k)), []);
+  assert.deepEqual(Object.keys(gm).filter((k) => /send/i.test(k)), ['sendDraft']);
   const r = await gm.createDraft({ to: 'a@b.c', subject: 'Héllo', body: 'Hi!\nThanks' });
   assert.equal(r.draftId, 'd1');
   const raw = b64urlDecode(JSON.parse(g.calls.at(-1)?.body).message.raw);
@@ -170,7 +172,8 @@ test('tools: no send/delete/share tools; reads + creations auto-allowed, edits a
   const g = fakeGoogle();
   const api = apiWith(g).api;
   const tools = googleTools({ calendar: createCalendar(api), gmail: createGmail(api), drive: createDrive(api, { getFolderId: () => 'folder1', setFolderId: () => {} }) });
-  assert.deepEqual(tools.filter((t) => /send|delete|share|trash|remove/i.test(t.name)).map((t) => t.name), []);
+  assert.deepEqual(tools.filter((t) => /delete|share|trash|remove/i.test(t.name)).map((t) => t.name), []);
+  assert.deepEqual(tools.filter((t) => /send/i.test(t.name)).map((t) => t.name), ['gmail_send_draft']);
   const rule = policyRule(tools);
   assert.equal(rule({ name: 'mcp__google__gmail_create_draft' }), 'allow');
   assert.equal(rule({ name: 'mcp__google__gmail_search' }), 'allow');
@@ -288,4 +291,56 @@ test('backup: uploads the .tama bytes to appData, keeps 7, lists and finds them 
   assert.equal(backups[0].day, '2026-11-09');
   assert.equal(backups[0].tamaId, 'tama-1');
   s.stop();
+});
+
+test('calendar: a created event comes with an "add to calendar" link for guests (no invitations are sent)', async () => {
+  const g = fakeGoogle();
+  const cal = createCalendar(apiWith(g).api);
+  const e = await cal.create({ summary: 'Tennis with Ardy', start: '2026-11-07T19:00:00+07:00', end: '2026-11-07T21:00:00+07:00', location: 'Grand Sport Central' });
+  const u = new URL(e.shareLink);
+  assert.equal(u.hostname, 'calendar.google.com');
+  assert.equal(u.searchParams.get('action'), 'TEMPLATE');
+  assert.equal(u.searchParams.get('text'), 'Tennis with Ardy');
+  assert.equal(u.searchParams.get('dates'), '20261107T120000Z/20261107T140000Z');
+  assert.equal(u.searchParams.get('location'), 'Grand Sport Central');
+});
+
+test('sending (D-038): only drafts Tama wrote; Claude is always asked; guests on an event count as sending', async () => {
+  const g = fakeGoogle();
+  const api = apiWith(g).api;
+  /** @type {string[]} */ const mine = [];
+  const tools = googleTools({
+    calendar: createCalendar(api), gmail: createGmail(api), drive: createDrive(api, { getFolderId: () => 'f', setFolderId: () => {} }),
+    drafts: { remember: (id) => mine.push(id), isTamas: (id) => mine.includes(id) },
+  });
+  const t = (/** @type {string} */ n) => /** @type {any} */ (tools.find((x) => x.name === n));
+  await assert.rejects(t('gmail_send_draft').run({ draftId: 'someone-elses' }), /only send drafts it wrote/);
+  const d = await t('gmail_create_draft').run({ to: 'ardy@example.com', subject: 'Tennis?', body: 'See you at 7!' });
+  assert.deepEqual(mine, [d.draftId]);
+  assert.match(await t('gmail_send_draft').preview({ draftId: d.draftId }), /Send this email\?\nTo: ardy@example\.com\nSubject: Tennis\?\n\nSee you at 7!/);
+  await t('gmail_send_draft').run({ draftId: d.draftId });
+  assert.deepEqual(g.state.sent, ['d1']);
+
+  const rule = policyRule(tools);
+  assert.equal(rule({ name: 'mcp__google__gmail_send_draft', input: { draftId: 'd1' } }), 'ask');
+  assert.equal(rule({ name: 'mcp__google__gmail_create_draft', input: {} }), 'allow');
+  assert.equal(rule({ name: 'mcp__google__calendar_create_event', input: { summary: 'x' } }), 'allow');
+  assert.equal(rule({ name: 'mcp__google__calendar_create_event', input: { summary: 'x', attendees: 'a@b.co' } }), 'ask');
+
+  await createCalendar(api).create({ summary: 'Tennis', start: '2026-11-07T19:00:00+07:00', end: '2026-11-07T21:00:00+07:00', attendees: 'ardy@example.com' });
+  const call = g.calls.filter((c) => c.method === 'POST' && c.url.pathname.includes('/calendar/')).at(-1);
+  assert.equal(call?.url.searchParams.get('sendUpdates'), 'all');
+  assert.deepEqual(JSON.parse(call?.body).attendees, [{ email: 'ardy@example.com' }]);
+  await assert.rejects(createCalendar(api).create({ summary: 'x', start: '2026-11-07', end: '2026-11-08', attendees: 'not-an-email' }), /Not an email/);
+});
+
+test('calendar: a confirmed place link is added to the event notes (only Google links)', async () => {
+  const g = fakeGoogle();
+  const cal = createCalendar(apiWith(g).api);
+  await cal.create({ summary: 'Tennis', start: '2026-11-07T19:00:00+07:00', end: '2026-11-07T21:00:00+07:00', location: 'Grand Sport Central, Jakarta', placeLink: 'https://maps.app.goo.gl/AbC123', description: 'Bring rackets' });
+  const body = JSON.parse(g.calls.filter((c) => c.method === 'POST' && c.url.pathname.includes('/calendar/')).at(-1)?.body);
+  assert.equal(body.location, 'Grand Sport Central, Jakarta');
+  assert.equal(body.description, 'Bring rackets\n\n📍 Map: https://maps.app.goo.gl/AbC123');
+  await cal.create({ summary: 'X', start: '2026-11-07', end: '2026-11-08', placeLink: 'https://evil.example/x' });
+  assert.equal(JSON.parse(g.calls.filter((c) => c.method === 'POST' && c.url.pathname.includes('/calendar/')).at(-1)?.body).description, undefined);
 });

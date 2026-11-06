@@ -1,7 +1,7 @@
 {
   "name": "tama",
   "productName": "Tama",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Tama - a chibi anime agentic tamagotchi desktop companion",
   "author": "philipuscahyadi02-hub",
   "main": "src/main/index.js",
@@ -31,7 +31,9 @@
     ],
     "asarUnpack": [
       "node_modules/@anthropic-ai/claude-agent-sdk/**",
-      "node_modules/zod/**"
+      "node_modules/zod/**",
+      "src/main/engines/agy/mcp-relay.js",
+      "src/main/engines/agy/guard.js"
     ],
     "win": {
       "target": "portable",

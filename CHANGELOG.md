@@ -17,6 +17,28 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## [Unreleased]
 _Nothing yet._
 
+## [0.7.0] — 2026-11-06 — M7 Telegram (+ Gemini does Google, sending with confirmation, places)
+### Added
+- **M7 Telegram** (D-036): your Tama on your phone, served from your PC (no server).
+  - **Setup in 2 minutes:** create a bot with @BotFather, `/phone setup <token>`, open the link on your phone. Only that one chat is ever answered (SAFE-3).
+  - **Chat** with her from anywhere (Gemini via agy, same conversation as the 💬 window).
+  - **`/status`** with a picture of how she looks right now, `/feed /snack /nap /summon`, `/todo /done /focus /remind`, `/brief`.
+  - **Remote coding:** `/code <task>` runs in the terminal's Claude Code session, only in folders you allowed on the PC (`/phone allow here`), always asking first: permission prompts arrive as ✅ / ♾️ / ❌ buttons. Live progress, the result, and the diff as a file. `/stop`, `/repos`, `/cd`, `/remote off` kill switch. Every remote action shows on the desktop.
+  - **Just ask in plain words:** for real work (code, email drafts, Docs, Sheets, calendar) she replies with a **💻 Let Claude do it** button; one tap hands it to Claude Code.
+  - **Tama's desk:** remote tasks that need no project (like Google tasks) run in her own empty folder; your projects still need `/phone allow here` on the PC.
+  - **Good morning / good night:** a morning brief and tonight's diary page on your phone.
+- **Gemini does your Google tasks itself** (D-037): in the 💬 chat and on Telegram, "what's on tomorrow?", "draft a reply to…", "make a gym sheet" are done by the chat brain (your agy/Gemini login), not Claude. Anything that creates or changes something waits for your ✅ (chat window or phone). Still no sending, deleting or sharing.
+### Fixed
+- **Telegram confirm deadlock:** a ✅ tap could not be read while the message that asked for it was still waiting, so Google actions from the phone always timed out. Button presses are now handled immediately (regression test through the real polling loop).
+- Confirmations now expire after 2.5 minutes, before agy's own 3-minute tool timeout.
+- **Inviting someone:** calendar events now come with an "add to calendar" link, and the chat brain puts it into a Gmail draft to the guest (Tama still never sends invitations or emails).
+### Changed
+- **Tama can now send email and calendar invitations, after you confirm** (D-038, replaces drafts-only D-014): she writes the draft, shows you the whole email (To, Cc, Subject, body) with "✅ Send it" in the chat or on your phone, and only then sends. Invitations: the confirm card says "Google will email an invitation to …". She can only send drafts she wrote, never anything automatically. Claude in the terminal also always asks before sending.
+- **Places checked before events** (D-039): paste a Google Maps link and Tama uses it as the event location right away; type a place name and she looks it up first (Google Maps with an optional `/google maps-key`, otherwise web search + a Maps link) and asks "is this the right place?" before creating anything. The confirm card and the event notes show the map link.
+### Security
+- **agy's plan mode turned out to be advisory**: a persuasive prompt made it write files. Every Tama agy session now has a hard guard hook that blocks all tools except Tama's own and web search (fail-closed). `npm run probe:agy` checks this.
+  - Bot says "sleeping" when the PC app quits; `/phone awake on` keeps the PC awake for remote use.
+
 ## [0.6.0] — 2026-11-06 — M6 Google (+ M5 extras)
 ### Added
 - **M6 Google** (D-034):
@@ -151,7 +173,20 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `08f25ab` | 2026-11-06 | feat(google) | check event places on Google Maps before creating (D-039) |
+| `398ba59` | 2026-11-06 | docs(changelog) | regenerate commit table |
+| `a601952` | 2026-11-06 | feat(google) | send email and calendar invitations after the user confirms the full content (D-038) |
+| `a46a321` | 2026-11-06 | docs(changelog) | regenerate commit table |
+| `61ac8e2` | 2026-11-06 | fix(telegram) | confirm deadlock in the polling loop; invite flow via draft + add-to-calendar link |
+| `a8e51fb` | 2026-11-06 | docs(changelog) | regenerate commit table |
+| `43d1df2` | 2026-11-06 | feat(chat) | Gemini does Google tasks itself; hard read-only guard for agy (D-037) |
+| `34a0f55` | 2026-11-06 | docs(changelog) | regenerate commit table |
+| `e7fb5e0` | 2026-11-06 | feat(telegram) | "Let Claude do it" button for plain-language work, Tama's desk for remote tasks |
+| `e9094ed` | 2026-11-06 | docs(changelog) | regenerate commit table |
+| `185f052` | 2026-11-06 | feat(telegram) | M7 Telegram bot from the PC: chat, pet, productivity, remote /code |
+| `d6980fa` | 2026-11-06 | docs(changelog) | regenerate commit table for 0.6.0 |
 
 ### v0.6.0
 | Commit | Date | Type | Subject |

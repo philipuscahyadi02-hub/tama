@@ -31,10 +31,11 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
     '  /memory          what your Tama remembers about you · /remember <fact> · /forget <n|all>',
     '  /diary [date]    read their diary (they write one every evening) · /diary list',
     '  /event [id]      start a little moment now · /dnd [on|off] quiet mode · /nudges [on|off] water & stretch',
-    '  /google [setup|status|login|logout|brief|backup|backups|restore <n>|readonly on|off]   Gmail drafts, Calendar, Drive, Docs, Sheets',
+    '  /google [setup|status|login|logout|brief|backup|backups|restore <n>|readonly on|off|maps-key <key|off>]   Gmail, Calendar, Drive, Docs, Sheets',
     '  /brief           morning brief (calendar, important mail, todos) · /newpc  checklist for a new PC',
     '  /weather <city>  set your city for weather moments (no arg = now · /weather off) · /marker [on|off] walk tab',
-    '  coming soon: /phone (M7) · /voice (M8)',
+    '  /phone [setup <token>|code|status|on|off|unpair|allow here|disallow here|remote on|off|awake on|off]   Telegram on your phone',
+    '  coming soon: /voice (M8)',
     '',
     '  This terminal = Claude Code (asks before edits/commands).  Chat with your Tama = 💬 window (Ctrl+Alt+J, free via agy).',
     '  /engines  status · /budget [usd]  daily Claude budget (API-equivalent estimate)',
@@ -182,7 +183,50 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
         await K.ui.setPrefs({ walkMarker: on });
         info(on ? '⎿  🚶 walk tab on: when you hide your Tama, a little tab on the right edge calls them back' : '⎿  walk tab off');
       }],
-      phone: ['(M7) Pair your phone (Telegram)', () => info('⎿  Telegram pairing arrives in M7.')],
+      phone: ['Your Tama on your phone (Telegram)', async (arg) => {
+        const T = K.telegram;
+        const [cmd, ...rest] = String(arg || 'status').trim().split(/\s+/);
+        const v = (rest[0] || '').toLowerCase();
+        const pairInfo = (s) => (s.pairing
+          ? `⎿  📱 Open ${s.pairing.link || `your bot @${s.bot}`} on your phone and press Start, or send it this code: ${s.pairing.code} (valid 15 min)`
+          : '');
+        switch (cmd) {
+          case 'setup': {
+            if (!rest[0]) {
+              return info([
+                '⎿  Telegram setup (2 minutes):',
+                '    1. In Telegram, open @BotFather → /newbot → pick a name → copy the token (123456:AA…)',
+                '    2. Here: /phone setup <token>',
+                '    3. Open the link I show on your phone and press Start. Only that chat will ever be answered.',
+              ].join('\n'));
+            }
+            const r = await T.setup(rest[0]);
+            if (r.error) return error(`✗ ${r.error}`);
+            return info(`⎿  ✅ bot @${r.bot} is running on this PC.\n${pairInfo(r)}`);
+          }
+          case 'code': { const r = await T.newCode(); return r.error ? error(`✗ ${r.error}`) : info(pairInfo(r)); }
+          case 'unpair': await T.unpair(); return info('⎿  phone disconnected. /phone code to pair again');
+          case 'on': case 'off': await T.set({ enabled: cmd === 'on' }); return info(`⎿  Telegram bot ${cmd === 'on' ? 'running 📱' : 'stopped 💤'}`);
+          case 'allow': case 'disallow': {
+            const path = !rest.length || v === 'here' ? getCwd() : rest.join(' ');
+            if (!path) return error('✗ /cd into a project first, then /phone allow here');
+            const r = await T.set(cmd === 'allow' ? { allow: path } : { disallow: path });
+            return info(`⎿  remote /code folders: ${r.repos.length ? r.repos.join(', ') : '(none)'}`);
+          }
+          case 'remote': await T.set({ remote: v === 'on' }); return info(`⎿  remote coding from the phone: ${v === 'on' ? 'on 💻' : 'off 🔒'}`);
+          case 'awake': await T.set({ awake: v === 'on' }); return info(`⎿  keep the PC awake for your phone: ${v === 'on' ? 'on ☕' : 'off'}`);
+          default: {
+            const s = await T.status();
+            if (!s.configured) return info('⎿  Telegram isn\'t set up yet. /phone setup shows the 2-minute steps 📱');
+            return info([
+              `⎿  📱 bot @${s.bot} · ${s.running ? 'running' : 'stopped'} · ${s.paired ? 'paired with your phone ✅' : 'not paired yet'}`,
+              `    remote /code: ${s.remote ? 'on' : 'off'} · folders: ${s.repos.length ? s.repos.join(', ') : '(none: /phone allow here)'}`,
+              `    keep PC awake: ${s.awake ? 'on' : 'off'}${s.ignored ? ` · ignored ${s.ignored} message(s) from other chats` : ''}`,
+              pairInfo(s),
+            ].filter(Boolean).join('\n'));
+          }
+        }
+      }],
       voice: ['(M8) Voice settings', () => info('⎿  Voice (AivisSpeech) arrives in M8.')],
       google: ['Connect Google: Gmail drafts, Calendar, Drive, Docs, Sheets', async (arg) => {
         const G = K.google;
@@ -209,6 +253,12 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
             const b = r.backups && r.backups[Number(rest[0]) - 1];
             if (!b) return info('⎿  Usage: /google restore <n> (see /google backups)');
             return show(await G.restore(b.id), (x) => `⎿  restored "${x.name}" as a new Tama. Switch to them in /tama`);
+          }
+          case 'maps-key': {
+            const v2 = rest[0] || '';
+            if (!v2) return info(`⎿  places: ${s.maps === 'google' ? 'Google Maps (key set)' : 'web search + Maps links'} · /google maps-key <AIza…> to use Google Places · /google maps-key off`);
+            const r = await G.set({ mapsKey: v2 === 'off' ? null : v2 });
+            return r.error ? error(`✗ ${r.error}`) : info(`⎿  places: ${r.maps === 'google' ? 'Google Maps 📍' : 'web search + Maps links'}`);
           }
           case 'readonly': {
             const r = await G.set({ readonly: /^(on|1|yes)$/i.test(rest[0] || '') });

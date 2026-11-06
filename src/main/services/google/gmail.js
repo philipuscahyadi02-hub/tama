@@ -1,5 +1,6 @@
 // @ts-check
-// Gmail (GOOG-4): search, read, create drafts. There is NO send function anywhere (D-014): the user sends from Gmail.
+// Gmail (GOOG-4, D-038): search, read, create drafts, and send a draft Tama wrote — only after the user confirmed
+// the full draft (enforced by the callers: PermissionGate for Claude, chat-tools for the chat brain).
 const BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
 
 /** @param {string} s */
@@ -68,6 +69,18 @@ function createGmail(api) {
         'Content-Type: text/plain; charset="UTF-8"', 'Content-Transfer-Encoding: 8bit', '', String(p.body || ''));
       const r = await api.request(`${BASE}/drafts`, { json: { message: { raw: b64url(lines.join('\r\n')), ...(p.threadId ? { threadId: p.threadId } : {}) } } });
       return { draftId: r.id, messageId: r.message && r.message.id, link: 'https://mail.google.com/mail/u/0/#drafts' };
+    },
+    /** The draft as the user will see it in the confirm card. @param {{ draftId: string }} p */
+    async getDraft({ draftId }) {
+      const d = await api.request(`${BASE}/drafts/${encodeURIComponent(draftId)}`, { query: { format: 'full' } });
+      const m = d.message || {};
+      const h = (m.payload && m.payload.headers) || [];
+      return { draftId: d.id, to: header(h, 'To'), cc: header(h, 'Cc'), bcc: header(h, 'Bcc'), subject: header(h, 'Subject'), body: bodyText(m.payload).slice(0, 8000) };
+    },
+    /** Send an existing draft (D-038). @param {{ draftId: string }} p */
+    async sendDraft({ draftId }) {
+      const r = await api.request(`${BASE}/drafts/send`, { json: { id: draftId } });
+      return { sent: true, messageId: r.id, threadId: r.threadId, link: `https://mail.google.com/mail/u/0/#sent/${r.id}` };
     },
     async profile() { return api.request(`${BASE}/profile`); },
   };

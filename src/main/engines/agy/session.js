@@ -4,7 +4,7 @@
 const { spawn } = require('child_process');
 const { createAcpClient } = require('../acp/client');
 const { mapAcpUpdate, pickOption } = require('./map-update');
-const { findAgyExecutable, ensureTamaAgySettings, CLI_DIR_NAME } = require('./setup');
+const { findAgyExecutable, ensureTamaAgySettings, ensureWorkspaceGuard, CLI_DIR_NAME } = require('./setup');
 
 /** Terminal mode names (Claude style) → agy ACP mode ids. */
 const MODE_MAP = { default: 'default', acceptEdits: 'accept-edits', plan: 'plan' };
@@ -23,6 +23,8 @@ class AgyEngine {
    *   mode?: 'default'|'acceptEdits'|'plan',
    *   lockMode?: boolean,
    *   spawnAgent?: (cwd: string) => any,
+   *   mcpServers?: () => any[],
+   *   guard?: string | null,
    *   prepare?: () => void,
    * }} opts
    */
@@ -35,6 +37,10 @@ class AgyEngine {
     this.thoughtLevel = opts.thoughtLevel || null;
     this.spawnAgent = opts.spawnAgent || defaultSpawn;
     this.prepare = opts.prepare || (() => { ensureTamaAgySettings(); });
+    /** MCP servers (ACP stdio entries) for new sessions, e.g. Tama's Google tools relay (D-037). */
+    this.mcpServers = opts.mcpServers || (() => []);
+    /** Allow-list regex for the hard read-only hook in the working folder ('' = no tools); null = no guard (D-037). */
+    this.guard = opts.guard === undefined ? null : opts.guard;
     /** @type {string | null} */ this.cwd = null;
     /** @type {string} */
     this.mode = opts.mode || 'default';
@@ -79,6 +85,7 @@ class AgyEngine {
   async start() {
     if (!this.cwd) throw new Error('agy needs a working folder.');
     this.prepare();
+    if (this.guard !== null) ensureWorkspaceGuard(this.cwd, this.guard);
     const child = this.spawnAgent(this.cwd);
     const client = createAcpClient(child, { requestTimeoutMs: 0 });
     this.client = client;
@@ -105,7 +112,7 @@ class AgyEngine {
     });
     await client.request('initialize', { protocolVersion: 1, clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false } }, 60000);
     /** @type {any} */
-    const params = { cwd: this.cwd, mcpServers: [] };
+    const params = { cwd: this.cwd, mcpServers: this.mcpServers() };
     if (this.persona) params._meta = { antigravity: { systemPrompt: { append: this.persona } } };
     const s = await client.request('session/new', params, 60000);
     this.sessionId = s.sessionId;

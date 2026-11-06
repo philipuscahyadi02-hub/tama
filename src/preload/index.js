@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** Main → renderer messages arrive on one 'ui' channel as (name, payload). */
-const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google']);
+const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram']);
 /** @type {Map<string, Set<(p: any) => void>>} */
 const subs = new Map();
 ipcRenderer.on('ui', (_e, name, payload) => {
@@ -83,6 +83,7 @@ contextBridge.exposeInMainWorld('tama', {
     history: () => ipcRenderer.invoke('chat:history'),
     interrupt: () => ipcRenderer.send('chat:interrupt'),
     clear: () => ipcRenderer.send('chat:clear'),
+    confirm: (/** @type {number} */ id, /** @type {boolean} */ yes) => ipcRenderer.invoke('chat:confirm', id, yes),
     onEvent: on('chat.event'),
     onFocus: on('chat.focus'),
   },
@@ -111,6 +112,15 @@ contextBridge.exposeInMainWorld('tama', {
     list: () => ipcRenderer.invoke('diary:list'),
   },
 
+  // ---- Telegram (M7) ----
+  telegram: {
+    status: () => ipcRenderer.invoke('telegram:status'),
+    setup: (/** @type {string} */ token) => ipcRenderer.invoke('telegram:setup', token),
+    newCode: () => ipcRenderer.invoke('telegram:newCode'),
+    unpair: () => ipcRenderer.invoke('telegram:unpair'),
+    set: (/** @type {any} */ p) => ipcRenderer.invoke('telegram:set', p),
+    onChange: on('telegram'),
+  },
   // ---- Google (M6) ----
   google: {
     open: () => ipcRenderer.send('google:open'),

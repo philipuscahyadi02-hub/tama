@@ -38,7 +38,8 @@ const TOPICS = {
   /** { engine: 'claude'|'agy'|'tama', role: 'worker'|'lite'|'brain', ev: EngineEvent } */
   ENGINE_EVENT: 'engine.event',
   /** Chat window events (D-029): { t: 'message', message } | { t: 'delta', text } | { t: 'tool', text } | { t: 'status', state }
-   *  | { t: 'error', message } | { t: 'done', isError } | { t: 'cleared' } */
+   *  | { t: 'error', message } | { t: 'done', isError } | { t: 'cleared' }
+   *  | { t: 'confirm', id, text } | { t: 'confirm-done', id, yes } — the chat brain wants to create/edit something in Google (D-037) */
   CHAT_EVENT: 'chat.event',
   /** UiPrefs { termTheme, tourDone, unlocked, variants } — after a change (D-032) */
   UI_PREFS_CHANGED: 'ui.prefs.changed',
@@ -50,6 +51,8 @@ const TOPICS = {
   GOOGLE_CHANGED: 'google.changed',
   /** { summary, start, minutes } — a calendar event starts in ≤ 5 minutes (GOOG-3) */
   GOOGLE_MEETING_SOON: 'google.meeting.soon',
+  /** TelegramStatus { configured, paired, running, enabled, bot, repos, remote, awake, pairing: {code, link}|null, ignored } (D-036) */
+  TELEGRAM_CHANGED: 'telegram.changed',
   /** { text, kind: 'info'|'warn' } — brain messages worth a pet bubble (budget, missing engines) */
   BRAIN_NOTICE: 'brain.notice',
   /** { reason: string } — pet window was brought back on screen by summon() */
@@ -141,6 +144,8 @@ const TOPICS = {
   CHAT_HISTORY: 'chat.history',
   CHAT_INTERRUPT: 'chat.interrupt',
   CHAT_CLEAR: 'chat.clear',
+  /** { id, yes } → { ok } | { error } — answer a chat-brain confirmation (D-037) */
+  CHAT_CONFIRM: 'chat.confirm',
   /** () → UiPrefs */
   UI_PREFS_GET: 'ui.prefs.get',
   /** { termTheme?, tourDone? } → UiPrefs | { error, minLevel? } */
@@ -185,6 +190,16 @@ const TOPICS = {
   GOOGLE_BACKUPS: 'google.backups',
   /** { fileId } → roster import result — restore a backup as a new Tama */
   GOOGLE_RESTORE: 'google.restore',
+  /** () → TelegramStatus */
+  TELEGRAM_STATUS: 'telegram.status',
+  /** { token } → TelegramStatus (with a pairing code) | { error } — BotFather token (TG-2) */
+  TELEGRAM_SETUP: 'telegram.setup',
+  /** () → TelegramStatus with a fresh one-time pairing code */
+  TELEGRAM_NEW_CODE: 'telegram.newCode',
+  /** () → TelegramStatus — forget the paired chat */
+  TELEGRAM_UNPAIR: 'telegram.unpair',
+  /** { enabled?, remote?, awake?, allow?: path, disallow?: path } → TelegramStatus */
+  TELEGRAM_SET: 'telegram.set',
   /** sessionId|null → { ok } | { error } */
   ENGINE_RESUME: 'engine.resume',
   /** { reason } → void — bring the pet back on screen */
