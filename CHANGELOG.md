@@ -4,8 +4,11 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 
 **How this file works**
 - **Top part (hand-written):** add a line under `## [Unreleased]
+_Nothing yet._
+
+## [0.5.0] — 2026-11-06 — M5 Events & memory
 ### Added
-- **M5 events & memory** (branch `m5-events`, D-033):
+- **M5 events & memory** (D-033):
   - **Events** (EVT-1..3): your Tama starts little moments on her own: good morning, lunch check, afternoon slump, weekend plans, late-night "go to sleep", welcome back after a long absence, hungry/sleepy quests, a 7-day-streak party, bond level-ups, New Year / Valentine / Halloween / Christmas, her hatch-day, this-or-that questions, and memory callbacks. Defined as data in `assets/events/deck.json`; each line is written in character by Gemini (agy), with deck lines as a fallback.
   - **Event box** on the pet with answer buttons (and "later"); events also show in the 💬 chat history, and as a Windows notification when she's hidden. Answers grow the bond a little and can become memories.
   - **Memory** (EVT-4, NFR-4): she remembers facts you tell her in chat (hidden `[[remember]]` markers) or via answers. `/memory`, `/remember <fact>`, `/forget <n|all>`. Stored only on your PC, in the Tama's folder (moves with `.tama` exports).
