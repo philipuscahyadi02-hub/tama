@@ -182,8 +182,13 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
+_No commits._
+
+### v0.8.0
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `15111fb` | 2026-11-06 | chore(release) | 0.8.0 |
+| `0e39812` | 2026-11-06 | docs(changelog) | regenerate commit table |
 | `02e74c3` | 2026-11-06 | feat(usage) | Limits tab: what's left for Claude, Gemini and Google (D-041) |
 | `c8d20bd` | 2026-11-06 | docs(changelog) | regenerate commit table |
 | `276dd70` | 2026-11-06 | feat(usage) | M8 usage & accounts dashboard (D-040) |
