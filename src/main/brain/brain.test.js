@@ -220,3 +220,12 @@ test('chat: a remember marker becomes a memory and is never shown; memories reac
   await bus.request('chat.push', { role: 'tama', text: 'lunch time~' });
   assert.equal((await bus.request('chat.history')).messages.at(-1).text, 'lunch time~');
 });
+
+test('chat: a [[work: …]] marker is hidden and attached to the message (phone hand-off button)', async () => {
+  const { bus, chat } = setupBrain({ chatReply: () => 'Sure, Claude can make that! [[work: Create a Google Doc titled Plan]]' });
+  await bus.request('chat.send', '📱 make a plan doc');
+  await tick();
+  const tama = chat.find((e) => e.t === 'message' && e.message.role === 'tama');
+  assert.equal(tama.message.text, 'Sure, Claude can make that!');
+  assert.equal(tama.message.work, 'Create a Google Doc titled Plan');
+});

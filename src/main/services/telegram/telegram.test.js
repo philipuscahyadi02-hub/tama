@@ -35,7 +35,7 @@ function fakeTelegram() {
   return { fetch: /** @type {any} */ (f), calls, queue, sent };
 }
 
-function setup() {
+function setup(/** @type {{ desk?: string, work?: string }} */ o = {}) {
   const tg = fakeTelegram();
   const bus = new Bus();
   /** @type {Record<string, string>} */ const secrets = {};
@@ -56,7 +56,7 @@ function setup() {
     seen.push(['chat', t]);
     setTimeout(() => {
       bus.emit('chat.event', { t: 'message', message: { role: 'user', text: t } });
-      bus.emit('chat.event', { t: 'message', message: { role: 'tama', text: 'hi from Gemini~' } });
+      bus.emit('chat.event', { t: 'message', message: { role: 'tama', text: 'hi from Gemini~', work: o.work } });
     }, 5);
     return { ok: true };
   });
@@ -65,7 +65,7 @@ function setup() {
   const telegram = createTelegram({
     bus, secrets: { get: (k) => secrets[k] ?? null, set: (k, v) => { secrets[k] = v; }, delete: (k) => { delete secrets[k]; } },
     device: /** @type {any} */ (device), git: { isRepo: () => true, diff: async () => 'diff --git a/x b/x\n+hello' },
-    snapshot: async () => null, keepAwake: (on) => on, tama: { name: 'Kero-chan' }, fetch: tg.fetch,
+    snapshot: async () => null, keepAwake: (on) => on, tama: { name: 'Kero-chan' }, desk: /** @type {any} */ (o.desk), fetch: tg.fetch,
   });
   const stop = telegram.start();
   const msg = (/** @type {number} */ chat, /** @type {string} */ text) => ({ update_id: 1, message: { chat: { id: chat, type: 'private' }, text } });
@@ -93,8 +93,8 @@ test('pairing: token checked, one-time code binds exactly one chat; everyone els
   s.stop();
 });
 
-async function paired() {
-  const s = setup();
+async function paired(/** @type {{ desk?: string, work?: string }} */ o = {}) {
+  const s = setup(o);
   const st = await s.bus.request('telegram.setup', { token: TOKEN });
   await s.telegram.onUpdate(s.msg(42, st.pairing.code));
   return s;
@@ -172,4 +172,23 @@ test('format helpers', () => {
   assert.equal(fmt.toolLine({ name: 'mcp__google__docs_create' }), '🔧 google · docs_create');
   assert.match(fmt.permissionText({ name: 'Bash', input: { command: 'npm test' } }), /\$ npm test/);
   assert.equal(fmt.clip('x'.repeat(5000)).length, fmt.MAX);
+});
+
+test('real work asked in plain words gets a "Let Claude do it" button; the tap runs it at Tama\'s desk (D-036)', async () => {
+  const s = await paired({ desk: 'C:\\tama\\desk', work: 'Create a Google Sheet named Gym with columns Day and Minutes' });
+  await s.telegram.onUpdate(s.msg(42, 'make me a gym sheet in google'));
+  const offer = s.tg.calls.filter((c) => c.method === 'sendMessage').at(-1);
+  assert.equal(offer?.body.text, 'hi from Gemini~');
+  const btn = offer?.body.reply_markup.inline_keyboard[0][0];
+  assert.equal(btn.text, '💻 Let Claude do it');
+  await s.telegram.onUpdate({ update_id: 5, callback_query: { id: 'c', data: btn.callback_data, message: { chat: { id: 42 }, message_id: 1 } } });
+  // the current folder (C:\code\app) is not allowed, so the task moves to the desk and goes to Claude in ask-every-tool mode
+  assert.equal(s.cwd.value, 'C:\\tama\\desk');
+  assert.ok(s.seen.some((x) => x[0] === 'send' && /Google Sheet named Gym/.test(x[1])));
+  assert.ok(s.tg.sent().some((t) => /at my desk/.test(t)));
+  assert.ok(s.notices.some((n) => /moved to Tama's desk/.test(n)));
+  // the same button can't be used twice
+  await s.telegram.onUpdate({ update_id: 6, callback_query: { id: 'c2', data: btn.callback_data, message: { chat: { id: 42 }, message_id: 1 } } });
+  assert.match(s.tg.sent().at(-1), /expired|still working/);
+  s.stop();
 });

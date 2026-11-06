@@ -9,6 +9,8 @@ const persona = require('./persona');
 const HISTORY_MAX = 200;
 /** `[[remember: …]]` markers in a reply become memories and are never shown (EVT-4). */
 const REMEMBER_RE = /\[\[\s*remember\s*:\s*([^\]]+?)\s*\]\]/gi;
+/** `[[work: …]]` = a task the chat brain suggests handing to Claude Code (phone button, D-036). */
+const WORK_RE = /\[\[\s*work\s*:\s*([^\]]+?)\s*\]\]/i;
 
 /** Streaming filter that hides `[[…]]` markers, even when they arrive split across chunks. */
 function markerFilter() {
@@ -34,7 +36,7 @@ function markerFilter() {
   };
 }
 
-/** @typedef {{ role: 'user'|'tama'|'note', text: string, at: number, tools?: string[] }} ChatMessage */
+/** @typedef {{ role: 'user'|'tama'|'note', text: string, at: number, tools?: string[], work?: string }} ChatMessage */
 
 /**
  * @param {{
@@ -95,7 +97,8 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
         }
         const text = reply.text.replace(REMEMBER_RE, '').replace(/\[\[[^\]]*\]\]/g, '').trim()
           || (ev.isError ? 'uu… my brain glitched. Can you say that again? (agy error)' : 'hmm… I lost my words. Ask me again?');
-        push({ role: 'tama', text, at: now(), tools: reply.tools.length ? reply.tools : undefined });
+        const work = WORK_RE.exec(reply.text);
+        push({ role: 'tama', text, at: now(), tools: reply.tools.length ? reply.tools : undefined, work: work ? work[1].slice(0, 1000) : undefined });
         reply = { text: '', tools: [], filter: markerFilter() };
         out({ t: 'done', isError: !!ev.isError });
         break;

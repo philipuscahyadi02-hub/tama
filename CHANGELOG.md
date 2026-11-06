@@ -21,6 +21,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   - **Chat** with her from anywhere (Gemini via agy, same conversation as the 💬 window).
   - **`/status`** with a picture of how she looks right now, `/feed /snack /nap /summon`, `/todo /done /focus /remind`, `/brief`.
   - **Remote coding:** `/code <task>` runs in the terminal's Claude Code session, only in folders you allowed on the PC (`/phone allow here`), always asking first: permission prompts arrive as ✅ / ♾️ / ❌ buttons. Live progress, the result, and the diff as a file. `/stop`, `/repos`, `/cd`, `/remote off` kill switch. Every remote action shows on the desktop.
+  - **Just ask in plain words:** for real work (code, email drafts, Docs, Sheets, calendar) she replies with a **💻 Let Claude do it** button; one tap hands it to Claude Code.
+  - **Tama's desk:** remote tasks that need no project (like Google tasks) run in her own empty folder; your projects still need `/phone allow here` on the PC.
   - **Good morning / good night:** a morning brief and tonight's diary page on your phone.
   - Bot says "sleeping" when the PC app quits; `/phone awake on` keeps the PC awake for remote use.
 

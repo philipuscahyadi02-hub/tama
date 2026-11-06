@@ -143,7 +143,10 @@ function boot() {
   }));
   stoppers.push(brain.start(), createUiPrefs({ bus, device }).start(), google.start());
   // Telegram (M7, D-008, D-036): long polling from this PC; one paired chat; /code via the same Claude session.
-  stoppers.push(createTelegram({ bus, secrets, device, git, snapshot: () => pet.snapshot(), keepAwake, tama: active }).start());
+  // Tama's desk: an empty folder of her own, so phone tasks that need no project (Google, questions) have a safe place to run.
+  const desk = pathMod.join(appShell.paths.data(), 'desk');
+  require('fs').mkdirSync(desk, { recursive: true });
+  stoppers.push(createTelegram({ bus, secrets, device, git, snapshot: () => pet.snapshot(), keepAwake, tama: active, desk }).start());
   // Events & memory (M5, D-033): facts + diary per Tama, event deck from assets/events.
   stoppers.push(createMemory({ bus, store, tamaId: active.id }).start(), createEvents({ bus, store, tamaId: active.id, deck: EVENT_DECK }).start());
   // ---- M5 extras (D-035) ----

@@ -57,7 +57,8 @@ function statusText(pet) {
 }
 
 const HELP = [
-  'Just talk to me! (Gemini, free) ✨',
+  'Just talk to me! (Gemini, using your Google login) ✨',
+  'Ask for real work (code, email drafts, Docs, Sheets, calendar) and I\'ll show a 💻 button to hand it to Claude Code on your PC.',
   '',
   '/status · how I\'m doing (with a picture)',
   '/feed /snack /nap · take care of me',
@@ -67,8 +68,8 @@ const HELP = [
   '/brief · today\'s calendar, mail and todos',
   '',
   'Work on your PC (Claude Code):',
-  '/repos · allowed project folders · /cd <n> · switch',
   '/code <task> · do it (I ask before every change)',
+  '/repos · where it can work (0 = my desk, for Google tasks) · /cd <n>',
   '/stop · interrupt',
   '/remote off · kill switch for /code',
 ].join('\n');

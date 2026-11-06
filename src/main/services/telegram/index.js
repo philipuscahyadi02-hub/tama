@@ -19,10 +19,11 @@ const CHAT_TIMEOUT_MS = 120000;
  *   device: import('../../platform/store/device').DeviceSettings,
  *   git: { isRepo: (d: string) => boolean, diff: (d: string) => Promise<string> },
  *   snapshot: () => Promise<Buffer | null>, keepAwake: (on: boolean) => boolean,
- *   tama: { name: string }, fetch?: typeof fetch, now?: () => number,
+ *   tama: { name: string }, desk: string, fetch?: typeof fetch, now?: () => number,
  * }} deps
+ *   desk: Tama's own empty work folder; remote tasks that need no project (Google, questions) run there.
  */
-function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, fetch: f = fetch, now = Date.now }) {
+function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, desk, fetch: f = fetch, now = Date.now }) {
   const cfg = () => ({ enabled: true, repos: /** @type {string[]} */ ([]), remote: true, awake: false, morningDay: '', eveningDay: '', bot: '', ...(device.get().telegram || {}) });
   const api = createBotApi({ token: () => secrets.get('telegram.token'), fetch: f });
   const chatId = () => { const v = secrets.get('telegram.chatId'); return v ? Number(v) : null; };
@@ -38,7 +39,10 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
     bus.emit(TOPICS.ENGINE_EVENT, { engine: 'tama', role: 'brain', ev: { t: 'info', text: `⎿  ${text}` } });
     bus.emit(TOPICS.BRAIN_NOTICE, { text, kind: 'info' });
   };
-  const remote = createRemote({ bus, send, edit, sendDocument, git, announce, now, settings: () => ({ repos: cfg().repos, remote: cfg().remote }) });
+  const remote = createRemote({ bus, send, edit, sendDocument, git, announce, now, desk, settings: () => ({ repos: cfg().repos, remote: cfg().remote }) });
+  /** Tasks the chat brain offered to hand to Claude Code ("💻 Let Claude do it" buttons). */
+  const offered = new Map();
+  let offerSeq = 0;
 
   function status() {
     const c = cfg();
@@ -103,6 +107,13 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
     if (cb) {
       await api.call('answerCallbackQuery', { callback_query_id: cb.id }).catch(() => null);
       if (await remote.onCallback(String(cb.data || ''))) return;
+      const w = /^work:(\d+)$/.exec(String(cb.data || ''));
+      if (w) {
+        const task = offered.get(Number(w[1]));
+        offered.delete(Number(w[1]));
+        if (cb.message) await api.call('editMessageReplyMarkup', { chat_id: chatId(), message_id: cb.message.message_id, reply_markup: { inline_keyboard: [] } }).catch(() => null);
+        return task ? remote.start(task) : send('That button expired~ just ask me again, or use /code <task>.');
+      }
       if (String(cb.data || '').startsWith('ev:')) {
         const [, id, choice] = String(cb.data).split(':');
         const r = await bus.request(TOPICS.EVENTS_ANSWER, { id, choice: Number(choice) }).catch(() => null);
@@ -168,15 +179,24 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
   /** Talk to the chat brain; reply with its next message (TG-3). @param {string} text */
   async function chat(text) {
     await api.call('sendChatAction', { chat_id: chatId(), action: 'typing' }).catch(() => null);
+    /** @type {Promise<any>} */
     const reply = new Promise((resolve) => {
       const timer = setTimeout(() => { off(); resolve(null); }, CHAT_TIMEOUT_MS);
       const off = bus.on(TOPICS.CHAT_EVENT, (/** @type {any} */ ev) => {
-        if (ev.t === 'message' && ev.message.role !== 'user') { clearTimeout(timer); off(); resolve(ev.message.text); }
+        if (ev.t === 'message' && ev.message.role !== 'user') { clearTimeout(timer); off(); resolve(ev.message); }
       });
     });
     const r = await bus.request(TOPICS.CHAT_SEND, `📱 ${text}`).catch(() => ({ ok: false }));
     const answer = await reply;
-    return send(String(answer || (r && r.ok === false ? 'I can\'t chat right now (is agy set up on the PC?)' : 'uu… I got lost. say that again?')));
+    const body = String((answer && answer.text) || (r && r.ok === false ? 'I can\'t chat right now (is agy set up on the PC?)' : 'uu… I got lost. say that again?'));
+    if (answer && answer.work) {
+      // Real work: one tap hands it to Claude Code on the PC (which still asks before every change).
+      const id = ++offerSeq;
+      offered.set(id, answer.work);
+      for (const k of [...offered.keys()]) if (k <= id - 20) offered.delete(k);
+      return send(body, { reply_markup: { inline_keyboard: [[{ text: '💻 Let Claude do it', callback_data: `work:${id}` }]] } });
+    }
+    return send(body);
   }
 
   async function briefText() {
