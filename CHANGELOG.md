@@ -3,38 +3,34 @@
 Every version of Tama: what changed, which decisions were made, and the exact commits.
 
 **How this file works**
-- **Top part (hand-written):** add a line under `## [Unreleased]` in every commit that changes
-  behavior, docs or decisions. Sections: `Added` / `Changed` / `Fixed` / `Removed` / `Decisions` / `Docs`.
-  Reference PRD IDs (`SUM-1`) and decision IDs (`D-014`).
-- **Release:** rename `[Unreleased]` to `[x.y.z] — YYYY-MM-DD`, bump `package.json`, commit,
-  tag `vx.y.z`, then run `npm run changelog` and commit the regenerated table.
-- **Bottom part (generated):** `npm run changelog` rebuilds the commit table per version from
-  `git log` and the `v*` tags. Don't edit it by hand. Run it before each commit; it lists every
-  commit up to the previous one (a commit can't contain its own hash).
-- **Versioning (D-015):** each finished milestone is a minor version (M0 → 0.1.0, M1 → 0.2.0, …).
-  Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
+- **Top part (hand-written):** add a line under `## [Unreleased]
+_Nothing yet._
 
-## [Unreleased]
+## [0.3.1] — 2026-11-06 — M3 Brain & engines
 ### Added
-- **M3 brain & engines** (branch `m3-brain`):
-  - **Chat brain** (♡): Gemini Flash via `agy` (read-only plan mode) in your Tama's persona, aware of her stats and your day; falls back to Claude Haiku. Plain chat uses no Claude tokens.
-  - **Hand-off:** real work requests are passed to Claude Code automatically (the chat brain replies `[[ESCALATE]]`, which is never shown).
-  - **agy reviewer** (◆): `@agy …` or budget fallback; read-only review & plan; warns if files change anyway.
-  - **PermissionGate:** one place for every tool approval; chat brain tools are auto-denied.
-  - **Budget:** daily Claude usage (≈USD), 75% warning, auto read-only agy fallback when Claude is tight or rate-limited; `/budget`.
-  - Terminal: `/auto /chat /code`, `@chat @code @claude @agy`, `/engine`, `/engines`, `/budget`; ♡/●/◆ markers. Pet: chat replies in her speech bubble, brain notices.
-  - Onboarding shows which brains were found (ONB-7).
+- **M3 brain & engines** (released as 0.3.1, D-030):
+  - **Chat window** 💬 (CHAT-1): talk with your Tama in her own colors. Gemini Flash via `agy` (read-only plan mode), can **search the web**, knows her stats and your day, and can explain how to use Tama. No Claude tokens. Open it from the pet menu 💬, the tray, or **Ctrl+Alt+J**. Her replies also appear in her speech bubble.
+  - **Terminal = Claude Code only** (D-029): everything you type goes to Claude Code, which asks before edits and commands. Tama's local commands (`/todo`, `/focus`, `/cd`, …) still work.
+  - **Live progress** (D-031): the spinner shows "Thinking… 3.0k chars" and "Writing index.html… 15.1k chars", plus the elapsed time and the model, instead of a silent minute.
+  - **`/effort low|medium|high|xhigh|max|default`**: less thinking = faster answers (saved per PC, shown in the status bar). `/model sonnet|haiku|opus` for speed vs. smarts.
+  - **PermissionGate:** one place for every tool approval; the chat brain's tool requests are auto-denied.
+  - **Budget:** daily Claude usage (≈USD), 75% warning, heads-up when tight; `/budget`, `/engines`.
+  - Onboarding shows whether agy (chat) and Claude Code (terminal) were found (ONB-7).
   - `npm run probe:agy` re-checks agy's safety behavior against the real CLI.
+  - Dev: `TAMA_OPEN_CHAT`, `TAMA_CHAT_EVAL`; `TAMA_DEBUG` logs terminal engine events.
 ### Changed
 - The M0 engine host is replaced by `src/main/brain`. Claude Code permission prompts go through the gate.
-- Chatting no longer needs a project folder; only real work does.
 - Test runs with `TAMA_DATA_DIR` use their own Electron profile.
+- The pet menu has a 💬 chat button (buttons slightly smaller to fit).
 ### Fixed
 - Pet tests could keep the test runner alive after a failure; `npm test` now has per-test timeouts.
 ### Decisions
 - D-026 — agy via ACP with Tama-owned settings (worker part superseded).
 - D-027 — agy is read-only (plan mode) everywhere; edits only via Claude Code.
-- D-028 — Brain design.
+- D-028 — Brain design (routing part superseded by D-029).
+- D-029 — Terminal = Claude Code only; chat window = agy only.
+- D-030 — M3 is released as 0.3.1.
+- D-031 — Thinking/tool progress and `/effort`.
 
 ## [0.3.0] — 2026-11-05 — M2 Pet loop v2 & lifecycle
 ### Added
