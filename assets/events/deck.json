@@ -1,0 +1,159 @@
+{
+  "format": "tama-event-deck",
+  "version": 1,
+  "notes": "Events are data (EVT-3, D-033). trigger.type: time | lateNight | absence | stat | streak | date | birthday | random | memory | diary | active | levelUp. kind: chat | choice | quest | callback | nudge | diary. minBond = bond level index (0 Stranger .. 4 Soulmate). seed = what the chat brain writes a line from; lines = fallback when agy is unavailable. {name} = the Tama's name.",
+  "events": [
+    {
+      "id": "good-morning", "kind": "chat", "trigger": { "type": "time", "hours": [6, 10] },
+      "cooldownH": 20, "minBond": 0,
+      "seed": "It's morning and the user just started using the PC. Greet them warmly and ask about their plan for today.",
+      "lines": ["ohayou~! ☀️ what's the plan today?", "good morning! did you sleep well? let's have a nice day~"]
+    },
+    {
+      "id": "lunch-check", "kind": "choice", "trigger": { "type": "time", "hours": [12, 14] },
+      "cooldownH": 20, "minBond": 0,
+      "seed": "It's lunchtime. Ask the user if they've eaten yet.",
+      "lines": ["it's lunchtime~ did you eat yet? 🍙"],
+      "choices": [
+        { "label": "Yes, I ate!", "reply": "yay~ good job taking care of yourself! ✨", "bond": 2 },
+        { "label": "Not yet…", "reply": "mou~ go eat something! I'll wait right here 🍙", "bond": 1 }
+      ]
+    },
+    {
+      "id": "afternoon-slump", "kind": "choice", "trigger": { "type": "time", "hours": [15, 17], "days": "weekday" },
+      "cooldownH": 20, "minBond": 1,
+      "seed": "Mid-afternoon on a weekday; people get sleepy. Ask how the user is holding up.",
+      "lines": ["the 3pm sleepies are here… how are you holding up?"],
+      "choices": [
+        { "label": "Going strong 💪", "reply": "sugoi! I'm cheering for you~", "bond": 2 },
+        { "label": "Need a break", "reply": "then take five minutes! stretch with me~ 🙆", "bond": 2 },
+        { "label": "Coffee time ☕", "reply": "ehehe, bring me a cookie too!", "bond": 1 }
+      ]
+    },
+    {
+      "id": "weekend-plans", "kind": "chat", "trigger": { "type": "time", "hours": [10, 13], "days": "weekend" },
+      "cooldownH": 40, "minBond": 1,
+      "seed": "It's the weekend. Ask the user (playfully) what fun thing they'll do today, and remind them to rest too.",
+      "lines": ["it's the weekend~! doing anything fun today? 🎀"]
+    },
+    {
+      "id": "late-night", "kind": "choice", "trigger": { "type": "lateNight" },
+      "cooldownH": 6, "minBond": 0,
+      "seed": "It's very late at night and the user is still at the PC. Worry about them, gently tell them to sleep soon.",
+      "lines": ["it's sooo late… you should sleep soon, ok? 🌙", "mou~ it's past midnight! bedtime soon?"],
+      "choices": [
+        { "label": "Okay, 10 more minutes", "reply": "promise? I'll count~ 🌙", "bond": 1 },
+        { "label": "Going to bed now", "reply": "oyasumi~ sweet dreams! 💤", "bond": 2 }
+      ]
+    },
+    {
+      "id": "welcome-back", "kind": "chat", "trigger": { "type": "absence", "hours": 8 },
+      "cooldownH": 4, "minBond": 0,
+      "seed": "The user was away for a long time and just came back. React happily (a little lonely), welcome them back.",
+      "lines": ["you're back!! I missed you~ 🥺✨"]
+    },
+    {
+      "id": "hungry", "kind": "quest", "trigger": { "type": "stat", "stat": "hunger", "below": 25 },
+      "cooldownH": 3, "minBond": 0,
+      "seed": "You (the Tama) are very hungry. Ask the user for food in a cute, slightly dramatic way.",
+      "lines": ["my tummy is rumbling so loud… food pls? 🍙🥺"],
+      "quest": { "label": "Feed 🍙", "action": "feed", "reply": "itadakimasu~! ♡", "bond": 0 }
+    },
+    {
+      "id": "sleepy", "kind": "quest", "trigger": { "type": "stat", "stat": "energy", "below": 20 },
+      "cooldownH": 3, "minBond": 0,
+      "seed": "You (the Tama) are exhausted. Ask the user for a snack or a nap, cutely.",
+      "lines": ["so… sleepy… a snack would help… ⚡"],
+      "quest": { "label": "Energy snack ⚡", "action": "snack", "reply": "power up~! ⚡✨", "bond": 0 }
+    },
+    {
+      "id": "streak-7", "kind": "chat", "trigger": { "type": "streak", "atLeast": 7 },
+      "cooldownH": 144, "minBond": 0,
+      "seed": "The user kept a productivity streak for a week or more. Celebrate it proudly.",
+      "lines": ["a whole week streak!! you're amazing~ 🔥✨"]
+    },
+    {
+      "id": "level-up", "kind": "chat", "trigger": { "type": "levelUp" },
+      "cooldownH": 0, "minBond": 0,
+      "seed": "Your bond with the user just reached a new level. Say something heartfelt and a bit shy about it.",
+      "lines": ["we're even closer now… ehehe, I'm happy 💗"]
+    },
+    {
+      "id": "new-year", "kind": "chat", "trigger": { "type": "date", "md": "01-01" },
+      "cooldownH": 300, "minBond": 0,
+      "seed": "It's New Year's Day. Wish the user a happy new year and ask for their resolution.",
+      "lines": ["akemashite omedetou~! 🎍 any resolutions?"]
+    },
+    {
+      "id": "valentine", "kind": "chat", "trigger": { "type": "date", "md": "02-14" },
+      "cooldownH": 300, "minBond": 2,
+      "seed": "It's Valentine's Day. Give the user (pretend) homemade chocolate, flustered.",
+      "lines": ["h-here! homemade chocolate… it's not like I made it just for you! 🍫"]
+    },
+    {
+      "id": "halloween", "kind": "chat", "trigger": { "type": "date", "md": "10-31" },
+      "cooldownH": 300, "minBond": 0,
+      "seed": "It's Halloween. Ask for candy or threaten a cute prank.",
+      "lines": ["trick or treat~! 🎃 candy or I'll hide your cursor!"]
+    },
+    {
+      "id": "christmas", "kind": "chat", "trigger": { "type": "date", "md": "12-25" },
+      "cooldownH": 300, "minBond": 0,
+      "seed": "It's Christmas. Wish the user merry Christmas warmly.",
+      "lines": ["merii kurisumasu~! 🎄 thank you for this year ♡"]
+    },
+    {
+      "id": "birthday", "kind": "chat", "trigger": { "type": "birthday" },
+      "cooldownH": 300, "minBond": 0,
+      "seed": "Today is the anniversary of the day you (the Tama) hatched. Celebrate with the user, grateful.",
+      "lines": ["today is my hatch-day! 🎂 thank you for being with me~"]
+    },
+    {
+      "id": "remember-callback", "kind": "callback", "trigger": { "type": "memory" },
+      "cooldownH": 30, "minBond": 1,
+      "seed": "Bring up one thing you remember about the user (given below) naturally: ask a follow-up question or show you care.",
+      "lines": ["hey… I was thinking about what you told me before~"]
+    },
+    {
+      "id": "random-question", "kind": "choice", "trigger": { "type": "random", "chance": 0.15 },
+      "cooldownH": 8, "minBond": 0,
+      "seed": "Ask the user a light, fun this-or-that question to get to know them.",
+      "lines": ["question! cats or dogs? 🐱🐶"],
+      "choices": [
+        { "label": "Cats 🐱", "reply": "nya~ good taste!", "bond": 1, "remember": "prefers cats over dogs" },
+        { "label": "Dogs 🐶", "reply": "woof woof! loyal like you~", "bond": 1, "remember": "prefers dogs over cats" },
+        { "label": "Both! 🐱🐶", "reply": "greedy~ but I get it! ✨", "bond": 2, "remember": "loves both cats and dogs" }
+      ]
+    },
+    {
+      "id": "random-snack", "kind": "choice", "trigger": { "type": "random", "chance": 0.12 },
+      "cooldownH": 12, "minBond": 1,
+      "seed": "Ask the user about their favorite snack, playfully.",
+      "lines": ["if you could eat one snack forever, what would it be? 🍡"],
+      "choices": [
+        { "label": "Something sweet 🍡", "reply": "sweet tooth~ same!", "bond": 1, "remember": "likes sweet snacks" },
+        { "label": "Something salty 🍟", "reply": "salty gang! crunchy crunchy~", "bond": 1, "remember": "likes salty snacks" }
+      ]
+    },
+    {
+      "id": "water", "kind": "nudge", "trigger": { "type": "active", "minutes": 120 },
+      "cooldownH": 2, "minBond": 0,
+      "seed": "The user has been at the PC for two hours. Remind them to drink water, cutely.",
+      "lines": ["hydration check~! drink some water 💧"],
+      "quest": { "label": "Drank water 💧", "reply": "good job~ 💧✨", "bond": 1, "source": "nudge" }
+    },
+    {
+      "id": "stretch", "kind": "nudge", "trigger": { "type": "active", "minutes": 90 },
+      "cooldownH": 1.5, "minBond": 0,
+      "seed": "The user has been working for a long time without a break. Suggest a quick stretch.",
+      "lines": ["you've been sitting forever… stretch with me! 🙆"],
+      "quest": { "label": "Stretched 🙆", "reply": "nobi~ feels good right? ✨", "bond": 1, "source": "nudge" }
+    },
+    {
+      "id": "diary", "kind": "diary", "trigger": { "type": "diary", "hour": 21 },
+      "cooldownH": 12, "minBond": 0,
+      "seed": "Write today's diary entry.",
+      "lines": []
+    }
+  ]
+}

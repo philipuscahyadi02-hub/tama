@@ -43,6 +43,11 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     });
     bus.on(TOPICS.BRAIN_NOTICE, (p) => ipc.sendUi(pet.win, 'brain.notice', p));
     bus.on(TOPICS.UI_PREFS_CHANGED, (p) => toAll('ui.prefs', p));
+    bus.on(TOPICS.EVENT_SHOWN, (p) => {
+      ipc.sendUi(pet.win, 'event', p);
+      // A hidden pet can't show the bubble: tell the user with a Windows notification instead.
+      if (p.kind !== 'reply' && pet.isHiddenByUser()) shell.notify('💭 Your Tama wants to talk', String(p.text).slice(0, 140));
+    });
     bus.on(TOPICS.PET_BOND_CHANGED, (p) => { if (p.levelUp) ipc.sendUi(term.window(), 'pet.bond', p); });
     // Chat (agy) → chat window + pet bubble; terminal (Claude Code) → terminal + pet reactions (D-029).
     bus.on(TOPICS.CHAT_EVENT, (ev) => { ipc.sendUi(chat.window(), 'chat.event', ev); ipc.sendUi(pet.win, 'chat.event', ev); });
@@ -68,8 +73,17 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.on('term:show', () => term.show());
     ipc.on('chat:show', () => chat.show());
     ipc.handle('ui:prefs', () => bus.request(TOPICS.UI_PREFS_GET));
+    // ---- events & memory (M5) ----
+    ipc.handle('events:answer', (p) => bus.request(TOPICS.EVENTS_ANSWER, { id: String(p?.id || ''), choice: Number(p?.choice), dismiss: !!p?.dismiss }));
+    ipc.handle('events:trigger', (id) => bus.request(TOPICS.EVENTS_TRIGGER, { id: id ? String(id) : undefined }));
+    ipc.handle('memory:get', () => bus.request(TOPICS.MEMORY_GET));
+    ipc.handle('memory:add', (t) => bus.request(TOPICS.MEMORY_ADD, { text: String(t || ''), source: 'user' }));
+    ipc.handle('memory:forget', (ref) => bus.request(TOPICS.MEMORY_FORGET, { ref: ref === 'all' ? 'all' : String(ref || '') }));
+    ipc.handle('diary:read', (day) => bus.request(TOPICS.DIARY_READ, { day: day ? String(day) : undefined }));
+    ipc.handle('diary:list', () => bus.request(TOPICS.DIARY_LIST));
     ipc.handle('ui:setPrefs', (p) => bus.request(TOPICS.UI_PREFS_SET, {
       termTheme: p?.termTheme == null ? undefined : String(p.termTheme), tourDone: p?.tourDone == null ? undefined : !!p.tourDone,
+      dnd: p?.dnd == null ? undefined : !!p.dnd, nudges: p?.nudges == null ? undefined : !!p.nudges,
     }));
     // ---- chat window → core (agy, D-029) ----
     ipc.handle('chat:send', (t) => bus.request(TOPICS.CHAT_SEND, String(t || '')));

@@ -54,6 +54,7 @@ let bubbleTimer = null;
 let bubbleAction = null;
 function say(text, ms = 3200, opts = {}) {
   if (!menuEl.classList.contains('hidden') && !opts.force) return;
+  if (eventOpen && !opts.force) return; // an open event question wins over babble
   bubbleEl.textContent = text;
   bubbleEl.className = 'hit' + (opts.shout ? ' shout' : '') + (opts.onClick ? ' clicky' : '');
   bubbleAction = opts.onClick || null;
@@ -62,6 +63,43 @@ function say(text, ms = 3200, opts = {}) {
   bubbleTimer = setTimeout(() => bubbleEl.classList.add('hidden'), ms);
 }
 bubbleEl.addEventListener('click', () => { if (bubbleAction) bubbleAction(); bubbleEl.classList.add('hidden'); });
+
+// ---------------- events (EVT-2, D-033): her line + choice / quest buttons ----------------
+const eventBox = $('#eventBox');
+let eventOpen = null; // { id }
+let eventTimer = null;
+function closeEvent() { eventOpen = null; eventBox.classList.add('hidden'); clearTimeout(eventTimer); }
+T.events.onShow((p) => {
+  if (isEgg) return;
+  if (p.kind === 'reply') { closeEvent(); express('happy', 2200); emote('♡'); say(p.text, 4500, { force: true }); return; }
+  stopWalking(); menuEl.classList.add('hidden'); bubbleEl.classList.add('hidden');
+  eventOpen = { id: p.id };
+  eventBox.querySelector('.etext').textContent = p.text;
+  const opts = eventBox.querySelector('.eopts');
+  opts.innerHTML = '';
+  const labels = p.choices.length ? p.choices : p.quest ? [p.quest] : [];
+  labels.forEach((label, i) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.addEventListener('click', async () => {
+      const id = eventOpen && eventOpen.id;
+      closeEvent();
+      if (id) { const r = await T.events.answer(id, i); if (r && r.error) say(r.error, 3000, { force: true }); }
+    });
+    opts.appendChild(b);
+  });
+  eventBox.classList.remove('hidden');
+  hop(); express(p.kind === 'nudge' ? 'focus' : 'sparkle', 2000); emote(p.kind === 'nudge' ? '💧' : '💭', 2000);
+  clearTimeout(eventTimer);
+  // Plain lines fade after a while; questions wait longer (the core forgets them after 5 minutes).
+  eventTimer = setTimeout(closeEvent, labels.length ? 4 * 60000 : Math.min(15000, 5000 + p.text.length * 60));
+});
+eventBox.querySelector('.elater').addEventListener('click', () => {
+  const id = eventOpen && eventOpen.id;
+  closeEvent();
+  if (id) T.events.dismiss(id);
+  say('okay, later then~', 2000, { force: true });
+});
 
 let emoteTimer = null;
 function emote(sym, ms = 1600, side = 'right') {
@@ -289,6 +327,8 @@ window.addEventListener('mouseup', () => {
     // cheek poke → puffed-cheek pout
     express('pout', 1800); emote('💢');
     say(pick(['mou~! don\'t poke! 😤', 'puni puni… hmph!', 'b-baka! 💢']));
+  } else if (eventOpen) {
+    hop(); // answer the open question first (or press "later")
   } else {
     const open = menuEl.classList.contains('hidden');
     bubbleEl.classList.add('hidden');

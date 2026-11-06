@@ -18,6 +18,9 @@ const { createRoster } = require('./services/roster');
 const { createDesigner } = require('./services/designer');
 const { createProductivity } = require('./services/productivity');
 const { createUiPrefs } = require('./services/ui');
+const { createMemory } = require('./services/memory');
+const { createEvents } = require('./services/events');
+const EVENT_DECK = require('../../assets/events/deck.json');
 const { createGitWatcher } = require('./services/productivity/git-watcher');
 const git = require('./platform/git');
 const { askJson } = require('./engines/claude/oneshot');
@@ -124,6 +127,8 @@ function boot() {
     onIdle: (idle, idleSeconds) => bus.emit(TOPICS.DEVICE_IDLE_CHANGED, { idle, idleSeconds }),
   }));
   stoppers.push(brain.start(), createUiPrefs({ bus, device }).start());
+  // Events & memory (M5, D-033): facts + diary per Tama, event deck from assets/events.
+  stoppers.push(createMemory({ bus, store, tamaId: active.id }).start(), createEvents({ bus, store, tamaId: active.id, deck: EVENT_DECK }).start());
   summoner.startWatchdog();
   stoppers.push(() => summoner.stop(), () => petService.stop(), () => store.flush(), shell.unregisterHotkeys);
 

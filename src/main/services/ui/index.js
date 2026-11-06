@@ -8,7 +8,7 @@ const theme = require('../../../shared/theme');
  * @param {{ bus: import('../../bus').BusInstance, device: import('../../platform/store/device').DeviceSettings }} deps
  */
 function createUiPrefs({ bus, device }) {
-  const prefs = () => ({ termTheme: 'night', tourDone: false, ...(device.get().ui || {}) });
+  const prefs = () => ({ termTheme: 'night', tourDone: false, dnd: false, nudges: true, ...(device.get().ui || {}) });
 
   async function levelIndex() {
     const pet = await bus.request(TOPICS.PET_GET).catch(() => null);
@@ -22,12 +22,12 @@ function createUiPrefs({ bus, device }) {
     // A theme chosen earlier stays usable; an unknown id falls back to night.
     const termTheme = theme.VARIANTS.some((v) => v.id === p.termTheme) ? p.termTheme : 'night';
     return {
-      termTheme, tourDone: !!p.tourDone, unlocked,
+      termTheme, tourDone: !!p.tourDone, unlocked, dnd: !!p.dnd, nudges: p.nudges !== false,
       variants: theme.VARIANTS.map((v) => ({ ...v, unlocked: unlocked.includes(v.id) })),
     };
   }
 
-  /** @param {{ termTheme?: string, tourDone?: boolean }} p */
+  /** @param {{ termTheme?: string, tourDone?: boolean, dnd?: boolean, nudges?: boolean }} p */
   async function set(p) {
     /** @type {Record<string, any>} */
     const patch = {};
@@ -38,6 +38,8 @@ function createUiPrefs({ bus, device }) {
       patch.termTheme = v.id;
     }
     if (p.tourDone !== undefined) patch.tourDone = !!p.tourDone;
+    if (p.dnd !== undefined) patch.dnd = !!p.dnd;           // PET-6: no events or babble
+    if (p.nudges !== undefined) patch.nudges = !!p.nudges;  // PET-7: water/stretch reminders
     device.patch('ui', patch);
     const out = await get();
     bus.emit(TOPICS.UI_PREFS_CHANGED, out);

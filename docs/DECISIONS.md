@@ -62,6 +62,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-030 | M3 ships as 0.3.1; milestone = minor resumes with M4 = 0.4.0 | Accepted |
 | D-031 | Claude Code sessions stream summarized thinking + tool-input progress; `/effort` per PC | Accepted |
 | D-032 | UI theme from the CharacterSpec (shared/theme.js); terminal variants unlocked by bond; UI prefs in device.json | Accepted |
+| D-033 | Events & memory: deck JSON + pure triggers, agy composer, hidden [[remember]] markers, facts + diary in the Tama's folder | Accepted |
 
 ---
 
@@ -335,3 +336,18 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Per-Tama theme stored in the soul (moving PCs would carry a display preference); hand-picked palettes per preset (doesn't scale to prompt-designed Tamas).
 - **Consequences:** New UI surfaces take their colors from `theme.js`. More unlocks (outfits, events, voice lines) come in M5/M8 (BOND-3 stays ◐).
 - **Refs:** ART-4, TERM-1..4, BOND-3, SAFE-4, src/shared/theme.js, src/main/services/ui
+
+### D-033 — Events & memory: deck JSON + pure triggers, agy composer, hidden [[remember]] markers, facts + diary in the Tama's folder
+- **Date:** 2026-11-06 · **Status:** Accepted
+- **Context:** M5 (EVT-1..4, PET-6/7, NFR-4): the Tama should start little moments on her own, remember things about the user, and keep a diary, without spending Claude tokens or nagging.
+- **Decision:**
+  - **Deck as data:** `assets/events/deck.json` (shipped via `build.files`). Each event has a trigger (time [+ weekday/weekend], lateNight, absence, stat, streak, date, birthday = hatch anniversary, random, memory, diary, active minutes, levelUp), `cooldownH`, `minBond`, a `seed` for the chat brain, fallback `lines`, and optional `choices` (2–3, bond XP, optional `remember`) or a `quest` (button that runs a pet action or a wellbeing nudge).
+  - **Triggers are pure** (`services/events/triggers.js`): deck order = priority; a 40-minute gap between non-nudge events; one open event at a time (expires after 5 minutes); `chance` is per hour (ticks every minute).
+  - **Quiet (PET-6):** no pop-ups during a focus session, `/dnd`, while the user is idle/away, while she sleeps, or while she's an egg. The diary is still written quietly. Nudges (PET-7: water, stretch) can be turned off with `/nudges`.
+  - **Lines (EVT-3):** `brain/compose.js` asks agy (read-only plan mode, its own session, restarted every 15 turns) for one in-character line from the seed; for choice/quest events the seed lists the button labels so the line matches them. On failure or after 40 s, the deck's fallback line is used. No Claude tokens.
+  - **Events appear** in a pet event box with answer buttons ("later" dismisses), in the chat history (`chat.push`), and as a Windows notification if the pet is hidden. Answers award bond (`event`/`nudge` sources with small daily caps) and may store a memory.
+  - **Memory (EVT-4, NFR-4):** `tamas/<id>/memory/facts.json` (max 100, deduped). The chat brain adds facts by ending a reply with `[[remember: …]]`; a streaming filter hides markers, even when they arrive split across chunks. Memories reach the agy session as a `[memory]` line when they change. `/memory`, `/remember`, `/forget <n|all>`. Local only; travels with `.tama` exports.
+  - **Diary:** once per evening (from 21:00) the composer writes a 60–120-word entry from real facts (stats, finished todos, what the user said, today's moments) into `tamas/<id>/memory/diary/YYYY-MM-DD.md`; `/diary [date|list]`.
+- **Alternatives:** Hard-coded event code (not data-driven, AGENTS rule 12); LLM-generated choices (buttons could not be trusted to map to effects); a separate memory model call per message (slower, costs more).
+- **Consequences:** Weather (needs a location) and fullscreen/meeting detection are not done yet (EVT-1/PET-6 ◐; meetings come with Calendar in M6). New events = a deck entry plus a test row. Telegram (M7) will relay `event.shown` and `events.answer`.
+- **Refs:** EVT-1..4, PET-6, PET-7, NFR-4, BOND-3, assets/events/deck.json, src/main/services/{events,memory}, src/main/brain/compose.js

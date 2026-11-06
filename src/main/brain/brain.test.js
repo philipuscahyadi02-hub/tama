@@ -126,7 +126,7 @@ test('chat = agy: status line + message go to agy; the reply becomes a chat mess
   const r = await bus.request('chat.send', 'hello');
   assert.equal(r.ok, true);
   await tick();
-  assert.match(made.chat.sent[0], /^\[status\] .*\nhello$/);
+  assert.match(made.chat.sent[0], /^\[status\] .*\n(\[memory\] .*\n)?hello$/);
   assert.match(made.chat.persona, /You are Mochi/);
   const msgs = chat.filter((e) => e.t === 'message').map((e) => [e.message.role, e.message.text]);
   assert.deepEqual(msgs, [['user', 'hello'], ['tama', 'hi there! nya~']]);
@@ -179,4 +179,41 @@ test('usage: Claude turns and chat messages are recorded; brain.set validates th
   assert.equal(s.chat, 'agy');
   assert.equal((await bus.request('brain.set', { dailyClaudeUsd: 3 })).dailyClaudeUsd, 3);
   assert.equal((await bus.request('brain.set', { dailyClaudeUsd: -1 })).dailyClaudeUsd, 3);
+});
+
+// ---------------- memory in chat (EVT-4, D-033) ----------------
+const { markerFilter } = require('./chat');
+const { clean } = require('./compose');
+
+test('marker filter hides [[remember: …]] even when split across chunks', () => {
+  const f = markerFilter();
+  const out = ['Nice to meet you! ', '[', '[remem', 'ber: name is Phil', ']]', ' bye'].map((c) => f.push(c)).join('') + f.end();
+  assert.equal(out, 'Nice to meet you!  bye');
+  const g = markerFilter();
+  assert.equal(g.push('a [b] c [') + g.end(), 'a [b] c [');
+  assert.equal(clean('"hello there~"'), 'hello there~');
+  assert.equal(clean('[[remember: x]]'), null);
+});
+
+test('chat: a remember marker becomes a memory and is never shown; memories reach the session once', async () => {
+  const { bus, made, chat } = setupBrain({ chatReply: () => 'Phil! Cute name~ [[remember: is called Phil]]' });
+  /** @type {any[]} */ const facts = [];
+  bus.handle('memory.add', (p) => { if (!facts.some((f) => f.text === p.text)) facts.push({ id: `f${facts.length}`, text: p.text }); return { ok: true }; });
+  bus.handle('memory.get', () => ({ facts: facts.slice() }));
+  await bus.request('chat.send', 'my name is Phil');
+  await tick();
+  assert.deepEqual(facts.map((f) => f.text), ['is called Phil']);
+  assert.match(made.chat.sent[0], /\[memory\] You don't remember anything/);
+  const shownText = chat.filter((e) => e.t === 'delta').map((e) => e.text).join('');
+  assert.doesNotMatch(shownText, /remember/);
+  const tama = chat.find((e) => e.t === 'message' && e.message.role === 'tama');
+  assert.equal(tama.message.text, 'Phil! Cute name~');
+  await bus.request('chat.send', 'hi again');
+  await tick();
+  assert.match(made.chat.sent[1], /\[memory\] What you remember about the user: 1\) is called Phil/);
+  await bus.request('chat.send', 'and again');
+  await tick();
+  assert.doesNotMatch(made.chat.sent[2], /\[memory\]/); // unchanged → not repeated
+  await bus.request('chat.push', { role: 'tama', text: 'lunch time~' });
+  assert.equal((await bus.request('chat.history')).messages.at(-1).text, 'lunch time~');
 });

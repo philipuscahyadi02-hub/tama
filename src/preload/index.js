@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** Main → renderer messages arrive on one 'ui' channel as (name, payload). */
-const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs']);
+const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event']);
 /** @type {Map<string, Set<(p: any) => void>>} */
 const subs = new Map();
 ipcRenderer.on('ui', (_e, name, payload) => {
@@ -92,6 +92,23 @@ contextBridge.exposeInMainWorld('tama', {
     prefs: () => ipcRenderer.invoke('ui:prefs'),
     setPrefs: (/** @type {any} */ p) => ipcRenderer.invoke('ui:setPrefs', p),
     onPrefs: on('ui.prefs'),
+  },
+
+  // ---- events & memory (M5) ----
+  events: {
+    answer: (/** @type {string} */ id, /** @type {number} */ choice) => ipcRenderer.invoke('events:answer', { id, choice }),
+    dismiss: (/** @type {string} */ id) => ipcRenderer.invoke('events:answer', { id, dismiss: true }),
+    trigger: (/** @type {string|undefined} */ id) => ipcRenderer.invoke('events:trigger', id),
+    onShow: on('event'),
+  },
+  memory: {
+    get: () => ipcRenderer.invoke('memory:get'),
+    add: (/** @type {string} */ t) => ipcRenderer.invoke('memory:add', t),
+    forget: (/** @type {string|number} */ ref) => ipcRenderer.invoke('memory:forget', ref),
+  },
+  diary: {
+    read: (/** @type {string|undefined} */ day) => ipcRenderer.invoke('diary:read', day),
+    list: () => ipcRenderer.invoke('diary:list'),
   },
 
   // ---- both ----
