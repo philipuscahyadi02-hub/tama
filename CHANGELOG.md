@@ -15,8 +15,11 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
 
 ## [Unreleased]
+_Nothing yet._
+
+## [0.7.0] — 2026-11-06 — M7 Telegram (+ Gemini does Google, sending with confirmation, places)
 ### Added
-- **M7 Telegram** (branch `m7-telegram`, D-036): your Tama on your phone, served from your PC (no server).
+- **M7 Telegram** (D-036): your Tama on your phone, served from your PC (no server).
   - **Setup in 2 minutes:** create a bot with @BotFather, `/phone setup <token>`, open the link on your phone. Only that one chat is ever answered (SAFE-3).
   - **Chat** with her from anywhere (Gemini via agy, same conversation as the 💬 window).
   - **`/status`** with a picture of how she looks right now, `/feed /snack /nap /summon`, `/todo /done /focus /remind`, `/brief`.
