@@ -55,8 +55,38 @@ test('triggers: cooldowns, a 40-minute gap, minBond, quiet mode and nudges toggl
   assert.equal(pick(deck, ctx({ hour: 22, diaryDone: false }), fresh(), { nudges: true, quiet: true })?.id, 'diary');
 });
 
+test('triggers: weather (EVT-1, D-035) table', () => {
+  const wx = (/** @type {string} */ kind, tempC = 15) => ({ kind, tempC, hot: tempC >= 30, cold: tempC <= 3 });
+  /** @type {Array<[string[], any, number, boolean]>} */
+  const rows = [
+    [['rain'], wx('rain'), 12, true],
+    [['rain'], wx('cloudy'), 12, false],
+    [['rain'], null, 12, false],            // no location / offline
+    [['storm'], wx('storm'), 12, true],
+    [['hot'], wx('clear', 33), 12, true],
+    [['hot'], wx('clear', 25), 12, false],
+    [['snow', 'cold'], wx('cloudy', 1), 12, true],
+    [['snow', 'cold'], wx('snow', 5), 12, true],
+    [['snow', 'cold'], wx('rain', 8), 12, false],
+  ];
+  for (const [is, w, hour, want] of rows) {
+    assert.equal(matches({ type: 'weather', is }, ctx({ hour, weather: w })), want, `${is} ${JSON.stringify(w)}`);
+  }
+  // optional waking-hours window
+  assert.equal(matches({ type: 'weather', is: ['rain'], hours: [7, 22] }, ctx({ hour: 3, weather: wx('rain') })), false);
+  assert.equal(matches({ type: 'weather', is: ['rain'], hours: [7, 22] }, ctx({ hour: 7, weather: wx('rain') })), true);
+  // deck: storm wins over plain rain-like weather, and each weather event is picked when it applies
+  const at = (/** @type {any} */ w) => pick(deck, ctx({ hour: 19, weather: w }), fresh(), opts)?.id;
+  assert.equal(at(wx('storm')), 'thunderstorm');
+  assert.equal(at(wx('rain')), 'rainy-day');
+  assert.equal(at(wx('clear', 34)), 'hot-day');
+  assert.equal(at(wx('snow', -2)), 'cold-day');
+  assert.equal(at(wx('cloudy', 18)), undefined);
+  for (const id of ['thunderstorm', 'rainy-day', 'hot-day', 'cold-day']) assert.equal(deck.find((e) => e.id === id)?.cooldownH, 12);
+});
+
 // ---------------- service ----------------
-function setup({ compose = /** @type {any} */ (null) } = {}) {
+function setup({ compose = /** @type {any} */ (null), weather = /** @type {any} */ (null), fullscreen = false } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tama-ev-'));
   const store = createStore(dir);
   const bus = new Bus();
@@ -67,9 +97,13 @@ function setup({ compose = /** @type {any} */ (null) } = {}) {
   bus.handle('pet.get', () => pet);
   bus.handle('prod.get', () => ({ todos: [{ text: 'write tests', done: true, doneAt: T0 }], focus: { phase: 'idle' } }));
   bus.handle('ui.prefs.get', () => ({ dnd: false, nudges: true }));
+  /** @type {any} */ const google = { inMeeting: null };
+  bus.handle('google.status', () => google);
   bus.handle('pet.award', (p) => { calls.push(['award', p.source]); return { gained: 1 }; });
   bus.handle('pet.act', (p) => { calls.push(['act', p.action]); return { ok: true }; });
   bus.handle('brain.compose', (p) => (compose ? compose(p) : null));
+  if (weather) bus.handle('weather.get', () => ({ location: { city: 'Tokyo' }, current: weather }));
+  bus.handle('device.fullscreen.get', () => fullscreen);
   /** @type {any[]} */ const chat = [];
   bus.handle('chat.push', (p) => { chat.push(p); });
   bus.handle('chat.history', () => ({ messages: [{ role: 'user', text: 'I have an exam friday', at: T0 }] }));
@@ -79,8 +113,19 @@ function setup({ compose = /** @type {any} */ (null) } = {}) {
   const stopEv = ev.start();
   /** @type {any[]} */ const shown = [];
   bus.on('event.shown', (p) => shown.push(p));
-  return { bus, ev, memory, shown, calls, chat, store, pet, setT: (/** @type {number} */ v) => { t = v; }, T0, stop: () => { stopEv(); stopMem(); } };
+  return { bus, ev, memory, shown, calls, chat, store, pet, google, setT: (/** @type {number} */ v) => { t = v; }, T0, stop: () => { stopEv(); stopMem(); } };
 }
+
+test('events: a running calendar meeting keeps her quiet (PET-6, GOOG-3)', async () => {
+  const s = setup({ compose: () => 'lunch?' });
+  s.google.inMeeting = 'Standup';
+  await s.ev.tick();
+  assert.equal(s.shown.length, 0);
+  s.google.inMeeting = null;
+  await s.ev.tick();
+  assert.equal(s.shown[0].id, 'lunch-check');
+  s.stop();
+});
 
 test('events: a choice shows on the pet and in chat; answering awards bond and can create a memory (EVT-2/4)', async () => {
   const s = setup({ compose: () => 'did you eat lunch yet, nya? 🍙' });
@@ -144,4 +189,18 @@ test('memory: add (deduped), list, forget by number or all (EVT-4, NFR-4)', asyn
   assert.equal((await s.bus.request('memory.forget', { ref: 'all' })).removed, 1);
   assert.deepEqual(s.store.read('tamas/t1/memory/facts.json', 'memory', () => ({})).facts, []);
   s.stop();
+});
+
+test('events: weather from the weather service fires a weather event; fullscreen is quiet (PET-6, D-035)', async () => {
+  const rain = { kind: 'rain', tempC: 12, hot: false, cold: false, code: 61, isDay: true };
+  const s = setup({ weather: rain });
+  s.setT(new Date(2026, 10, 6, 19, 0).getTime());
+  await s.ev.tick();
+  assert.equal(s.shown[0].id, 'rainy-day');
+  s.stop();
+  const q = setup({ weather: rain, fullscreen: true });
+  q.setT(new Date(2026, 10, 6, 19, 0).getTime());
+  await q.ev.tick();
+  assert.equal(q.shown.length, 0);
+  q.stop();
 });

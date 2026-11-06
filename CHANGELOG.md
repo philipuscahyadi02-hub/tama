@@ -3,7 +3,18 @@
 Every version of Tama: what changed, which decisions were made, and the exact commits.
 
 **How this file works**
-- **Top part (hand-written):** add a line under `## [Unreleased]
+- **Top part (hand-written):** add a line under `## [Unreleased]` in every commit that changes
+  behavior, docs or decisions. Sections: `Added` / `Changed` / `Fixed` / `Removed` / `Decisions` / `Docs`.
+  Reference PRD IDs (`SUM-1`) and decision IDs (`D-014`).
+- **Release:** rename `[Unreleased]` to `[x.y.z] — YYYY-MM-DD`, bump `package.json`, commit,
+  tag `vx.y.z`, then run `npm run changelog` and commit the regenerated table.
+- **Bottom part (generated):** `npm run changelog` rebuilds the commit table per version from
+  `git log` and the `v*` tags. Don't edit it by hand. Run it before each commit; it lists every
+  commit up to the previous one (a commit can't contain its own hash).
+- **Versioning (D-015):** each finished milestone is a minor version (M0 → 0.1.0, M1 → 0.2.0, …).
+  Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
+
+## [Unreleased]
 ### Added
 - **M6 Google** (branch `m6-google`, D-034):
   - **Connect Google** with your own Google app: a guided 5-minute setup page (tray → Google…, or `/google setup`), browser sign-in (loopback + PKCE). Tokens are stored only in Windows-encrypted secrets.
@@ -12,6 +23,10 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   - **Morning brief** (once each morning, and `/brief`): today's events, important unread mail, open todos. The 💬 chat knows today's schedule too (read-only).
   - **Drive backup:** daily, to Drive's hidden app folder (keeps 7). `/google backups`, `/google restore <n>`. After sign-in on a new PC she offers to restore missing Tamas; a warning if the same Tama is awake on another PC.
   - `/google` (status, login, logout, brief, backup, backups, restore, readonly on|off) and `/newpc` checklist.
+- **M5 extras** (D-035):
+  - **Weather moments** (EVT-1): tell your Tama where you live with `/weather <city>` (Open-Meteo, no account or key). She notices thunderstorms, rainy days, very hot days (with a water quest) and cold or snowy days, and the 💬 chat knows the weather too. `/weather` shows it now, `/weather off` forgets the city. Offline? She just skips the weather.
+  - **Fullscreen = quiet time** (PET-6): no pop-up moments while a game, video or slideshow fills the screen (Windows).
+  - **Out for a walk** (SUM-5): when you hide your Tama, a tiny tab with her face peeks out from the right edge of the screen; click it to call her back. `/marker on|off`.
 ### Changed
 - PermissionGate supports rules (Google reads/creations auto-allowed and announced; edits ask).
 - `zod` is now a declared dependency (it was already installed as the Agent SDK's peer); it is unpacked with the SDK in the portable build.

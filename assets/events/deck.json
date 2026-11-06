@@ -1,7 +1,7 @@
 {
   "format": "tama-event-deck",
   "version": 1,
-  "notes": "Events are data (EVT-3, D-033). trigger.type: time | lateNight | absence | stat | streak | date | birthday | random | memory | diary | active | levelUp. kind: chat | choice | quest | callback | nudge | diary. minBond = bond level index (0 Stranger .. 4 Soulmate). seed = what the chat brain writes a line from; lines = fallback when agy is unavailable. {name} = the Tama's name.",
+  "notes": "Events are data (EVT-3, D-033). trigger.type: time | lateNight | absence | stat | streak | date | birthday | random | memory | diary | active | levelUp | weather (is: rain/storm/snow/clear/cloudy/hot/cold, optional hours). kind: chat | choice | quest | callback | nudge | diary. minBond = bond level index (0 Stranger .. 4 Soulmate). seed = what the chat brain writes a line from; lines = fallback when agy is unavailable. {name} = the Tama's name.",
   "events": [
     {
       "id": "good-morning", "kind": "chat", "trigger": { "type": "time", "hours": [6, 10] },
@@ -107,6 +107,35 @@
       "cooldownH": 300, "minBond": 0,
       "seed": "Today is the anniversary of the day you (the Tama) hatched. Celebrate with the user, grateful.",
       "lines": ["today is my hatch-day! 🎂 thank you for being with me~"]
+    },
+    {
+      "id": "thunderstorm", "kind": "chat", "trigger": { "type": "weather", "is": ["storm"], "hours": [7, 24] },
+      "cooldownH": 12, "minBond": 0,
+      "seed": "There is a thunderstorm outside where the user lives. Be a little scared of the thunder and ask the user to stay cozy and safe inside.",
+      "lines": ["eek! ⚡ thunder… can I hide behind your screen for a bit?", "there's a storm outside~ stay inside and cozy with me, ok? 🌩️"]
+    },
+    {
+      "id": "rainy-day", "kind": "choice", "trigger": { "type": "weather", "is": ["rain"], "hours": [7, 22] },
+      "cooldownH": 12, "minBond": 0,
+      "seed": "It's raining outside where the user lives. Mention the rain cozily and ask if they have an umbrella or are staying in.",
+      "lines": ["it's raining outside~ ☔ do you have an umbrella?", "pitter-patter… rainy day! staying in with me? ☔"],
+      "choices": [
+        { "label": "Staying in ☕", "reply": "yay~ cozy rainy day together! ☕🌧️", "bond": 1 },
+        { "label": "Got my umbrella ☂️", "reply": "good! don't get your socks wet~ ☂️", "bond": 1 }
+      ]
+    },
+    {
+      "id": "hot-day", "kind": "quest", "trigger": { "type": "weather", "is": ["hot"], "hours": [9, 21] },
+      "cooldownH": 12, "minBond": 0,
+      "seed": "It's a very hot day where the user lives. Complain cutely about the heat and ask the user to drink some water.",
+      "lines": ["it's sooo hot today… 🥵 drink some water with me?", "melting~ 🫠 please have a glass of water, ok?"],
+      "quest": { "label": "Drank some water 💧", "reply": "ahh~ refreshing! stay cool~ 💧", "bond": 1, "source": "nudge" }
+    },
+    {
+      "id": "cold-day", "kind": "chat", "trigger": { "type": "weather", "is": ["snow", "cold"], "hours": [7, 22] },
+      "cooldownH": 12, "minBond": 0,
+      "seed": "It's cold (or snowing) outside where the user lives. Shiver cutely and tell the user to stay warm, maybe with a hot drink.",
+      "lines": ["brrr~ it's cold out there! ❄️ stay warm, ok?", "is it snowing? ❄️ wrap up warm and get a hot drink~"]
     },
     {
       "id": "remember-callback", "kind": "callback", "trigger": { "type": "memory" },

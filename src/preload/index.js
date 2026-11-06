@@ -126,6 +126,12 @@ contextBridge.exposeInMainWorld('tama', {
     onChange: on('google'),
   },
   openLink: (/** @type {string} */ url) => ipcRenderer.invoke('link:open', url),
+  // ---- M5 extras: weather (D-035) ----
+  weather: {
+    get: () => ipcRenderer.invoke('weather:get'),
+    set: (/** @type {string} */ city) => ipcRenderer.invoke('weather:set', { city }),
+    off: () => ipcRenderer.invoke('weather:set', { off: true }),
+  },
 
   // ---- both ----
   onAgent: on('agent.event'),

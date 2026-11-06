@@ -88,4 +88,15 @@ function summonPosition(cursor, areas, size) {
   return { x: c.x, y: c.y };
 }
 
-module.exports = { BODY, bodyRect, overlapArea, bestArea, clampToScreen, isVisibleEnough, homePosition, summonPosition };
+/**
+ * Where the "out for a walk" marker docks (SUM-5, D-035): flush with the right edge of the work area,
+ * a little above the bottom (where the pet usually stands), always fully inside the area.
+ * @param {Rect} area @param {{width:number,height:number}} size
+ */
+function markerPosition(area, size) {
+  const x = area.x + area.width - size.width;
+  const y = Math.max(area.y, area.y + area.height - size.height - 160);
+  return { x: Math.round(x), y: Math.round(y) };
+}
+
+module.exports = { BODY, bodyRect, overlapArea, bestArea, clampToScreen, isVisibleEnough, homePosition, summonPosition, markerPosition };

@@ -6,7 +6,7 @@
 | | |
 |---|---|
 | **Version** | 0.10 |
-| **Status** | v0.5.0 released (M0–M5). M6 in progress on `m6-google`; M5 leftovers on `m5-extras` |
+| **Status** | v0.5.0 released (M0–M5). M6 + M5 extras code complete on `m6-google` (awaiting user check, then 0.6.0) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-06 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -82,7 +82,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | PET-3 | Easy energy: snack/energy drink (+25, cooldown), 10-min power nap (+50), charging when on AC power, auto-nap when PC idle >10 min (+30/h), focus-break recharge. | P0 | M2 | ☑ |
 | PET-4 | Agent work drains little (−1 per coding task); chatting costs no energy. | P0 | M2 | ☑ |
 | PET-5 | Interactions from kero-pet kept: click menu, head-pat rub, cheek poke, drag, wander, babble. | P0 | M1 | ☑ |
-| PET-6 | Do-not-disturb: no babble during fullscreen apps, meetings (calendar), or focus sessions. *(Focus, `/dnd`, away and asleep done; meetings with M6 Calendar; fullscreen later.)* | P1 | M5 | ◐ |
+| PET-6 | Do-not-disturb: no babble during fullscreen apps, meetings (calendar), or focus sessions. *(Focus, `/dnd`, away, asleep, fullscreen (D-035) and calendar meetings (D-034) all done.)* | P1 | M5 | ☑ |
 | PET-7 | Wellbeing nudges: water, stretch, late-night "go to sleep". Toggleable. | P2 | M5 | ☑ |
 | PET-8 | Reduced-motion and mute options. | P1 | M8 | ☐ |
 
@@ -100,7 +100,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.5 Events & conversations (EVT)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| EVT-1 | Event engine with triggers: time of day, weekday/weekend, holidays, Tama birthday, weather (Open-Meteo), stat states, productivity milestones, long absence, late-night coding, random. Per-event cooldowns and `minBond`. *(All but weather, which needs a location setting, D-033.)* | P0 | M5 | ◐ |
+| EVT-1 | Event engine with triggers: time of day, weekday/weekend, holidays, Tama birthday, weather (Open-Meteo), stat states, productivity milestones, long absence, late-night coding, random. Per-event cooldowns and `minBond`. *(D-033; weather via a per-PC city set with `/weather <city>`, D-035.)* | P0 | M5 | ☑ |
 | EVT-2 | Event types: chat topics, VN-style choices (2–3 options affecting mood/bond), mini-quests, memory callbacks, daily diary. | P0 | M5 | ☑ |
 | EVT-3 | Events defined as data (deck JSON); lines generated in-character by the lite brain from a seed. | P0 | M5 | ☑ |
 | EVT-4 | Memory: facts about the user, viewable ("what do you remember?") and forgettable. | P0 | M5 | ☑ |
@@ -136,7 +136,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | SUM-2 | Triggers: global hotkey `Ctrl+Alt+P`, tray left-click, tray menu, `/summon` (terminal & Telegram), second-instance launch. | P0 | M0 | ☑ |
 | SUM-3 | Drag & walk clamped to visible work areas (all monitors). Saved position validated against current displays. | P0 | M0 | ☑ |
 | SUM-4 | 30-s watchdog: if off-screen or lost topmost, fix it. | P0 | M0 | ☑ |
-| SUM-5 | "Out for a walk" edge marker — click to recall. | P2 | M5 | ☐ |
+| SUM-5 | "Out for a walk" edge marker — click to recall. *(Desktop-only; shown while the pet is hidden, `/marker on` / `off`, D-035.)* | P2 | M5 | ☑ |
 
 ### 4.9 Telegram / phone (TG)
 | ID | Requirement | Pri | MS | Status |

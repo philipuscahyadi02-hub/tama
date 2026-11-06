@@ -33,6 +33,7 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
     '  /event [id]      start a little moment now · /dnd [on|off] quiet mode · /nudges [on|off] water & stretch',
     '  /google [setup|status|login|logout|brief|backup|backups|restore <n>|readonly on|off]   Gmail drafts, Calendar, Drive, Docs, Sheets',
     '  /brief           morning brief (calendar, important mail, todos) · /newpc  checklist for a new PC',
+    '  /weather <city>  set your city for weather moments (no arg = now · /weather off) · /marker [on|off] walk tab',
     '  coming soon: /phone (M7) · /voice (M8)',
     '',
     '  This terminal = Claude Code (asks before edits/commands).  Chat with your Tama = 💬 window (Ctrl+Alt+J, free via agy).',
@@ -165,6 +166,21 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
         const on = arg ? /^(on|1|yes)$/i.test(arg) : !p.nudges;
         await K.ui.setPrefs({ nudges: on });
         info(on ? '⎿  💧 wellbeing nudges on' : '⎿  wellbeing nudges off');
+      }],
+      // ---- M5 extras (D-035) ----
+      weather: ['Weather where you are: /weather <city>, /weather off', async (arg) => {
+        const a = String(arg || '').trim();
+        if (a.toLowerCase() === 'off') { await K.weather.off(); return info('⎿  weather off. I forgot your city~'); }
+        const r = a ? await K.weather.set(a) : await K.weather.get();
+        if (r.error) return error(`✗ ${r.error}`);
+        if (!r.location) return info('⎿  No city set. /weather Tokyo (uses Open-Meteo, no account needed)');
+        info(`⎿  ${a ? '📍 saved: ' : '📍 '}${r.location.city} · ${r.summary || 'weather unavailable right now'}`);
+      }],
+      marker: ['"Out for a walk" tab on the screen edge while hidden: on/off', async (arg) => {
+        const p = await K.ui.prefs();
+        const on = arg ? /^(on|1|yes)$/i.test(arg) : !p.walkMarker;
+        await K.ui.setPrefs({ walkMarker: on });
+        info(on ? '⎿  🚶 walk tab on: when you hide your Tama, a little tab on the right edge calls them back' : '⎿  walk tab off');
       }],
       phone: ['(M7) Pair your phone (Telegram)', () => info('⎿  Telegram pairing arrives in M7.')],
       voice: ['(M8) Voice settings', () => info('⎿  Voice (AivisSpeech) arrives in M8.')],

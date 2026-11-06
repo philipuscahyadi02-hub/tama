@@ -56,8 +56,9 @@ function buildPersona(spec, opts = {}) {
 /**
  * One-line context for the next message (stats + day), so the persona can react to how she's doing.
  * @param {any} pet  PetSnapshot or null @param {any} prod  ProductivitySnapshot or null
+ * @param {any} [wx]  weather.get result ({ location, current }) or null (D-035)
  */
-function statusLine(pet, prod) {
+function statusLine(pet, prod, wx = null) {
   const parts = [];
   if (pet && pet.state) {
     const s = pet.state;
@@ -72,6 +73,11 @@ function statusLine(pet, prod) {
     const open = (prod.todos || []).filter((/** @type {any} */ t) => !t.done).length;
     if (open) parts.push(`user has ${open} open todo${open === 1 ? '' : 's'}`);
     if (prod.focus && prod.focus.phase === 'focus') parts.push('user is in a focus session');
+  }
+  const w = wx && wx.current;
+  if (w) {
+    const sky = /** @type {Record<string, string>} */ ({ clear: 'clear sky', cloudy: 'cloudy', rain: 'rain', snow: 'snow', storm: 'thunderstorm' })[w.kind] || w.kind;
+    parts.push(`weather${wx.location && wx.location.city ? ` in ${wx.location.city}` : ''}: ${sky}, ${Math.round(w.tempC)}°C`);
   }
   const now = new Date();
   parts.push(`local time ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
