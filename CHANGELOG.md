@@ -6,6 +6,20 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - **Top part (hand-written):** add a line under `## [Unreleased]
 _Nothing yet._
 
+## [0.4.0] — 2026-11-06 — M4 Terminal v2
+### Added
+- **M4 terminal v2:**
+  - **Themed from your Tama** (TERM-2, ART-4, D-032): "<Name> Code" title, the real character as a live title-bar avatar (works, gets startled by permission prompts, sparkles when done, click to summon), welcome banner with the motif, spinner words from their tics and catchphrases, prompt caret from their personality, colors from their palette with guaranteed readable contrast. The chat window and pet menu use the same theme.
+  - **`/theme`** night · day · pastel · neon, unlocked by bond level (BOND-3); unlocks are announced.
+  - **First-run tour** (`/tour` to see it again): what the terminal is for, `/cd`, speed controls, where chat lives.
+  - **Commands** (TERM-4): `/stats`, `/chat [msg]`, `/wardrobe`, `/theme`, `/tour`; `/diary /event /phone /voice` say which milestone brings them.
+  - **SAFE-4:** turning on accept-edits outside a git repo needs a second Shift+Tab (or `/mode acceptEdits confirm`).
+  - **Pet menu revamp:** the long 10-button pill became a compact 5×2 card about the pet's width: a care row (feed, snack, play, bath, nap) and a together row (chat, terminal, focus, stats, restyle), with a caption naming the hovered button and a speech-bubble tail.
+### Fixed
+- A brand-new kero-pet import skipped the bond migration (state stamped v2 with the old `bond` field), so bond showed "NaN". Existing saves were not affected.
+### Decisions
+- D-032 — UI theme from the CharacterSpec; terminal variants unlocked by bond; UI prefs per PC.
+
 ## [0.3.1] — 2026-11-06 — M3 Brain & engines
 ### Added
 - **M3 brain & engines** (released as 0.3.1, D-030):
@@ -99,7 +113,10 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `73bd25e` | 2026-11-06 | feat(terminal) | M4 terminal v2 themed from the CharacterSpec, bond-unlocked themes, tour, commands |
+| `f7abed6` | 2026-11-06 | docs(changelog) | regenerate commit table for 0.3.1 |
 
 ### v0.3.1
 | Commit | Date | Type | Subject |

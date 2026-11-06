@@ -127,7 +127,8 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
       bus.handle(TOPICS.ENGINE_INFO, () => {
         const w = worker();
         return {
-          cwd: eng().cwd || null, mode: w.mode, model: w.model, effort: w.effort || null, busy: !!w.busy,
+          cwd: eng().cwd || null, isGit: !!(eng().cwd && git.isRepo(eng().cwd)),
+          mode: w.mode, model: w.model, effort: w.effort || null, busy: !!w.busy,
           lastSessionId: eng().lastSessionId || null, totalCost: usage().claudeUsd, commands: w.commands, brain: status(),
         };
       }),

@@ -77,6 +77,7 @@ src/main/
   services/pet/            logic.js (needs/energy) + bond.js (XP, levels, caps, streaks) + index.js (M2)
   services/roster/         active Tama, first-run hatch, kero-pet import; lifecycle.js + bundle.js (.tama) (M2)
   services/productivity/   todos, notes, reminders (when.js parser), focus timer, git-watcher.js (M2)
+  services/ui/             per-PC UI prefs: terminal theme variant (bond-unlocked), tour flag (M4, D-032)
   platform/power.js        AC/battery + idle/lock → bus (easy energy)
   platform/git.js          read-only git log / user.email
   platform/files.js        whole-file read/write for user-picked paths
@@ -91,7 +92,7 @@ src/main/
   services/designer/       prompt.js (schemas) + fallback.js (keyword designer) + index.js (M1)
   engines/claude/oneshot.js  tool-less structured call for the designer (D-021)
   platform/windows/page-window.js  framed pages (onboarding, dev gallery)
-src/shared/                pure modules for main AND renderer (D-020): palette, catalog, spec,
+src/shared/                pure modules for main AND renderer (D-020): palette, catalog, spec, theme (UI tokens + flavor, D-032),
                            rig/{kit,face,hair,headwear,outfit,accessories,compose}
 src/preload/index.js       window.tama allow-list
 src/renderer/shared/       rig.css (animations + expressions), rig-view.js (renderRig/renderEgg)
@@ -135,8 +136,8 @@ bus.on('engine.event', handler)
 - Channels forward a filtered set of topics to renderers / Telegram.
 
 ### Topics in use (M0)
-Events: `app.error`, `pet.state.changed`, `pet.bond.changed`, `engine.event`, `chat.event`, `brain.notice`, `summon.done`, `tray.action`, `character.changed`, `device.{power,idle}.changed`, `prod.{changed,focus.phase,reminder.due,commit.seen}`.
-Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,delete,export,import}`, `prod.*`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setEffort,setCwd,answerPermission,resume}`, `chat.{send,history,interrupt,clear}`, `brain.{status,set}`, `summon`.
+Events: `app.error`, `pet.state.changed`, `pet.bond.changed`, `engine.event`, `chat.event`, `brain.notice`, `ui.prefs.changed`, `summon.done`, `tray.action`, `character.changed`, `device.{power,idle}.changed`, `prod.{changed,focus.phase,reminder.due,commit.seen}`.
+Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,delete,export,import}`, `prod.*`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setEffort,setCwd,answerPermission,resume}`, `chat.{send,history,interrupt,clear}`, `ui.prefs.{get,set}`, `brain.{status,set}`, `summon`.
 Renderer messages arrive on one `ui` IPC channel: `pet.state`, `pet.bond`, `prod`, `focus`, `reminder`, `commit`, `summon`, `tray`, `agent.event`, `term.focus`, `character`.
 
 ## 5. Engine contract

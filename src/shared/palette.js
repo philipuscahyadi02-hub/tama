@@ -69,6 +69,15 @@
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   }
 
+  /** WCAG contrast ratio 1..21. @param {string} a @param {string} b */
+  function contrast(a, b) {
+    const [x, y] = [luminance(a), luminance(b)].sort((m, n) => n - m);
+    return (x + 0.05) / (y + 0.05);
+  }
+
+  /** HSL saturation 0..1 (how colorful). @param {string} hex */
+  function saturation(hex) { return rgbToHsl(...toRgb(hex))[1]; }
+
   /**
    * Base colors → CSS variable map. `overrides` lets a preset pin exact tokens (Kero-chan does).
    * @param {Record<string, string>} base
@@ -119,5 +128,5 @@
     return vars;
   }
 
-  return { BASE_KEYS, isHex, shade, mix, luminance, derive };
+  return { BASE_KEYS, isHex, shade, mix, luminance, contrast, saturation, derive };
 }));

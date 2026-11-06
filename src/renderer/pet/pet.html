@@ -29,16 +29,21 @@
     <div id="bubble" class="hidden hit"></div>
 
     <div id="menu" class="hit hidden">
-      <button data-act="feed" title="Feed">🍙</button>
-      <button data-act="snack" title="Energy snack (+25 ⚡)">⚡</button>
-      <button data-act="play" title="Play">🎀</button>
-      <button data-act="clean" title="Bath">🛁</button>
-      <button data-act="nap" title="Power nap (10 min) / wake up">💤</button>
-      <button data-act="focus" title="Focus 25 min / stop">⏱️</button>
-      <button data-act="stats" title="Stats">📊</button>
-      <button data-act="wardrobe" title="Restyle">🪄</button>
-      <button data-act="chat" title="Chat (Ctrl+Alt+J)">💬</button>
-      <button data-act="code" title="Open the terminal for coding (Ctrl+Alt+K)">💻</button>
+      <div class="row care">
+        <button data-act="feed" data-label="Feed 🍙">🍙</button>
+        <button data-act="snack" data-label="Energy snack (+25 ⚡)">⚡</button>
+        <button data-act="play" data-label="Play">🎀</button>
+        <button data-act="clean" data-label="Bath">🛁</button>
+        <button data-act="nap" data-label="Power nap / wake up">💤</button>
+      </div>
+      <div class="row together">
+        <button data-act="chat" data-label="Chat (Ctrl+Alt+J)">💬</button>
+        <button data-act="code" data-label="Terminal (Ctrl+Alt+K)">💻</button>
+        <button data-act="focus" data-label="Focus 25 min / stop">⏱️</button>
+        <button data-act="stats" data-label="Stats">📊</button>
+        <button data-act="wardrobe" data-label="Restyle">🪄</button>
+      </div>
+      <div id="menuCap">what shall we do?</div>
     </div>
 
     <div id="fx"></div>
@@ -54,6 +59,7 @@
   <script src="../../shared/palette.js"></script>
   <script src="../../shared/catalog.js"></script>
   <script src="../../shared/spec.js"></script>
+  <script src="../../shared/theme.js"></script>
   <script src="../../shared/rig/kit.js"></script>
   <script src="../../shared/rig/face.js"></script>
   <script src="../../shared/rig/hair.js"></script>

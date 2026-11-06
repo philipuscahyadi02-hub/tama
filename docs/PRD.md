@@ -5,8 +5,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.7 |
-| **Status** | v0.3.1 released (M0–M3; M3 = 0.3.1, D-030). Next: M4 → 0.4.0 |
+| **Version** | 0.8 |
+| **Status** | v0.4.0 released (M0–M4). M5 in progress on `m5-events` |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-06 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -70,7 +70,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | ART-1 | Chibi anime style only. Layered SVG rig: base body (per gender), hair, motif headwear (hood/ears/tail), outfit, accessories, palette. | P0 | M1 | ☑ |
 | ART-2 | The model **selects and recolors** parts from the library; it never free-draws the core body. | P0 | M1 | ☑ |
 | ART-3 | Full expression set works for every design: happy, sparkle, blush, pout, teary, shock, dizzy, smug, sleep, focus (glasses), sad. | P0 | M1 | ☑ |
-| ART-4 | Character palette/motif drives UI theme tokens (terminal, menus, bubbles). | P0 | M4 | ☐ |
+| ART-4 | Character palette/motif drives UI theme tokens (terminal, menus, bubbles). | P0 | M4 | ☑ |
 | ART-5 | Render current expression to PNG (for Telegram status/stickers). | P1 | M7 | ☐ |
 | ART-6 | Optional model-generated accessory SVG, sanitized and bounded. | P2 | later | ☐ |
 
@@ -91,7 +91,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 |---|---|---|---|---|
 | BOND-1 | Bond XP from productivity: agent task done +2, git commit in watched repo +1 (cap 10/day), focus session +3, todo done +1, daily streak +1 (bonus at 7/30), finished calendar focus block +2, pats/play small & capped. | P0 | M2 | ☑ |
 | BOND-2 | Diminishing returns after a daily cap (anti-farming). | P0 | M2 | ☑ |
-| BOND-3 | Levels: Stranger → Acquaintance → Buddy → Partner → Soulmate. Unlock outfits, themes, events, voice lines, proactive behaviors. | P1 | M2 | ◐ |
+| BOND-3 | Levels: Stranger → Acquaintance → Buddy → Partner → Soulmate. Unlock outfits, themes, events, voice lines, proactive behaviors. *(Terminal themes done in M4, D-032.)* | P1 | M2 | ◐ |
 | BOND-4 | **Bond never unlocks permissions** or weakens safety. | P0 | M2 | ☑ |
 | PROD-1 | Todos (`/todo`), focus timer (`/focus 25`), reminders (`/remind`), notes (`/note`). Shared across desktop & Telegram. | P0 | M2 | ☑ |
 | PROD-2 | Git commit watcher for user-chosen repos. | P1 | M2 | ☑ |
@@ -124,10 +124,10 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.7 Terminal (TERM)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| TERM-1 | Claude-Code-style terminal (from kero-pet): streaming, tool lines, diffs, todo lists, permission prompts, Shift+Tab modes, Esc interrupt, history. | P0 | M4 | ☐ |
-| TERM-2 | Themed from CharacterSpec: colors, prompt glyph, spinner frames, banner, corner avatar that reacts live. | P0 | M4 | ☐ |
-| TERM-3 | ~~Chat mode and code mode; engine badge~~ → replaced by the separate chat window (D-029). Terminal shows live thinking / writing progress (D-031). | P0 | M4 | ◐ |
-| TERM-4 | Commands: `/chat /code /engine /todo /focus /remind /note /feed /nap /stats /diary /event /voice /summon /phone /theme /tama /wardrobe`; unknown `/x` forwarded to the active engine. | P0 | M4 | ☐ |
+| TERM-1 | Claude-Code-style terminal (from kero-pet): streaming, tool lines, diffs, todo lists, permission prompts, Shift+Tab modes, Esc interrupt, history. | P0 | M4 | ☑ |
+| TERM-2 | Themed from CharacterSpec: colors, prompt glyph, spinner frames, banner, corner avatar that reacts live. | P0 | M4 | ☑ |
+| TERM-3 | ~~Chat mode and code mode; engine badge~~ → replaced by the separate chat window (D-029). Terminal shows live thinking / writing progress (D-031) and a first-run tour (`/tour`). | P0 | M4 | ☑ |
+| TERM-4 | Commands: `/chat /todo /focus /remind /note /feed /snack /nap /stats /theme /tour /tama /wardrobe /summon /model /effort /mode /budget`; `/diary /event` (M5), `/phone` (M7), `/voice` (M8) say when they arrive; unknown `/x` forwarded to Claude Code. | P0 | M4 | ☑ |
 
 ### 4.8 Summon & window reliability (SUM)
 | ID | Requirement | Pri | MS | Status |
@@ -188,7 +188,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | SAFE-1 | One `PermissionGate` for every tool approval from every engine and every channel. | P0 | M3 | ☑ |
 | SAFE-2 | Secrets only via the secrets module; never logged, never in plain JSON, never in exports without password. | P0 | M0 | ☑ |
 | SAFE-3 | Telegram accepts only the paired chat ID. | P0 | M7 | ☐ |
-| SAFE-4 | Warn before accept-edits mode outside a git repo. | P1 | M4 | ☐ |
+| SAFE-4 | Warn before accept-edits mode outside a git repo. | P1 | M4 | ☑ |
 | SAFE-5 | Daily cost/token budget shown in `/stats`; Tama warns near the limit. | P1 | M3 | ☑ |
 | NFR-1 | Idle CPU < 2%, RAM < 300 MB (excluding engine processes). | P1 | M8 | ☐ |
 | NFR-2 | Multi-monitor & mixed-DPI safe. | P0 | M0 | ◐ |
@@ -203,7 +203,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M1 — Character & hatching.** *(code complete)* SVG rig, parts library, CharacterSpec, onboarding (ONB-1..6, ART-1..3, PET-5, VOICE-2).
 - [x] **M2 — Pet loop v2 & lifecycle.** *(code complete; BOND-3 unlock effects arrive with themes in M4 and events in M5)* Energy, bond, productivity, roster, export/import (PET-1..4, BOND-*, PROD-1..2, PORT-3..5, ONB-9).
 - [x] **M3 — Brain & engines.** *(released as 0.3.1)* Claude Code terminal + agy chat window, PermissionGate, budget (BRAIN-*, ENG-1..5, CHAT-1, SAFE-1, SAFE-5, ONB-7).
-- [ ] **M4 — Terminal v2.** Theming from the CharacterSpec (no more hard-coded Kero), commands, first-run tour (TERM-*, ART-4, SAFE-4).
+- [x] **M4 — Terminal v2.** *(released as 0.4.0)* Theming from the CharacterSpec (no more hard-coded Kero), commands, first-run tour (TERM-*, ART-4, SAFE-4).
 - [ ] **M5 — Events & memory.** (EVT-*, PET-6..7, NFR-4, SUM-5).
 - [ ] **M6 — Google.** OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
 - [ ] **M7 — Telegram.** (TG-*, ART-5, SAFE-3).
@@ -218,6 +218,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.8 — 2026-11-06** — M4 implemented: TERM-1..4, ART-4, SAFE-4; BOND-3 terminal themes (D-032).
 - **0.7 — 2026-11-06** — Terminal = Claude Code only, chat window = agy only (D-029, CHAT-1); M3 ships as 0.3.1 (D-030); progress + `/effort` (D-031).
 - **0.6 — 2026-11-06** — M3 implemented: BRAIN-1..5, ENG-1..5, SAFE-1, SAFE-5, ONB-7. agy is read-only (D-027).
 - **0.5 — 2026-11-05** — M2 implemented: PET-1..4, BOND-1/2/4, PROD-1/2, PORT-3..5, ONB-9 done; BOND-3 levels done, unlock effects in M4/M5.

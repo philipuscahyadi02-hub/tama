@@ -17,6 +17,7 @@ const { watchPower } = require('./platform/power');
 const { createRoster } = require('./services/roster');
 const { createDesigner } = require('./services/designer');
 const { createProductivity } = require('./services/productivity');
+const { createUiPrefs } = require('./services/ui');
 const { createGitWatcher } = require('./services/productivity/git-watcher');
 const git = require('./platform/git');
 const { askJson } = require('./engines/claude/oneshot');
@@ -122,7 +123,7 @@ function boot() {
     onPower: (onAC) => bus.emit(TOPICS.DEVICE_POWER_CHANGED, { onAC }),
     onIdle: (idle, idleSeconds) => bus.emit(TOPICS.DEVICE_IDLE_CHANGED, { idle, idleSeconds }),
   }));
-  stoppers.push(brain.start());
+  stoppers.push(brain.start(), createUiPrefs({ bus, device }).start());
   summoner.startWatchdog();
   stoppers.push(() => summoner.stop(), () => petService.stop(), () => store.flush(), shell.unregisterHotkeys);
 

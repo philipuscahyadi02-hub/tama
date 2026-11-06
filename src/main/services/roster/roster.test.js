@@ -28,7 +28,8 @@ test('first run imports the most recent kero-pet save as a hatched Kero-chan (ke
   const roster = createRoster({ bus: new Bus(), store, legacySaveFiles: [older, newer, path.join(legacyDir, 'missing.json')], newId: () => 'tama-k' });
   assert.deepEqual(roster.ensureActive(), { id: 'tama-k', name: 'Kero-chan', stage: 'hatched' });
   const state = store.read('tamas/tama-k/state.json', 'tama-state', () => ({}));
-  assert.equal(state.bond, 64);
+  assert.equal(state.bondXp, 64 * 12); // migrated, not just stamped (D-023)
+  assert.equal(state.bond, undefined);
   assert.equal(state.xp, 9);
   const ch = store.read('tamas/tama-k/character.json', 'character', () => ({}));
   assert.equal(ch.importedFrom, 'kero-pet');

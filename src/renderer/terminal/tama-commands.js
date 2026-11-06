@@ -25,7 +25,10 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
     '  /remind <when> <text>   e.g. /remind in 10m stretch · /remind 3pm call mom · /reminders',
     '  /note [text]     jot a note (no text = recent notes)',
     '  /watch [here|path]   earn bond from your commits in a repo (no arg = list) · /unwatch <here|path>',
-    '  /feed  /snack  /nap  take care of your Tama · /tama  My Tamas (switch, hatch, export, import)',
+    '  /feed  /snack  /nap  take care of your Tama · /stats  how they are doing · /wardrobe  restyle',
+    '  /chat [msg]      open the 💬 chat (and send msg)    /tama  My Tamas (switch, hatch, export, import)',
+    '  /theme [name]    terminal look (night · day · pastel · neon; unlocked by bond)',
+    '  coming soon: /diary /event (M5) · /phone (M7) · /voice (M8)',
     '',
     '  This terminal = Claude Code (asks before edits/commands).  Chat with your Tama = 💬 window (Ctrl+Alt+J, free via agy).',
     '  /engines  status · /budget [usd]  daily Claude budget (API-equivalent estimate)',
@@ -89,6 +92,39 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
         info(`⎿  Claude today ≈$${s.usage.claudeUsd.toFixed(2)} of $${s.dailyClaudeUsd} (API-equivalent estimate). /budget <usd> to change, 0 = no limit.`);
       }],
       tama: ['My Tamas: switch, hatch, graduate, export, import', () => { K.openRoster(false); info('⎿  opened My Tamas'); }],
+      stats: ['How your Tama is doing', async () => {
+        const p = await K.getPet();
+        const s = p.state;
+        const bar = (v) => `${'█'.repeat(Math.round(v / 10))}${'░'.repeat(10 - Math.round(v / 10))} ${Math.round(v)}`;
+        const lv = p.level;
+        info([
+          `  ${p.name} · ${lv.title} ${lv.emoji}${lv.next ? ` (${Math.floor(lv.xp)} / ${lv.next} bond)` : ' (max!)'}${s.streak && s.streak.count ? ` · 🔥 ${s.streak.count}-day streak` : ''}`,
+          `  tummy  ${bar(s.hunger)}    mood   ${bar(s.happy)}`,
+          `  energy ${bar(s.energy)}    clean  ${bar(s.clean)}${s.asleep ? '    💤 asleep' : ''}${p.charging ? '    🔌 charging' : ''}`,
+        ].join('\n'));
+      }],
+      wardrobe: ['Restyle your Tama', () => { K.openOnboarding('restyle'); info('⎿  opened the wardrobe ✨'); }],
+      chat: ['Open the 💬 chat with your Tama (optionally send a message)', async (arg) => {
+        K.showChat();
+        if (arg) await K.chat.send(arg);
+        info(arg ? '⎿  sent to the chat window 💬' : '⎿  opened the chat window 💬 (Ctrl+Alt+J)');
+      }],
+      theme: ['Terminal look: night, day, pastel, neon', async (arg) => {
+        const prefs = await K.ui.prefs();
+        if (!arg) {
+          return info([
+            `⎿  theme: ${prefs.termTheme}`,
+            ...prefs.variants.map((v) => `    ${v.unlocked ? (v.id === prefs.termTheme ? '●' : '○') : '🔒'} ${v.id.padEnd(7)} ${v.label}${v.unlocked ? '' : ` (unlocks at bond level ${v.minLevel + 1})`}`),
+          ].join('\n'));
+        }
+        const r = await K.ui.setPrefs({ termTheme: arg.trim().toLowerCase() });
+        if (r.error === 'locked') return info(`⎿  🔒 not yet! that look unlocks at bond level ${r.minLevel + 1}. Keep being productive together~`);
+        show(r, () => `⎿  theme: ${r.termTheme} ✨`);
+      }],
+      diary: ["(M5) Your Tama's diary", () => info('⎿  The diary arrives in M5 (events & memory). Stay tuned~')],
+      event: ['(M5) Start a little event', () => info('⎿  Events arrive in M5. Stay tuned~')],
+      phone: ['(M7) Pair your phone (Telegram)', () => info('⎿  Telegram pairing arrives in M7.')],
+      voice: ['(M8) Voice settings', () => info('⎿  Voice (AivisSpeech) arrives in M8.')],
       feed: ['Feed your Tama', async () => show(await K.act('feed'), (r) => (r.ok ? '⎿  🍙 itadakimasu!' : `⎿  (${r.reason})`))],
       snack: ['Energy snack (+25)', async () => show(await K.act('snack'), (r) => (r.ok ? '⎿  ⚡ energy +25' : r.reason === 'cooldown' ? `⎿  snack again in ${Math.ceil(r.retryInMs / 60000)} min` : `⎿  (${r.reason})`))],
       nap: ['10-minute power nap', async () => show(await K.act('nap'), (r) => (r.ok ? '⎿  💤 power nap, 10 min' : `⎿  (${r.reason})`))],
