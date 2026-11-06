@@ -43,7 +43,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-011 | Storage split: soul / device / secrets, with schemaVersion migrations | Accepted |
 | D-012 | Gmail sending | Superseded by D-014 |
 | D-013 | Docs: PRD + ARCHITECTURE + DECISIONS, AGENTS.md as the shared rulebook | Accepted |
-| D-014 | Gmail: drafts only, no send tool | Accepted |
+| D-014 | Gmail: drafts only, no send tool | Superseded by D-038 |
 | D-015 | Versioning, CHANGELOG with commit table, repo-scoped decision log | Accepted |
 | D-016 | First run imports the kero-pet save as the first Tama | Accepted |
 | D-017 | Pet stats live in the main-process pet service from M0 | Accepted |
@@ -67,6 +67,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-035 | M5 extras: Open-Meteo weather per PC, fullscreen DND via one hidden PowerShell helper, "out for a walk" edge marker | Accepted |
 | D-036 | Telegram: long polling, one-time-code pairing to one chat, chat → agy, /code → shared Claude session in allow-listed folders with inline permission buttons | Accepted |
 | D-037 | Chat brain does Google itself: MCP relay → local bridge, Tama-side confirmations, and a hard PreToolUse guard (plan mode is only advisory) | Accepted · Supersedes D-027 ("plan mode = no side effects") |
+| D-038 | Sending allowed after the user confirms the full draft/invitation (only Tama's own drafts; never automatic) | Accepted · Supersedes D-014 |
 
 ---
 
@@ -155,7 +156,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Refs:** AGENTS.md
 
 ### D-014 — Gmail: drafts only, no send tool
-- **Date:** 2026-11-05 · **Status:** Accepted · Supersedes D-012
+- **Date:** 2026-11-05 · **Status:** Superseded by D-038 (user decision 2026-11-06) · Supersedes D-012
 - **Context:** User answered PRD Q1.
 - **Decision:** The Google MCP server exposes `gmail_create_draft` only. No send tool exists in any engine or channel; the user sends from Gmail themselves.
 - **Alternatives:** Send after explicit approval (declined by user).
@@ -416,3 +417,16 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Gemini CLI with its tool allow-list (needs another install/login; agy works); agy default mode (writes ungated); Tama-only HTTP MCP (agy declares no HTTP MCP support).
 - **Consequences:** `npm run probe:agy` now also checks "pushy prompt + guard = no writes/commands" and "guard + Tama tools = tool works". If a future agy changes hook loading, the probe fails and the chat must not be used until fixed. Google use from chat costs agy/Gemini quota instead of Claude.
 - **Refs:** GOOG-2, GOOG-7, BRAIN-2, ENG-3, TG-3, D-014, D-027, D-029, D-034, src/main/engines/agy/{guard,mcp-relay,setup}.js, src/main/platform/tool-bridge.js, src/main/brain/chat-tools.js
+
+### D-038 — Sending allowed after the user confirms the full draft/invitation (only Tama's own drafts; never automatic)
+- **Date:** 2026-11-06 · **Status:** Accepted · Supersedes D-014 (drafts only)
+- **Context:** The user asked to remove "never send to other people" and replace it with: Tama drafts, shows the draft to the user, and sends after the user confirms it from the chat (desktop or Telegram). Trigger: inviting a friend to tennis from the phone.
+- **Decision:**
+  - New tool `gmail_send_draft` (policy **send**): it only sends drafts Tama itself created (`device.json` `google.tamaDrafts`, newest 200), never other drafts in the mailbox. Before sending, the user sees the **full** email (To/Cc/Bcc/Subject/body) and taps "✅ Send it" (chat window card or Telegram buttons). No answer or "Don't send" = nothing is sent.
+  - `gmail_create_draft` is policy **draft**: it runs without a tap (a draft only sits in the user's Gmail) and is announced.
+  - `calendar_create_event` takes optional `attendees`; with guests it is policy **send** (`sendUpdates=all`, Google emails the invitations), and the confirm card says so explicitly. Without guests it stays **create**.
+  - Policies are computed per call (`policyFor`). Claude Code (PermissionGate rule): **send** and **edit** always ask; read/draft/create auto + announced. Chat brain (chat-tools): **create/edit/send** ask. There is no mode that sends without a tap. Still no delete/share tools.
+  - Scopes are unchanged (`gmail.compose` already covers sending drafts).
+- **Alternatives:** Keep drafts only (the user explicitly declined); let the model send directly after a "yes" in text (a free-text "yes" is easier to fake via prompt injection than a button on the exact content).
+- **Consequences:** Prompt injection from an untrusted email could try to make the chat brain send mail; the confirm card always shows the real recipient and body, so the user is the final check. PRD GOOG-4 changes; AGENTS §4 updated.
+- **Refs:** GOOG-3, GOOG-4, GOOG-7, D-014, D-034, D-037, src/main/services/google/{gmail,calendar,tools}.js, src/main/brain/chat-tools.js

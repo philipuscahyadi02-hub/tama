@@ -196,7 +196,10 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
   async function onChatConfirm(ev) {
     if (!chatId()) return;
     if (ev.t === 'confirm' && phoneTurn) {
-      const m = await send(`🙋 ${ev.text}\nShall I?`, { reply_markup: { inline_keyboard: [[{ text: '✅ Yes, do it', callback_data: `cfm:${ev.id}:y` }, { text: '❌ No', callback_data: `cfm:${ev.id}:n` }]] } });
+      const send1 = ev.kind === 'send';
+      const m = await send(send1 ? `🙋 ${ev.text}` : `🙋 ${ev.text}\nShall I?`, { reply_markup: { inline_keyboard: [[
+        { text: send1 ? '✅ Send it' : '✅ Yes, do it', callback_data: `cfm:${ev.id}:y` }, { text: send1 ? '❌ Don\'t send' : '❌ No', callback_data: `cfm:${ev.id}:n` },
+      ]] } });
       confirms.set(ev.id, m.message_id);
     } else if (ev.t === 'confirm-done' && confirms.has(ev.id)) {
       const mid = confirms.get(ev.id);

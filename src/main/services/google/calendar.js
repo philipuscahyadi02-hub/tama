@@ -1,5 +1,6 @@
 // @ts-check
-// Google Calendar (GOOG-3). Events are created without attendees, so Tama never sends invitations.
+// Google Calendar (GOOG-3, D-038). Guests are optional; with guests Google emails them an invitation, so callers treat
+// that as sending (the user confirms first).
 const BASE = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
 
 /** @typedef {{ id: string, summary: string, start: string, end: string, allDay: boolean, location?: string, description?: string, link?: string }} CalEvent */
@@ -14,7 +15,7 @@ function slim(e) {
 }
 
 /**
- * A Google Calendar "add this event" link for OTHER people (Tama never sends invitations, D-014/D-034): put it in a
+ * A Google Calendar "add this event" link for OTHER people (an alternative to inviting them, D-038): put it in a
  * Gmail draft so the recipient can add the event with one click.
  * @param {{ summary: string, start: string, end: string, location?: string, description?: string }} e
  */
@@ -24,6 +25,13 @@ function addLink(e) {
   if (e.location) q.set('location', e.location);
   if (e.description) q.set('details', e.description);
   return `https://calendar.google.com/calendar/render?${q}`;
+}
+
+/** "a@x.com, b@y.org" → validated addresses. @param {string | undefined} s */
+function guestList(s) {
+  const list = String(s || '').split(/[,;\s]+/).map((x) => x.trim()).filter(Boolean);
+  for (const e of list) if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) throw new Error(`Not an email address: ${e}`);
+  return list;
 }
 
 /** A date or date-time string → Calendar's { date } or { dateTime }. @param {string} s */
@@ -45,12 +53,13 @@ function createCalendar(api, now = Date.now) {
       });
       return (r.items || []).filter((/** @type {any} */ e) => e.status !== 'cancelled').map(slim);
     },
-    /** @param {{ summary: string, start: string, end: string, description?: string, location?: string }} p */
+    /** @param {{ summary: string, start: string, end: string, description?: string, location?: string, attendees?: string }} p */
     async create(p) {
       if (!p.summary) throw new Error('An event needs a summary.');
+      const guests = guestList(p.attendees);
       const r = await api.request(BASE, {
-        query: { sendUpdates: 'none' },
-        json: { summary: p.summary, start: when(p.start), end: when(p.end), description: p.description, location: p.location },
+        query: { sendUpdates: guests.length ? 'all' : 'none' },
+        json: { summary: p.summary, start: when(p.start), end: when(p.end), description: p.description, location: p.location, ...(guests.length ? { attendees: guests.map((email) => ({ email })) } : {}) },
       });
       const ev = slim(r);
       return { ...ev, shareLink: addLink({ ...p, start: ev.start, end: ev.end }) };
@@ -68,4 +77,4 @@ function createCalendar(api, now = Date.now) {
   };
 }
 
-module.exports = { createCalendar, slim, when, addLink };
+module.exports = { createCalendar, slim, when, addLink, guestList };

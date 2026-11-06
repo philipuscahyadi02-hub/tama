@@ -99,7 +99,7 @@ K.chat.onEvent((ev) => {
       const card = log.querySelector(`.confirm[data-id="${ev.id}"]`);
       if (card) {
         card.classList.add('answered');
-        card.querySelector('.cbtns').textContent = ev.yes ? '✅ okay, doing it~' : '❌ cancelled';
+        card.querySelector('.cbtns').textContent = ev.yes ? '✅ okay, doing it~' : '❌ cancelled (nothing was sent)';
       }
       break;
     }
@@ -112,7 +112,7 @@ function addConfirm(ev) {
   const d = document.createElement('div');
   d.className = 'confirm';
   d.dataset.id = String(ev.id);
-  d.innerHTML = `<div class="ctext"></div><div class="cbtns"><button class="yes">✅ Yes, do it</button><button class="no">No</button></div>`;
+  d.innerHTML = `<div class="ctext"></div><div class="cbtns"><button class="yes">${ev.kind === 'send' ? '✅ Send it' : '✅ Yes, do it'}</button><button class="no">${ev.kind === 'send' ? 'Don\'t send' : 'No'}</button></div>`;
   d.querySelector('.ctext').textContent = ev.text;
   d.querySelector('.yes').addEventListener('click', () => K.chat.confirm(ev.id, true));
   d.querySelector('.no').addEventListener('click', () => K.chat.confirm(ev.id, false));

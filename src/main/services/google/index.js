@@ -37,7 +37,7 @@ const LEASE_EVERY_MS = 5 * 60000;
  * }} deps
  */
 function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceName, fetch: f = fetch, now = Date.now }) {
-  const prefs = () => ({ readonly: false, backup: true, folderId: null, lastBackup: 0, briefDay: '', deviceId: '', ...(device.get().google || {}) });
+  const prefs = () => ({ readonly: false, backup: true, folderId: null, lastBackup: 0, briefDay: '', deviceId: '', tamaDrafts: /** @type {string[]} */ ([]), ...(device.get().google || {}) });
   if (!prefs().deviceId) device.patch('google', { deviceId: `pc-${now().toString(36)}-${Math.random().toString(36).slice(2, 8)}` });
   const json = (/** @type {string} */ k) => { try { return JSON.parse(secrets.get(k) || 'null'); } catch { return null; } };
   const client = () => /** @type {{ clientId: string, clientSecret: string } | null} */ (json('google.client'));
@@ -51,8 +51,13 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
   const gmail = createGmail(api);
   const drive = createDrive(api, { getFolderId: () => prefs().folderId, setFolderId: (id) => device.patch('google', { folderId: id }) });
   const backup = createBackup({ bus, drive, tamaId: () => tama.id, tamaName: () => tama.name, deviceId: prefs().deviceId, deviceName, now });
+  // Drafts Tama wrote (only these can be sent, D-038); kept per PC, newest 200.
+  const drafts = {
+    remember: (/** @type {string} */ id) => device.patch('google', { tamaDrafts: [...(prefs().tamaDrafts || []), id].slice(-200) }),
+    isTamas: (/** @type {string} */ id) => (prefs().tamaDrafts || []).includes(id),
+  };
   const tools = googleTools({
-    calendar, gmail, drive, now,
+    calendar, gmail, drive, now, drafts,
     onCreated: (what) => bus.emit(TOPICS.BRAIN_NOTICE, { text: `made a ${what} in your Google~ ✨`, kind: 'info' }),
   });
 

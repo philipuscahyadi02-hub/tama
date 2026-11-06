@@ -93,3 +93,39 @@ test('bridge + relay: MCP over stdio reaches Tama\'s tools; a wrong key is refus
   relay.stdin.end();
   bridge.close();
 });
+
+test('chat tools (D-038): drafts run without a tap; sending shows the full email with "send" buttons; no = nothing sent', async () => {
+  const bus = new Bus();
+  /** @type {string[]} */ const ran = [];
+  /** @type {any[]} */ const evs = [];
+  bus.on('chat.event', (e) => evs.push(e));
+  const tools = [
+    { name: 'gmail_create_draft', title: 'draft', policy: 'draft', description: 'd', params: {}, run: async () => { ran.push('draft'); return { draftId: 'd1' }; } },
+    { name: 'gmail_send_draft', title: 'send', policy: 'send', description: 's', params: {}, preview: async () => '✉️ Send this email?\nTo: ardy@example.com\nSubject: Tennis?', run: async () => { ran.push('send'); return { sent: true }; } },
+    { name: 'calendar_create_event', title: 'event', policy: 'create', policyFor: (/** @type {any} */ a) => (a.attendees ? 'send' : 'create'), description: 'e', params: {}, run: async () => { ran.push('event'); return {}; } },
+  ];
+  const ct = createChatTools({ bus, tools: () => /** @type {any} */ (tools) });
+  const stop = ct.start();
+  await ct.call('gmail_create_draft', {});
+  assert.deepEqual(ran, ['draft']);
+  assert.equal(evs.filter((e) => e.t === 'confirm').length, 0);
+
+  const p = ct.call('gmail_send_draft', { draftId: 'd1' });
+  await new Promise((r) => setTimeout(r, 5));
+  const ask = evs.find((e) => e.t === 'confirm');
+  assert.equal(ask.kind, 'send');
+  assert.match(ask.text, /To: ardy@example\.com/);
+  await bus.request('chat.confirm', { id: ask.id, yes: false });
+  assert.match((await p).text, /nothing was sent/);
+  assert.deepEqual(ran, ['draft']);
+
+  const p2 = ct.call('calendar_create_event', { summary: 'Tennis', start: '2026-11-07T19:00:00+07:00', end: '2026-11-07T21:00:00+07:00', attendees: 'ardy@example.com' });
+  await new Promise((r) => setTimeout(r, 5));
+  const ask2 = evs.filter((e) => e.t === 'confirm').at(-1);
+  assert.equal(ask2.kind, 'send');
+  assert.match(ask2.text, /EMAIL AN INVITATION to: ardy@example\.com/);
+  await bus.request('chat.confirm', { id: ask2.id, yes: true });
+  await p2;
+  assert.deepEqual(ran, ['draft', 'event']);
+  stop();
+});

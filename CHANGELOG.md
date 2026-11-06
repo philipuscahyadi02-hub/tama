@@ -29,6 +29,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - **Telegram confirm deadlock:** a ✅ tap could not be read while the message that asked for it was still waiting, so Google actions from the phone always timed out. Button presses are now handled immediately (regression test through the real polling loop).
 - Confirmations now expire after 2.5 minutes, before agy's own 3-minute tool timeout.
 - **Inviting someone:** calendar events now come with an "add to calendar" link, and the chat brain puts it into a Gmail draft to the guest (Tama still never sends invitations or emails).
+### Changed
+- **Tama can now send email and calendar invitations, after you confirm** (D-038, replaces drafts-only D-014): she writes the draft, shows you the whole email (To, Cc, Subject, body) with "✅ Send it" in the chat or on your phone, and only then sends. Invitations: the confirm card says "Google will email an invitation to …". She can only send drafts she wrote, never anything automatically. Claude in the terminal also always asks before sending.
 ### Security
 - **agy's plan mode turned out to be advisory**: a persuasive prompt made it write files. Every Tama agy session now has a hard guard hook that blocks all tools except Tama's own and web search (fail-closed). `npm run probe:agy` checks this.
   - Bot says "sleeping" when the PC app quits; `/phone awake on` keeps the PC awake for remote use.
