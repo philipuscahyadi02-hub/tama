@@ -15,8 +15,11 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
 
 ## [Unreleased]
+_Nothing yet._
+
+## [0.8.0] — 2026-11-06 — M8 Usage & accounts dashboard
 ### Added
-- **M8 Usage & accounts dashboard** (branch `m8-dashboard`, D-040). Voice moved to M9.
+- **M8 Usage & accounts dashboard** (D-040, D-041). Voice moved to M9.
   - **Dashboard** (tray → Usage & accounts…, or `/usage`): who is signed in to Claude, Gemini (agy), Google and Telegram; totals per service; a per-day chart (calls, tokens, Claude $); a filterable log with CSV export. `/usage here` prints today's summary in the terminal.
   - **Usage log:** every Claude and Gemini turn (tokens in/out/cache, API-equivalent $, model, time), every Google API call (e.g. "gmail send POST", Places marked billable) and Telegram message, as numbers only, never your messages, emails or files. Kept on this PC for 3 months.
   - **Claude plan limits:** your 5-hour and weekly usage % and reset time, straight from Claude.

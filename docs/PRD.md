@@ -6,7 +6,7 @@
 | | |
 |---|---|
 | **Version** | 0.16 |
-| **Status** | v0.7.0 released (M0–M7). M8 code complete on `m8-dashboard` (awaiting user check, then 0.8.0); voice is M9 |
+| **Status** | v0.8.0 released (M0–M8). M9 (voice & polish) in progress on `m9-voice`; portable .exe postponed |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-06 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -203,7 +203,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | SAFE-5 | Daily cost/token budget shown in `/stats`; Tama warns near the limit. | P1 | M3 | ☑ |
 | NFR-1 | Idle CPU < 2%, RAM < 300 MB (excluding engine processes). | P1 | M9 | ☐ |
 | NFR-2 | Multi-monitor & mixed-DPI safe. | P0 | M0 | ◐ |
-| NFR-3 | Ships as a portable `.exe` (electron-builder), uses installed `claude`/`agy`. | P0 | M9 | ☐ |
+| NFR-3 | Ships as a portable `.exe` (electron-builder), uses installed `claude`/`agy`. *(Postponed by the user, 2026-11-06.)* | P0 | later | ☐ |
 | NFR-4 | Memory view + forget; local-only data except the user's own Drive backup. | P0 | M5 | ☑ |
 
 ## 5. Milestones
@@ -218,8 +218,8 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M5 — Events & memory.** *(released as 0.5.0; weather, fullscreen DND and SUM-5 deferred)* (EVT-*, PET-6..7, NFR-4, SUM-5).
 - [x] **M6 — Google.** *(released as 0.6.0; Tasks sync, Docs replace-section and a hard device lock deferred)* OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
 - [x] **M7 — Telegram.** *(released as 0.7.0; voice notes in M9)* (TG-*, ART-5, SAFE-3).
-- [x] **M8 — Usage & accounts dashboard.** *(code complete)* Usage log, dashboard, Limits tab (what's left), account switching (USE-1..7, D-040, D-041).
-- [ ] **M9 — Voice & polish.** AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance, portable .exe (VOICE-1, TG-3 voice, PET-8, NFR-1, NFR-3).
+- [x] **M8 — Usage & accounts dashboard.** *(released as 0.8.0)* Usage log, dashboard, Limits tab (what's left), account switching (USE-1..7, D-040, D-041).
+- [ ] **M9 — Voice & polish.** AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
 
 ## 6. Open questions
 
