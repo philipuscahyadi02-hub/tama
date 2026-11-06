@@ -158,7 +158,10 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `185f052` | 2026-11-06 | feat(telegram) | M7 Telegram bot from the PC: chat, pet, productivity, remote /code |
+| `d6980fa` | 2026-11-06 | docs(changelog) | regenerate commit table for 0.6.0 |
 
 ### v0.6.0
 | Commit | Date | Type | Subject |
