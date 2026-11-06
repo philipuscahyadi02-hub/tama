@@ -36,9 +36,10 @@ function parseMapsUrl(url) {
 }
 
 /**
- * @param {{ fetch?: typeof fetch, key: () => string | null, near: () => { lat: number, lng: number, city?: string } | null }} deps
+ * @param {{ fetch?: typeof fetch, key: () => string | null, near: () => { lat: number, lng: number, city?: string } | null,
+ *   onCall?: (c: { op: string, ok: boolean, ms: number }) => void }} deps
  */
-function createMaps({ fetch: f = fetch, key, near }) {
+function createMaps({ fetch: f = fetch, key, near, onCall = () => {} }) {
   /** Follow a pasted (short) Maps link to the full URL, only through Google hosts. @param {{ url: string }} p */
   async function resolveLink({ url }) {
     let cur = String(url || '').trim();
@@ -75,12 +76,14 @@ function createMaps({ fetch: f = fetch, key, near }) {
         note: 'No Google Maps key: use search_web to find the official name and address, then show them with mapsSearchLink and ask the user to confirm.' };
     }
     const body = { textQuery: q, maxResultCount: 3, ...(n ? { locationBias: { circle: { center: { latitude: n.lat, longitude: n.lng }, radius: 50000 } } } : {}) };
+    const t0 = Date.now();
     const r = await f(PLACES_URL, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'X-Goog-Api-Key': k, 'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.googleMapsUri' },
       body: JSON.stringify(body),
     });
     const j = /** @type {any} */ (await r.json().catch(() => ({})));
+    onCall({ op: 'places.searchText (billable)', ok: r.ok, ms: Date.now() - t0 });
     if (!r.ok) throw new Error(`Google Maps: ${(j.error && j.error.message) || r.status}`);
     return {
       source: 'google',

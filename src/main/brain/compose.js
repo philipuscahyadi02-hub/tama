@@ -21,10 +21,10 @@ Reply with the entry text only (no title, no date, no tools).`,
 /**
  * @param {{
  *   factory: (emit: (ev: any) => void, persona: string) => import('./index').Engine,
- *   scratchDir: string, available: () => boolean, persona: () => string,
+ *   scratchDir: string, available: () => boolean, persona: () => string, onResult?: (ev: any) => void,
  * }} deps
  */
-function createComposer({ factory, scratchDir, available, persona }) {
+function createComposer({ factory, scratchDir, available, persona, onResult = () => {} }) {
   /** @type {import('./index').Engine | null} */
   let engine = null;
   let turns = 0;
@@ -34,6 +34,7 @@ function createComposer({ factory, scratchDir, available, persona }) {
 
   /** @param {any} ev */
   function onEvent(ev) {
+    if (ev.t === 'result') onResult(ev);
     if (!pending) return;
     if (ev.t === 'text-delta') pending.text += ev.text;
     else if (ev.t === 'result') { const p = pending; pending = null; p.done(ev.isError ? null : clean(p.text)); }

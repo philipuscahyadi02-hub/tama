@@ -66,6 +66,10 @@ function mapSdkMessage(m, ctx) {
       }
       break;
     }
+    case 'rate_limit_event':
+      // claude.ai plan limits (5-hour / weekly utilization) for the usage dashboard (D-040).
+      if (m.rate_limit_info) out.push({ t: 'rate-limit', info: m.rate_limit_info });
+      break;
     case 'system':
       if (m.subtype === 'init') {
         out.push({ t: 'init', model: m.model, cwd: m.cwd, mode: m.permissionMode, commands: m.slash_commands || [], version: m.claude_code_version });

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data: blob:" />
+  <title>Usage &amp; accounts</title>
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <header>
+    <h1>📊 Usage &amp; accounts</h1>
+    <div class="seg tabs" id="tabs"><button data-tab="overview" class="on">Overview</button><button data-tab="limits">Limits</button></div>
+    <span class="spacer"></span>
+    <div class="seg ov" id="range">
+      <button data-days="1">Today</button><button data-days="7">7 days</button><button data-days="14" class="on">14 days</button><button data-days="30">30 days</button>
+    </div>
+    <button id="refresh" title="Re-check accounts and reload">⟳ Refresh</button>
+  </header>
+  <p class="dim note">Numbers only: Tama logs what was used (tokens, calls, time), never your messages, emails or files. Stored on this PC for 3 months.</p>
+
+  <!-- ================= Limits tab (D-041) ================= -->
+  <div id="tabLimits" class="hidden">
+    <div class="row"><h2>What's left</h2><span class="spacer"></span><span class="dim" id="limUpdated"></span><button id="limRefresh" title="Ask Claude for its live plan limits (no message is sent, costs nothing)">⟳ Check now</button></div>
+    <section class="card limclaude"><h3><span class="dot" style="background:var(--c-claude)"></span>Claude plan <span class="badge" id="limSub"></span></h3>
+      <div id="limWindows" class="limgrid"></div>
+      <div id="limExtra" class="kv dim"></div>
+      <h3 class="sub">Remaining over the last 7 days</h3>
+      <div id="limChart"></div><div id="limLegend" class="legend"></div>
+    </section>
+    <section class="grid2">
+      <div class="card"><h3><span class="dot" style="background:var(--c-gemini)"></span>Gemini (agy)</h3><div id="limGemini"></div></div>
+      <div class="card"><h3><span class="dot" style="background:var(--c-google)"></span>Google Cloud project</h3><div id="limGoogle"></div></div>
+    </section>
+    <section class="card"><h3>🔔 Warnings</h3>
+      <div class="kv">Tama warns (pet bubble) when a Claude window has less than
+        <input id="alertA" type="number" min="1" max="99" class="num" />% and
+        <input id="alertB" type="number" min="1" max="99" class="num" />% left. <button id="alertSave">Save</button></div>
+    </section>
+  </div>
+
+  <!-- ================= Overview tab ================= -->
+  <div id="tabOverview">
+  <h2>Accounts</h2>
+  <section id="accounts" class="grid4"></section>
+  <p id="acctMsg" class="msg"></p>
+
+  <h2>Usage <span class="dim" id="rangeLabel"></span></h2>
+  <section id="totals" class="grid4"></section>
+
+  <section class="card">
+    <div class="row">
+      <h3>Per day</h3><span class="spacer"></span>
+      <div class="seg" id="metric"><button data-m="calls" class="on">Calls</button><button data-m="tokens">Tokens</button><button data-m="costUsd">Claude $</button></div>
+    </div>
+    <div id="chart"></div>
+    <div id="legend" class="legend"></div>
+  </section>
+
+  <section class="card">
+    <div class="row">
+      <h3>Log</h3><span class="spacer"></span>
+      <select id="fProvider"><option value="">All services</option><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="google">Google</option><option value="telegram">Telegram</option></select>
+      <input id="fText" placeholder="filter (op, model, surface)…" />
+      <button id="csv" title="Download the shown rows as CSV">⬇ CSV</button>
+    </div>
+    <div class="tablewrap"><table id="log"><thead><tr>
+      <th>Time</th><th>Service</th><th>Where</th><th>What</th><th>Model</th><th class="n">In</th><th class="n">Out</th><th class="n">Cache</th><th class="n">≈$</th><th class="n">ms</th><th></th>
+    </tr></thead><tbody></tbody></table></div>
+  </section>
+  </div>
+
+  <script src="../../shared/palette.js"></script>
+  <script src="../../shared/catalog.js"></script>
+  <script src="../../shared/spec.js"></script>
+  <script src="../../shared/theme.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>

@@ -5,9 +5,10 @@
 const BASE = 'https://api.telegram.org';
 
 /**
- * @param {{ token: () => string | null, fetch?: typeof fetch }} deps
+ * @param {{ token: () => string | null, fetch?: typeof fetch, onCall?: (c: { method: string, ok: boolean }) => void }} deps
+ *   onCall: one report per Bot API call except long polling, for the usage log (D-040).
  */
-function createBotApi({ token, fetch: f = fetch }) {
+function createBotApi({ token, fetch: f = fetch, onCall = () => {} }) {
   const redact = (/** @type {string} */ s) => { const t = token(); return t ? String(s).split(t).join('<token>') : String(s); };
 
   /** @param {string} method @param {Record<string, any>} [params] @param {AbortSignal} [signal] */
@@ -19,6 +20,7 @@ function createBotApi({ token, fetch: f = fetch }) {
       r = await f(`${BASE}/bot${t}/${method}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(params), signal });
     } catch (e) { throw new Error(redact(`Telegram ${method}: ${/** @type {Error} */ (e).message || e}`)); }
     const j = /** @type {any} */ (await r.json().catch(() => ({ ok: false, description: `HTTP ${r.status}` })));
+    if (method !== 'getUpdates') onCall({ method, ok: !!j.ok });
     if (!j.ok) {
       const err = /** @type {any} */ (new Error(redact(`Telegram ${method}: ${j.description || r.status}`)));
       err.code = j.error_code; err.retryAfter = j.parameters && j.parameters.retry_after;

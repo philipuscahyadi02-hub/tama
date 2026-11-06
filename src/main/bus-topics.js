@@ -53,6 +53,14 @@ const TOPICS = {
   GOOGLE_MEETING_SOON: 'google.meeting.soon',
   /** TelegramStatus { configured, paired, running, enabled, bot, repos, remote, awake, pairing: {code, link}|null, ignored } (D-036) */
   TELEGRAM_CHANGED: 'telegram.changed',
+  /** UsageEntry-like { provider, surface, op, model?, tokensIn?, tokensOut?, cacheRead?, cacheWrite?, tokens?, costUsd?, ms?, ok } — log one call (D-040) */
+  USAGE_RECORD: 'usage.record',
+  /** { last: UsageEntry } — after a usage entry was written */
+  USAGE_CHANGED: 'usage.changed',
+  /** Limit news (D-041): { provider: 'claude', windows: { [window]: { used 0..1, resetsAt } }, source } | { provider: 'gemini', tier?, hit? } */
+  USAGE_LIMIT: 'usage.limit',
+  /** Accounts { claude, gemini, google, telegram } — after an account status changed (D-040) */
+  ACCOUNTS_CHANGED: 'accounts.changed',
   /** { text, kind: 'info'|'warn' } — brain messages worth a pet bubble (budget, missing engines) */
   BRAIN_NOTICE: 'brain.notice',
   /** { reason: string } — pet window was brought back on screen by summon() */
@@ -200,6 +208,18 @@ const TOPICS = {
   TELEGRAM_UNPAIR: 'telegram.unpair',
   /** { enabled?, remote?, awake?, allow?: path, disallow?: path } → TelegramStatus */
   TELEGRAM_SET: 'telegram.set',
+  /** { days?, provider?, limit? } → { summary, entries, claudeLimits } (D-040) */
+  USAGE_GET: 'usage.get',
+  /** () → Limits { claude: { windows, history, extra, breakdown }, gemini: { tier, lastHit, today }, google: { month, placesCap, project } } */
+  USAGE_LIMITS_GET: 'usage.limits.get',
+  /** () → Limits — ask Claude for live plan limits now (no message, $0) */
+  USAGE_LIMITS_REFRESH: 'usage.limits.refresh',
+  /** { placesCap?: number | null, alertAt?: number[] } → Limits */
+  USAGE_LIMITS_SET: 'usage.limits.set',
+  /** { refresh? } → Accounts */
+  ACCOUNTS_GET: 'accounts.get',
+  /** { kind: 'claude'|'gemini'|'google'|'google-project'|'telegram' } → { ok, message } | { error } — start switching an account */
+  ACCOUNTS_SWITCH: 'accounts.switch',
   /** sessionId|null → { ok } | { error } */
   ENGINE_RESUME: 'engine.resume',
   /** { reason } → void — bring the pet back on screen */

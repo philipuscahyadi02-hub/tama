@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** Main → renderer messages arrive on one 'ui' channel as (name, payload). */
-const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram']);
+const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram', 'usage', 'accounts']);
 /** @type {Map<string, Set<(p: any) => void>>} */
 const subs = new Map();
 ipcRenderer.on('ui', (_e, name, payload) => {
@@ -112,6 +112,22 @@ contextBridge.exposeInMainWorld('tama', {
     list: () => ipcRenderer.invoke('diary:list'),
   },
 
+  // ---- Usage & accounts (M8) ----
+  usage: {
+    open: () => ipcRenderer.send('dashboard:open'),
+    get: (/** @type {any} */ p) => ipcRenderer.invoke('usage:get', p),
+    onChange: on('usage'),
+  },
+  limits: {
+    get: () => ipcRenderer.invoke('limits:get'),
+    refresh: () => ipcRenderer.invoke('limits:refresh'),
+    set: (/** @type {any} */ p) => ipcRenderer.invoke('limits:set', p),
+  },
+  accounts: {
+    get: (/** @type {boolean} */ refresh) => ipcRenderer.invoke('accounts:get', !!refresh),
+    switchTo: (/** @type {string} */ kind) => ipcRenderer.invoke('accounts:switch', kind),
+    onChange: on('accounts'),
+  },
   // ---- Telegram (M7) ----
   telegram: {
     status: () => ipcRenderer.invoke('telegram:status'),

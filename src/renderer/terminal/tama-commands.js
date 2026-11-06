@@ -33,6 +33,7 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
     '  /event [id]      start a little moment now · /dnd [on|off] quiet mode · /nudges [on|off] water & stretch',
     '  /google [setup|status|login|logout|brief|backup|backups|restore <n>|readonly on|off|maps-key <key|off>]   Gmail, Calendar, Drive, Docs, Sheets',
     '  /brief           morning brief (calendar, important mail, todos) · /newpc  checklist for a new PC',
+    '  /usage [here]    Usage & accounts dashboard: Claude, Gemini, Google, Telegram usage + switch accounts',
     '  /weather <city>  set your city for weather moments (no arg = now · /weather off) · /marker [on|off] walk tab',
     '  /phone [setup <token>|code|status|on|off|unpair|allow here|disallow here|remote on|off|awake on|off]   Telegram on your phone',
     '  coming soon: /voice (M8)',
@@ -279,6 +280,20 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
         const r = await K.google.brief();
         if (r.error) return info('⎿  connect Google first (/google setup) for the brief~');
         info(`☀️ ${r.text}`);
+      }],
+      usage: ['Usage & accounts dashboard (Claude, Gemini, Google, Telegram)', async (arg) => {
+        if (arg !== 'here') { K.usage.open(); return info('⎿  opened Usage & accounts 📊 (/usage here for a quick summary)'); }
+        const [r, L] = await Promise.all([K.usage.get({ days: 1 }), K.limits.get()]);
+        const t = r.summary.totals;
+        const usd = (n) => `$${(n || 0).toFixed(2)}`;
+        const lim = Object.values((L.claude && L.claude.windows) || {}).map((v) => `${v.label} ${Math.round(v.left * 100)}% left`).join(' · ');
+        info([
+          '⎿  today',
+          `    Claude    ${t.claude.calls} turns · ${t.claude.tokens.toLocaleString()} tokens · ≈${usd(t.claude.costUsd)} (API-equivalent)${lim ? ` · ${lim}` : ''}`,
+          `    Gemini    ${t.gemini.calls} turns · ${t.gemini.tokens.toLocaleString()} tokens${L.gemini && L.gemini.tier ? ` · ${L.gemini.tier}` : ''}`,
+          `    Google    ${t.google.calls} API calls${t.google.errors ? ` (${t.google.errors} errors)` : ''}`,
+          `    Telegram  ${t.telegram.calls} messages/calls`,
+        ].join('\n'));
       }],
       newpc: ['Checklist for setting up Tama on a new PC', async () => {
         const [b, g] = await Promise.all([K.brain.status(), K.google.status()]);

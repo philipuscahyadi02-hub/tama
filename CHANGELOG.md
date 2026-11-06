@@ -17,6 +17,15 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## [Unreleased]
 _Nothing yet._
 
+## [0.8.0] — 2026-11-06 — M8 Usage & accounts dashboard
+### Added
+- **M8 Usage & accounts dashboard** (D-040, D-041). Voice moved to M9.
+  - **Dashboard** (tray → Usage & accounts…, or `/usage`): who is signed in to Claude, Gemini (agy), Google and Telegram; totals per service; a per-day chart (calls, tokens, Claude $); a filterable log with CSV export. `/usage here` prints today's summary in the terminal.
+  - **Usage log:** every Claude and Gemini turn (tokens in/out/cache, API-equivalent $, model, time), every Google API call (e.g. "gmail send POST", Places marked billable) and Telegram message, as numbers only, never your messages, emails or files. Kept on this PC for 3 months.
+  - **Claude plan limits:** your 5-hour and weekly usage % and reset time, straight from Claude.
+  - **Limits tab** (tray → Limits left…, D-041): Claude's 5-hour and weekly windows as **% left** with reset countdowns, extra-usage credits and a 7-day trend, checked live (no message, $0) when you open it, every 20 minutes and after each Claude turn; warnings in the pet bubble at 25 % and 10 % left (adjustable). Gemini: your plan tier, today's usage and a warning if the quota runs out (agy doesn't share a % left). Google: calls this month, billable Places calls against a monthly cap you set, and links to your project's quota and billing pages.
+  - **Switch accounts:** Claude and agy open their official sign-in in a console window; Google lets you pick another account or change the Google project; Telegram points to `/phone setup`. Tama notices the change and starts fresh sessions on the new account.
+
 ## [0.7.0] — 2026-11-06 — M7 Telegram (+ Gemini does Google, sending with confirmation, places)
 ### Added
 - **M7 Telegram** (D-036): your Tama on your phone, served from your PC (no server).
@@ -173,7 +182,12 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `02e74c3` | 2026-11-06 | feat(usage) | Limits tab: what's left for Claude, Gemini and Google (D-041) |
+| `c8d20bd` | 2026-11-06 | docs(changelog) | regenerate commit table |
+| `276dd70` | 2026-11-06 | feat(usage) | M8 usage & accounts dashboard (D-040) |
+| `990c18f` | 2026-11-06 | docs(changelog) | regenerate commit table for 0.7.0 |
 
 ### v0.7.0
 | Commit | Date | Type | Subject |

@@ -17,10 +17,11 @@ const USER_ACTIONS = new Set(['feed', 'snack', 'play', 'clean', 'sleep', 'nap', 
  *   openOnboarding: (mode: 'hatch'|'restyle'|'rebirth') => void,
  *   openRoster: (importNow?: boolean) => unknown,
  *   openGoogle: () => unknown,
+ *   openDashboard: (tab?: string) => unknown,
  *   pages?: () => Array<import('electron').BrowserWindow>,
  * }} deps
  */
-function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster, openGoogle, pages }) {
+function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster, openGoogle, openDashboard, pages }) {
   /** The last .tama file the user picked; import only ever reads this path, never one sent by a page. */
   let pickedImport = /** @type {string | null} */ (null);
   const both = () => [pet.win, term.window(), chat.window()];
@@ -49,6 +50,8 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     bus.on(TOPICS.UI_PREFS_CHANGED, (p) => toAll('ui.prefs', p));
     bus.on(TOPICS.GOOGLE_CHANGED, (p) => { toAll('google', p); for (const w of pageWindows()) ipc.sendUi(w, 'google', p); });
     bus.on(TOPICS.TELEGRAM_CHANGED, (p) => toAll('telegram', p));
+    bus.on(TOPICS.USAGE_CHANGED, (p) => { for (const w of pageWindows()) ipc.sendUi(w, 'usage', p); });
+    bus.on(TOPICS.ACCOUNTS_CHANGED, (p) => { for (const w of pageWindows()) ipc.sendUi(w, 'accounts', p); });
     bus.on(TOPICS.GOOGLE_MEETING_SOON, (p) => shell.notify(`📅 ${p.summary}`, `starts in ${p.minutes} min`));
     bus.on(TOPICS.EVENT_SHOWN, (p) => {
       ipc.sendUi(pet.win, 'event', p);
@@ -80,6 +83,17 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.on('term:show', () => term.show());
     ipc.on('chat:show', () => chat.show());
     ipc.handle('ui:prefs', () => bus.request(TOPICS.UI_PREFS_GET));
+    // ---- Usage & accounts (M8, D-040) ----
+    ipc.on('dashboard:open', () => openDashboard());
+    ipc.handle('usage:get', (p) => bus.request(TOPICS.USAGE_GET, { days: Number(p?.days) || 14, provider: p?.provider ? String(p.provider) : undefined, limit: Number(p?.limit) || 300 }));
+    ipc.handle('accounts:get', (refresh) => bus.request(TOPICS.ACCOUNTS_GET, { refresh: !!refresh }));
+    ipc.handle('limits:get', () => bus.request(TOPICS.USAGE_LIMITS_GET));
+    ipc.handle('limits:refresh', () => bus.request(TOPICS.USAGE_LIMITS_REFRESH));
+    ipc.handle('limits:set', (p) => bus.request(TOPICS.USAGE_LIMITS_SET, {
+      placesCap: p?.placesCap === null ? null : p?.placesCap === undefined ? undefined : Number(p.placesCap),
+      alertAt: Array.isArray(p?.alertAt) ? p.alertAt.map(Number) : undefined,
+    }));
+    ipc.handle('accounts:switch', (kind) => bus.request(TOPICS.ACCOUNTS_SWITCH, { kind: String(kind || '') }).catch((e) => ({ error: String(e.message || e) })));
     // ---- Telegram (M7, D-036) ----
     ipc.handle('telegram:status', () => bus.request(TOPICS.TELEGRAM_STATUS));
     ipc.handle('telegram:setup', (t) => bus.request(TOPICS.TELEGRAM_SETUP, { token: String(t || '') }).catch((e) => ({ error: String(e.message || e) })));

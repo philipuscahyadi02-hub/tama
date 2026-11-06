@@ -60,7 +60,7 @@ function authorize({ clientId, clientSecret, scopes, openExternal, fetch: f = fe
       redirectUri = `http://127.0.0.1:${addr.port}`;
       const q = new URLSearchParams({
         client_id: clientId, redirect_uri: redirectUri, response_type: 'code', scope: scopes.join(' '),
-        code_challenge: challenge, code_challenge_method: 'S256', state, access_type: 'offline', prompt: 'consent',
+        code_challenge: challenge, code_challenge_method: 'S256', state, access_type: 'offline', prompt: 'select_account consent', // pick the account every time (D-040)
         include_granted_scopes: 'true', ...(loginHint ? { login_hint: loginHint } : {}),
       });
       timer = setTimeout(() => finish(new Error('Google sign-in timed out (5 minutes).')), timeoutMs);

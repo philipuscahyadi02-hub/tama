@@ -83,4 +83,21 @@ function openExternal(url) {
   return require('electron').shell.openExternal(u.toString());
 }
 
-module.exports = { notify, pickFolder, pickSaveTama, pickOpenTama, registerHotkeys, unregisterHotkeys, createTray, openExternal, EXTERNAL_HOSTS };
+/**
+ * Run a short batch script in a new, visible console window (official CLI sign-ins, D-040). Windows only.
+ * @param {string} name  file-safe name @param {string[]} lines  cmd.exe lines
+ */
+function runConsoleScript(name, lines) {
+  if (process.platform !== 'win32') throw new Error('Account switching windows are only available on Windows for now.');
+  const fs = require('fs');
+  const os = require('os');
+  const path = require('path');
+  const { spawn } = require('child_process');
+  const file = path.join(os.tmpdir(), `tama-${name.replace(/[^a-z0-9-]/gi, '')}.cmd`);
+  fs.writeFileSync(file, `${lines.join('\r\n')}\r\n`);
+  const child = spawn('cmd.exe', ['/d', '/s', '/c', `start "" "${file}"`], { windowsVerbatimArguments: true, detached: true, stdio: 'ignore' });
+  child.unref();
+  return file;
+}
+
+module.exports = { notify, pickFolder, pickSaveTama, pickOpenTama, registerHotkeys, unregisterHotkeys, createTray, openExternal, runConsoleScript, EXTERNAL_HOSTS };
