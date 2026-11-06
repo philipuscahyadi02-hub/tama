@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** Main → renderer messages arrive on one 'ui' channel as (name, payload). */
-const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus']);
+const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs']);
 /** @type {Map<string, Set<(p: any) => void>>} */
 const subs = new Map();
 ipcRenderer.on('ui', (_e, name, payload) => {
@@ -85,6 +85,13 @@ contextBridge.exposeInMainWorld('tama', {
     clear: () => ipcRenderer.send('chat:clear'),
     onEvent: on('chat.event'),
     onFocus: on('chat.focus'),
+  },
+
+  // ---- UI preferences (terminal theme, tour) ----
+  ui: {
+    prefs: () => ipcRenderer.invoke('ui:prefs'),
+    setPrefs: (/** @type {any} */ p) => ipcRenderer.invoke('ui:setPrefs', p),
+    onPrefs: on('ui.prefs'),
   },
 
   // ---- both ----

@@ -61,6 +61,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-029 | Two surfaces: terminal = Claude Code only, chat window = agy only (with web search) | Accepted · Supersedes D-028 routing |
 | D-030 | M3 ships as 0.3.1; milestone = minor resumes with M4 = 0.4.0 | Accepted |
 | D-031 | Claude Code sessions stream summarized thinking + tool-input progress; `/effort` per PC | Accepted |
+| D-032 | UI theme from the CharacterSpec (shared/theme.js); terminal variants unlocked by bond; UI prefs in device.json | Accepted |
 
 ---
 
@@ -321,3 +322,16 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Disable thinking (worse results); pick a faster default model for the user (their choice: `/model`, `/effort`).
 - **Consequences:** More IPC traffic during long turns (throttled). The status bar and help mention `/model` and `/effort` as the speed controls.
 - **Refs:** TERM-1, src/main/engines/claude/{session,map-message}.js
+
+### D-032 — UI theme from the CharacterSpec (shared/theme.js); terminal variants unlocked by bond; UI prefs in device.json
+- **Date:** 2026-11-06 · **Status:** Accepted
+- **Context:** M4 (ART-4, TERM-2, BOND-3): the terminal was hard-coded to Kero-chan (title, frog avatar, pink/green colors, "Kero-ing" spinner words, permission text). Every Tama should get her own look, and a better bond should unlock something visible.
+- **Decision:**
+  - `src/shared/theme.js` (pure UMD, D-020) turns a CharacterSpec into `--tama-*` tokens for the terminal (`terminalVars`), the chat window (`chatVars`) and the pet menu (`petVars`), plus flavor text (`flavor`: "<Name> Code", subtitle from the motif, spinner verbs from the name/tics/catchphrases, prompt caret from personality).
+  - Accent colors are the two most colorful base colors; every text/accent token is pushed until it reaches WCAG contrast 4.5 on its background (dim text 3.2). Table-tested with extreme palettes.
+  - Terminal variants: **night** (always), **day** (Acquaintance), **pastel** (Partner), **neon** (Soulmate). Chosen with `/theme`; locked ones show 🔒 and the level needed; a level-up that unlocks one is announced.
+  - `services/ui` keeps per-PC UI preferences in `device.json` `ui` (`termTheme`, `tourDone`) behind `ui.prefs.get/set` and emits `ui.prefs.changed`. A look is a device preference, not part of the portable soul.
+  - Terminal CSS uses only `--tama-*` tokens (AGENTS §3). The title-bar avatar is the real rig and reacts live (focus while working, shock on permission, sparkle when done, dizzy on error; click = summon).
+- **Alternatives:** Per-Tama theme stored in the soul (moving PCs would carry a display preference); hand-picked palettes per preset (doesn't scale to prompt-designed Tamas).
+- **Consequences:** New UI surfaces take their colors from `theme.js`. More unlocks (outfits, events, voice lines) come in M5/M8 (BOND-3 stays ◐).
+- **Refs:** ART-4, TERM-1..4, BOND-3, SAFE-4, src/shared/theme.js, src/main/services/ui

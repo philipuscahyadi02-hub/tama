@@ -5,6 +5,7 @@
 const { TOPICS } = require('../../bus-topics');
 const specMod = require('../../../shared/spec');
 const { createLifecycle } = require('./lifecycle');
+const { migrate } = require('../../platform/store/migrations');
 
 /** @typedef {import('../../../shared/spec').CharacterSpec} CharacterSpec */
 /** @typedef {'egg'|'hatched'} Stage */
@@ -50,7 +51,8 @@ function createRoster({ bus, store, legacySaveFiles = [], now = Date.now, newId 
     const meta = { createdAt: now(), importedFrom: legacy ? 'kero-pet' : null };
     if (legacy) {
       store.write(charFile(id), 'character', { ...specMod.preset('kero'), ...meta, stage: 'hatched' });
-      store.write(`tamas/${id}/state.json`, 'tama-state', legacy);
+      // kero-pet saves are schema v0: run every migration (e.g. bond 0..100 → bondXp, D-023) before writing.
+      store.write(`tamas/${id}/state.json`, 'tama-state', migrate('tama-state', legacy));
     } else {
       // An egg: the real design comes from onboarding (ONB-1). The placeholder spec is never shown.
       store.write(charFile(id), 'character', { ...specMod.normalizeSpec({ name: 'Tama' }), ...meta, stage: 'egg' });

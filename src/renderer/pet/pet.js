@@ -468,6 +468,8 @@ function applyCharacter(ch) {
   petEl.classList.toggle('egg', isEgg);
   if (isEgg) { window.TamaShared.renderEgg(petEl, svgEl); return; }
   spec = window.TamaShared.renderRig(petEl, svgEl, ch.spec);
+  // Menu colors follow the character (ART-4).
+  for (const [k, v] of Object.entries(window.TamaShared.theme.petVars(spec))) document.documentElement.style.setProperty(k, v);
   petName = spec.name;
   renderMood();
 }

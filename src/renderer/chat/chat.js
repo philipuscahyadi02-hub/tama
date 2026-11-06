@@ -8,27 +8,9 @@ const sendBtn = $('#send');
 
 const st = { busy: false, live: null, liveText: '', name: 'Tama', tools: null };
 
-// ---------------- theme ----------------
+// ---------------- theme (shared with the terminal, src/shared/theme.js) ----------------
 function applyTheme(spec) {
-  const P = window.TamaShared.palette;
-  const pal = spec.palette || {};
-  const main = pal.main || '#ff8fbf';
-  const accent = pal.accent || main;
-  const hair = pal.hair || main;
-  const inkOn = (hex) => (P.luminance(hex) > 0.45 ? '#2b2340' : '#ffffff');
-  const vars = {
-    '--tama-bg': P.mix(main, '#ffffff', 0.92),
-    '--tama-panel': '#ffffff',
-    '--tama-head': P.mix(hair, '#ffffff', 0.7),
-    '--tama-accent': accent,
-    '--tama-accent-ink': inkOn(accent),
-    '--tama-bubble': P.mix(main, '#ffffff', 0.8),
-    '--tama-bubble-line': P.mix(main, '#ffffff', 0.62),
-    '--tama-user': P.shade(accent, -0.04),
-    '--tama-user-ink': inkOn(P.shade(accent, -0.04)),
-    '--tama-line': P.mix(main, '#ffffff', 0.7),
-  };
-  for (const [k, v] of Object.entries(vars)) document.documentElement.style.setProperty(k, v);
+  for (const [k, v] of Object.entries(window.TamaShared.theme.chatVars(spec))) document.documentElement.style.setProperty(k, v);
 }
 
 function applyCharacter(ch) {
@@ -43,7 +25,8 @@ function applyCharacter(ch) {
   }
   $('#name').textContent = st.name;
   document.title = `Chat with ${st.name}`;
-  input.placeholder = `Talk to ${st.name}~ (Enter to send, Shift+Enter new line)`;
+  input.placeholder = `Talk to ${st.name}~`;
+  input.title = 'Enter to send · Shift+Enter for a new line';
 }
 
 // ---------------- messages ----------------

@@ -40,6 +40,8 @@ const TOPICS = {
   /** Chat window events (D-029): { t: 'message', message } | { t: 'delta', text } | { t: 'tool', text } | { t: 'status', state }
    *  | { t: 'error', message } | { t: 'done', isError } | { t: 'cleared' } */
   CHAT_EVENT: 'chat.event',
+  /** UiPrefs { termTheme, tourDone, unlocked, variants } — after a change (D-032) */
+  UI_PREFS_CHANGED: 'ui.prefs.changed',
   /** { text, kind: 'info'|'warn' } — brain messages worth a pet bubble (budget, missing engines) */
   BRAIN_NOTICE: 'brain.notice',
   /** { reason: string } — pet window was brought back on screen by summon() */
@@ -131,6 +133,10 @@ const TOPICS = {
   CHAT_HISTORY: 'chat.history',
   CHAT_INTERRUPT: 'chat.interrupt',
   CHAT_CLEAR: 'chat.clear',
+  /** () → UiPrefs */
+  UI_PREFS_GET: 'ui.prefs.get',
+  /** { termTheme?, tourDone? } → UiPrefs | { error, minLevel? } */
+  UI_PREFS_SET: 'ui.prefs.set',
   /** sessionId|null → { ok } | { error } */
   ENGINE_RESUME: 'engine.resume',
   /** { reason } → void — bring the pet back on screen */

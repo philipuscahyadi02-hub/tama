@@ -87,10 +87,10 @@ html, body {
 }
 #menu button {
   width: 31px; height: 31px; border-radius: 50%; border: 0; cursor: pointer; padding: 0;
-  background: var(--pink-l); font-size: 17px; transition: transform .1s, background .1s;
+  background: var(--tama-menu-1, var(--pink-l)); font-size: 17px; transition: transform .1s, background .1s;
 }
-#menu button:nth-child(even) { background: var(--green-l); }
-#menu button:hover { transform: translateY(-3px) scale(1.1) rotate(-6deg); background: #ffd0e4; }
+#menu button:nth-child(even) { background: var(--tama-menu-2, var(--green-l)); }
+#menu button:hover { transform: translateY(-3px) scale(1.1) rotate(-6deg); background: var(--tama-menu-hover, #ffd0e4); }
 
 /* ---------- stats panel ---------- */
 .panel {

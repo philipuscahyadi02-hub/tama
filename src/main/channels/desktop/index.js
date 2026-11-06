@@ -42,6 +42,8 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
       shell.notify('⏰ Reminder', String(p.text));
     });
     bus.on(TOPICS.BRAIN_NOTICE, (p) => ipc.sendUi(pet.win, 'brain.notice', p));
+    bus.on(TOPICS.UI_PREFS_CHANGED, (p) => toAll('ui.prefs', p));
+    bus.on(TOPICS.PET_BOND_CHANGED, (p) => { if (p.levelUp) ipc.sendUi(term.window(), 'pet.bond', p); });
     // Chat (agy) → chat window + pet bubble; terminal (Claude Code) → terminal + pet reactions (D-029).
     bus.on(TOPICS.CHAT_EVENT, (ev) => { ipc.sendUi(chat.window(), 'chat.event', ev); ipc.sendUi(pet.win, 'chat.event', ev); });
     bus.on(TOPICS.ENGINE_EVENT, ({ ev, engine, role }) => {
@@ -65,6 +67,10 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.on('notify', (title, body) => shell.notify(String(title), String(body)));
     ipc.on('term:show', () => term.show());
     ipc.on('chat:show', () => chat.show());
+    ipc.handle('ui:prefs', () => bus.request(TOPICS.UI_PREFS_GET));
+    ipc.handle('ui:setPrefs', (p) => bus.request(TOPICS.UI_PREFS_SET, {
+      termTheme: p?.termTheme == null ? undefined : String(p.termTheme), tourDone: p?.tourDone == null ? undefined : !!p.tourDone,
+    }));
     // ---- chat window → core (agy, D-029) ----
     ipc.handle('chat:send', (t) => bus.request(TOPICS.CHAT_SEND, String(t || '')));
     ipc.handle('chat:history', () => bus.request(TOPICS.CHAT_HISTORY));

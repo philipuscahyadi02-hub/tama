@@ -77,3 +77,42 @@ test('ids are prefixed so several rigs can share one page', () => {
   assert.match(a, /url\(#a-hair\)/);
   assert.doesNotMatch(a, /url\(#hair\)/);
 });
+
+// ---------------- theme (ART-4, TERM-2) ----------------
+const theme = require('./theme');
+
+test('theme: every variant is readable for very different Tamas (contrast ≥ 4.5 for text and accents)', () => {
+  const specs = [
+    preset('kero'),
+    normalizeSpec({ name: 'Noir', palette: { hair: '#111111', eyes: '#222222', main: '#ffffff', accent: '#f0f0f0' } }),
+    normalizeSpec({ name: 'Sunny', palette: { hair: '#ffee00', eyes: '#ffdd00', main: '#fff5a0', accent: '#ffffff' } }),
+    normalizeSpec({ name: 'Mochi', gender: 'boy', palette: { hair: '#2e2a38', eyes: '#5b9cff', main: '#a77bdb', accent: '#ffd34f' } }),
+  ];
+  for (const s of specs) {
+    for (const v of theme.VARIANTS) {
+      const t = theme.terminalVars(s, v.id);
+      for (const k of ['--tama-fg', '--tama-accent', '--tama-accent2', '--tama-warn', '--tama-bad', '--tama-good', '--tama-info']) {
+        assert.ok(palette.contrast(t[k], t['--tama-bg']) >= 4.5, `${s.name}/${v.id}: ${k} ${t[k]} on ${t['--tama-bg']}`);
+      }
+      assert.ok(palette.contrast(t['--tama-dim'], t['--tama-bg']) >= 3.2, `${s.name}/${v.id}: dim`);
+    }
+  }
+});
+
+test('theme: flavor comes from the spec (name, tics → spinner verbs, caret)', () => {
+  const f = theme.flavor(preset('kero'));
+  assert.equal(f.title, 'Kero-chan Code');
+  assert.ok(f.verbs.includes('Kero-ing'));
+  assert.ok(f.verbs.includes('Ganbaru-ing'));
+  assert.equal(f.emoji, '🐸');
+  const g = theme.flavor(normalizeSpec({ name: 'Mochi', personality: { chaos: 90 } }));
+  assert.equal(g.title, 'Mochi Code');
+  assert.ok(g.verbs.includes('Mochi-ing'));
+  assert.equal(g.caret, '✦');
+});
+
+test('theme: variants unlock with bond level (BOND-3)', () => {
+  assert.deepEqual(theme.unlocked(0).map((v) => v.id), ['night']);
+  assert.deepEqual(theme.unlocked(1).map((v) => v.id), ['night', 'day']);
+  assert.deepEqual(theme.unlocked(4).map((v) => v.id), ['night', 'day', 'pastel', 'neon']);
+});

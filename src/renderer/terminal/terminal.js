@@ -1,5 +1,5 @@
-/* Tama terminal — a Claude Code-style terminal UI. Ported from kero-pet/renderer/terminal.js;
-   the Kero-flavored text stays until M4 themes it from the CharacterSpec (TERM-2). */
+/* Tama terminal — a Claude Code-style terminal UI (ported from kero-pet/renderer/terminal.js).
+   Colors, title, caret, spinner words and the live avatar come from the active Tama (TERM-2, ART-4, D-032). */
 const $ = (s) => document.querySelector(s);
 const K = window.tama;
 const screenEl = $('#screen');
@@ -7,7 +7,8 @@ const tx = $('#transcript');
 const input = $('#input');
 
 const st = {
-  cwd: null, mode: 'default', model: null, effort: null, busy: false, totalCost: 0,
+  cwd: null, isGit: false, mode: 'default', model: null, effort: null, busy: false, totalCost: 0,
+  spec: null, flavor: null, variant: 'night', modeConfirmUntil: 0,
   lastSessionId: null, commands: [], history: [], histIdx: -1,
   tools: new Map(), // tool_use id -> { el, name, input }
   textEl: null, textBuf: '',
@@ -128,14 +129,45 @@ function toolSummary(name, i, text, isErr) {
 }
 
 // ---------------- spinner ----------------
-const GLYPHS = ['·', '✢', '✳', '✶', '✻', '✽', '✻', '✶', '✳', '✢'];
-const VERBS = ['Kero-ing', 'Ribbiting', 'Hopping', 'Ganbatte-ing', 'Pondering', 'Lily-padding', 'Sparkling', 'Doki-doki-ing', 'Henshin-ing', 'Nyaa-ing', 'Croaking', 'Mogu-mogu-ing'];
+let GLYPHS = ['·', '✢', '✳', '✶', '✻', '✽', '✻', '✶', '✳', '✢'];
+let VERBS = ['Pondering', 'Sparkling', 'Ganbatte-ing', 'Doki-doki-ing'];
+const tamaName = () => (st.flavor ? st.flavor.name : 'your Tama');
+
+// ---------------- theme + live avatar (TERM-2) ----------------
+function applyTheme() {
+  const TS = window.TamaShared;
+  if (!st.spec) return;
+  const vars = TS.theme.terminalVars(st.spec, st.variant);
+  for (const [k, v] of Object.entries(vars)) document.documentElement.style.setProperty(k, v);
+  const f = TS.theme.flavor(st.spec);
+  st.flavor = f;
+  VERBS = f.verbs; GLYPHS = f.glyphs;
+  document.documentElement.style.setProperty('--tama-caret', JSON.stringify(f.caret));
+  $('#caret').textContent = f.caret;
+  $('#title').textContent = f.title;
+  document.title = f.title;
+  $('#avatar').title = `${f.name} (click: bring them on screen)`;
+  TS.renderRig($('#avatar'), $('#avatar svg'), st.spec, 'term-');
+  avatarMood(st.busy ? 'focus' : 'normal');
+  document.querySelectorAll('.welcome').forEach((w) => w.replaceWith(welcomeEl()));
+}
+let moodTimer = null;
+/** The title-bar avatar reacts to what Claude is doing. @param {string} mood @param {number} [ms] */
+function avatarMood(mood, ms) {
+  const el = $('#avatar');
+  el.className = el.className.replace(/\bmood-\w+/g, '').trim() + ' mood-' + mood;
+  el.classList.toggle('working', st.busy && mood === 'focus');
+  clearTimeout(moodTimer);
+  moodTimer = null;
+  if (ms) moodTimer = setTimeout(() => { moodTimer = null; avatarMood(st.busy ? 'focus' : 'normal'); }, ms);
+}
 let spinTimer = null;
 let spinI = 0;
 function setBusy(b) {
   st.busy = b;
   $('#spinner').classList.toggle('hidden', !b);
   clearInterval(spinTimer);
+  if (b) avatarMood('focus'); else if (!moodTimer) avatarMood('normal');
   if (b) {
     st.turnStart = st.turnStart || Date.now();
     $('#spinVerb').textContent = VERBS[Math.floor(Math.random() * VERBS.length)] + '…';
@@ -165,7 +197,7 @@ function progressVerb(name, file) {
 const MODES = ['default', 'acceptEdits', 'plan'];
 const MODE_TEXT = {
   default: '? for shortcuts',
-  acceptEdits: '⏵⏵ accept edits on (shift+tab to cycle) · Henshin mode ✨',
+  acceptEdits: '⏵⏵ accept edits on (shift+tab to cycle)',
   plan: '⏸ plan mode on (shift+tab to cycle)',
 };
 function renderStatus() {
@@ -244,6 +276,7 @@ K.onAgent((ev) => {
       break;
     }
     case 'permission':
+      avatarMood('shock', 2500);
       st.perms.push(ev);
       if (st.perms.length === 1) showPerm();
       break;
@@ -261,6 +294,7 @@ K.onAgent((ev) => {
       }
       const cost = typeof ev.cost === 'number' ? ` · $${ev.cost.toFixed(3)} (session $${(ev.totalCost || 0).toFixed(3)})` : '';
       add(`✻ ${ev.isError ? 'Stopped' : 'Done'} in ${fmtDur(ev.durationMs || 0)}${cost}`, 'done');
+      avatarMood(ev.isError ? 'pout' : 'sparkle', 2500);
       setBusy(false);
       renderStatus();
       break;
@@ -275,12 +309,12 @@ K.onAgent((ev) => {
     case 'model': st.model = ev.model; renderStatus(); break;
     case 'effort': st.effort = ev.effort; renderStatus(); break;
     case 'cwd':
-      st.cwd = ev.cwd; renderStatus();
+      st.cwd = ev.cwd; st.isGit = !!ev.isGit; renderStatus();
       document.querySelectorAll('.cwdline').forEach((e) => { e.textContent = 'cwd: ' + ev.cwd; });
       break;
     case 'cleared': st.totalCost = 0; renderStatus(); break;
     case 'info': info(ev.text); break;
-    case 'error': error('✗ ' + ev.message); setBusy(false); break;
+    case 'error': error('✗ ' + ev.message); setBusy(false); avatarMood('dizzy', 3000); break;
   }
 });
 
@@ -292,7 +326,7 @@ function permOptions(p) {
   return [
     ['yes', 'Yes'],
     ['always', `Yes, and don't ask again for ${what}`],
-    ['no', 'No, and tell Kero-chan what to do differently (esc)'],
+    ['no', `No, and tell ${tamaName()} what to do differently (esc)`],
   ];
 }
 function showPerm() {
@@ -311,12 +345,12 @@ function showPerm() {
   const perm = $('#perm');
   perm.innerHTML = `
     <div class="ptitle">${esc(title)}</div>
-    <div class="kero">(｡•́︿•̀｡) ano… Kero-chan wants to do this:</div>
+    <div class="who">(｡•́︿•̀｡) ano… ${esc(tamaName())} wants to do this:</div>
     <div class="preview">${preview}</div>
     ${p.reason ? `<div class="dim">${esc(p.reason)}</div>` : ''}
     <div class="q">${q}</div>
     <div class="opts">${permOptions(p).map(([, label], n) => `<div class="opt" data-n="${n}">${n + 1}. ${esc(label)}</div>`).join('')}</div>
-    <input class="fb hidden" placeholder="Tell Kero-chan what to do instead… (Enter to send, empty = just stop)" />
+    <input class="fb hidden" placeholder="Tell ${esc(tamaName())} what to do instead… (Enter to send, empty = just stop)" />
     <div class="phint">↑/↓ select · enter confirm · 1-3 quick pick · esc = no</div>`;
   perm.classList.remove('hidden');
   $('#inputBox').classList.add('hidden');
@@ -354,7 +388,8 @@ const TAMA = window.makeTamaCommands(K, { info: (t) => info(t), error: (t) => er
 const LOCAL = {
   help: ['Show help', () => {
     info([
-      'Kero Code — works like Claude Code, with a frog hood 🐸',
+      `${st.flavor ? st.flavor.title : 'Tama Code'} — works like Claude Code, with ${tamaName()} ${st.flavor ? st.flavor.emoji : ''}`,
+      '  Chat, advice and web search with your Tama → the 💬 chat window (Ctrl+Alt+J or /chat).',
       '',
       '  Enter            send            Shift+Enter   new line',
       '  Esc              interrupt       Shift+Tab     cycle mode (default → accept edits → plan)',
@@ -367,6 +402,8 @@ const LOCAL = {
       '  /model [name]    switch model (opus = smartest, sonnet = faster, haiku = fastest; empty = default)',
       '  /effort [level]  thinking effort: low (fast) · medium · high · xhigh · max (slow, deep) · default',
       '  /mode [m]        default | acceptEdits | plan',
+      '  /theme [name]    terminal look: night, day, pastel, neon (unlocked by your bond)',
+      '  /tour            show the quick tour again',
       '  /cost            show session cost',
       '  /summon          bring your Tama back on screen (also Ctrl+Alt+P)',
       '  /exit            hide this window',
@@ -395,9 +432,11 @@ const LOCAL = {
     info(`⎿  Effort set to ${a}`);
   }],
   mode: ['Set permission mode', (arg) => {
-    if (!MODES.includes(arg)) return info(`⎿  Modes: ${MODES.join(', ')} (current: ${st.mode})`);
-    K.setMode(arg);
+    const [m, confirm] = String(arg || '').split(/\s+/);
+    if (!MODES.includes(m)) return info(`⎿  Modes: ${MODES.join(', ')} (current: ${st.mode})`);
+    setMode(m, confirm === 'confirm');
   }],
+  tour: ['Show the quick tour', () => tour()],
   cost: ['Show session cost', () => info(`⎿  Session cost: $${st.totalCost.toFixed(4)}`)],
   summon: ['Bring your Tama back on screen', () => { K.summon(); info('⎿  Summoned! (Ctrl+Alt+P works anywhere)'); }],
   exit: ['Hide the terminal', () => K.win.close()],
@@ -409,6 +448,31 @@ K.prod.onFocus((f) => {
   if (f.completed) info(`⏱️ Focus session done!${f.gained ? ` (+${f.gained} bond 💗)` : ''} Take a break~`);
   else if (f.breakOver) info('⏱️ Break over. Ready for another /focus?');
 });
+
+/** SAFE-4: accept-edits outside a git repo needs a second, deliberate step. */
+function setMode(m, confirmed) {
+  if (m === 'acceptEdits' && st.cwd && !st.isGit && !confirmed) {
+    st.modeConfirmUntil = Date.now() + 5000;
+    add(esc('⚠ This folder is not a git repo: accepted edits can\'t be undone with git. Press Shift+Tab again (or /mode acceptEdits confirm) to turn accept-edits on anyway.'), 'error');
+    return;
+  }
+  st.modeConfirmUntil = 0;
+  if (m === 'acceptEdits' && st.mode === 'acceptEdits') return;
+  K.setMode(m);
+}
+
+/** First-run tour: what this window is for, and where chat lives (shown once; /tour repeats it). */
+function tour() {
+  const n = tamaName();
+  info([
+    `✨ Quick tour (${n} Code)`,
+    '  1. This terminal is Claude Code: it reads, edits and runs things in your project, and asks before each change.',
+    '  2. Pick the project first: /cd (folder picker) or /cd C:\\path\\to\\project. Then just describe the task.',
+    '  3. Speed: /model sonnet (faster) or opus (smartest) · /effort low…max (how much it thinks) · Esc stops.',
+    `  4. Just want to talk or search the web? Open the 💬 chat with ${n}: Ctrl+Alt+J or /chat.`,
+    '  5. Productivity: /todo, /focus 25, /remind 5pm stretch, /watch (your commits grow the bond). /help lists everything.',
+  ].join('\n'));
+}
 
 function slashMatches(prefix) {
   const local = Object.entries(LOCAL).map(([c, [d]]) => ({ c, d }));
@@ -473,7 +537,9 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.key === 'Tab' && e.shiftKey) {
     e.preventDefault();
-    K.setMode(MODES[(MODES.indexOf(st.mode) + 1) % MODES.length]);
+    const next = MODES[(MODES.indexOf(st.mode) + 1) % MODES.length];
+    // Pressing Shift+Tab again right after the warning confirms accept-edits outside git (SAFE-4).
+    setMode(next, Date.now() < st.modeConfirmUntil);
     return;
   }
   if (e.key === 'Escape') {
@@ -522,18 +588,35 @@ K.onFocus(() => input.focus());
 screenEl.addEventListener('mouseup', () => { if (!String(window.getSelection())) input.focus(); });
 
 // ---------------- boot ----------------
+function welcomeEl() {
+  const d = document.createElement('div');
+  d.className = 'welcome';
+  const f = st.flavor || { title: 'Tama Code', subtitle: 'Claude Code, with your Tama. /help for commands.' };
+  d.innerHTML = `<div class="face tama-rig mood-happy"><svg class="rig-svg" viewBox="0 0 200 240"></svg></div>
+    <div><div class="big">✻ Welcome to ${esc(f.title)}!</div>
+    <div class="dim">${esc(f.subtitle)}</div>
+    <div class="dim cwdline">cwd: ${esc(st.cwd || '(none yet — type /cd to pick a project)')}</div></div>`;
+  if (st.spec) window.TamaShared.renderRig(d.querySelector('.face'), d.querySelector('svg'), st.spec, 'welcome-');
+  return d;
+}
 function welcome() {
-  add(`<div class="face">  ∩ ∩\n (◕ᴗ◕)\n  /ノ🎀</div>
-    <div><div class="big">✻ Welcome to Kero Code!</div>
-    <div class="dim">Claude Code, but with a frog hood. /help for commands.</div>
-    <div class="dim cwdline">cwd: ${esc(st.cwd || '(none yet — type /cd to pick a project)')}</div></div>`, 'welcome');
+  const stick = nearBottom();
+  tx.appendChild(welcomeEl());
+  if (stick) scroll(true);
 }
 
+K.onCharacter((ch) => { if (ch.stage !== 'egg') { st.spec = ch.spec; applyTheme(); } });
+K.ui.onPrefs((p) => { if (p.termTheme !== st.variant) { st.variant = p.termTheme; applyTheme(); } });
+$('#avatar').addEventListener('click', () => { K.summon(); avatarMood('happy', 1500); });
+
 (async function boot() {
-  const s = await K.termInit();
-  Object.assign(st, { cwd: s.cwd, mode: s.mode, model: s.model, effort: s.effort || null, totalCost: s.totalCost || 0, lastSessionId: s.lastSessionId, commands: s.commands || [] });
+  const [s, ch, prefs] = await Promise.all([K.termInit(), K.getCharacter(), K.ui.prefs()]);
+  if (ch && ch.stage !== 'egg') st.spec = ch.spec;
+  st.variant = prefs.termTheme;
+  applyTheme();
+  Object.assign(st, { cwd: s.cwd, isGit: !!s.isGit, mode: s.mode, model: s.model, effort: s.effort || null, totalCost: s.totalCost || 0, lastSessionId: s.lastSessionId, commands: s.commands || [] });
   welcome();
-  if (s.lastSessionId && s.cwd) info('⎿  Tip: /resume continues your last conversation');
+  if (!prefs.tourDone) { tour(); K.ui.setPrefs({ tourDone: true }); } else if (s.lastSessionId && s.cwd) info('⎿  Tip: /resume continues your last conversation');
   if (s.busy) setBusy(true);
   renderStatus();
   input.focus();
