@@ -198,6 +198,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `9decdd3` | 2026-11-07 | fix(telegram) | voice notes on request, bot menu refresh, persona knows her voice |
+| `8bc4fd8` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `aa3a4b7` | 2026-11-07 | feat(voice) | run the headless AivisSpeech Engine only while Japanese dub is on (D-044) |
 | `ff73fc0` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `6969a77` | 2026-11-07 | feat(voice) | language setting English / Japanese dub / off (D-043) |
