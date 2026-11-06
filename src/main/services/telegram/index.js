@@ -243,7 +243,12 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
       return send(body, { reply_markup: { inline_keyboard: [[{ text: '💻 Let Claude do it', callback_data: `work:${id}` }]] } });
     }
     const sent = await send(body);
-    if (cfg().voiceNotes) voiceNote(body).catch((e) => bus.emit(TOPICS.APP_ERROR, { topic: 'telegram.voice', message: String(e.message || e) }));
+    if (cfg().voiceNotes || wantsVoice(text)) {
+      voiceNote(body).catch((e) => {
+        bus.emit(TOPICS.APP_ERROR, { topic: 'telegram.voice', message: String(e.message || e) });
+        send(`(my voice note didn't work: ${String(e.message || e).slice(0, 120)})`).catch(() => null);
+      });
+    }
     return sent;
   }
 
@@ -288,6 +293,7 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
     if (!cfg().enabled || !secrets.get('telegram.token')) { changed(); return; }
     stopPoll = api.poll(dispatch, { onError: (e) => bus.emit(TOPICS.APP_ERROR, { topic: 'telegram', message: e.message }) });
     api.call('setMyShortDescription', { short_description: `✨ ${tama.name} is awake on your PC` }).catch(() => null);
+    if (chatId()) api.call('setMyCommands', { commands: fmt.COMMANDS }).catch(() => null); // new commands show up without re-pairing
     changed();
   }
 
@@ -336,4 +342,9 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
   return { start, status, setup, onUpdate, dispatch, set, daily, remote };
 }
 
-module.exports = { createTelegram };
+/** "send it as a voice note", "vn dong", "kirim suara", "pakai suara"… → this reply also comes as a voice note. Pure. @param {string} t */
+function wantsVoice(t) {
+  return /\b(voice ?(note|message|msg|chat)|vn|(as|in|by|with|via) (a )?voice|(send|say|speak|tell)( it| me| that)? (out loud|aloud)|(kirim|pakai|pake|lewat|pakek|dengan|via) (suara|voice|vn)|(rekam|rekaman) suara|suaramu|suara kamu)\b|声で|ボイス/i.test(String(t || ''));
+}
+
+module.exports = { wantsVoice, createTelegram };
