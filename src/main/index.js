@@ -33,6 +33,7 @@ const { createVoice } = require('./services/voice');
 const { createVvEngines } = require('./services/voice/vv-engine');
 const sapi = require('./platform/tts-sapi');
 const { createVoiceEngineProcess } = require('./platform/voice-engine-process');
+const { createAppIcon } = require('./platform/app-icon');
 const { createChatTools } = require('./brain/chat-tools');
 const { startToolBridge } = require('./platform/tool-bridge');
 const os = require('os');
@@ -154,30 +155,36 @@ function boot() {
     if (voiceProcs[id].cleanupStale()) debug(`voice: stopped a ${id} engine left over from a previous run`);
   }
   const voice = createVoice({ bus, device, sapi, vv: createVvEngines(), tamaId: active.id, procs: voiceProcs });
-  /** Tray menu; the Voice submenu shows the current choice (D-043). @param {string} lang */
+  /** Tray menu, grouped (D-047); the Voice submenu shows the current choice (D-043). @param {string} lang */
   const trayItems = (lang) => [
-      { label: `Summon ${active.name}  (Ctrl+Alt+P)`, click: () => summon('tray-menu') },
-      { label: `Chat with ${active.name}  (Ctrl+Alt+J)`, click: () => chatWin.show() },
-      { label: 'Open terminal  (Ctrl+Alt+K)', click: () => term.show() },
+      { label: `Summon ${active.name}`, accelerator: 'Ctrl+Alt+P', registerAccelerator: false, click: () => summon('tray-menu') },
+      { label: `Chat with ${active.name}`, accelerator: 'Ctrl+Alt+J', registerAccelerator: false, click: () => chatWin.show() },
+      { label: 'Terminal (Claude Code)', accelerator: 'Ctrl+Alt+K', registerAccelerator: false, click: () => term.show() },
       { label: 'Show / Hide', click: () => pet.toggleVisible() },
+      { type: 'separator' },
+      { label: 'Take care', submenu: [
+        { label: 'Feed', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'feed' }) },
+        { label: 'Play', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'play' }) },
+        { label: 'Energy snack', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'snack' }) },
+        { label: 'Bedtime (sleep / wake)', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'sleep' }) },
+      ] },
       { label: 'Voice', submenu: [
         { label: 'English (Windows voice)', type: 'radio', checked: lang === 'en', click: () => bus.request(TOPICS.VOICE_SET, { lang: 'en' }).catch(() => null) },
-        { label: 'Japanese dub (AivisSpeech)', type: 'radio', checked: lang === 'ja', click: () => bus.request(TOPICS.VOICE_SET, { lang: 'ja' }).catch(() => null) },
+        { label: 'Japanese dub (anime voice)', type: 'radio', checked: lang === 'ja', click: () => bus.request(TOPICS.VOICE_SET, { lang: 'ja' }).catch(() => null) },
         { label: 'No voice', type: 'radio', checked: lang === 'off', click: () => bus.request(TOPICS.VOICE_SET, { lang: 'off' }).catch(() => null) },
         { type: 'separator' },
         { label: 'Choose her voice…', click: () => openVoice() },
       ] },
-      { label: 'My Tamas…', click: () => openRoster(false) },
-      { label: 'Google…', click: () => openGoogle() },
-      { label: 'Usage & accounts…', click: () => openDashboard() },
-      { label: 'Limits left…', click: () => openDashboard('limits') },
-      { label: 'Restyle…', click: () => openOnboarding('restyle') },
-      { label: 'Rebirth…', click: () => openOnboarding('rebirth') },
-      { type: 'separator' },
-      { label: 'Feed', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'feed' }) },
-      { label: 'Play', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'play' }) },
-      { label: 'Energy snack', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'snack' }) },
-      { label: 'Bedtime (sleep / wake)', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'sleep' }) },
+      { label: active.name, submenu: [
+        { label: 'My Tamas…', click: () => openRoster(false) },
+        { label: 'Restyle…', click: () => openOnboarding('restyle') },
+        { label: 'Rebirth…', click: () => openOnboarding('rebirth') },
+      ] },
+      { label: 'Accounts & usage', submenu: [
+        { label: 'Usage & accounts…', click: () => openDashboard() },
+        { label: 'Limits left…', click: () => openDashboard('limits') },
+        { label: 'Google…', click: () => openGoogle() },
+      ] },
       { type: 'separator' },
       { label: 'Quit', click: appShell.quit },
   ];
@@ -187,6 +194,11 @@ function boot() {
     items: trayItems(voice.status().lang),
   });
   bus.on(TOPICS.VOICE_CHANGED, (/** @type {any} */ st) => shell.setTrayItems(tray, trayItems(st.lang)));
+  // App icon = her face (D-047): cached one right away, a fresh render shortly after start and on every restyle.
+  const appIcon = createAppIcon({ cacheFile: () => pathMod.join(appShell.paths.data(), 'icons', `${active.id}.png`), getTray: () => tray });
+  appIcon.loadCached();
+  setTimeout(() => { appIcon.render().then((ok) => debug(`app icon ${ok ? 'rendered' : 'not rendered'}`)); }, 2500);
+  bus.on(TOPICS.CHARACTER_CHANGED, () => { appIcon.render().catch(() => null); });
   const failed = shell.registerHotkeys({ [HOTKEYS.summon]: () => summon('hotkey'), [HOTKEYS.terminal]: () => term.toggle(), [HOTKEYS.chat]: () => chatWin.toggle() });
   if (failed.length && !process.env.TAMA_DATA_DIR) shell.notify('Tama', `Hotkey already in use by another app: ${failed.join(', ')}`);
 

@@ -29,6 +29,8 @@ contextBridge.exposeInMainWorld('tama', {
   showChat: () => ipcRenderer.send('chat:show'),
   summon: () => ipcRenderer.send('summon'),
   getCharacter: () => ipcRenderer.invoke('character:get'),
+  /** App icon page (D-047): the face is drawn, capture it. */
+  iconReady: () => ipcRenderer.send('icon:ready'),
   openOnboarding: (/** @type {string} */ mode) => ipcRenderer.send('onboarding:open', mode || 'hatch'),
 
   // ---- onboarding window ----

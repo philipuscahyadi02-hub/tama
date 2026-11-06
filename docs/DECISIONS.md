@@ -76,6 +76,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-044 | Headless AivisSpeech Engine (GPU) started by Tama only while Japanese dub is on; stopped on switch/quit; crash leftovers cleaned via a PID file | Accepted |
 | D-045 | Voice page: VOICEVOX added (headless engine, 44 licensed TTS characters), per-Tama voice pick + tuning, mood-matched styles from the dub's feeling tag; no cloning of real people's voices | Accepted |
 | D-046 | Voice page readability: English labels from assets/voice/names.json (kana → romaji fallback); separate ▶ listen and ✓ use per style; off-screen test windows | Accepted |
+| D-047 | App icon = the active Tama's face (rendered off-screen, cached per Tama, re-rendered on restyle); tray menu grouped into submenus | Accepted |
 
 ---
 
@@ -620,3 +621,22 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
   - Dev: `TAMA_SHOT_OFFSCREEN=1` opens page windows off-screen without focus, so live checks don't pop up over the user's work (one did before).
 - **Consequences:** Name readings are best effort; new engine voices without an entry appear romanized or in Japanese.
 - **Refs:** VOICE-5, D-045, assets/voice/names.json, src/main/services/voice/names.js, src/renderer/voice
+
+### D-047 — App icon = the active Tama's face; tray menu grouped
+- **Date:** 2026-11-07 · **Status:** Accepted
+- **Context:**
+  - The tray menu had 17 entries.
+  - Icons were a generic hand-drawn frog bitmap (tray) and Electron's default (windows/taskbar). The user wanted the icon to be the Tama and to update by itself for new Tamas.
+  - The user also asked whether "kero" applies to all Tamas. It does not: `kero~` is only a verbal tic in the Kero-chan preset's speech; designed Tamas get their own tics.
+- **Decision:**
+  - **Icon** (`platform/app-icon.js` + `renderer/icon/`):
+    - An off-screen, transparent 256 px window draws the face with the shared rig (head crop in a round badge, ring and background from the Tama's theme colors; animations off so it never catches a blink) and is captured.
+    - The result is applied to the tray (32 px) and to every window (`setIcon`, also for windows created later), so the taskbar shows her too.
+    - Cached as `<data>/icons/<tamaId>.png` (a device cache, not part of the soul) and used right away at the next start.
+    - Re-rendered 2.5 s after start and on every `character.changed` (restyle, hatch, rebirth). Switching Tama relaunches the app, so it follows too.
+  - **Tray:**
+    - Top level: Summon, Chat, Terminal (with their shortcuts shown), Show / Hide.
+    - Submenus: Take care (Feed, Play, Energy snack, Bedtime), Voice, *<her name>* (My Tamas, Restyle, Rebirth), Accounts & usage (Usage & accounts, Limits left, Google).
+    - Then Quit.
+- **Consequences:** The packaged exe's file icon stays static (set at build time; the exe is postponed). An egg shows the egg.
+- **Refs:** ART-4, SUM-*, src/main/platform/app-icon.js, src/renderer/icon, src/main/index.js (tray)

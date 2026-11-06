@@ -35,6 +35,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   - **Mute and reduced motion:** `/mute`, `/motion auto|reduced|full` (auto follows Windows' animation setting).
   - Onboarding's "hear my voice" works again (it was silent inside Electron).
 ### Changed
+- **The app icon is your Tama's face** (tray, taskbar, windows), drawn from her look in her colors and redrawn when you restyle or hatch a new Tama (D-047).
+- **Tray menu grouped:** Summon / Chat / Terminal / Show-Hide on top; Take care, Voice, *her name* (My Tamas, Restyle, Rebirth) and Accounts & usage as submenus.
 - Idle CPU from about 5.8 % to about 2 %: idle animations run in short bursts, blinks are one-shots, an invisible tear animation no longer runs, and wandering moves the window less often.
 
 ## [0.8.0] — 2026-11-06 — M8 Usage & accounts dashboard
