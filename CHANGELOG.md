@@ -162,6 +162,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `e7fb5e0` | 2026-11-06 | feat(telegram) | "Let Claude do it" button for plain-language work, Tama's desk for remote tasks |
+| `e9094ed` | 2026-11-06 | docs(changelog) | regenerate commit table |
 | `185f052` | 2026-11-06 | feat(telegram) | M7 Telegram bot from the PC: chat, pet, productivity, remote /code |
 | `d6980fa` | 2026-11-06 | docs(changelog) | regenerate commit table for 0.6.0 |
 
