@@ -9,6 +9,9 @@
 const { TOPICS } = require('../../bus-topics');
 
 const DETECT_MS = 5 * 60000;
+/** First start unpacks models and can take minutes; later starts take ~20 s. */
+const ENGINE_BOOT_MS = 5 * 60000;
+const ENGINE_POLL_MS = 3000;
 const MAX_CHARS = 280;
 const LANGS = ['en', 'ja', 'off'];
 const CACHE = 60;
@@ -41,11 +44,13 @@ function speakable(s) {
  *   bus: import('../../bus').BusInstance, device: import('../../platform/store/device').DeviceSettings,
  *   sapi: { synthesize: (text: string, o: any) => Promise<Buffer>, listVoices: () => Promise<any[]> },
  *   vv: ReturnType<typeof import('./vv-engine').createVvEngines>, tamaId: string,
+ *   engineProc?: { start: () => { ok: boolean, reason?: string }, stop: () => void, find: () => string | null, owned: () => boolean },
+ *   wait?: (ms: number) => Promise<void>,
  * }} deps
  */
-function createVoice({ bus, device, sapi, vv, tamaId }) {
+function createVoice({ bus, device, sapi, vv, tamaId, engineProc, wait = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
   const prefs = () => {
-    const p = { chat: true, events: true, speakerByTama: /** @type {Record<string, number>} */ ({}), ...(device.get().voice || {}) };
+    const p = { chat: true, events: true, gpu: true, speakerByTama: /** @type {Record<string, number>} */ ({}), ...(device.get().voice || {}) };
     // Older saves had enabled/anime; map them to the single language choice.
     if (!LANGS.includes(p.lang)) p.lang = p.enabled === false ? 'off' : p.anime === 'always' ? 'ja' : 'en';
     return p;
@@ -53,6 +58,36 @@ function createVoice({ bus, device, sapi, vv, tamaId }) {
   /** @type {Map<string, string>} English line -> Japanese dub (also reused for the phone voice note of the same reply). */
   const dubs = new Map();
   let warnedNoEngine = false;
+  let booting = false;
+  let stopped = false;
+
+  /**
+   * Japanese dub on → make sure an engine runs (start the installed headless one, hidden); off → stop the one Tama
+   * started (D-044). Never touches an engine the user runs themselves.
+   */
+  async function syncEngine() {
+    if (!engineProc) return;
+    if (prefs().lang !== 'ja') { engineProc.stop(); return; }
+    if (engines.length || booting) return;
+    engines = await vv.detect().catch(() => []);
+    if (engines.length) return;
+    const r = engineProc.start();
+    if (!r.ok) return;
+    booting = true;
+    try {
+      for (let t = 0; t < ENGINE_BOOT_MS && !stopped && prefs().lang === 'ja'; t += ENGINE_POLL_MS) {
+        await wait(ENGINE_POLL_MS);
+        engines = await vv.detect().catch(() => []);
+        if (engines.length) {
+          // The first synthesis loads the voice model (~15 s); do it now so her first real line isn't late.
+          const a = animeVoice();
+          if (a) await vv.synthesize(a.engine, 'はい', a.speaker).catch(() => null);
+          bus.emit(TOPICS.VOICE_CHANGED, status());
+          return;
+        }
+      }
+    } finally { booting = false; }
+  }
   /** @type {import('./vv-engine').Engine[]} */ let engines = [];
   /** @type {any[]} */ let systemVoices = [];
   let fromPhone = false;
@@ -113,9 +148,13 @@ function createVoice({ bus, device, sapi, vv, tamaId }) {
   }
 
   function noEngineNotice() {
+    if (booting) return; // still warming up: English for now, no nagging
     if (warnedNoEngine) return;
     warnedNoEngine = true;
-    bus.emit(TOPICS.BRAIN_NOTICE, { text: "Japanese voice needs AivisSpeech (or VOICEVOX) running on this PC~ I'll use my English voice until then." });
+    const installed = engineProc && engineProc.find();
+    bus.emit(TOPICS.BRAIN_NOTICE, { text: installed
+      ? "My Japanese voice didn't start~ I'll use my English voice for now. (/voice ja to try again)"
+      : "Japanese voice needs AivisSpeech installed on this PC~ I'll use my English voice until then." });
   }
 
   /** Speak on the desktop if allowed right now. @param {string} text @param {'chat'|'event'|'test'} purpose */
@@ -139,28 +178,32 @@ function createVoice({ bus, device, sapi, vv, tamaId }) {
   function status() {
     const p = prefs();
     return {
-      lang: p.lang, chat: p.chat, events: p.events, speaker: p.speakerByTama[tamaId] ?? null,
+      lang: p.lang, chat: p.chat, events: p.events, gpu: p.gpu !== false, speaker: p.speakerByTama[tamaId] ?? null,
+      engineInstalled: !!(engineProc && engineProc.find()), engineStartedByTama: !!(engineProc && engineProc.owned()), engineBooting: booting,
       engines: engines.map((e) => ({ id: e.id, name: e.name, version: e.version, speakers: e.speakers })),
       systemVoices,
     };
   }
 
-  /** @param {{ lang?: string, chat?: boolean, events?: boolean, speaker?: number | null }} p */
+  /** @param {{ lang?: string, chat?: boolean, events?: boolean, gpu?: boolean, speaker?: number | null }} p */
   function set(p) {
     const cur = prefs();
     /** @type {Record<string, any>} */ const patch = {};
-    for (const k of ['chat', 'events']) if (typeof (/** @type {any} */ (p))[k] === 'boolean') patch[k] = (/** @type {any} */ (p))[k];
+    for (const k of ['chat', 'events', 'gpu']) if (typeof (/** @type {any} */ (p))[k] === 'boolean') patch[k] = (/** @type {any} */ (p))[k];
     if (LANGS.includes(String(p.lang))) { patch.lang = p.lang; warnedNoEngine = false; }
+    const restart = typeof p.gpu === 'boolean' && p.gpu !== (cur.gpu !== false) && engineProc && engineProc.owned();
     if (p.speaker === null || Number.isInteger(p.speaker)) patch.speakerByTama = { ...cur.speakerByTama, [tamaId]: p.speaker };
     device.patch('voice', patch);
+    if (restart && engineProc) { engineProc.stop(); engines = []; }
+    if (patch.lang || restart) syncEngine().catch(() => null);
     const st = status();
     bus.emit(TOPICS.VOICE_CHANGED, st);
     return st;
   }
 
   function start() {
-    detect().catch(() => null);
-    const timer = setInterval(() => { detect().catch(() => null); }, DETECT_MS);
+    detect().then(() => syncEngine()).catch(() => null);
+    const timer = setInterval(() => { if (!booting) detect().catch(() => null); }, DETECT_MS);
     const offs = [
       bus.on(TOPICS.CHAT_EVENT, (/** @type {any} */ ev) => {
         if (ev.t !== 'message') return;
@@ -177,10 +220,10 @@ function createVoice({ bus, device, sapi, vv, tamaId }) {
       bus.handle(TOPICS.VOICE_SET, (/** @type {any} */ p) => set(p || {})),
       bus.handle(TOPICS.VOICE_DETECT, () => detect()),
     ];
-    return () => { clearInterval(timer); for (const off of offs) off(); };
+    return () => { stopped = true; clearInterval(timer); for (const off of offs) off(); if (engineProc) engineProc.stop(); };
   }
 
-  return { start, say, render, detect, status, set };
+  return { start, say, render, detect, status, set, syncEngine };
 }
 
 module.exports = { createVoice, speakable, JAPANESE, LANGS };

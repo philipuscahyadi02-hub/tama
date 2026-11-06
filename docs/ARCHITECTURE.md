@@ -125,6 +125,7 @@ M5 extras (D-035):
 src/main/services/weather/        logic.js (pure: WMO code → kind, hot/cold, parsers) + index.js (/weather city in device.json,
                                   Open-Meteo fetch at most every 30 min, quiet failures)
 src/main/platform/tts-sapi.js     Windows built-in speech (System.Speech via PowerShell) → WAV (D-042)
+src/main/platform/voice-engine-process.js  starts/stops the headless AivisSpeech Engine while the Japanese dub is on; PID file for crash leftovers (D-044)
 src/main/platform/fullscreen.js   fullscreen-foreground check via one hidden long-lived PowerShell + user32 helper (Windows only)
 src/main/platform/windows/walk-marker.js  44x44 "out for a walk" edge tab while the pet is hidden (SUM-5)
 src/renderer/marker/              the walk tab view (Tama's face; click = summon)

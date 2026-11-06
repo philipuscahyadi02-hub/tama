@@ -73,6 +73,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-041 | Limits tab: Claude windows from the SDK (live /usage without a message + per-turn events), Gemini tier + quota-hit only, Google counts vs user cap | Accepted |
 | D-042 | Voice: AivisSpeech/VOICEVOX HTTP for Japanese lines, Windows SAPI (via PowerShell) for English; audio plays in the pet window; Telegram voice notes as M4A; calm-idle animation bursts | Accepted · engine choice superseded by D-043 |
 | D-043 | Voice language setting: English (Windows voice) / Japanese dub (Gemini translates in character, AivisSpeech reads) / off; tray Voice menu + `/voice en\|ja\|off` | Accepted · Supersedes D-042 (engine choice) |
+| D-044 | Headless AivisSpeech Engine (GPU) started by Tama only while Japanese dub is on; stopped on switch/quit; crash leftovers cleaned via a PID file | Accepted |
 
 ---
 
@@ -541,3 +542,29 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
   - Japanese needs AivisSpeech (or VOICEVOX) installed and running.
   - The meaning comes from Gemini's translation and could drift slightly from the text shown.
 - **Refs:** VOICE-1, TG-3, D-022, D-033, D-042, src/main/services/voice/index.js, src/main/brain/compose.js, src/main/index.js (tray)
+
+### D-044 — Headless AivisSpeech Engine (GPU) started by Tama only while Japanese dub is on
+- **Date:** 2026-11-07 · **Status:** Accepted
+- **Context:** The user asked whether AivisSpeech has to be an app and what it costs. They then asked to have it installed.
+- **Findings (measured on the user's laptop: Ryzen 5 3550H, GTX 1650):**
+  - **Install:** AivisSpeech Engine 1.2.0 is a headless server (`run.exe`, `127.0.0.1:10101`). Its Windows build from the official GitHub release (216 MB 7z) was extracted to `%LOCALAPPDATA%\Programs\AivisSpeech-Engine` (814 MB). `run.exe` is not code-signed. It ships two voices (まお, コハク).
+  - **First start:** about 2.5 minutes, one-time setup. Later starts take 20–40 s.
+  - **CPU mode:** about 1.2–1.5 GB RAM; a 40-character sentence took about 9 s.
+  - **GPU mode (`--use_gpu`, DirectML):** a 40-character sentence took about 3.4 s once warm; it uses about 0.7 GB RAM plus about 1.1 GB of GPU memory.
+  - **Idle CPU:** about 0 % in both modes.
+  - **First synthesis** after a start loads the model (about 15 s).
+- **Decision:**
+  - **Running the engine** (`platform/voice-engine-process.js`):
+    - Finds `run.exe` in the Tama install path, the AivisSpeech app's folder, or `device.json` `voice.enginePath`.
+    - Starts it hidden (`windowsHide`, `--use_gpu` unless `/voice gpu off`) only while `voice.lang === 'ja'`.
+    - Stops its whole process tree on a switch to English or off, and on quit.
+    - An engine Tama didn't start (the user's AivisSpeech app) is used but never stopped.
+  - **Crash safety:** the PID of the engine Tama started is stored in `<data>/voice-engine.pid`. On the next start Tama stops that PID only if it is still a `run.exe`; a reused PID that belongs to another program is left alone (tested).
+  - **Warm-up:** after the engine comes up, one tiny synthesis loads the model, so her first real line isn't 15 s late. While the engine is starting, lines are spoken in English without a warning.
+  - `/voice` shows engine state (not installed / starts with Japanese dub / warming up / started by me, GPU|CPU); `/voice gpu on|off` restarts it.
+- **Alternatives:** Keeping the engine always running (about 1 GB of RAM all the time); running the AivisSpeech app (an extra window, more memory); CPU mode by default (about 3× slower on this PC).
+- **Consequences:**
+  - A dubbed line arrives about 6–9 s after the text (Gemini translation plus synthesis).
+  - The engine is unsigned third-party software from the official repo, installed at the user's request.
+  - On PCs with only an integrated GPU, the README says `--use_gpu` is slower: use `/voice gpu off` there.
+- **Refs:** VOICE-1, D-022, D-043, src/main/platform/voice-engine-process.js, src/main/services/voice/index.js

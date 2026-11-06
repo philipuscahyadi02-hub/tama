@@ -194,14 +194,15 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
           const r = await K.voice.say(a.slice(4).trim() || 'Hi hi! This is my voice. Do you like it?');
           return r.ok ? info(`⎿  🔊 ${r.engine}${r.lang === 'ja' ? ` · 「${r.text}」` : ''}`) : error(`✗ couldn't speak (${r.reason})`);
         } else if (cmd in LANG) st = await K.voice.set({ lang: cmd });
-        else if (cmd === 'chat' || cmd === 'events') st = await K.voice.set({ [cmd]: onOff(val) });
+        else if (cmd === 'chat' || cmd === 'events' || cmd === 'gpu') st = await K.voice.set({ [cmd]: onOff(val) });
         else if (cmd === 'speaker') st = await K.voice.set({ speaker: val === 'default' ? null : Number(val) });
         else if (cmd === 'speakers') {
           st = await K.voice.detect();
           if (!st.engines.length) return info('⎿  No AivisSpeech / VOICEVOX running. Start it, then try again.');
           return info(st.engines.map((e) => `⎿  ${e.name} ${e.version}\n${e.speakers.map((sp) => `     ${sp.name}: ${sp.styles.map((x) => `${x.name} #${x.id}`).join(', ')}`).join('\n')}`).join('\n') + '\n   Pick one with /voice speaker <id>');
-        } else return error('✗ /voice [en|ja|off|test|chat on|off|events on|off|speakers|speaker <id>]');
-        const eng = st.engines.length ? st.engines.map((e) => `${e.name} ${e.version}`).join(', ') : 'not running';
+        } else return error('✗ /voice [en|ja|off|test|chat on|off|events on|off|gpu on|off|speakers|speaker <id>]');
+        const eng = st.engines.length ? `${st.engines.map((e) => `${e.name} ${e.version}`).join(', ')}${st.engineStartedByTama ? ` (started by me${st.gpu ? ', GPU' : ', CPU'})` : ''}`
+          : st.engineBooting ? 'warming up…' : st.engineInstalled ? 'installed, starts with Japanese dub' : 'not installed';
         info(`⎿  voice: ${LANG[st.lang]} · chat ${st.chat ? 'on' : 'off'} · moments ${st.events ? 'on' : 'off'} · AivisSpeech/VOICEVOX: ${eng}${st.speaker != null ? ` · speaker #${st.speaker}` : ''}${st.lang === 'ja' && !st.engines.length ? '\n   (Japanese needs AivisSpeech running; until then I use my English voice)' : ''}\n   Also in the tray menu → Voice.`);
       }],
       // ---- M5 extras (D-035) ----

@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.18 |
+| **Version** | 0.19 |
 | **Status** | v0.8.0 released (M0–M8). M9 (voice & polish) code complete on `m9-voice`; portable .exe postponed |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-06 |
@@ -230,6 +230,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.19 — 2026-11-07** — VOICE-1: Tama starts/stops the headless AivisSpeech Engine (GPU) with the Japanese dub (D-044).
 - **0.18 — 2026-11-07** — VOICE-1: language setting English / Japanese dub / off (D-043).
 - **0.17 — 2026-11-07** — M9: voice (VOICE-1), Tama → phone voice notes (TG-3 ◐), mute/reduced motion (PET-8), idle CPU work (NFR-1 ◐) (D-042). Portable .exe postponed by the user.
 - **0.16 — 2026-11-06** — Limits tab: what's left per service, trend, warnings (USE-5..7, D-041).

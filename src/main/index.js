@@ -32,6 +32,7 @@ const { fetchClaudeLimits } = require('./engines/claude/limits');
 const { createVoice } = require('./services/voice');
 const { createVvEngines } = require('./services/voice/vv-engine');
 const sapi = require('./platform/tts-sapi');
+const { createVoiceEngineProcess } = require('./platform/voice-engine-process');
 const { createChatTools } = require('./brain/chat-tools');
 const { startToolBridge } = require('./platform/tool-bridge');
 const os = require('os');
@@ -143,7 +144,12 @@ function boot() {
     openPage('roster/roster.html', { width: 900, height: 660, title: 'My Tamas', query: importNow ? { import: '1' } : {} });
   createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster, openGoogle, openDashboard, pages: openPages }).start();
   // Voice (M9, D-042/D-043): created before the tray, whose Voice submenu shows its setting; started with the services.
-  const voice = createVoice({ bus, device, sapi, vv: createVvEngines(), tamaId: active.id });
+  const engineProc = createVoiceEngineProcess({
+    exePath: () => (device.get().voice || {}).enginePath, gpu: () => (device.get().voice || {}).gpu !== false,
+    pidFile: pathMod.join(appShell.paths.data(), 'voice-engine.pid'),
+  });
+  if (engineProc.cleanupStale()) debug('voice: stopped an AivisSpeech engine left over from a previous run');
+  const voice = createVoice({ bus, device, sapi, vv: createVvEngines(), tamaId: active.id, engineProc });
   /** Tray menu; the Voice submenu shows the current choice (D-043). @param {string} lang */
   const trayItems = (lang) => [
       { label: `Summon ${active.name}  (Ctrl+Alt+P)`, click: () => summon('tray-menu') },

@@ -122,3 +122,33 @@ test('voice: muted / dnd stay quiet; phone chats are not spoken on the desktop',
   stop();
   assert.deepEqual(s.played.map((p) => p.text), ['Hi desk!']);
 });
+
+test('voice engine: Japanese dub starts the installed engine (hidden), other choices stop only the one Tama started', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tama-voice-'));
+  const bus = new Bus();
+  const device = createDeviceSettings(createStore(dir));
+  let up = false;
+  /** @type {string[]} */ const log = [];
+  const engineProc = {
+    start: () => { log.push('start'); setTimeout(() => { up = true; }, 5); return { ok: true }; },
+    stop: () => { log.push('stop'); up = false; },
+    find: () => 'C:/x/run.exe', owned: () => up,
+  };
+  const vv = /** @type {any} */ ({ detect: async () => (up ? [{ id: 'aivis', name: 'AivisSpeech', base: 'x', version: '1.2.0', speakers: [{ name: 'Mao', styles: [{ name: 'Normal', id: 1 }] }] }] : []), synthesize: async () => Buffer.from('W') });
+  const sapi = { synthesize: async () => Buffer.from('W'), listVoices: async () => [] };
+  bus.handle('ui.prefs.get', () => ({}));
+  bus.handle('prod.get', () => ({}));
+  bus.handle('pet.get', () => ({ state: {} }));
+  const voice = createVoice({ bus, device, sapi, vv, tamaId: 't', engineProc, wait: () => new Promise((r) => setTimeout(r, 10)) });
+  const stop = voice.start();
+  await new Promise((r) => setTimeout(r, 30));
+  assert.deepEqual(log, ['stop']); // English by default: nothing started (stop is a no-op for engines Tama didn't start)
+  voice.set({ lang: 'ja' });
+  await new Promise((r) => setTimeout(r, 60));
+  assert.deepEqual(log, ['stop', 'start']);
+  assert.equal(voice.status().engines.length, 1);
+  assert.equal(voice.status().engineStartedByTama, true);
+  voice.set({ lang: 'en' });
+  assert.deepEqual(log, ['stop', 'start', 'stop']);
+  stop();
+});

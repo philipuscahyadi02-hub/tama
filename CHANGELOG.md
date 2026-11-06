@@ -22,7 +22,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
     - **English:** the Windows voice with her pitch and speed.
     - **Japanese dub:** Gemini rewrites each line in her own casual Japanese and AivisSpeech (or VOICEVOX) reads it, while the text stays English.
     - **No voice.**
-  - Also: `/voice test`, `/voice chat|events on|off`, `/voice speakers`, `/voice speaker <id>`.
+  - Also: `/voice test`, `/voice chat|events on|off`, `/voice gpu on|off`, `/voice speakers`, `/voice speaker <id>`.
+  - **AivisSpeech runs only when needed** (D-044): Tama starts the installed AivisSpeech Engine hidden (on the graphics card) when you choose Japanese dub, warms it up, and stops it when you switch away or quit. If Tama crashes, the engine is stopped on the next start.
   - **Telegram voice notes:** `/voice on` on the phone and she also answers with a voice note. Your own voice notes get a polite "can't listen yet".
   - **Mute and reduced motion:** `/mute`, `/motion auto|reduced|full` (auto follows Windows' animation setting).
   - Onboarding's "hear my voice" works again (it was silent inside Electron).

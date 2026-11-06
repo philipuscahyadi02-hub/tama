@@ -230,7 +230,7 @@ const TOPICS = {
   VOICE_RENDER: 'voice.render',
   /** () → VoiceStatus { lang: 'en'|'ja'|'off', chat, events, speaker, engines, systemVoices } */
   VOICE_STATUS: 'voice.status',
-  /** { lang?: 'en'|'ja'|'off', chat?, events?, speaker?: number|null } → VoiceStatus */
+  /** { lang?: 'en'|'ja'|'off', chat?, events?, gpu?, speaker?: number|null } → VoiceStatus */
   VOICE_SET: 'voice.set',
   /** () → VoiceStatus — look for AivisSpeech / VOICEVOX again */
   VOICE_DETECT: 'voice.detect',
