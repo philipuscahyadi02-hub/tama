@@ -105,6 +105,14 @@ src/renderer/roster/       My Tamas: switch, hatch, graduate, restore, delete, e
 src/renderer/terminal/tama-commands.js  /todo /focus /remind /note /watch /feed /snack /nap /tama (M2)
 src/renderer/dev/          rig gallery (TAMA_GALLERY=designs|moods)
 ```
+M5 extras (D-035):
+```
+src/main/services/weather/        logic.js (pure: WMO code → kind, hot/cold, parsers) + index.js (/weather city in device.json,
+                                  Open-Meteo fetch at most every 30 min, quiet failures)
+src/main/platform/fullscreen.js   fullscreen-foreground check via one hidden long-lived PowerShell + user32 helper (Windows only)
+src/main/platform/windows/walk-marker.js  44x44 "out for a walk" edge tab while the pet is hidden (SUM-5)
+src/renderer/marker/              the walk tab view (Tama's face; click = summon)
+```
 
 ### 2.2 Shared code rule
 `src/shared/**` must stay pure: no Node or Electron APIs and no DOM, only data in and strings out. Each file uses the
@@ -141,6 +149,7 @@ bus.on('engine.event', handler)
 ### Topics in use (M0)
 Events: `app.error`, `pet.state.changed`, `pet.bond.changed`, `engine.event`, `chat.event`, `brain.notice`, `ui.prefs.changed`, `memory.changed`, `event.shown`, `summon.done`, `tray.action`, `character.changed`, `device.{power,idle}.changed`, `prod.{changed,focus.phase,reminder.due,commit.seen}`.
 Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,delete,export,import}`, `prod.*`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setEffort,setCwd,answerPermission,resume}`, `chat.{send,history,interrupt,clear,push}`, `ui.prefs.{get,set}`, `memory.{get,add,forget}`, `diary.{write,list,read}`, `events.{answer,trigger}`, `brain.compose`, `brain.{status,set}`, `summon`.
+M5 extras (D-035): requests `weather.{get,set}`, `device.fullscreen.get`.
 Renderer messages arrive on one `ui` IPC channel: `pet.state`, `pet.bond`, `prod`, `focus`, `reminder`, `commit`, `summon`, `tray`, `agent.event`, `term.focus`, `character`.
 
 ## 5. Engine contract
@@ -169,7 +178,7 @@ stop(): void
 %APPDATA%\tama\
   tamas\<tamaId>\ character.json state.json events.json memory\facts.json memory\diary\*.md
   user/productivity.json  todos, notes, reminders, focus (the user's, not a Tama's; D-024)
-  device.json      engines, routing, hotkeys, window positions, watched git repos (this PC only)
+  device.json      engines, routing, hotkeys, window positions, watched git repos, weather city (this PC only)
   secrets.bin      safeStorage-encrypted (Telegram token, Google tokens)
   active.json      { activeTamaId }
   logs\

@@ -90,3 +90,4 @@ Debug env vars: `TAMA_DEBUG=1`, `TAMA_SHOT=<dir>` (screenshots, `TAMA_SHOT_TIMES
 `TAMA_OPEN_ONBOARDING=hatch|restyle|rebirth`, `TAMA_ONBOARD_WALK=<dir>` (scripted onboarding run + screenshots),
 `TAMA_OPEN_ROSTER=1`, `TAMA_OPEN_CHAT=1`, `TAMA_PET_EVAL=<js>` / `TAMA_TERM_EVAL=<js>` / `TAMA_CHAT_EVAL=<js>` (run JS in the pet / terminal / chat window after load;
 `TAMA_DEBUG=1` also logs terminal engine events).
+`TAMA_HIDE_PET=1` hides the pet shortly after start (as if by Show / Hide), for walk-marker checks.

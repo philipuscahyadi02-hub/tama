@@ -4,7 +4,11 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 
 **How this file works**
 - **Top part (hand-written):** add a line under `## [Unreleased]
-_Nothing yet._
+### Added
+- **M5 extras** (D-035):
+  - **Weather moments** (EVT-1): tell your Tama where you live with `/weather <city>` (Open-Meteo, no account or key). She notices thunderstorms, rainy days, very hot days (with a water quest) and cold or snowy days, and the 💬 chat knows the weather too. `/weather` shows it now, `/weather off` forgets the city. Offline? She just skips the weather.
+  - **Fullscreen = quiet time** (PET-6): no pop-up moments while a game, video or slideshow fills the screen (Windows).
+  - **Out for a walk** (SUM-5): when you hide your Tama, a tiny tab with her face peeks out from the right edge of the screen; click it to call her back. `/marker on|off`.
 
 ## [0.5.0] — 2026-11-06 — M5 Events & memory
 ### Added
