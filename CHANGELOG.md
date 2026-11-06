@@ -11,6 +11,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   - **First-run tour** (`/tour` to see it again): what the terminal is for, `/cd`, speed controls, where chat lives.
   - **Commands** (TERM-4): `/stats`, `/chat [msg]`, `/wardrobe`, `/theme`, `/tour`; `/diary /event /phone /voice` say which milestone brings them.
   - **SAFE-4:** turning on accept-edits outside a git repo needs a second Shift+Tab (or `/mode acceptEdits confirm`).
+  - **Pet menu revamp:** the long 10-button pill became a compact 5×2 card about the pet's width: a care row (feed, snack, play, bath, nap) and a together row (chat, terminal, focus, stats, restyle), with a caption naming the hovered button and a speech-bubble tail.
 ### Fixed
 - A brand-new kero-pet import skipped the bond migration (state stamped v2 with the old `bond` field), so bond showed "NaN". Existing saves were not affected.
 ### Decisions

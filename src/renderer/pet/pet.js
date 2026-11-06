@@ -212,6 +212,13 @@ menuEl.addEventListener('click', (e) => {
   menuEl.classList.add('hidden');
   actions[b.dataset.act]();
 });
+// The caption under the buttons names whatever you hover (no native tooltips needed).
+const menuCap = $('#menuCap');
+menuEl.addEventListener('mouseover', (e) => {
+  const b = e.target.closest('button[data-label]');
+  menuCap.textContent = b ? b.dataset.label : 'what shall we do?';
+});
+menuEl.addEventListener('mouseleave', () => { menuCap.textContent = 'what shall we do?'; });
 T.onTray((a) => !isEgg && actions[a] && actions[a]());
 
 // ---------------- pointer: click / drag / head-pat / cheek-poke ----------------

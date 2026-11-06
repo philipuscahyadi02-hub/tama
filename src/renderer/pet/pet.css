@@ -78,19 +78,30 @@ html, body {
 #bubble.shout::after { display: none; }
 @keyframes pop { from { transform: translateX(-50%) scale(.5); opacity: 0; } }
 
-/* ---------- menu ---------- */
+/* ---------- menu: compact 5x2 card about the pet's width (care row + together row) ---------- */
 #menu {
-  position: absolute; bottom: 206px; left: 50%; transform: translateX(-50%);
-  display: flex; gap: 4px; padding: 5px 7px;
-  background: var(--paper); border: 2.5px solid var(--ink); border-radius: 999px;
+  position: absolute; bottom: 214px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 5px; padding: 8px 9px 6px;
+  background: var(--paper); border: 2.5px solid var(--ink); border-radius: 18px;
   box-shadow: 3px 3px 0 var(--ink); animation: pop .22s ease-out;
 }
-#menu button {
-  width: 31px; height: 31px; border-radius: 50%; border: 0; cursor: pointer; padding: 0;
-  background: var(--tama-menu-1, var(--pink-l)); font-size: 17px; transition: transform .1s, background .1s;
+#menu::after { /* speech-bubble tail pointing at the pet */
+  content: ""; position: absolute; left: 50%; bottom: -9px; width: 14px; height: 14px; margin-left: -7px;
+  background: var(--paper); border-right: 2.5px solid var(--ink); border-bottom: 2.5px solid var(--ink);
+  transform: rotate(45deg); border-bottom-right-radius: 3px;
 }
-#menu button:nth-child(even) { background: var(--tama-menu-2, var(--green-l)); }
-#menu button:hover { transform: translateY(-3px) scale(1.1) rotate(-6deg); background: var(--tama-menu-hover, #ffd0e4); }
+#menu .row { display: grid; grid-template-columns: repeat(5, 32px); gap: 5px; }
+#menu button {
+  width: 32px; height: 32px; border-radius: 11px; border: 0; cursor: pointer; padding: 0;
+  font-size: 17px; line-height: 32px; transition: transform .1s, background .1s;
+}
+#menu .care button { background: var(--tama-menu-1, var(--pink-l)); }
+#menu .together button { background: var(--tama-menu-2, var(--green-l)); }
+#menu button:hover, #menu button:focus-visible { transform: translateY(-2px) scale(1.12) rotate(-6deg); background: var(--tama-menu-hover, #ffd0e4); outline: none; }
+#menuCap {
+  font-size: 11.5px; font-weight: 700; text-align: center; color: var(--ink); opacity: .75;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; margin: 0 auto; height: 15px;
+}
 
 /* ---------- stats panel ---------- */
 .panel {
