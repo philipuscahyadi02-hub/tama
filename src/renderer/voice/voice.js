@@ -35,10 +35,11 @@ async function showInfo(engine, uuid) {
 
 function renderNow() {
   const p = st.pick;
-  $('#nowName').textContent = p ? p.name : 'No anime voice yet';
+  $('#nowName').innerHTML = p ? label(p.nameEn, p.name) : 'No anime voice yet';
   $('#nowEngine').textContent = p ? ENGINE_NAMES[p.engine] || p.engine : '';
-  $('#nowStyle').textContent = p ? p.styleName : '';
+  $('#nowStyle').textContent = p ? (p.styleNameEn ? `${p.styleNameEn} · ${p.styleName}` : p.styleName) : '';
   $('#credit').textContent = p ? credit(p.engine, p.name) : 'Choose Japanese dub once so an engine starts and its voices appear here.';
+  $('#nowHint').textContent = p ? 'Change it below: ▶ listens, ✓ makes it her voice.' : '';
   const t = st.tune;
   $('#tPitch').value = String(t.pitch); $('#vPitch').textContent = `${t.pitch > 0 ? '+' : ''}${Math.round(t.pitch * 100)}`;
   $('#tSpeed').value = String(t.speed); $('#vSpeed').textContent = `${t.speed.toFixed(2)}×`;
@@ -62,27 +63,28 @@ function renderEngines() {
   }));
 }
 
+/** "English (日本語)" label: English first, the original small. */
+const label = (en, jp) => (en && en !== jp ? `${esc(en)} <span class="jp">${esc(jp)}</span>` : esc(jp));
+
 function renderVoices() {
   const groups = {};
   for (const v of st.voices) (groups[v.engine] = groups[v.engine] || []).push(v);
   const p = st.pick;
   $('#voices').innerHTML = Object.entries(groups).map(([engine, list]) => `<div class="group"><h4>${esc(ENGINE_NAMES[engine] || engine)} · ${list.length} voices</h4><div class="vgrid">${
     list.map((v) => {
-      const sel = p && p.engine === engine && p.uuid === v.uuid;
-      return `<div class="vcard${sel ? ' sel' : ''}"><div class="top"><span class="name">${esc(v.name)}</span>
-        <button data-use="${esc(engine)}|${esc(v.uuid)}|${v.styles[0] ? v.styles[0].id : 0}">${sel ? '✓ Her voice' : 'Use'}</button></div>
-        <div class="chips">${v.styles.map((s) => `<span class="chip${sel && p.style === s.id ? ' on' : ''}" data-try="${esc(engine)}|${esc(v.uuid)}|${s.id}" title="Hear it; double-click to use this style">${esc(s.name)}</span>`).join('')}</div></div>`;
+      const selVoice = p && p.engine === engine && p.uuid === v.uuid;
+      return `<div class="vcard${selVoice ? ' sel' : ''}"><div class="top"><span class="name">${label(v.en, v.name)}</span>${selVoice ? '<span class="badge">her voice</span>' : ''}</div>
+        <div class="styles">${v.styles.map((s) => {
+          const on = selVoice && p.style === s.id;
+          const key = `${esc(engine)}|${esc(v.uuid)}|${s.id}`;
+          return `<div class="srow${on ? ' on' : ''}">
+            <button class="play" data-try="${key}" title="Listen">▶</button>
+            <span class="sname">${label(s.en, s.name)}</span>
+            <button class="pick${on ? ' on' : ''}" data-use="${key}" title="${on ? 'Her voice' : 'Use this voice'}">${on ? '✓' : ''}</button></div>`;
+        }).join('')}</div></div>`;
     }).join('')}</div></div>`).join('') || '<div class="kv dim">No voices known yet.</div>';
-  document.querySelectorAll('[data-try]').forEach((c) => {
-    c.addEventListener('click', () => { const [engine, , style] = c.dataset.try.split('|'); preview(engine, Number(style)); });
-    c.addEventListener('dblclick', () => { const [engine, uuid, style] = c.dataset.try.split('|'); use(engine, uuid, Number(style)); });
-  });
-  document.querySelectorAll('[data-use]').forEach((b) => b.addEventListener('click', () => {
-    const [engine, uuid, style] = b.dataset.use.split('|');
-    // Keep the chosen style when re-using the selected character.
-    const keep = p && p.engine === engine && p.uuid === uuid ? p.style : Number(style);
-    use(engine, uuid, keep);
-  }));
+  document.querySelectorAll('[data-try]').forEach((c) => c.addEventListener('click', () => { const [engine, , style] = c.dataset.try.split('|'); preview(engine, Number(style)); }));
+  document.querySelectorAll('[data-use]').forEach((c) => c.addEventListener('click', () => { const [engine, uuid, style] = c.dataset.use.split('|'); use(engine, uuid, Number(style)); }));
 }
 
 let shownKey = '';
@@ -108,7 +110,7 @@ async function preview(engine, style, mood) {
 
 async function use(engine, uuid, style) {
   render(await K.voice.set({ pick: { engine, uuid, style } }));
-  preview(engine, style);
+  say(`✓ ${st.pick ? `${st.pick.nameEn || st.pick.name} (${st.pick.styleNameEn || st.pick.styleName})` : ''} is her voice now`);
 }
 
 function tuneFromSliders() {

@@ -3,13 +3,15 @@
 // page can list voices while an engine is off), and starting/stopping them. The selected voice's engine runs while
 // Japanese dub is on; another engine is "leased" for a few minutes after a preview, then stopped again.
 
+const { characterEn, styleEn } = require('./names');
+
 const BOOT_MS = 5 * 60000;
 const POLL_MS = 3000;
 const LEASE_MS = 3 * 60000;
 
 /**
  * @typedef {{ start: () => { ok: boolean, reason?: string }, stop: () => void, find: () => string | null, owned: () => boolean }} EngineProc
- * @typedef {{ name: string, uuid: string, styles: Array<{ name: string, id: number }> }} Speaker
+ * @typedef {{ name: string, uuid: string, en?: string, styles: Array<{ name: string, id: number, en?: string }> }} Speaker
  */
 
 /**
@@ -98,7 +100,7 @@ function createEngineManager({ vv, procs, device, wait = (ms) => new Promise((r)
     /** @type {Array<Speaker & { engine: string }>} */ const out = [];
     for (const id of ids()) {
       const speakers = (running[id] && running[id].speakers) || (cat[id] && cat[id].speakers) || [];
-      for (const s of speakers) out.push({ ...s, engine: id });
+      for (const s of speakers) out.push({ ...s, engine: id, en: characterEn(s.name), styles: s.styles.map((x) => ({ ...x, en: styleEn(x.name) })) });
     }
     return out;
   }

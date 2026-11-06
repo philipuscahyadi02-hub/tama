@@ -22,9 +22,19 @@
 .vcard.sel { border-color: var(--tama-accent); box-shadow: 0 0 0 2px var(--tama-accent) inset; }
 .vcard .top { display: flex; align-items: center; gap: 6px; }
 .vcard .name { font-weight: 700; flex: 1; }
-.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-.chip { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--tama-line); background: var(--tama-bg); cursor: pointer; font-weight: 600; }
-.chip:hover { border-color: var(--tama-accent); }
-.chip.on { background: var(--tama-accent); color: var(--tama-accent-ink); border-color: var(--tama-accent); }
 details.terms { margin-top: 6px; font-size: 12px; }
 details.terms pre { white-space: pre-wrap; max-height: 180px; overflow: auto; background: var(--tama-bg); padding: 8px; border-radius: 8px; border: 1px solid var(--tama-line); }
+
+/* style rows: ▶ listen · name (English + Japanese) · ✓ use (D-046) */
+.jp { color: var(--tama-dim); font-weight: 400; font-size: .85em; margin-left: 4px; }
+.vcard .name { font-size: 14px; }
+.styles { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; }
+.srow { display: flex; align-items: center; gap: 8px; padding: 2px 4px; border-radius: 8px; }
+.srow:hover { background: var(--tama-bubble); }
+.srow.on { background: var(--tama-bubble); }
+.srow .sname { flex: 1; font-size: 12.5px; font-weight: 600; }
+.srow button { width: 26px; height: 26px; padding: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; }
+.srow .play { background: var(--tama-panel); }
+.srow .pick { border: 2px solid var(--tama-line); background: var(--tama-panel); color: var(--tama-accent-ink); font-weight: 800; font-size: 13px; }
+.srow .pick:hover { border-color: var(--tama-accent); }
+.srow .pick.on { background: var(--tama-accent); border-color: var(--tama-accent); }

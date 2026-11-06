@@ -10,6 +10,12 @@ function attachDebug(win, tag) {
     win.webContents.on('console-message', (/** @type {any} */ e) => console.log(`[${tag}]`, e.message));
     win.webContents.on('render-process-gone', (_e, d) => console.log(`[${tag}] gone`, d));
   }
+  // TAMA_SHOT_OFFSCREEN=1: page windows open off-screen and never take focus, so live checks don't pop up over
+  // the user's work (screenshots still capture them).
+  if (process.env.TAMA_SHOT_OFFSCREEN && !['pet', 'term', 'chat', 'marker'].includes(tag)) {
+    win.setPosition(-4000, 40);
+    win.setFocusable(false);
+  }
   const dir = process.env.TAMA_SHOT;
   if (dir) {
     const times = (process.env.TAMA_SHOT_TIMES || '2500,7000').split(',').map(Number);

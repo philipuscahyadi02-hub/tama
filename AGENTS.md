@@ -95,3 +95,4 @@ Debug env vars: `TAMA_DEBUG=1`, `TAMA_SHOT=<dir>` (screenshots, `TAMA_SHOT_TIMES
 `TAMA_VOICE_TEST=<text>` speaks the text once, then renders + encodes it as a Telegram voice note and logs the sizes.
 `TAMA_OPEN_DASHBOARD=limits` opens the dashboard on the Limits tab. `TAMA_OPEN_VOICE=1` opens the Voice page.
 `TAMA_QUIT_AFTER=<ms>` quits cleanly (stoppers run) — use it for live tests instead of killing Electron.
+`TAMA_SHOT_OFFSCREEN=1` opens page windows off-screen (no pop-up over the user's work; screenshots still work).

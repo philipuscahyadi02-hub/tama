@@ -110,7 +110,7 @@ test('voice: Japanese dub picks the style for the translator\'s mood, applies tu
   s.voice.set({ moodStyles: false });
   r = await s.voice.say('Good morning!', 'chat');
   assert.equal(r.style, 'ノーマル');
-  assert.equal((/** @type {any} */ (s.voice.status().pick)).moodMap.sad, 'せつなめ');
+  assert.equal((/** @type {any} */ (s.voice.status().pick)).moodMap.sad, 'Wistful (せつなめ)');
   s.voice.set({ lang: 'off' });
   assert.deepEqual(await s.voice.say('Hello', 'chat'), { ok: false, reason: 'off' });
   assert.equal((await s.voice.say('Hello', 'test')).ok, true); // the test command ignores the off switch
@@ -192,4 +192,16 @@ test('voice engines: Japanese dub starts the chosen voice\'s engine; others run 
   assert.ok(!log.includes('stop voicevox')); // still leased
   stop();
   assert.ok(log.includes('stop voicevox')); // quitting stops everything Tama started
+});
+
+test('names: English labels for characters and styles; kana names are romanized when unknown', () => {
+  const { characterEn, styleEn, romaji } = require('./names');
+  assert.equal(characterEn('ずんだもん'), 'Zundamon');
+  assert.equal(characterEn('東北きりたん'), 'Tohoku Kiritan');
+  assert.equal(styleEn('なみだめ'), 'Teary');
+  assert.equal(styleEn('ツンツン'), 'Tsun-tsun (prickly)');
+  assert.equal(romaji('きりたん'), 'Kiritan');
+  assert.equal(romaji('ちょっと'), 'Chotto');
+  assert.equal(romaji('シャウト'), 'Shauto');
+  assert.equal(characterEn('新キャラ'), ''); // kanji: no guess, the page shows the original only
 });

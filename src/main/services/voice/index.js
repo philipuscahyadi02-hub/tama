@@ -214,10 +214,14 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
     const engines = mgr.status();
     return {
       lang: p.lang, chat: p.chat, events: p.events, gpu: p.gpu !== false, moodStyles: p.moodStyles !== false, tune: tune(),
-      pick: who ? { engine: who.engine, uuid: who.speaker.uuid, name: who.speaker.name, style: who.style,
+      pick: who ? { engine: who.engine, uuid: who.speaker.uuid, name: who.speaker.name, nameEn: who.speaker.en || '', style: who.style,
         styleName: (who.speaker.styles.find((s) => s.id === who.style) || {}).name || '',
+        styleNameEn: (who.speaker.styles.find((s) => s.id === who.style) || {}).en || '',
         // Which style each mood uses with this voice (shown on the Voice page).
-        moodMap: Object.fromEntries(MOODS.map((m) => [m, (who.speaker.styles.find((s) => s.id === styleFor(who.speaker.styles, who.style, m)) || {}).name || ''])) } : null,
+        moodMap: Object.fromEntries(MOODS.map((m) => {
+          const st = who.speaker.styles.find((s) => s.id === styleFor(who.speaker.styles, who.style, m)) || { name: '', en: '' };
+          return [m, st.en ? `${st.en} (${st.name})` : st.name];
+        })) } : null,
       speaker: who ? who.style : null,
       engines, voices: mgr.voices(), systemVoices,
       engineInstalled: engines.some((e) => e.installed), engineStartedByTama: engines.some((e) => e.startedByTama), engineBooting: engines.some((e) => e.booting),

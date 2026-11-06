@@ -75,6 +75,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-043 | Voice language setting: English (Windows voice) / Japanese dub (Gemini translates in character, AivisSpeech reads) / off; tray Voice menu + `/voice en\|ja\|off` | Accepted · Supersedes D-042 (engine choice) |
 | D-044 | Headless AivisSpeech Engine (GPU) started by Tama only while Japanese dub is on; stopped on switch/quit; crash leftovers cleaned via a PID file | Accepted |
 | D-045 | Voice page: VOICEVOX added (headless engine, 44 licensed TTS characters), per-Tama voice pick + tuning, mood-matched styles from the dub's feeling tag; no cloning of real people's voices | Accepted |
+| D-046 | Voice page readability: English labels from assets/voice/names.json (kana → romaji fallback); separate ▶ listen and ✓ use per style; off-screen test windows | Accepted |
 
 ---
 
@@ -608,3 +609,14 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
   - Voice notes and the desktop use the same pick and mood.
   - Live check: three lines were spoken with ずんだもん in ノーマル/なみだめ/ツンツン from the tags excited/sad/tease, in 4.6–9 s each (translation plus synthesis).
 - **Refs:** VOICE-1, VOICE-3, D-022, D-043, D-044, src/main/services/voice/{index,engines,emotion,vv-engine}.js, src/main/platform/voice-engine-process.js, src/renderer/voice
+
+### D-046 — Voice page readability: English labels, separate listen/use controls, off-screen test windows
+- **Date:** 2026-11-07 · **Status:** Accepted
+- **Context:** The user found the Voice page hard to read (Japanese-only names) and wanted listening and choosing as separate controls instead of one "Use" button.
+- **Decision:**
+  - `assets/voice/names.json` (data, AGENTS rule 12) holds English labels for the 46 shipped characters and 67 style names. `services/voice/names.js` adds them (`en`) to the voice list, the pick and the mood map. Unknown kana-only names are romanized; names with kanji show only the original.
+  - The page shows English first with the Japanese smaller beside it. Each style row has **▶** (listen) and a round **✓** (make it her voice); the chosen style is filled.
+  - The mood matcher knows the extra VOICEVOX style names (うきうき, 不機嫌, 低血圧, けだるげ, びえーん, …).
+  - Dev: `TAMA_SHOT_OFFSCREEN=1` opens page windows off-screen without focus, so live checks don't pop up over the user's work (one did before).
+- **Consequences:** Name readings are best effort; new engine voices without an entry appear romanized or in Japanese.
+- **Refs:** VOICE-5, D-045, assets/voice/names.json, src/main/services/voice/names.js, src/renderer/voice

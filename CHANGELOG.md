@@ -27,6 +27,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
     - Pick from AivisSpeech and **VOICEVOX** characters (44, e.g. ずんだもん, 四国めたん, 春日部つむぎ): click a style to hear it, "Use" to choose it.
     - Tune pitch, speed and expression per Tama.
     - Each character's portrait, credit and terms are shown.
+    - Names and styles are shown in English with the Japanese beside them (e.g. Zundamon ずんだもん · Teary なみだめ). Each style has its own ▶ listen and ✓ use buttons.
   - **Her voice follows her emotion:** each line gets a feeling (happy, sad, teasing, sleepy…), and she speaks it in the matching style (e.g. なみだめ when sad, ツンツン when scolding) with a fitting tone. `/voice mood on|off`.
   - **AivisSpeech runs only when needed** (D-044): Tama starts the installed AivisSpeech Engine hidden (on the graphics card) when you choose Japanese dub, warms it up, and stops it when you switch away or quit. If Tama crashes, the engine is stopped on the next start.
   - **Telegram voice notes:** `/voice on` on the phone and she also answers with a voice note. Your own voice notes get a polite "can't listen yet".
