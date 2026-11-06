@@ -18,6 +18,14 @@ const MIGRATIONS = {
   productivity: [
     (d) => d,
   ],
+  // tamas/<id>/memory/facts.json — { facts: Fact[] } (EVT-4, D-033)
+  memory: [
+    (d) => ({ facts: [], ...d }),
+  ],
+  // tamas/<id>/events.json — cooldowns, last event, diary day, today's moments (D-033)
+  events: [
+    (d) => ({ last: {}, lastAny: 0, diaryDay: '', log: [], ...d }),
+  ],
   // tamas/<id>/character.json
   character: [
     (d) => d,

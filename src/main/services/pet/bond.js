@@ -23,6 +23,8 @@ const SOURCES = {
   calendar: { xp: 2, cap: 8, productive: true },  // finished calendar focus block (M6)
   play: { xp: 1, cap: 3, productive: false },
   pat: { xp: 0.5, cap: 3, productive: false },
+  event: { xp: 1, cap: 4, productive: false },    // answered an event (M5)
+  nudge: { xp: 1, cap: 3, productive: false },    // did a wellbeing nudge: water, stretch (M5)
 };
 const STREAK_BONUS = { daily: 1, 7: 5, 30: 15 };
 

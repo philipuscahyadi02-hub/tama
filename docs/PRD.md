@@ -5,8 +5,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.8 |
-| **Status** | v0.4.0 released (M0–M4). M5 in progress on `m5-events` |
+| **Version** | 0.9 |
+| **Status** | v0.5.0 released (M0–M5). M6 in progress on `m6-google`; M5 leftovers on `m5-extras` |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-06 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -82,8 +82,8 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | PET-3 | Easy energy: snack/energy drink (+25, cooldown), 10-min power nap (+50), charging when on AC power, auto-nap when PC idle >10 min (+30/h), focus-break recharge. | P0 | M2 | ☑ |
 | PET-4 | Agent work drains little (−1 per coding task); chatting costs no energy. | P0 | M2 | ☑ |
 | PET-5 | Interactions from kero-pet kept: click menu, head-pat rub, cheek poke, drag, wander, babble. | P0 | M1 | ☑ |
-| PET-6 | Do-not-disturb: no babble during fullscreen apps, meetings (calendar), or focus sessions. | P1 | M5 | ☐ |
-| PET-7 | Wellbeing nudges: water, stretch, late-night "go to sleep". Toggleable. | P2 | M5 | ☐ |
+| PET-6 | Do-not-disturb: no babble during fullscreen apps, meetings (calendar), or focus sessions. *(Focus, `/dnd`, away and asleep done; meetings with M6 Calendar; fullscreen later.)* | P1 | M5 | ◐ |
+| PET-7 | Wellbeing nudges: water, stretch, late-night "go to sleep". Toggleable. | P2 | M5 | ☑ |
 | PET-8 | Reduced-motion and mute options. | P1 | M8 | ☐ |
 
 ### 4.4 Bond & productivity (BOND / PROD)
@@ -100,10 +100,10 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.5 Events & conversations (EVT)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| EVT-1 | Event engine with triggers: time of day, weekday/weekend, holidays, Tama birthday, weather (Open-Meteo), stat states, productivity milestones, long absence, late-night coding, random. Per-event cooldowns and `minBond`. | P0 | M5 | ☐ |
-| EVT-2 | Event types: chat topics, VN-style choices (2–3 options affecting mood/bond), mini-quests, memory callbacks, daily diary. | P0 | M5 | ☐ |
-| EVT-3 | Events defined as data (deck JSON); lines generated in-character by the lite brain from a seed. | P0 | M5 | ☐ |
-| EVT-4 | Memory: facts about the user, viewable ("what do you remember?") and forgettable. | P0 | M5 | ☐ |
+| EVT-1 | Event engine with triggers: time of day, weekday/weekend, holidays, Tama birthday, weather (Open-Meteo), stat states, productivity milestones, long absence, late-night coding, random. Per-event cooldowns and `minBond`. *(All but weather, which needs a location setting, D-033.)* | P0 | M5 | ◐ |
+| EVT-2 | Event types: chat topics, VN-style choices (2–3 options affecting mood/bond), mini-quests, memory callbacks, daily diary. | P0 | M5 | ☑ |
+| EVT-3 | Events defined as data (deck JSON); lines generated in-character by the lite brain from a seed. | P0 | M5 | ☑ |
+| EVT-4 | Memory: facts about the user, viewable ("what do you remember?") and forgettable. | P0 | M5 | ☑ |
 
 ### 4.6 Brain & engines (BRAIN / ENG)
 | ID | Requirement | Pri | MS | Status |
@@ -127,7 +127,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | TERM-1 | Claude-Code-style terminal (from kero-pet): streaming, tool lines, diffs, todo lists, permission prompts, Shift+Tab modes, Esc interrupt, history. | P0 | M4 | ☑ |
 | TERM-2 | Themed from CharacterSpec: colors, prompt glyph, spinner frames, banner, corner avatar that reacts live. | P0 | M4 | ☑ |
 | TERM-3 | ~~Chat mode and code mode; engine badge~~ → replaced by the separate chat window (D-029). Terminal shows live thinking / writing progress (D-031) and a first-run tour (`/tour`). | P0 | M4 | ☑ |
-| TERM-4 | Commands: `/chat /todo /focus /remind /note /feed /snack /nap /stats /theme /tour /tama /wardrobe /summon /model /effort /mode /budget`; `/diary /event` (M5), `/phone` (M7), `/voice` (M8) say when they arrive; unknown `/x` forwarded to Claude Code. | P0 | M4 | ☑ |
+| TERM-4 | Commands: `/chat /todo /focus /remind /note /feed /snack /nap /stats /theme /tour /tama /wardrobe /summon /model /effort /mode /budget`; `/memory /remember /forget /diary /event /dnd /nudges` (M5), `/phone` (M7), `/voice` (M8) says when it arrives; unknown `/x` forwarded to Claude Code. | P0 | M4 | ☑ |
 
 ### 4.8 Summon & window reliability (SUM)
 | ID | Requirement | Pri | MS | Status |
@@ -193,7 +193,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | NFR-1 | Idle CPU < 2%, RAM < 300 MB (excluding engine processes). | P1 | M8 | ☐ |
 | NFR-2 | Multi-monitor & mixed-DPI safe. | P0 | M0 | ◐ |
 | NFR-3 | Ships as a portable `.exe` (electron-builder), uses installed `claude`/`agy`. | P0 | M8 | ☐ |
-| NFR-4 | Memory view + forget; local-only data except the user's own Drive backup. | P0 | M5 | ☐ |
+| NFR-4 | Memory view + forget; local-only data except the user's own Drive backup. | P0 | M5 | ☑ |
 
 ## 5. Milestones
 
@@ -204,7 +204,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M2 — Pet loop v2 & lifecycle.** *(code complete; BOND-3 unlock effects arrive with themes in M4 and events in M5)* Energy, bond, productivity, roster, export/import (PET-1..4, BOND-*, PROD-1..2, PORT-3..5, ONB-9).
 - [x] **M3 — Brain & engines.** *(released as 0.3.1)* Claude Code terminal + agy chat window, PermissionGate, budget (BRAIN-*, ENG-1..5, CHAT-1, SAFE-1, SAFE-5, ONB-7).
 - [x] **M4 — Terminal v2.** *(released as 0.4.0)* Theming from the CharacterSpec (no more hard-coded Kero), commands, first-run tour (TERM-*, ART-4, SAFE-4).
-- [ ] **M5 — Events & memory.** (EVT-*, PET-6..7, NFR-4, SUM-5).
+- [x] **M5 — Events & memory.** *(released as 0.5.0; weather, fullscreen DND and SUM-5 deferred)* (EVT-*, PET-6..7, NFR-4, SUM-5).
 - [ ] **M6 — Google.** OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
 - [ ] **M7 — Telegram.** (TG-*, ART-5, SAFE-3).
 - [ ] **M8 — Voice & polish.** (VOICE-1, PET-8, NFR-1, NFR-3).
@@ -218,6 +218,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.9 — 2026-11-06** — M5 implemented: EVT-2..4, NFR-4, PET-7 done; EVT-1 and PET-6 partial (D-033).
 - **0.8 — 2026-11-06** — M4 implemented: TERM-1..4, ART-4, SAFE-4; BOND-3 terminal themes (D-032).
 - **0.7 — 2026-11-06** — Terminal = Claude Code only, chat window = agy only (D-029, CHAT-1); M3 ships as 0.3.1 (D-030); progress + `/effort` (D-031).
 - **0.6 — 2026-11-06** — M3 implemented: BRAIN-1..5, ENG-1..5, SAFE-1, SAFE-5, ONB-7. agy is read-only (D-027).

@@ -39,6 +39,11 @@ function buildPersona(spec, opts = {}) {
     'You may use web search (search_web) for current facts, news, prices or anything you are unsure about, and mention the source briefly.',
     'Never run commands, edit or create files, or touch git: you are read-only. Never pretend you did.',
     'If the user wants real work on their computer or code, answer helpfully (explain, plan, give a snippet) and tell them to do it in the terminal with Claude Code (Ctrl+Alt+K, /cd, then ask).',
+    'Messages may start with a "[memory] …" line listing what you remember about the user. Use it naturally and kindly; never quote it.',
+    'When the user shares a lasting personal fact (their name, birthday, job or studies, likes, goals, an important upcoming event), '
+      + 'end your reply with a hidden marker on its own line: [[remember: <short fact in third person, e.g. "has a job interview on Friday">]]. '
+      + 'At most one per reply, never for small talk, never for secrets like passwords. The marker is hidden from the user.',
+    'If the user asks what you remember, tell them kindly, and mention they can see or delete memories with /memory and /forget in the terminal.',
     GUIDE,
     'Be cute in chat, but never put cute flavor inside code, commands or file contents. Stay wholesome.',
     opts.today ? `Today is ${opts.today}.` : '',

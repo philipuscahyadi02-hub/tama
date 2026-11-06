@@ -9,6 +9,7 @@ const { TOPICS } = require('../bus-topics');
 const persona = require('./persona');
 const budget = require('./budget');
 const { createChat } = require('./chat');
+const { createComposer } = require('./compose');
 
 const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
 
@@ -57,6 +58,12 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
   const chat = createChat({
     bus, scratchDir, available: () => available.agy, factory: factories.agyChat,
     onResult: (ev) => recordUsage('agy', 'lite', ev), now,
+  });
+
+  // Events + diary text (EVT-3): its own agy session, same persona.
+  let personaText = '';
+  const composer = createComposer({
+    factory: factories.agyChat, scratchDir: path.join(scratchDir, 'compose'), available: () => available.agy, persona: () => personaText,
   });
 
   // ---------------- terminal (Claude Code) ----------------
@@ -118,7 +125,9 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
 
   /** @param {any} spec */
   function updatePersona(spec) {
-    chat.setPersona(persona.buildPersona(spec, { today: new Date(now()).toDateString() }));
+    personaText = persona.buildPersona(spec, { today: new Date(now()).toDateString() });
+    chat.setPersona(personaText);
+    composer.setPersona(personaText);
   }
 
   function start() {
@@ -159,10 +168,11 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
       }),
       bus.handle(TOPICS.BRAIN_STATUS, () => status()),
       bus.handle(TOPICS.BRAIN_SET, setBrain),
+      bus.handle(TOPICS.BRAIN_COMPOSE, (/** @type {any} */ p) => composer.compose({ kind: p && p.kind === 'diary' ? 'diary' : 'line', seed: String((p && p.seed) || '') })),
       bus.on(TOPICS.CHARACTER_CHANGED, (/** @type {any} */ c) => { updatePersona(c.spec); }),
     ];
     bus.request(TOPICS.CHARACTER_GET).then((c) => updatePersona(c.spec)).catch(() => null);
-    return () => { for (const off of offs) off(); stopChat(); if (claude) claude.stop(); };
+    return () => { for (const off of offs) off(); stopChat(); composer.stop(); if (claude) claude.stop(); };
   }
 
   return { start, send, status, setBrain, chat };

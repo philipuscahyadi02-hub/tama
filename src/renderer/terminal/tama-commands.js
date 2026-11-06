@@ -28,7 +28,10 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
     '  /feed  /snack  /nap  take care of your Tama · /stats  how they are doing · /wardrobe  restyle',
     '  /chat [msg]      open the 💬 chat (and send msg)    /tama  My Tamas (switch, hatch, export, import)',
     '  /theme [name]    terminal look (night · day · pastel · neon; unlocked by bond)',
-    '  coming soon: /diary /event (M5) · /phone (M7) · /voice (M8)',
+    '  /memory          what your Tama remembers about you · /remember <fact> · /forget <n|all>',
+    '  /diary [date]    read their diary (they write one every evening) · /diary list',
+    '  /event [id]      start a little moment now · /dnd [on|off] quiet mode · /nudges [on|off] water & stretch',
+    '  coming soon: /phone (M7) · /voice (M8)',
     '',
     '  This terminal = Claude Code (asks before edits/commands).  Chat with your Tama = 💬 window (Ctrl+Alt+J, free via agy).',
     '  /engines  status · /budget [usd]  daily Claude budget (API-equivalent estimate)',
@@ -121,8 +124,46 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
         if (r.error === 'locked') return info(`⎿  🔒 not yet! that look unlocks at bond level ${r.minLevel + 1}. Keep being productive together~`);
         show(r, () => `⎿  theme: ${r.termTheme} ✨`);
       }],
-      diary: ["(M5) Your Tama's diary", () => info('⎿  The diary arrives in M5 (events & memory). Stay tuned~')],
-      event: ['(M5) Start a little event', () => info('⎿  Events arrive in M5. Stay tuned~')],
+      memory: ['What your Tama remembers about you', async () => {
+        const { facts } = await K.memory.get();
+        if (!facts.length) return info('⎿  Nothing yet. Tell them about yourself in the 💬 chat, or /remember <fact>.');
+        info([...facts.map((f, i) => `  ${String(i + 1).padStart(2)}. ${f.text}  (${f.source}, ${new Date(f.at).toLocaleDateString()})`),
+          '', '  /forget <n> to remove one · /forget all to clear'].join('\n'));
+      }],
+      remember: ['Tell your Tama a fact to remember', async (arg) => {
+        if (!arg) return info('⎿  Usage: /remember my birthday is March 3');
+        show(await K.memory.add(arg), (r) => (r.duplicate ? '⎿  I already remember that~' : `⎿  📝 I'll remember: ${r.fact.text}`));
+      }],
+      forget: ['Forget a memory (number from /memory, or all)', async (arg) => {
+        const a = String(arg || '').trim().toLowerCase();
+        if (!a) return info('⎿  Usage: /forget <n> (see /memory) or /forget all');
+        show(await K.memory.forget(a === 'all' ? 'all' : a), (r) => (a === 'all' ? `⎿  forgot ${r.removed} memories. a fresh start~` : `⎿  forgot: ${r.fact.text}`));
+      }],
+      diary: ["Read your Tama's diary", async (arg) => {
+        if (arg === 'list') {
+          const { days } = await K.diary.list();
+          return info(days.length ? `⎿  diary pages: ${days.slice(0, 30).join(', ')}` : '⎿  No pages yet. I write one every evening~');
+        }
+        const r = await K.diary.read(arg || undefined);
+        if (r.error) return info(`⎿  ${r.error}`);
+        info(`📔 ${r.text.trim()}` + (r.days.length > 1 ? '\n\n  (/diary list for older pages)' : ''));
+      }],
+      event: ['Start a little moment with your Tama now', async (arg) => {
+        const r = await K.events.trigger(arg || undefined);
+        show(r, () => '⎿  look at your Tama~ 💭');
+      }],
+      dnd: ['Do not disturb: no events or babble', async (arg) => {
+        const p = await K.ui.prefs();
+        const on = arg ? /^(on|1|yes)$/i.test(arg) : !p.dnd;
+        await K.ui.setPrefs({ dnd: on });
+        info(on ? '⎿  🤫 quiet mode on: no events until /dnd off' : '⎿  quiet mode off~');
+      }],
+      nudges: ['Water & stretch reminders on/off', async (arg) => {
+        const p = await K.ui.prefs();
+        const on = arg ? /^(on|1|yes)$/i.test(arg) : !p.nudges;
+        await K.ui.setPrefs({ nudges: on });
+        info(on ? '⎿  💧 wellbeing nudges on' : '⎿  wellbeing nudges off');
+      }],
       phone: ['(M7) Pair your phone (Telegram)', () => info('⎿  Telegram pairing arrives in M7.')],
       voice: ['(M8) Voice settings', () => info('⎿  Voice (AivisSpeech) arrives in M8.')],
       feed: ['Feed your Tama', async () => show(await K.act('feed'), (r) => (r.ok ? '⎿  🍙 itadakimasu!' : `⎿  (${r.reason})`))],

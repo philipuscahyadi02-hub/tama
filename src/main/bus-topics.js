@@ -42,6 +42,10 @@ const TOPICS = {
   CHAT_EVENT: 'chat.event',
   /** UiPrefs { termTheme, tourDone, unlocked, variants } — after a change (D-032) */
   UI_PREFS_CHANGED: 'ui.prefs.changed',
+  /** { facts: Fact[] } — memories changed (EVT-4) */
+  MEMORY_CHANGED: 'memory.changed',
+  /** { id, kind: TamaEvent kind | 'reply', text, choices: string[], quest: string|null } — show an event on the pet (EVT-2) */
+  EVENT_SHOWN: 'event.shown',
   /** { text, kind: 'info'|'warn' } — brain messages worth a pet bubble (budget, missing engines) */
   BRAIN_NOTICE: 'brain.notice',
   /** { reason: string } — pet window was brought back on screen by summon() */
@@ -137,6 +141,26 @@ const TOPICS = {
   UI_PREFS_GET: 'ui.prefs.get',
   /** { termTheme?, tourDone? } → UiPrefs | { error, minLevel? } */
   UI_PREFS_SET: 'ui.prefs.set',
+  /** () → { facts: Fact[] } */
+  MEMORY_GET: 'memory.get',
+  /** { text, source? } → { ok, fact?, duplicate?, facts } | { error } */
+  MEMORY_ADD: 'memory.add',
+  /** { ref: number (1-based) | id | 'all' } → { ok, removed, facts } | { error } */
+  MEMORY_FORGET: 'memory.forget',
+  /** { day: 'YYYY-MM-DD', text } → { ok } */
+  DIARY_WRITE: 'diary.write',
+  /** () → { days: string[] } newest first */
+  DIARY_LIST: 'diary.list',
+  /** { day? } → { day, text, days } | { error } — latest page when no day */
+  DIARY_READ: 'diary.read',
+  /** { kind: 'line'|'diary', seed } → string | null — in-character text from the chat brain (EVT-3) */
+  BRAIN_COMPOSE: 'brain.compose',
+  /** { role: 'user'|'tama'|'note', text } → void — add a line to the chat history (events) */
+  CHAT_PUSH: 'chat.push',
+  /** { id, choice?: number, dismiss?: boolean } → { ok, reply? } | { error } */
+  EVENTS_ANSWER: 'events.answer',
+  /** { id? } → { ok } | { error } — show an event now (/event) */
+  EVENTS_TRIGGER: 'events.trigger',
   /** sessionId|null → { ok } | { error } */
   ENGINE_RESUME: 'engine.resume',
   /** { reason } → void — bring the pet back on screen */
