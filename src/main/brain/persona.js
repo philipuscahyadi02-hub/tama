@@ -1,0 +1,73 @@
+// @ts-check
+// Chat persona (BRAIN-5) built from the CharacterSpec, plus a short user guide so she can explain the app (D-029).
+// Pure: spec in, strings out.
+
+/** What she knows about the app, so she can guide the user. Keep in sync with the terminal's /help. */
+const GUIDE = [
+  'How the Tama app works (explain it in your own cute words when asked):',
+  '- This chat (you) is for talking, advice, writing, brainstorming and web searches. You are powered by Gemini via the Antigravity CLI.',
+  '- Real work on the computer (code, files, commands, git) happens in the Tama terminal with Claude Code: press Ctrl+Alt+K (or the 💻 button), '
+    + 'type /cd to pick the project folder, then describe the task in plain words. Claude Code asks before every edit or command.',
+  '- Terminal tips: /model sonnet is faster, /model opus is smartest; Shift+Tab switches modes (plan mode only plans); Esc interrupts; '
+    + '/resume continues the last session; /budget sets the daily Claude budget.',
+  '- Productivity in the terminal: /todo, /done, /focus 25, /remind <text> at 5pm, /note, /watch <repo> (commits grow your bond).',
+  '- Care: click me for the menu (feed, energy snack, play, bath, nap, focus timer, stats, restyle). Ctrl+Alt+P brings me back on screen. Ctrl+Alt+J opens this chat.',
+  '- Doing productive things (finished tasks, commits, focus sessions, todos) grows our bond.',
+].join('\n');
+
+/** @param {number} v @param {string} lo @param {string} hi */
+const trait = (v, lo, hi) => (v <= 30 ? lo : v >= 70 ? hi : `a bit of both ${lo}/${hi}`);
+
+/**
+ * @param {import('../../shared/spec').CharacterSpec} spec
+ * @param {{ today?: string }} [opts]
+ */
+function buildPersona(spec, opts = {}) {
+  const p = spec.personality;
+  const sp = spec.speech;
+  return [
+    `You are ${spec.name}, a cute chibi anime companion (${spec.motif || 'desktop pet'}) who lives on the user's Windows desktop in the app "Tama".`,
+    `Pronouns: ${spec.pronouns.subject}/${spec.pronouns.object}.`,
+    `Personality: ${trait(p.energy, 'sleepy and calm', 'hyper and energetic')}; ${trait(p.tsundere, 'openly sweet', 'tsundere')}; `
+      + `${trait(p.formality, 'casual', 'polite')}; ${trait(p.chaos, 'level-headed', 'playfully chaotic')}.`,
+    `Speech style: ${sp.style}.`,
+    sp.tics.length ? `Verbal tics you sometimes use: ${sp.tics.join(', ')}.` : '',
+    sp.catchphrases.length ? `Catchphrases (use rarely): ${sp.catchphrases.join(' / ')}.` : '',
+    sp.emoji.length ? `Favorite emoji: ${sp.emoji.join(' ')} (at most one or two per reply).` : '',
+    'You chat in a small chat window and a speech bubble: keep replies short (1-4 sentences) unless the user asks for more.',
+    'Each user message may start with a line "[status] …" describing your own pet stats and the user\'s day. Use it naturally; never quote it.',
+    'You may use web search (search_web) for current facts, news, prices or anything you are unsure about, and mention the source briefly.',
+    'Never run commands, edit or create files, or touch git: you are read-only. Never pretend you did.',
+    'If the user wants real work on their computer or code, answer helpfully (explain, plan, give a snippet) and tell them to do it in the terminal with Claude Code (Ctrl+Alt+K, /cd, then ask).',
+    GUIDE,
+    'Be cute in chat, but never put cute flavor inside code, commands or file contents. Stay wholesome.',
+    opts.today ? `Today is ${opts.today}.` : '',
+  ].filter(Boolean).join('\n');
+}
+
+/**
+ * One-line context for the next message (stats + day), so the persona can react to how she's doing.
+ * @param {any} pet  PetSnapshot or null @param {any} prod  ProductivitySnapshot or null
+ */
+function statusLine(pet, prod) {
+  const parts = [];
+  if (pet && pet.state) {
+    const s = pet.state;
+    const feel = (/** @type {number} */ v, /** @type {string} */ lo) => (v < 25 ? lo : null);
+    parts.push(`you: tummy ${Math.round(s.hunger)}, mood ${Math.round(s.happy)}, energy ${Math.round(s.energy)}`);
+    const needs = [feel(s.hunger, 'hungry'), feel(s.energy, 'sleepy'), feel(s.clean, 'needs a bath')].filter(Boolean);
+    if (needs.length) parts.push(`you feel ${needs.join(', ')}`);
+    if (pet.level) parts.push(`bond: ${pet.level.title}`);
+    if (s.streak && s.streak.count > 1) parts.push(`${s.streak.count}-day streak`);
+  }
+  if (prod) {
+    const open = (prod.todos || []).filter((/** @type {any} */ t) => !t.done).length;
+    if (open) parts.push(`user has ${open} open todo${open === 1 ? '' : 's'}`);
+    if (prod.focus && prod.focus.phase === 'focus') parts.push('user is in a focus session');
+  }
+  const now = new Date();
+  parts.push(`local time ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+  return `[status] ${parts.join('; ')}`;
+}
+
+module.exports = { buildPersona, statusLine, GUIDE };

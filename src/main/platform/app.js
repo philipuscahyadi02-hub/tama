@@ -17,6 +17,9 @@ const paths = {
  * @param {{ boot: () => void, onSecondInstance: () => void, beforeQuit: () => void }} hooks
  */
 function run({ boot, onSecondInstance, beforeQuit }) {
+  // Test/dev runs with their own data folder also get their own Electron profile, so they never
+  // collide with (or quit because of) the Tama the user is actually running.
+  if (process.env.TAMA_DATA_DIR) app.setPath('userData', path.join(process.env.TAMA_DATA_DIR, '.electron'));
   if (!app.requestSingleInstanceLock()) { app.quit(); return; }
   app.whenReady().then(boot);
   app.on('second-instance', onSecondInstance);

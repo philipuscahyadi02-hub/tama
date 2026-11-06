@@ -63,7 +63,7 @@ past decisions → `docs/DECISIONS.md`.
 ## 4. Safety rules
 
 - Default to ask-before-tools for every engine, and stricter for remote (Telegram) sessions.
-- `agy` must never run in `always-proceed`; assert on its init event (D-007).
+- `agy` runs only via ACP with Tama-owned settings, always in read-only plan mode, and only for the chat window; its tool requests are auto-denied (D-026, D-027, D-029). All edits go through Claude Code in the terminal. Re-run `npm run probe:agy` after agy updates.
 - Telegram: drop anything not from the paired chat ID.
 - Google: minimal scopes; no delete or share tools; edits to existing files need approval; no email sending at all (D-014).
 - Never extract or reuse another app's OAuth tokens (D-006).
@@ -88,4 +88,5 @@ Debug env vars: `TAMA_DEBUG=1`, `TAMA_SHOT=<dir>` (screenshots, `TAMA_SHOT_TIMES
 `TAMA_NO_LEGACY=1` (skip kero-pet import), `TAMA_SELFTEST=1` (live summon check, quits when done),
 `TAMA_GALLERY=designs|moods` (rig gallery window), `TAMA_OFFLINE_DESIGNER=1` (keyword designer, no AI),
 `TAMA_OPEN_ONBOARDING=hatch|restyle|rebirth`, `TAMA_ONBOARD_WALK=<dir>` (scripted onboarding run + screenshots),
-`TAMA_OPEN_ROSTER=1`, `TAMA_PET_EVAL=<js>` / `TAMA_TERM_EVAL=<js>` (run JS in the pet / terminal window after load).
+`TAMA_OPEN_ROSTER=1`, `TAMA_OPEN_CHAT=1`, `TAMA_PET_EVAL=<js>` / `TAMA_TERM_EVAL=<js>` / `TAMA_CHAT_EVAL=<js>` (run JS in the pet / terminal / chat window after load;
+`TAMA_DEBUG=1` also logs terminal engine events).

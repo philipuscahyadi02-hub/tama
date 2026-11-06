@@ -12,15 +12,16 @@ const USER_ACTIONS = new Set(['feed', 'snack', 'play', 'clean', 'sleep', 'nap', 
  *   shell: typeof import('../../platform/shell'),
  *   pet: import('../../platform/windows/pet-window').PetWindow,
  *   term: import('../../platform/windows/terminal-window').TerminalWindow,
+ *   chat: import('../../platform/windows/chat-window').ChatWindow,
  *   summon: (reason: string) => void,
  *   openOnboarding: (mode: 'hatch'|'restyle'|'rebirth') => void,
  *   openRoster: (importNow?: boolean) => unknown,
  * }} deps
  */
-function createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboarding, openRoster }) {
+function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster }) {
   /** The last .tama file the user picked; import only ever reads this path, never one sent by a page. */
   let pickedImport = /** @type {string | null} */ (null);
-  const both = () => [pet.win, term.window()];
+  const both = () => [pet.win, term.window(), chat.window()];
   /** Fire-and-forget request; failures surface on app.error instead of becoming unhandled rejections. @param {string} topic @param {any} [payload] */
   const fire = (topic, payload) => { bus.request(topic, payload).catch((e) => bus.emit(TOPICS.APP_ERROR, { topic, message: String(e.message || e) })); };
   /** @param {string} name @param {any} payload */
@@ -40,8 +41,12 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboardi
       toAll('reminder', p);
       shell.notify('⏰ Reminder', String(p.text));
     });
-    bus.on(TOPICS.ENGINE_EVENT, ({ ev }) => {
-      toAll('agent.event', ev);
+    bus.on(TOPICS.BRAIN_NOTICE, (p) => ipc.sendUi(pet.win, 'brain.notice', p));
+    // Chat (agy) → chat window + pet bubble; terminal (Claude Code) → terminal + pet reactions (D-029).
+    bus.on(TOPICS.CHAT_EVENT, (ev) => { ipc.sendUi(chat.window(), 'chat.event', ev); ipc.sendUi(pet.win, 'chat.event', ev); });
+    bus.on(TOPICS.ENGINE_EVENT, ({ ev, engine, role }) => {
+      for (const w of [pet.win, term.window()]) ipc.sendUi(w, 'agent.event', { ...ev, engine, role });
+      if (role !== 'worker') return;
       // Tell the user via Windows notifications when they can't see the terminal.
       if (!term.isHidden()) return;
       if (ev.t === 'permission') shell.notify('Tama needs permission 🥺', `${ev.name}: open the terminal to answer`);
@@ -59,9 +64,19 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboardi
     });
     ipc.on('notify', (title, body) => shell.notify(String(title), String(body)));
     ipc.on('term:show', () => term.show());
+    ipc.on('chat:show', () => chat.show());
+    // ---- chat window → core (agy, D-029) ----
+    ipc.handle('chat:send', (t) => bus.request(TOPICS.CHAT_SEND, String(t || '')));
+    ipc.handle('chat:history', () => bus.request(TOPICS.CHAT_HISTORY));
+    ipc.on('chat:interrupt', () => fire(TOPICS.CHAT_INTERRUPT));
+    ipc.on('chat:clear', () => fire(TOPICS.CHAT_CLEAR));
     ipc.on('summon', () => summon('ui'));
     ipc.handle('character:get', () => bus.request(TOPICS.CHARACTER_GET));
     // ---- productivity (pet + terminal) ----
+    ipc.handle('brain:status', () => bus.request(TOPICS.BRAIN_STATUS));
+    ipc.handle('brain:set', (p) => bus.request(TOPICS.BRAIN_SET, {
+      dailyClaudeUsd: p?.dailyClaudeUsd == null ? undefined : Number(p.dailyClaudeUsd),
+    }));
     ipc.handle('prod:get', () => bus.request(TOPICS.PROD_GET));
     ipc.handle('prod:todoAdd', (t) => bus.request(TOPICS.PROD_TODO_ADD, { text: String(t || '') }));
     ipc.handle('prod:todoDone', (ref) => bus.request(TOPICS.PROD_TODO_DONE, { ref }));
@@ -126,6 +141,7 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboardi
     ipc.on('agent:clear', () => fire(TOPICS.ENGINE_CLEAR));
     ipc.on('agent:setMode', (m) => fire(TOPICS.ENGINE_SET_MODE, String(m)));
     ipc.on('agent:setModel', (m) => fire(TOPICS.ENGINE_SET_MODEL, m ? String(m) : null));
+    ipc.on('agent:setEffort', (v) => fire(TOPICS.ENGINE_SET_EFFORT, v ? String(v) : null));
     ipc.on('agent:permission', (id, choice, feedback) =>
       fire(TOPICS.ENGINE_ANSWER_PERMISSION, { id: Number(id), choice, feedback }));
     ipc.onFromWindow('win:minimize', (w) => w.minimize());

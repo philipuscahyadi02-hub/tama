@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** Main → renderer messages arrive on one 'ui' channel as (name, payload). */
-const UI_NAMES = new Set(['pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character']);
+const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus']);
 /** @type {Map<string, Set<(p: any) => void>>} */
 const subs = new Map();
 ipcRenderer.on('ui', (_e, name, payload) => {
@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld('tama', {
   act: (/** @type {string} */ action) => ipcRenderer.invoke('pet:act', action),
   notify: (/** @type {string} */ t, /** @type {string} */ b) => ipcRenderer.send('notify', t, b),
   showTerminal: () => ipcRenderer.send('term:show'),
+  showChat: () => ipcRenderer.send('chat:show'),
   summon: () => ipcRenderer.send('summon'),
   getCharacter: () => ipcRenderer.invoke('character:get'),
   openOnboarding: (/** @type {string} */ mode) => ipcRenderer.send('onboarding:open', mode || 'hatch'),
@@ -65,6 +66,7 @@ contextBridge.exposeInMainWorld('tama', {
   clear: () => ipcRenderer.send('agent:clear'),
   setMode: (/** @type {string} */ m) => ipcRenderer.send('agent:setMode', m),
   setModel: (/** @type {string|null} */ m) => ipcRenderer.send('agent:setModel', m),
+  setEffort: (/** @type {string|null} */ v) => ipcRenderer.send('agent:setEffort', v),
   answerPermission: (/** @type {number} */ id, /** @type {string} */ choice, /** @type {string} */ feedback) =>
     ipcRenderer.send('agent:permission', id, choice, feedback),
   resume: (/** @type {string|null} */ id) => ipcRenderer.invoke('agent:resume', id),
@@ -75,8 +77,23 @@ contextBridge.exposeInMainWorld('tama', {
     close: () => ipcRenderer.send('win:close'),
   },
 
+  // ---- chat window (agy, D-029) ----
+  chat: {
+    send: (/** @type {string} */ t) => ipcRenderer.invoke('chat:send', t),
+    history: () => ipcRenderer.invoke('chat:history'),
+    interrupt: () => ipcRenderer.send('chat:interrupt'),
+    clear: () => ipcRenderer.send('chat:clear'),
+    onEvent: on('chat.event'),
+    onFocus: on('chat.focus'),
+  },
+
   // ---- both ----
   onAgent: on('agent.event'),
+  onBrainNotice: on('brain.notice'),
+  brain: {
+    status: () => ipcRenderer.invoke('brain:status'),
+    set: (/** @type {any} */ p) => ipcRenderer.invoke('brain:set', p),
+  },
   prod: {
     get: () => ipcRenderer.invoke('prod:get'),
     todoAdd: (/** @type {string} */ t) => ipcRenderer.invoke('prod:todoAdd', t),

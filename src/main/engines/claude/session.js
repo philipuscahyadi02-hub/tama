@@ -25,21 +25,30 @@ const persona = (name) =>
 
 /** @typedef {(ev: {t: string, [k: string]: any}) => void} Emit */
 
+/**
+ * Profiles: 'worker' = full Claude Code (tools, CLAUDE.md, permissions via the gate);
+ * 'lite' = Tama's chat brain fallback (D-027): Haiku, no tools, no user settings, not saved, persona prompt.
+ * @typedef {{ role?: 'worker'|'lite', tamaName?: string, gate?: import('../../brain/permission-gate').PermissionGate | null,
+ *   persona?: string, model?: string | null }} ClaudeOpts
+ */
+
 class ClaudeCodeEngine {
-  /** @param {Emit} emit @param {{ tamaName?: string }} [opts] */
+  /** @param {Emit} emit @param {ClaudeOpts} [opts] */
   constructor(emit, opts = {}) {
     this.emit = emit;
+    this.role = opts.role || 'worker';
+    this.gate = opts.gate || null;
+    this.persona = opts.persona || '';
     this.tamaName = opts.tamaName || 'Tama';
     /** @type {string | null} */ this.cwd = null;
     this.mode = 'default';
-    /** @type {string | null} */ this.model = null; // null = Claude Code's default
+    /** @type {string | null} */ this.model = opts.model || null; // null = Claude Code's default
+    /** Reasoning effort; null = Claude Code's default. Lower = less thinking = faster. @type {string | null} */
+    this.effort = null;
     /** @type {string | null} */ this.sessionId = null;
     /** @type {any} */ this.q = null;
     /** @type {InstanceType<typeof InputQueue> | null} */ this.input = null;
     this.busy = false;
-    /** @type {Map<number, {resolve: (r: any) => void, suggestions?: any, input: any}>} */
-    this.pendingPerms = new Map();
-    this.permSeq = 0;
     this.totalCost = 0;
     this.baseCost = 0;
     this.procCost = 0;
@@ -62,6 +71,18 @@ class ClaudeCodeEngine {
     this.emit({ t: 'mode', mode });
   }
 
+  /** Lite profile: new persona applies from the next session. @param {string} persona */
+  setPersona(persona) { if (persona !== this.persona) { this.persona = persona; this.stop(); this.sessionId = null; } }
+
+  /** @param {string | null} effort  low|medium|high|xhigh|max, or null for the default */
+  async setEffort(effort) {
+    this.effort = effort || null;
+    if (this.q) {
+      try { await this.q.applyFlagSettings({ effortLevel: this.effort || undefined }); } catch (e) { this.emitError(e); }
+    }
+    this.emit({ t: 'effort', effort: this.effort });
+  }
+
   /** @param {string | null} model */
   async setModel(model) {
     this.model = model || null;
@@ -76,16 +97,24 @@ class ClaudeCodeEngine {
     this.baseCost = this.totalCost;
     this.procCost = 0;
     /** @type {Record<string, any>} */
-    const options = {
-      cwd: this.cwd,
-      includePartialMessages: true,
-      permissionMode: this.mode,
-      systemPrompt: { type: 'preset', preset: 'claude_code', append: persona(this.tamaName) },
-      canUseTool: (/** @type {string} */ name, /** @type {any} */ input, /** @type {any} */ o) => this.askPermission(name, input, o),
-    };
+    const options = this.role === 'lite'
+      ? {
+        cwd: this.cwd, includePartialMessages: true, model: this.model || 'haiku',
+        systemPrompt: this.persona, tools: [], settingSources: [], persistSession: false,
+      }
+      : {
+        cwd: this.cwd,
+        includePartialMessages: true,
+        permissionMode: this.mode,
+        systemPrompt: { type: 'preset', preset: 'claude_code', append: persona(this.tamaName) },
+        canUseTool: (/** @type {string} */ name, /** @type {any} */ input, /** @type {any} */ o) => this.askPermission(name, input, o),
+      };
     if (CLAUDE_EXE) options.pathToClaudeCodeExecutable = CLAUDE_EXE;
-    if (this.model) options.model = this.model;
-    if (resumeId) options.resume = resumeId;
+    if (this.model && this.role !== 'lite') options.model = this.model;
+    if (this.effort && this.role !== 'lite') options.effort = this.effort;
+    // Stream summarized thinking so the terminal can show progress instead of a silent minute (2026-11-06 trace).
+    if (this.role !== 'lite') options.thinking = { type: 'adaptive', display: 'summarized' };
+    if (resumeId && this.role !== 'lite') options.resume = resumeId;
     this.q = query({ prompt: this.input, options });
     this.loop(this.q);
   }
@@ -116,57 +145,35 @@ class ClaudeCodeEngine {
   }
 
   async interrupt() {
-    for (const [id, p] of this.pendingPerms) {
-      p.resolve({ behavior: 'deny', message: 'The user interrupted.', interrupt: true });
-      this.emit({ t: 'permission-done', id });
-    }
-    this.pendingPerms.clear();
+    if (this.gate) this.gate.cancelAll('claude', 'The user interrupted.');
     if (this.q && this.busy) { try { await this.q.interrupt(); } catch { /* already stopped */ } }
   }
 
   stop() {
-    for (const [, p] of this.pendingPerms) p.resolve({ behavior: 'deny', message: 'Session closed.' });
-    this.pendingPerms.clear();
+    if (this.gate && this.role === 'worker') this.gate.cancelAll('claude', 'Session closed.');
     if (this.input) this.input.close();
     if (this.q) { try { this.q.close(); } catch { /* already closed */ } }
     this.q = null; this.input = null;
     if (this.busy) this.setBusy(false);
   }
 
-  /** @param {string} name @param {any} input @param {any} opts */
-  askPermission(name, input, opts) {
-    const id = ++this.permSeq;
-    this.emit({ t: 'status', state: 'permission' });
-    this.emit({ t: 'permission', id, name, input, reason: opts && opts.decisionReason });
-    return new Promise((resolve) => {
-      this.pendingPerms.set(id, { resolve, suggestions: opts && opts.suggestions, input });
-      if (opts && opts.signal) {
-        opts.signal.addEventListener('abort', () => {
-          if (this.pendingPerms.delete(id)) {
-            resolve({ behavior: 'deny', message: 'Aborted.' });
-            this.emit({ t: 'permission-done', id });
-          }
-        });
-      }
+  /**
+   * Claude Code asks before a tool → PermissionGate (SAFE-1) → SDK answer.
+   * @param {string} name @param {any} input @param {any} opts
+   */
+  async askPermission(name, input, opts) {
+    if (!this.gate) return { behavior: 'deny', message: 'No permission gate configured.' };
+    const d = await this.gate.request({
+      engine: 'claude', role: this.role === 'lite' ? 'lite' : 'worker', sessionKey: this.sessionId || '',
+      tool: { name, input, reason: opts && opts.decisionReason },
     });
-  }
-
-  /** @param {number} id @param {'yes'|'always'|'no'} choice @param {string} [feedback] */
-  answerPermission(id, choice, feedback) {
-    const p = this.pendingPerms.get(id);
-    if (!p) return;
-    this.pendingPerms.delete(id);
-    if (choice === 'yes') p.resolve({ behavior: 'allow', updatedInput: p.input });
-    else if (choice === 'always') p.resolve({ behavior: 'allow', updatedInput: p.input, updatedPermissions: p.suggestions || [] });
-    else {
-      p.resolve({
-        behavior: 'deny',
-        message: feedback ? `The user said no and gave this instruction: ${feedback}` : 'The user denied this action. Wait for their instructions.',
-        interrupt: !feedback,
-      });
-    }
-    this.emit({ t: 'permission-done', id, choice });
-    this.emit({ t: 'status', state: 'thinking' });
+    if (d.choice === 'yes') return { behavior: 'allow', updatedInput: input };
+    if (d.choice === 'always') return { behavior: 'allow', updatedInput: input, updatedPermissions: (opts && opts.suggestions) || [] };
+    return {
+      behavior: 'deny',
+      message: d.feedback ? `The user said no and gave this instruction: ${d.feedback}` : 'The user denied this action. Wait for their instructions.',
+      interrupt: !d.feedback,
+    };
   }
 
   /** @param {any} q */

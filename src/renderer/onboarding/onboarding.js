@@ -207,11 +207,21 @@ const STEPS = {
           👗 ${esc(s.parts.headwear)} · ${esc(s.parts.outfit)} · ${esc(s.parts.hairBack)} hair · ${esc(s.parts.eyes)} eyes<br>
           💬 ${esc(s.speech.style)}<br>🎙️ ${esc(s.voice.prompt || 'default voice')}</div>
         ${mode === 'rebirth' ? `<label class="check"><input id="kb" type="checkbox" ${st.keepBond ? 'checked' : ''}/> Keep our bond, level and memories</label>` : ''}
+        <div class="facts" id="brains">🧠 checking brains…</div>
         <p class="sub" style="margin-top:14px">${mode === 'restyle' ? 'Stats, bond and memories stay the same.' : mode === 'rebirth' ? 'The old look is replaced.' : 'Your new friend will appear on the desktop.'}</p>
         <button id="go" class="primary">${verb}</button></div></div>`;
     },
     bind: () => {
       const pv = $('#pv'); pv.appendChild(rig(st.spec, 'sparkle')); cycleMoods(pv);
+      // ONB-7: show which engines were found, with a hint for missing ones.
+      T.brain.status().then((b) => {
+        const ok = (v) => (v ? '✓' : '✗');
+        const hints = [];
+        if (!b.available.claude) hints.push('Install Claude Code and log in (`claude`) for coding work.');
+        if (!b.available.agy) hints.push('Install the Antigravity CLI (`agy`) and log in to chat with your Tama.');
+        $('#brains').innerHTML = `🧠 chat (agy) ${ok(b.available.agy)} · terminal (Claude Code) ${ok(b.available.claude)}`
+          + (hints.length ? `<br><small>${hints.map(esc).join('<br>')}</small>` : '');
+      }).catch(() => { $('#brains').textContent = '🧠 could not check the brains'; });
       const kb = $('#kb');
       if (kb) kb.addEventListener('change', () => { st.keepBond = kb.checked; });
       $('#go').addEventListener('click', async () => {

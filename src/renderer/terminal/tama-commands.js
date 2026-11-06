@@ -26,6 +26,9 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
     '  /note [text]     jot a note (no text = recent notes)',
     '  /watch [here|path]   earn bond from your commits in a repo (no arg = list) · /unwatch <here|path>',
     '  /feed  /snack  /nap  take care of your Tama · /tama  My Tamas (switch, hatch, export, import)',
+    '',
+    '  This terminal = Claude Code (asks before edits/commands).  Chat with your Tama = 💬 window (Ctrl+Alt+J, free via agy).',
+    '  /engines  status · /budget [usd]  daily Claude budget (API-equivalent estimate)',
   ];
 
   return {
@@ -69,6 +72,21 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
       unwatch: ['Stop watching a repo', async (arg) => {
         const target = arg === 'here' || !arg ? getCwd() : arg;
         show(await P.watchRemove(target), () => `⎿  stopped watching ${target}`);
+      }],
+      engines: ['Show engine status', async () => {
+        const s = await K.brain.status();
+        const u = s.usage;
+        info([
+          `  terminal   Claude Code ${s.available.claude ? '✓ found' : '✗ not found (install + log in: claude)'}`,
+          `  chat 💬    agy (Gemini) ${s.available.agy ? '✓ found' : '✗ not found (install the Antigravity CLI + log in)'}`,
+          `  today      Claude ${u.claudeTurns} turns ≈$${u.claudeUsd.toFixed(2)} / $${s.dailyClaudeUsd} · chat ${u.liteTurns} messages`,
+          s.claudeTight.tight ? `  ⚠ ${s.claudeTight.reason}` : '',
+        ].filter(Boolean).join('\n'));
+      }],
+      budget: ['Daily Claude budget (USD, API-equivalent)', async (arg) => {
+        if (arg) { const s = await K.brain.set({ dailyClaudeUsd: Number(arg) }); return info(`⎿  daily Claude budget: $${s.dailyClaudeUsd}`); }
+        const s = await K.brain.status();
+        info(`⎿  Claude today ≈$${s.usage.claudeUsd.toFixed(2)} of $${s.dailyClaudeUsd} (API-equivalent estimate). /budget <usd> to change, 0 = no limit.`);
       }],
       tama: ['My Tamas: switch, hatch, graduate, export, import', () => { K.openRoster(false); info('⎿  opened My Tamas'); }],
       feed: ['Feed your Tama', async () => show(await K.act('feed'), (r) => (r.ok ? '⎿  🍙 itadakimasu!' : `⎿  (${r.reason})`))],

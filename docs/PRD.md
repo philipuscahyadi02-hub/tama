@@ -5,10 +5,10 @@
 
 | | |
 |---|---|
-| **Version** | 0.5 |
-| **Status** | v0.3.0 released (M0–M2). M3 in progress on `m3-brain` |
+| **Version** | 0.7 |
+| **Status** | v0.3.1 released (M0–M3; M3 = 0.3.1, D-030). Next: M4 → 0.4.0 |
 | **Owner** | philipuscahyadi02-hub |
-| **Last updated** | 2026-11-05 |
+| **Last updated** | 2026-11-06 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
 
 ---
@@ -60,7 +60,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | ONB-4 | Show 3 variants; pick / reroll / refine by chat ("make hair blue"). | P1 | M1 | ☑ |
 | ONB-5 | Name + personality sliders (energy, tsundere, formality, chaos), prefilled from spec. | P0 | M1 | ☑ |
 | ONB-6 | Free-text **voice prompt**; produces a `VoiceSpec` + playable preview; can regenerate. | P0 | M1 | ☑ |
-| ONB-7 | Detect & smoke-test engines (`claude`, `agy`); show login instructions if missing. | P0 | M3 | ☐ |
+| ONB-7 | Detect & smoke-test engines (`claude`, `agy`); show login instructions if missing. | P0 | M3 | ☑ |
 | ONB-8 | Optional steps: Telegram pairing, Google sign-in. Skippable, available later in settings. | P1 | M6/M7 | ☐ |
 | ONB-9 | First screen offers "Hatch new 🥚" or "Bring my Tama 📦" (import/restore). | P0 | M2 | ☑ |
 
@@ -108,16 +108,17 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.6 Brain & engines (BRAIN / ENG)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| BRAIN-1 | Router: `/command` → local or forwarded; otherwise lite brain answers; lite brain can `escalate()` to a worker engine. Manual override `@code`, `@chat`, `@claude`, `@agy`. | P0 | M3 | ☐ |
-| BRAIN-2 | Lite brain default: Gemini Flash via `agy`; fallback: Haiku via Claude login. | P0 | M3 | ☐ |
-| BRAIN-3 | Editable routing policy (`/engine`, settings). Default: chat/events/diary → cheap; code → Claude. | P0 | M3 | ☐ |
-| BRAIN-4 | Budget fallback: near Claude limits, auto-route to `agy` with an in-character notice. | P1 | M3 | ☐ |
-| BRAIN-5 | Persona: cute in chat, **never** in code, commit messages, or file contents. | P0 | M3 | ☐ |
-| ENG-1 | `ClaudeCodeEngine` via Claude Agent SDK (ported from kero-pet `agent.js`): streaming, permissions, interrupt, modes, model, resume. | P0 | M3 | ☐ |
-| ENG-2 | `AgyEngine` drives `agy` CLI headless (`-p --output-format stream-json --input-format stream-json`), persistent process per session. | P0 | M3 | ☐ |
-| ENG-3 | **`agy` must never run in `always-proceed`** (its headless default). Force ask/plan mode; all tool approvals go through Tama's PermissionGate. | P0 | M3 | ☐ |
-| ENG-4 | Uniform engine event contract (`text-delta`, `tool`, `tool-result`, `permission`, `todo`, `result`, `status`, `error`). | P0 | M3 | ☐ |
-| ENG-5 | Never extract or reuse another app's OAuth tokens; each engine uses its own CLI login. | P0 | M3 | ☐ |
+| BRAIN-1 | Two surfaces (D-029): the **terminal** sends everything to Claude Code (Tama's own `/commands` run locally, unknown `/x` forwarded); the **chat window** talks to the chat brain. | P0 | M3 | ☑ |
+| BRAIN-2 | Chat brain: Gemini Flash via `agy` only (read-only, web search); no Claude fallback (D-029). | P0 | M3 | ☑ |
+| BRAIN-3 | Fixed policy (D-029): chat/events/diary → agy; code & productivity work → Claude Code. Speed controls in the terminal: `/model`, `/effort` (D-031). | P0 | M3 | ☑ |
+| BRAIN-4 | Budget: daily Claude usage estimate, 75% warning and an in-character heads-up when tight; no automatic engine switch (D-029). | P1 | M3 | ☑ |
+| BRAIN-5 | Persona: cute in chat, **never** in code, commit messages, or file contents. | P0 | M3 | ☑ |
+| ENG-1 | `ClaudeCodeEngine` via Claude Agent SDK (ported from kero-pet `agent.js`): streaming, permissions, interrupt, modes, model, resume. | P0 | M3 | ☑ |
+| ENG-2 | `AgyEngine` drives `agy acp` (Agent Client Protocol over stdio), one persistent process per session (D-026). | P0 | M3 | ☑ |
+| ENG-3 | `agy` via ACP with Tama-owned settings; **always read-only plan mode**, used only for chat (D-026, D-027, D-029); its tool requests are auto-denied by the PermissionGate. | P0 | M3 | ☑ |
+| CHAT-1 | Chat window with the Tama (pet menu 💬, tray, Ctrl+Alt+J): streaming replies, web-search lines, themed from the CharacterSpec, replies also in the pet bubble; she can explain how to use Tama. | P0 | M3 | ☑ |
+| ENG-4 | Uniform engine event contract (`text-delta`, `tool`, `tool-result`, `permission`, `todo`, `result`, `status`, `error`). | P0 | M3 | ☑ |
+| ENG-5 | Never extract or reuse another app's OAuth tokens; each engine uses its own CLI login. | P0 | M3 | ☑ |
 | ENG-6 | Additional engines (Codex, Gemini CLI) via the same interface. | P2 | later | ☐ |
 
 ### 4.7 Terminal (TERM)
@@ -125,7 +126,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 |---|---|---|---|---|
 | TERM-1 | Claude-Code-style terminal (from kero-pet): streaming, tool lines, diffs, todo lists, permission prompts, Shift+Tab modes, Esc interrupt, history. | P0 | M4 | ☐ |
 | TERM-2 | Themed from CharacterSpec: colors, prompt glyph, spinner frames, banner, corner avatar that reacts live. | P0 | M4 | ☐ |
-| TERM-3 | Chat mode and code mode; engine badge on each reply. | P0 | M4 | ☐ |
+| TERM-3 | ~~Chat mode and code mode; engine badge~~ → replaced by the separate chat window (D-029). Terminal shows live thinking / writing progress (D-031). | P0 | M4 | ◐ |
 | TERM-4 | Commands: `/chat /code /engine /todo /focus /remind /note /feed /nap /stats /diary /event /voice /summon /phone /theme /tama /wardrobe`; unknown `/x` forwarded to the active engine. | P0 | M4 | ☐ |
 
 ### 4.8 Summon & window reliability (SUM)
@@ -184,11 +185,11 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.13 Safety, privacy & non-functional (SAFE / NFR)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| SAFE-1 | One `PermissionGate` for every tool approval from every engine and every channel. | P0 | M3 | ☐ |
+| SAFE-1 | One `PermissionGate` for every tool approval from every engine and every channel. | P0 | M3 | ☑ |
 | SAFE-2 | Secrets only via the secrets module; never logged, never in plain JSON, never in exports without password. | P0 | M0 | ☑ |
 | SAFE-3 | Telegram accepts only the paired chat ID. | P0 | M7 | ☐ |
 | SAFE-4 | Warn before accept-edits mode outside a git repo. | P1 | M4 | ☐ |
-| SAFE-5 | Daily cost/token budget shown in `/stats`; Tama warns near the limit. | P1 | M3 | ☐ |
+| SAFE-5 | Daily cost/token budget shown in `/stats`; Tama warns near the limit. | P1 | M3 | ☑ |
 | NFR-1 | Idle CPU < 2%, RAM < 300 MB (excluding engine processes). | P1 | M8 | ☐ |
 | NFR-2 | Multi-monitor & mixed-DPI safe. | P0 | M0 | ◐ |
 | NFR-3 | Ships as a portable `.exe` (electron-builder), uses installed `claude`/`agy`. | P0 | M8 | ☐ |
@@ -201,8 +202,8 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M0 — Foundation.** *(code complete; NFR-2 needs a real mixed-DPI check)* Scaffold from kero-pet, service split, event bus, store/secrets/migrations, summon fix (SUM-1..4, PORT-1..2, SAFE-2, NFR-2).
 - [x] **M1 — Character & hatching.** *(code complete)* SVG rig, parts library, CharacterSpec, onboarding (ONB-1..6, ART-1..3, PET-5, VOICE-2).
 - [x] **M2 — Pet loop v2 & lifecycle.** *(code complete; BOND-3 unlock effects arrive with themes in M4 and events in M5)* Energy, bond, productivity, roster, export/import (PET-1..4, BOND-*, PROD-1..2, PORT-3..5, ONB-9).
-- [ ] **M3 — Brain & engines.** Router, Claude + agy engines, PermissionGate, budget (BRAIN-*, ENG-1..5, SAFE-1, SAFE-5, ONB-7).
-- [ ] **M4 — Terminal v2.** Theming, chat/code modes, commands (TERM-*, ART-4, SAFE-4).
+- [x] **M3 — Brain & engines.** *(released as 0.3.1)* Claude Code terminal + agy chat window, PermissionGate, budget (BRAIN-*, ENG-1..5, CHAT-1, SAFE-1, SAFE-5, ONB-7).
+- [ ] **M4 — Terminal v2.** Theming from the CharacterSpec (no more hard-coded Kero), commands, first-run tour (TERM-*, ART-4, SAFE-4).
 - [ ] **M5 — Events & memory.** (EVT-*, PET-6..7, NFR-4, SUM-5).
 - [ ] **M6 — Google.** OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
 - [ ] **M7 — Telegram.** (TG-*, ART-5, SAFE-3).
@@ -217,6 +218,8 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.7 — 2026-11-06** — Terminal = Claude Code only, chat window = agy only (D-029, CHAT-1); M3 ships as 0.3.1 (D-030); progress + `/effort` (D-031).
+- **0.6 — 2026-11-06** — M3 implemented: BRAIN-1..5, ENG-1..5, SAFE-1, SAFE-5, ONB-7. agy is read-only (D-027).
 - **0.5 — 2026-11-05** — M2 implemented: PET-1..4, BOND-1/2/4, PROD-1/2, PORT-3..5, ONB-9 done; BOND-3 levels done, unlock effects in M4/M5.
 - **0.4 — 2026-11-05** — M1 implemented: ONB-1..6, ART-1..3, VOICE-2 done; PORT-4 partial (restyle + rebirth; graduate/delete in M2).
 - **0.3 — 2026-11-05** — M0 implemented: SUM-1..4, PORT-1..2, SAFE-2, PET-5 done; NFR-2 and PET-1 partial. SUM-2's Telegram trigger lands in M7.

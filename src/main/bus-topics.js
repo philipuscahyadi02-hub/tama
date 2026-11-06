@@ -35,8 +35,13 @@ const TOPICS = {
   PROD_REMINDER_DUE: 'prod.reminder.due',
   /** { repo, subject } — a new commit by the user in a watched repo (bond XP awarded) */
   PROD_COMMIT_SEEN: 'prod.commit.seen',
-  /** { engine: string, ev: EngineEvent } */
+  /** { engine: 'claude'|'agy'|'tama', role: 'worker'|'lite'|'brain', ev: EngineEvent } */
   ENGINE_EVENT: 'engine.event',
+  /** Chat window events (D-029): { t: 'message', message } | { t: 'delta', text } | { t: 'tool', text } | { t: 'status', state }
+   *  | { t: 'error', message } | { t: 'done', isError } | { t: 'cleared' } */
+  CHAT_EVENT: 'chat.event',
+  /** { text, kind: 'info'|'warn' } — brain messages worth a pet bubble (budget, missing engines) */
+  BRAIN_NOTICE: 'brain.notice',
   /** { reason: string } — pet window was brought back on screen by summon() */
   SUMMON_DONE: 'summon.done',
   /** { action: 'feed'|'play'|'snack'|'sleep' } — care action chosen from the tray menu */
@@ -110,10 +115,22 @@ const TOPICS = {
   ENGINE_SET_MODE: 'engine.setMode',
   /** model|null → void */
   ENGINE_SET_MODEL: 'engine.setModel',
+  /** 'low'|'medium'|'high'|'xhigh'|'max'|null → void — Claude Code reasoning effort */
+  ENGINE_SET_EFFORT: 'engine.setEffort',
   /** dir → { t:'cwd', cwd, isGit } | { error } */
   ENGINE_SET_CWD: 'engine.setCwd',
-  /** { id, choice, feedback } → void   (moves to brain/PermissionGate in M3) */
+  /** { id, choice: 'yes'|'always'|'no', feedback? } → boolean — answered by brain/PermissionGate (SAFE-1) */
   ENGINE_ANSWER_PERMISSION: 'engine.answerPermission',
+  /** () → { terminal: 'claude', chat: 'agy', available, usage, dailyClaudeUsd, claudeTight } */
+  BRAIN_STATUS: 'brain.status',
+  /** { dailyClaudeUsd? } → status */
+  BRAIN_SET: 'brain.set',
+  /** text → { ok, error? } — talk to your Tama (agy, D-029) */
+  CHAT_SEND: 'chat.send',
+  /** () → { messages: ChatMessage[], busy, available } */
+  CHAT_HISTORY: 'chat.history',
+  CHAT_INTERRUPT: 'chat.interrupt',
+  CHAT_CLEAR: 'chat.clear',
   /** sessionId|null → { ok } | { error } */
   ENGINE_RESUME: 'engine.resume',
   /** { reason } → void — bring the pet back on screen */

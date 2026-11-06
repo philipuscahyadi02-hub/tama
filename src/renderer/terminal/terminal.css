@@ -49,6 +49,7 @@ body { display: flex; flex-direction: column; border: 1px solid var(--line); }
 .user .q { color: var(--dim); font-size: 12px; }
 .msg { display: grid; grid-template-columns: 16px 1fr; }
 .msg > .dot { color: var(--fg); }
+.msg.lite > .dot { color: var(--pink, #ff8fbf); }
 .msg.tool > .dot { color: var(--green); }
 .msg.tool.running > .dot { animation: blink 1s steps(2) infinite; color: var(--dim); }
 .msg.tool.err > .dot { color: var(--red); }
