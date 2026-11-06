@@ -99,8 +99,14 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
+_No commits._
+
+### v0.3.1
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `bcddd06` | 2026-11-06 | chore(release) | 0.3.1 |
+| `d136bf8` | 2026-11-06 | feat(brain) | terminal = Claude Code only, chat window = agy only; live progress and /effort |
+| `8a0670a` | 2026-11-06 | docs(changelog) | regenerate commit table |
 | `e71df33` | 2026-11-06 | feat(brain) | M3 lite chat brain, hand-off to Claude Code, read-only agy, budget |
 | `e0aa9fa` | 2026-11-05 | test(engines) | fix JSDoc type in agy engine test |
 | `096380c` | 2026-11-05 | feat(engines) | ACP client, agy engine and PermissionGate (M3a) |
