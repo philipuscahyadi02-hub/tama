@@ -53,13 +53,16 @@ function createCalendar(api, now = Date.now) {
       });
       return (r.items || []).filter((/** @type {any} */ e) => e.status !== 'cancelled').map(slim);
     },
-    /** @param {{ summary: string, start: string, end: string, description?: string, location?: string, attendees?: string }} p */
+    /** @param {{ summary: string, start: string, end: string, description?: string, location?: string, attendees?: string, placeLink?: string }} p */
     async create(p) {
       if (!p.summary) throw new Error('An event needs a summary.');
       const guests = guestList(p.attendees);
+      // A verified Google Maps link for the place goes into the notes, so guests can open it (D-039).
+      const link = p.placeLink && /^https:\/\/([a-z0-9-]+\.)*(google\.[a-z.]+|goo\.gl)\//i.test(p.placeLink) ? p.placeLink : '';
+      const description = [p.description, link ? `📍 Map: ${link}` : ''].filter(Boolean).join('\n\n') || undefined;
       const r = await api.request(BASE, {
         query: { sendUpdates: guests.length ? 'all' : 'none' },
-        json: { summary: p.summary, start: when(p.start), end: when(p.end), description: p.description, location: p.location, ...(guests.length ? { attendees: guests.map((email) => ({ email })) } : {}) },
+        json: { summary: p.summary, start: when(p.start), end: when(p.end), description, location: p.location, ...(guests.length ? { attendees: guests.map((email) => ({ email })) } : {}) },
       });
       const ev = slim(r);
       return { ...ev, shareLink: addLink({ ...p, start: ev.start, end: ev.end }) };

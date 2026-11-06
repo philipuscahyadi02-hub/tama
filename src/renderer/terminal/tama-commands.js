@@ -31,7 +31,7 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
     '  /memory          what your Tama remembers about you · /remember <fact> · /forget <n|all>',
     '  /diary [date]    read their diary (they write one every evening) · /diary list',
     '  /event [id]      start a little moment now · /dnd [on|off] quiet mode · /nudges [on|off] water & stretch',
-    '  /google [setup|status|login|logout|brief|backup|backups|restore <n>|readonly on|off]   Gmail drafts, Calendar, Drive, Docs, Sheets',
+    '  /google [setup|status|login|logout|brief|backup|backups|restore <n>|readonly on|off|maps-key <key|off>]   Gmail, Calendar, Drive, Docs, Sheets',
     '  /brief           morning brief (calendar, important mail, todos) · /newpc  checklist for a new PC',
     '  /weather <city>  set your city for weather moments (no arg = now · /weather off) · /marker [on|off] walk tab',
     '  /phone [setup <token>|code|status|on|off|unpair|allow here|disallow here|remote on|off|awake on|off]   Telegram on your phone',
@@ -253,6 +253,12 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
             const b = r.backups && r.backups[Number(rest[0]) - 1];
             if (!b) return info('⎿  Usage: /google restore <n> (see /google backups)');
             return show(await G.restore(b.id), (x) => `⎿  restored "${x.name}" as a new Tama. Switch to them in /tama`);
+          }
+          case 'maps-key': {
+            const v2 = rest[0] || '';
+            if (!v2) return info(`⎿  places: ${s.maps === 'google' ? 'Google Maps (key set)' : 'web search + Maps links'} · /google maps-key <AIza…> to use Google Places · /google maps-key off`);
+            const r = await G.set({ mapsKey: v2 === 'off' ? null : v2 });
+            return r.error ? error(`✗ ${r.error}`) : info(`⎿  places: ${r.maps === 'google' ? 'Google Maps 📍' : 'web search + Maps links'}`);
           }
           case 'readonly': {
             const r = await G.set({ readonly: /^(on|1|yes)$/i.test(rest[0] || '') });

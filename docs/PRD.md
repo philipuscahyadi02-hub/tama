@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.13 |
+| **Version** | 0.14 |
 | **Status** | v0.6.0 released (M0–M6). M7 code complete on `m7-telegram` (awaiting user check, then 0.7.0) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-06 |
@@ -155,7 +155,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 |---|---|---|---|---|
 | GOOG-1 | Desktop OAuth (loopback + PKCE) with the user's own Google Cloud client in **Production (unverified)** status (Testing expires tokens in 7 days). Tokens in `secrets` only. | P0 | M6 | ☑ |
 | GOOG-2 | Google tools exposed as an MCP server, plugged into **every** engine. *(Claude Code in-process; the agy chat brain via a local relay with Tama-side confirmations, D-034, D-037.)* | P0 | M6 | ☑ |
-| GOOG-3 | Calendar: read, create/edit events; meeting reminders (sleeve-tug 5 min before) and DND during meetings. | P0 | M6 | ☑ |
+| GOOG-3 | Calendar: read, create/edit events (places checked against Google Maps / pasted Maps links, D-039); meeting reminders (sleeve-tug 5 min before) and DND during meetings. | P0 | M6 | ☑ |
 | GOOG-4 | Gmail: read/search, summarize, create drafts; **send only after the user confirms the full draft** (D-038, was drafts-only D-014). | P0 | M6 | ☑ |
 | GOOG-5 | Drive: `drive.file` by default (create/edit own files); optional `drive.readonly` toggle for search/read across Drive. | P0 | M6 | ☑ |
 | GOOG-6 | Docs: create from Markdown, append, replace section. Sheets: create with tabs/headers/formulas, write range, append rows. *(All but "replace section".)* | P0 | M6 | ◐ |
@@ -218,6 +218,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.14 — 2026-11-06** — Event places verified on Google Maps before creating (D-039).
 - **0.13 — 2026-11-06** — Sending email and calendar invitations allowed after the user confirms the full content (D-038 supersedes D-014).
 - **0.12 — 2026-11-06** — Chat brain does Google itself with confirmations; hard read-only guard for agy (D-037). GOOG-2 done.
 - **0.11 — 2026-11-06** — M7 implemented: TG-1,2,4..8, SAFE-3, ART-5 done; TG-3 text done (voice in M8) (D-036).

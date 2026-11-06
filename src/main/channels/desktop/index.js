@@ -98,6 +98,7 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.handle('google:logout', () => bus.request(TOPICS.GOOGLE_LOGOUT));
     ipc.handle('google:set', (p) => bus.request(TOPICS.GOOGLE_SET, {
       readonly: typeof p?.readonly === 'boolean' ? p.readonly : undefined, backup: typeof p?.backup === 'boolean' ? p.backup : undefined,
+      mapsKey: p?.mapsKey === null ? null : typeof p?.mapsKey === 'string' ? p.mapsKey : undefined,
     }));
     ipc.handle('google:brief', () => bus.request(TOPICS.GOOGLE_BRIEF).catch((e) => ({ error: String(e.message || e) })));
     ipc.handle('google:backupNow', () => bus.request(TOPICS.GOOGLE_BACKUP_NOW).catch((e) => ({ error: String(e.message || e) })));

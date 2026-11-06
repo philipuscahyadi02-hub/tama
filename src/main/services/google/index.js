@@ -9,6 +9,7 @@ const { createGmail } = require('./gmail');
 const { createDrive } = require('./drive');
 const { googleTools, policyRule } = require('./tools');
 const { createBackup } = require('./backup');
+const { createMaps } = require('./maps');
 const { dayOf } = require('../pet/bond');
 
 const SCOPES = {
@@ -56,8 +57,13 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
     remember: (/** @type {string} */ id) => device.patch('google', { tamaDrafts: [...(prefs().tamaDrafts || []), id].slice(-200) }),
     isTamas: (/** @type {string} */ id) => (prefs().tamaDrafts || []).includes(id),
   };
+  // Places (D-039): Google Places with the user's optional Maps Platform key; biased to the weather city (D-035).
+  const maps = createMaps({
+    fetch: f, key: () => secrets.get('google.mapsKey'),
+    near: () => { const w = device.get().weather; return w && typeof w.lat === 'number' ? { lat: w.lat, lng: w.lon, city: w.city } : null; },
+  });
   const tools = googleTools({
-    calendar, gmail, drive, now, drafts,
+    calendar, gmail, drive, now, drafts, maps,
     onCreated: (what) => bus.emit(TOPICS.BRAIN_NOTICE, { text: `made a ${what} in your Google~ ✨`, kind: 'info' }),
   });
 
@@ -72,7 +78,7 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
     const t = tokens();
     return {
       configured: !!client(), signedIn: signedIn(), email: (t && t.email) || null, readonly: !!p.readonly, backup: p.backup !== false,
-      lastBackup: p.lastBackup || 0, inMeeting: meeting && meeting.end > now() ? meeting.summary : null,
+      lastBackup: p.lastBackup || 0, inMeeting: meeting && meeting.end > now() ? meeting.summary : null, maps: secrets.get('google.mapsKey') ? 'google' : 'web-search',
       scopes: t ? String(t.scope || '').split(' ').filter(Boolean).map((s) => s.replace('https://www.googleapis.com/auth/', '')) : [],
     };
   }
@@ -197,9 +203,14 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
     }
   }
 
-  /** @param {{ readonly?: boolean, backup?: boolean }} p */
+  /** @param {{ readonly?: boolean, backup?: boolean, mapsKey?: string | null }} p */
   function set(p) {
     /** @type {Record<string, any>} */ const patch = {};
+    if (p.mapsKey === null || p.mapsKey === '') secrets.delete('google.mapsKey');
+    else if (typeof p.mapsKey === 'string') {
+      if (!/^AIza[0-9A-Za-z_-]{30,}$/.test(p.mapsKey.trim())) return { ...status(), error: 'That does not look like a Google API key (starts with AIza…).' };
+      secrets.set('google.mapsKey', p.mapsKey.trim());
+    }
     if (typeof p.readonly === 'boolean') patch.readonly = p.readonly;
     if (typeof p.backup === 'boolean') patch.backup = p.backup;
     device.patch('google', patch);

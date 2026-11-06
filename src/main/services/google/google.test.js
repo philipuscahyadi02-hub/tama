@@ -333,3 +333,14 @@ test('sending (D-038): only drafts Tama wrote; Claude is always asked; guests on
   assert.deepEqual(JSON.parse(call?.body).attendees, [{ email: 'ardy@example.com' }]);
   await assert.rejects(createCalendar(api).create({ summary: 'x', start: '2026-11-07', end: '2026-11-08', attendees: 'not-an-email' }), /Not an email/);
 });
+
+test('calendar: a confirmed place link is added to the event notes (only Google links)', async () => {
+  const g = fakeGoogle();
+  const cal = createCalendar(apiWith(g).api);
+  await cal.create({ summary: 'Tennis', start: '2026-11-07T19:00:00+07:00', end: '2026-11-07T21:00:00+07:00', location: 'Grand Sport Central, Jakarta', placeLink: 'https://maps.app.goo.gl/AbC123', description: 'Bring rackets' });
+  const body = JSON.parse(g.calls.filter((c) => c.method === 'POST' && c.url.pathname.includes('/calendar/')).at(-1)?.body);
+  assert.equal(body.location, 'Grand Sport Central, Jakarta');
+  assert.equal(body.description, 'Bring rackets\n\n📍 Map: https://maps.app.goo.gl/AbC123');
+  await cal.create({ summary: 'X', start: '2026-11-07', end: '2026-11-08', placeLink: 'https://evil.example/x' });
+  assert.equal(JSON.parse(g.calls.filter((c) => c.method === 'POST' && c.url.pathname.includes('/calendar/')).at(-1)?.body).description, undefined);
+});

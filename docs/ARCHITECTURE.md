@@ -81,7 +81,8 @@ src/main/
   services/memory/         facts.json + diary/*.md in tamas/<id>/memory (M5, D-033)
   services/events/         triggers.js (pure) + index.js (tick, fire, answers, diary) over assets/events/deck.json (M5, D-033)
   services/google/         index (sign-in state, calendar watch, brief, chat context), api (token refresh), calendar, gmail (no send),
-                           drive (+ Docs/Sheets, appData), markdown, tools (13 tools + gate policy), backup (appData + lease) (M6, D-034)
+                           drive (+ Docs/Sheets, appData), markdown, tools (+ gate policy), backup (appData + lease) (M6, D-034),
+                           maps (pasted Maps links, Google Places lookup, D-039)
   platform/google-oauth.js loopback + PKCE desktop OAuth (M6)
   services/telegram/       api (long polling, uploads), format (pure), remote (/code bridge), index (pairing, routing, daily) (M7, D-036)
   platform/power.js        AC/battery + idle/lock → bus (easy energy)

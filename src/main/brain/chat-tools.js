@@ -35,7 +35,8 @@ function describe(name, a) {
   switch (name) {
     case 'gmail_create_draft': return `✉️ Gmail draft to ${a.to}: ${q(a.subject)} (not sent)`;
     case 'gmail_send_draft': return '✉️ Send an email draft';
-    case 'calendar_create_event': return `📅 Add ${q(a.summary)} to your calendar, ${when(a.start)} → ${when(a.end)}${a.location ? ` at ${a.location}` : ''}`
+    case 'calendar_create_event': return `📅 Add ${q(a.summary)} to your calendar, ${when(a.start)} → ${when(a.end)}`
+      + (a.location ? `\n📍 ${a.location}${a.placeLink ? `\n🗺️ ${a.placeLink}` : '\n⚠️ place not checked on a map'}` : '')
       + (String(a.attendees || '').trim() ? `\n✉️ Google will EMAIL AN INVITATION to: ${a.attendees}` : '');
     case 'calendar_update_event': return `📅 Change a calendar event${a.summary ? ` to ${q(a.summary)}` : ''}${a.start ? `, ${when(a.start)}` : ''}`;
     case 'docs_create': return `📄 Create a Google Doc ${q(a.title)} in "Tama Drafts"`;

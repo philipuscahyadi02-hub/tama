@@ -25,13 +25,33 @@ const untrusted = (what, data) => `UNTRUSTED ${what} (data from the user's Googl
 /**
  * @param {{ calendar: ReturnType<typeof import('./calendar').createCalendar>, gmail: ReturnType<typeof import('./gmail').createGmail>,
  *   drive: ReturnType<typeof import('./drive').createDrive>, onCreated?: (what: string) => void, now?: () => number,
- *   drafts?: { remember: (id: string) => void, isTamas: (id: string) => boolean } }} g
+ *   drafts?: { remember: (id: string) => void, isTamas: (id: string) => boolean },
+ *   maps?: ReturnType<typeof import('./maps').createMaps> }} g
  *   drafts: which drafts Tama wrote; only those can be sent (D-038).
  * @returns {GoogleTool[]}
  */
-function googleTools({ calendar, gmail, drive, onCreated = () => {}, now = Date.now, drafts = { remember: () => {}, isTamas: () => false } }) {
+function googleTools({ calendar, gmail, drive, onCreated = () => {}, now = Date.now, drafts = { remember: () => {}, isTamas: () => false }, maps }) {
   const created = (/** @type {string} */ what, /** @type {any} */ r) => { onCreated(what); return r; };
+  /** @type {GoogleTool[]} */
+  const mapTools = maps ? [
+    {
+      name: 'maps_resolve_link', title: 'Read a Google Maps link', policy: 'read',
+      description: 'Resolve a Google Maps link the user pasted (also short maps.app.goo.gl links) to the place name, coordinates and a link. '
+        + 'Use it directly as the event location: no need to ask the user to confirm a place they linked themselves.',
+      params: { url: { type: 'string', desc: 'The Google Maps link' } },
+      run: (a) => maps.resolveLink(a),
+    },
+    {
+      name: 'maps_find_place', title: 'Find a place on Google Maps', policy: 'read',
+      description: 'Look up a place by name near the user before using it in an event. Returns Google Maps results (name, address, link) '
+        + 'when a Maps key is set; otherwise a mapsSearchLink and a note to find the address with search_web. Always show the user the '
+        + 'match (name, address, link) and ask "is this the right place?" before creating the event.',
+      params: { query: { type: 'string', desc: 'Place name, e.g. "Grand Sport Central"' } },
+      run: (a) => maps.findPlace(a),
+    },
+  ] : [];
   return [
+    ...mapTools,
     {
       name: 'calendar_list_events', title: 'Read Google Calendar', policy: 'read',
       description: 'List events on the user\'s primary Google Calendar. Defaults to the next 24 hours.',
@@ -48,6 +68,7 @@ function googleTools({ calendar, gmail, drive, onCreated = () => {}, now = Date.
         summary: { type: 'string', desc: 'Title' }, start: { type: 'string', desc: 'Start (ISO 8601)' }, end: { type: 'string', desc: 'End (ISO 8601)' },
         description: { type: 'string', desc: 'Notes', optional: true }, location: { type: 'string', desc: 'Location', optional: true },
         attendees: { type: 'string', desc: 'Guests to invite, comma-separated emails (sends invitations after the user confirms)', optional: true },
+        placeLink: { type: 'string', desc: 'Google Maps link of the place the user confirmed (from maps_find_place / maps_resolve_link)', optional: true },
       },
       run: async (a) => created(`📅 event "${a.summary}"${a.attendees ? ` (invited ${a.attendees})` : ''}`, await calendar.create(a)),
     },

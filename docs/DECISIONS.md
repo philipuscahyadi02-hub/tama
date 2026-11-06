@@ -68,6 +68,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-036 | Telegram: long polling, one-time-code pairing to one chat, chat → agy, /code → shared Claude session in allow-listed folders with inline permission buttons | Accepted |
 | D-037 | Chat brain does Google itself: MCP relay → local bridge, Tama-side confirmations, and a hard PreToolUse guard (plan mode is only advisory) | Accepted · Supersedes D-027 ("plan mode = no side effects") |
 | D-038 | Sending allowed after the user confirms the full draft/invitation (only Tama's own drafts; never automatic) | Accepted · Supersedes D-014 |
+| D-039 | Event places: resolve pasted Maps links; otherwise look the place up and ask the user to confirm it before creating the event | Accepted |
 
 ---
 
@@ -430,3 +431,17 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Keep drafts only (the user explicitly declined); let the model send directly after a "yes" in text (a free-text "yes" is easier to fake via prompt injection than a button on the exact content).
 - **Consequences:** Prompt injection from an untrusted email could try to make the chat brain send mail; the confirm card always shows the real recipient and body, so the user is the final check. PRD GOOG-4 changes; AGENTS §4 updated.
 - **Refs:** GOOG-3, GOOG-4, GOOG-7, D-014, D-034, D-037, src/main/services/google/{gmail,calendar,tools}.js, src/main/brain/chat-tools.js
+
+### D-039 — Event places: resolve pasted Maps links; otherwise look the place up and ask the user to confirm it before creating the event
+- **Date:** 2026-11-06 · **Status:** Accepted
+- **Context:** The user wants Tama to double-check a typed location against Google Maps before invitations go out, and to use a pasted Google Maps link directly.
+- **Decision:**
+  - `services/google/maps.js`:
+    - **`maps_resolve_link`** follows a pasted Maps link (including `maps.app.goo.gl`) only through Google hosts, and reads the place name and pin coordinates. The place is used directly; the user's own link is kept.
+    - **`maps_find_place`** uses Google Places API (New) Text Search when the user sets an optional Maps Platform key (`/google maps-key`, stored in secrets), biased to the weather city (D-035).
+    - Without a key it returns a Google Maps search link plus the city, and the chat brain finds the official name and address with `search_web`. OpenStreetMap was tested and rejected: it returned sports venues in Russia and Brazil for a Jakarta venue.
+  - The persona requires: typed place → look up → show name, address and map link → **ask "is this the right place?"** → only then create the event, with `location` = "Name, full address" and `placeLink` = the map link (stored in the event notes; only Google links are accepted).
+  - The event confirm card always shows 📍 the place and 🗺️ the link, or "⚠️ place not checked on a map".
+- **Alternatives:** Always use OpenStreetMap (poor coverage for local venues); require a Maps key (billing setup for every user).
+- **Consequences:** The live test caught a real mix-up ("Grand Sport Central" → "Grand Central Sport Center", with its address) before anything was created. Without a key, accuracy depends on web search; the user verifies by tapping the map link.
+- **Refs:** GOOG-3, D-035, D-038, src/main/services/google/maps.js
