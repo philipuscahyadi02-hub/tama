@@ -142,14 +142,19 @@ function boot() {
   const openRoster = (/** @type {boolean | undefined} */ importNow) =>
     openPage('roster/roster.html', { width: 900, height: 660, title: 'My Tamas', query: importNow ? { import: '1' } : {} });
   createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster, openGoogle, openDashboard, pages: openPages }).start();
-  shell.createTray({
-    tooltip: `${active.name} (Tama)`,
-    onClick: () => summon('tray-click'),
-    items: [
+  // Voice (M9, D-042/D-043): created before the tray, whose Voice submenu shows its setting; started with the services.
+  const voice = createVoice({ bus, device, sapi, vv: createVvEngines(), tamaId: active.id });
+  /** Tray menu; the Voice submenu shows the current choice (D-043). @param {string} lang */
+  const trayItems = (lang) => [
       { label: `Summon ${active.name}  (Ctrl+Alt+P)`, click: () => summon('tray-menu') },
       { label: `Chat with ${active.name}  (Ctrl+Alt+J)`, click: () => chatWin.show() },
       { label: 'Open terminal  (Ctrl+Alt+K)', click: () => term.show() },
       { label: 'Show / Hide', click: () => pet.toggleVisible() },
+      { label: 'Voice', submenu: [
+        { label: 'English (Windows voice)', type: 'radio', checked: lang === 'en', click: () => bus.request(TOPICS.VOICE_SET, { lang: 'en' }).catch(() => null) },
+        { label: 'Japanese dub (AivisSpeech)', type: 'radio', checked: lang === 'ja', click: () => bus.request(TOPICS.VOICE_SET, { lang: 'ja' }).catch(() => null) },
+        { label: 'No voice', type: 'radio', checked: lang === 'off', click: () => bus.request(TOPICS.VOICE_SET, { lang: 'off' }).catch(() => null) },
+      ] },
       { label: 'My Tamas…', click: () => openRoster(false) },
       { label: 'Google…', click: () => openGoogle() },
       { label: 'Usage & accounts…', click: () => openDashboard() },
@@ -163,8 +168,13 @@ function boot() {
       { label: 'Bedtime (sleep / wake)', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'sleep' }) },
       { type: 'separator' },
       { label: 'Quit', click: appShell.quit },
-    ],
+  ];
+  const tray = shell.createTray({
+    tooltip: `${active.name} (Tama)`,
+    onClick: () => summon('tray-click'),
+    items: trayItems(voice.status().lang),
   });
+  bus.on(TOPICS.VOICE_CHANGED, (/** @type {any} */ st) => shell.setTrayItems(tray, trayItems(st.lang)));
   const failed = shell.registerHotkeys({ [HOTKEYS.summon]: () => summon('hotkey'), [HOTKEYS.terminal]: () => term.toggle(), [HOTKEYS.chat]: () => chatWin.toggle() });
   if (failed.length && !process.env.TAMA_DATA_DIR) shell.notify('Tama', `Hotkey already in use by another app: ${failed.join(', ')}`);
 
@@ -184,7 +194,7 @@ function boot() {
   require('fs').mkdirSync(desk, { recursive: true });
   stoppers.push(createTelegram({ bus, secrets, device, git, snapshot: () => pet.snapshot(), keepAwake, tama: active, desk }).start());
   // Voice (M9, D-042): AivisSpeech / VOICEVOX when running, Windows' built-in voice otherwise.
-  stoppers.push(createVoice({ bus, device, sapi, vv: createVvEngines(), tamaId: active.id }).start());
+  stoppers.push(voice.start());
   // Accounts (M8, D-040): sign-ins stay in the official tools; switching opens their sign-in in a console window.
   stoppers.push(createAccounts({
     bus,
@@ -222,7 +232,8 @@ function boot() {
       const said = await bus.request(TOPICS.VOICE_SAY, { text: String(process.env.TAMA_VOICE_TEST), purpose: 'test' }).catch((e) => ({ error: String(e) }));
       const r = await bus.request(TOPICS.VOICE_RENDER, { text: String(process.env.TAMA_VOICE_TEST) }).catch(() => null);
       const enc = r ? await bus.request(TOPICS.VOICE_ENCODE, { wav: r.wav }).catch((e) => ({ error: String(e) })) : null;
-      console.log('[voice-test]', JSON.stringify({ said, engine: r && r.engine, wavBytes: r && Buffer.from(r.wav, 'base64').length, m4aBytes: enc && enc.data ? Buffer.from(enc.data, 'base64').length : 0, m4aHead: enc && enc.data ? Buffer.from(enc.data, 'base64').subarray(4, 8).toString() : enc && enc.error }));
+      const dubbed = await bus.request(TOPICS.BRAIN_COMPOSE, { kind: 'translate', seed: String(process.env.TAMA_VOICE_TEST) }).catch((e) => String(e));
+      console.log('[voice-test]', JSON.stringify({ dubbed, said, engine: r && r.engine, wavBytes: r && Buffer.from(r.wav, 'base64').length, m4aBytes: enc && enc.data ? Buffer.from(enc.data, 'base64').length : 0, m4aHead: enc && enc.data ? Buffer.from(enc.data, 'base64').subarray(4, 8).toString() : enc && enc.error }));
     }, 2000));
   }
   if (process.env.TAMA_PET_EVAL) {

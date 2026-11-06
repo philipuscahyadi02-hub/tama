@@ -64,8 +64,8 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.on('voice:encoded', (id, r) => { const fn = encodes.get(Number(id)); if (fn) fn(r && typeof r === 'object' ? { data: r.data ? String(r.data) : undefined, mime: r.mime ? String(r.mime) : undefined, error: r.error ? String(r.error) : undefined } : { error: 'bad reply' }); });
     ipc.handle('voice:status', () => bus.request(TOPICS.VOICE_STATUS));
     ipc.handle('voice:set', (p) => bus.request(TOPICS.VOICE_SET, {
-      enabled: typeof p?.enabled === 'boolean' ? p.enabled : undefined, chat: typeof p?.chat === 'boolean' ? p.chat : undefined,
-      events: typeof p?.events === 'boolean' ? p.events : undefined, anime: p?.anime ? String(p.anime) : undefined,
+      lang: p?.lang ? String(p.lang) : undefined, chat: typeof p?.chat === 'boolean' ? p.chat : undefined,
+      events: typeof p?.events === 'boolean' ? p.events : undefined,
       speaker: p?.speaker === null ? null : Number.isInteger(p?.speaker) ? p.speaker : undefined,
     }));
     ipc.handle('voice:say', (t) => bus.request(TOPICS.VOICE_SAY, { text: String(t || '').slice(0, 500), purpose: 'test' }));

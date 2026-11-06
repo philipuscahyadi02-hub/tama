@@ -1,11 +1,17 @@
 // @ts-check
-// Voice (VOICE-1, TG-3, PET-8, D-022, D-042): turns the Tama's lines into speech. AivisSpeech / VOICEVOX (anime voices,
-// local) when running, otherwise Windows' built-in voice with the CharacterSpec pitch/rate. Speaks chat replies and event
-// lines on the desktop (not chats from the phone), stays quiet when muted, in /dnd, in a focus session or while she sleeps.
+// Voice (VOICE-1, TG-3, PET-8, D-022, D-042, D-043): turns the Tama's lines into speech. One setting, `lang`:
+//   'en'  - Windows' built-in voice reads the English text (CharacterSpec pitch/rate);
+//   'ja'  - Japanese dub: the line is translated in character by the composer (agy/Gemini, no Claude tokens) and
+//           AivisSpeech / VOICEVOX reads it; without a running engine it falls back to 'en';
+//   'off' - no voice on the desktop.
+// Speaks chat replies and event lines on the desktop (not chats from the phone), stays quiet when muted, in /dnd,
+// in a focus session or while she sleeps.
 const { TOPICS } = require('../../bus-topics');
 
 const DETECT_MS = 5 * 60000;
 const MAX_CHARS = 280;
+const LANGS = ['en', 'ja', 'off'];
+const CACHE = 60;
 const JAPANESE = /[぀-ヿ㐀-䶿一-鿿]/;
 
 /** Text → what should be spoken: no emoji, kaomoji, markdown, links or hidden markers. Pure. @param {string} s */
@@ -38,7 +44,15 @@ function speakable(s) {
  * }} deps
  */
 function createVoice({ bus, device, sapi, vv, tamaId }) {
-  const prefs = () => ({ enabled: true, chat: true, events: true, anime: 'auto', speakerByTama: /** @type {Record<string, number>} */ ({}), ...(device.get().voice || {}) });
+  const prefs = () => {
+    const p = { chat: true, events: true, speakerByTama: /** @type {Record<string, number>} */ ({}), ...(device.get().voice || {}) };
+    // Older saves had enabled/anime; map them to the single language choice.
+    if (!LANGS.includes(p.lang)) p.lang = p.enabled === false ? 'off' : p.anime === 'always' ? 'ja' : 'en';
+    return p;
+  };
+  /** @type {Map<string, string>} English line -> Japanese dub (also reused for the phone voice note of the same reply). */
+  const dubs = new Map();
+  let warnedNoEngine = false;
   /** @type {import('./vv-engine').Engine[]} */ let engines = [];
   /** @type {any[]} */ let systemVoices = [];
   let fromPhone = false;
@@ -49,38 +63,66 @@ function createVoice({ bus, device, sapi, vv, tamaId }) {
     return status();
   }
 
-  /** Which engine and settings to use for this text. @param {string} text @param {any} voice VoiceSpec */
-  function choose(text, voice) {
-    const p = prefs();
+  /** The anime engine + speaker to use, or null. */
+  function animeVoice() {
     const anime = engines[0];
-    const speaker = p.speakerByTama[tamaId] ?? (anime && anime.speakers[0] && anime.speakers[0].styles[0] ? anime.speakers[0].styles[0].id : null);
-    // Japanese engines read English badly (D-022): English lines use the Windows voice unless the user says always.
-    const useAnime = !!anime && speaker !== null && p.anime !== 'never' && (p.anime === 'always' || JAPANESE.test(text));
-    return useAnime ? { kind: 'anime', engine: anime, speaker, voice } : { kind: 'system', voice };
+    if (!anime) return null;
+    const speaker = prefs().speakerByTama[tamaId] ?? (anime.speakers[0] && anime.speakers[0].styles[0] ? anime.speakers[0].styles[0].id : null);
+    return speaker === null ? null : { engine: anime, speaker: Number(speaker) };
   }
 
-  /** @param {string} raw @param {any} [voiceOverride] @returns {Promise<{ wav: Buffer, engine: string, text: string } | null>} */
-  async function render(raw, voiceOverride) {
+  /** English line -> her Japanese line (in character, via the composer). Null when agy is unavailable. @param {string} text */
+  async function dub(text) {
+    if (JAPANESE.test(text)) return text;
+    const hit = dubs.get(text);
+    if (hit) return hit;
+    const ja = await bus.request(TOPICS.BRAIN_COMPOSE, { kind: 'translate', seed: text }).catch(() => null);
+    const out = ja && JAPANESE.test(String(ja)) ? speakable(String(ja)) : null;
+    if (out) { dubs.set(text, out); if (dubs.size > CACHE) dubs.delete(String(dubs.keys().next().value)); }
+    return out;
+  }
+
+  /**
+   * @param {string} raw @param {any} [voiceOverride] VoiceSpec @param {'en'|'ja'} [langOverride]
+   * @returns {Promise<{ wav: Buffer, engine: string, text: string, lang: 'en'|'ja' } | null>}
+   */
+  async function render(raw, voiceOverride, langOverride) {
     const text = speakable(raw);
     if (!text) return null;
     const ch = await bus.request(TOPICS.CHARACTER_GET).catch(() => null);
     const voice = voiceOverride || (ch && ch.spec && ch.spec.voice) || { pitch: 1, rate: 1, voiceGender: 'female' };
-    const c = choose(text, voice);
-    if (c.kind === 'anime' && c.engine && c.speaker !== null) {
-      try {
-        const wav = await vv.synthesize(c.engine, text, Number(c.speaker), { speed: voice.rate, pitch: voice.pitch });
-        return { wav, engine: c.engine.name, text };
-      } catch { engines = []; /* engine went away: fall back and re-detect later */ }
+    const lang = langOverride || (prefs().lang === 'ja' ? 'ja' : 'en');
+    if (lang === 'ja') {
+      const a = animeVoice();
+      if (!a) noEngineNotice();
+      else {
+        const ja = await dub(text);
+        if (ja) {
+          try {
+            const wav = await vv.synthesize(a.engine, ja, a.speaker, { speed: voice.rate, pitch: voice.pitch });
+            return { wav, engine: a.engine.name, text: ja, lang: 'ja' };
+          } catch { engines = []; /* engine went away: fall back now, re-detect later */ }
+        }
+      }
     }
-    const wav = await sapi.synthesize(text, { gender: voice.voiceGender, pitch: voice.pitch, rate: voice.rate });
-    return { wav, engine: 'Windows', text };
+    // The Windows voices are English-only: don't feed them kana or kanji.
+    const en = text.replace(/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\u3000-\u303f\uff01-\uff60]+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!en) return null;
+    const wav = await sapi.synthesize(en, { gender: voice.voiceGender, pitch: voice.pitch, rate: voice.rate });
+    return { wav, engine: 'Windows', text: en, lang: 'en' };
+  }
+
+  function noEngineNotice() {
+    if (warnedNoEngine) return;
+    warnedNoEngine = true;
+    bus.emit(TOPICS.BRAIN_NOTICE, { text: "Japanese voice needs AivisSpeech (or VOICEVOX) running on this PC~ I'll use my English voice until then." });
   }
 
   /** Speak on the desktop if allowed right now. @param {string} text @param {'chat'|'event'|'test'} purpose */
   async function say(text, purpose) {
     const p = prefs();
     if (purpose !== 'test') {
-      if (!p.enabled || (purpose === 'chat' && !p.chat) || (purpose === 'event' && !p.events)) return { ok: false, reason: 'off' };
+      if (p.lang === 'off' || (purpose === 'chat' && !p.chat) || (purpose === 'event' && !p.events)) return { ok: false, reason: 'off' };
       const [ui, prod, pet] = await Promise.all([
         bus.request(TOPICS.UI_PREFS_GET).catch(() => null), bus.request(TOPICS.PROD_GET).catch(() => null), bus.request(TOPICS.PET_GET).catch(() => null),
       ]);
@@ -91,27 +133,29 @@ function createVoice({ bus, device, sapi, vv, tamaId }) {
     const r = await render(text).catch((e) => { bus.emit(TOPICS.APP_ERROR, { topic: 'voice', message: String(e.message || e) }); return null; });
     if (!r) return { ok: false, reason: 'error' };
     bus.emit(TOPICS.VOICE_PLAY, { wav: r.wav.toString('base64'), text: r.text, engine: r.engine });
-    return { ok: true, engine: r.engine };
+    return { ok: true, engine: r.engine, lang: r.lang, text: r.text };
   }
 
   function status() {
     const p = prefs();
     return {
-      ...p, speaker: p.speakerByTama[tamaId] ?? null,
+      lang: p.lang, chat: p.chat, events: p.events, speaker: p.speakerByTama[tamaId] ?? null,
       engines: engines.map((e) => ({ id: e.id, name: e.name, version: e.version, speakers: e.speakers })),
       systemVoices,
     };
   }
 
-  /** @param {{ enabled?: boolean, chat?: boolean, events?: boolean, anime?: string, speaker?: number | null }} p */
+  /** @param {{ lang?: string, chat?: boolean, events?: boolean, speaker?: number | null }} p */
   function set(p) {
     const cur = prefs();
     /** @type {Record<string, any>} */ const patch = {};
-    for (const k of ['enabled', 'chat', 'events']) if (typeof (/** @type {any} */ (p))[k] === 'boolean') patch[k] = (/** @type {any} */ (p))[k];
-    if (['auto', 'always', 'never'].includes(String(p.anime))) patch.anime = p.anime;
+    for (const k of ['chat', 'events']) if (typeof (/** @type {any} */ (p))[k] === 'boolean') patch[k] = (/** @type {any} */ (p))[k];
+    if (LANGS.includes(String(p.lang))) { patch.lang = p.lang; warnedNoEngine = false; }
     if (p.speaker === null || Number.isInteger(p.speaker)) patch.speakerByTama = { ...cur.speakerByTama, [tamaId]: p.speaker };
     device.patch('voice', patch);
-    return status();
+    const st = status();
+    bus.emit(TOPICS.VOICE_CHANGED, st);
+    return st;
   }
 
   function start() {
@@ -126,8 +170,8 @@ function createVoice({ bus, device, sapi, vv, tamaId }) {
       bus.on(TOPICS.EVENT_SHOWN, (/** @type {any} */ e) => { if (e && e.text) say(e.text, 'event').catch(() => null); }),
       bus.handle(TOPICS.VOICE_SAY, (/** @type {any} */ p) => say(String((p && p.text) || ''), p && p.purpose === 'test' ? 'test' : 'chat')),
       bus.handle(TOPICS.VOICE_RENDER, async (/** @type {any} */ p) => {
-        const r = await render(String((p && p.text) || ''), p && p.voice);
-        return r ? { wav: r.wav.toString('base64'), engine: r.engine, text: r.text } : null;
+        const r = await render(String((p && p.text) || ''), p && p.voice, p && (p.lang === 'en' || p.lang === 'ja') ? p.lang : undefined);
+        return r ? { wav: r.wav.toString('base64'), engine: r.engine, text: r.text, lang: r.lang } : null;
       }),
       bus.handle(TOPICS.VOICE_STATUS, () => status()),
       bus.handle(TOPICS.VOICE_SET, (/** @type {any} */ p) => set(p || {})),
@@ -139,4 +183,4 @@ function createVoice({ bus, device, sapi, vv, tamaId }) {
   return { start, say, render, detect, status, set };
 }
 
-module.exports = { createVoice, speakable, JAPANESE };
+module.exports = { createVoice, speakable, JAPANESE, LANGS };

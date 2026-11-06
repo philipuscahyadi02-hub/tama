@@ -185,7 +185,7 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
       }),
       bus.handle(TOPICS.BRAIN_STATUS, () => status()),
       bus.handle(TOPICS.BRAIN_SET, setBrain),
-      bus.handle(TOPICS.BRAIN_COMPOSE, (/** @type {any} */ p) => composer.compose({ kind: p && p.kind === 'diary' ? 'diary' : 'line', seed: String((p && p.seed) || '') })),
+      bus.handle(TOPICS.BRAIN_COMPOSE, (/** @type {any} */ p) => composer.compose({ kind: p && (p.kind === 'diary' || p.kind === 'translate') ? p.kind : 'line', seed: String((p && p.seed) || '') })),
       bus.on(TOPICS.CHARACTER_CHANGED, (/** @type {any} */ c) => { updatePersona(c.spec); }),
       // A different Gemini (agy) account: start fresh agy sessions (D-040).
       bus.on(TOPICS.ACCOUNTS_CHANGED, () => { chat.reset(); composer.stop(); }),

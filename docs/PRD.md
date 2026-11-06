@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.17 |
+| **Version** | 0.18 |
 | **Status** | v0.8.0 released (M0–M8). M9 (voice & polish) code complete on `m9-voice`; portable .exe postponed |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-06 |
@@ -176,7 +176,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.11 Voice (VOICE)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| VOICE-1 | Voice provider; main = **AivisSpeech** (or VOICEVOX) local engine (anime voices, D-022); fallback = Windows built-in voice (pitch, rate from `VoiceSpec`). Speaks chat replies and moments on the desktop, with a talking mouth (D-042). | P0 | M9 | ☑ |
+| VOICE-1 | Voice with a language setting (D-043): **English** (Windows built-in voice, pitch/rate from `VoiceSpec`), **Japanese dub** (Gemini translates each line in character, **AivisSpeech**/VOICEVOX reads it, D-022), or **off**. Tray ▸ Voice and `/voice en\|ja\|off`. Speaks chat replies and moments on the desktop with a talking mouth (D-042). | P0 | M9 | ☑ |
 | VOICE-2 | Speaking style (tics, catchphrase frequency) from the same voice prompt. | P0 | M1 | ☑ |
 | VOICE-3 | Other providers pluggable later (e.g. ElevenLabs Voice Design, paid; Kokoro for English). | P2 | later | ☐ |
 | VOICE-4 | STT for Telegram voice notes (local whisper.cpp, optional download). | P2 | later | ☐ |
@@ -230,6 +230,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.18 — 2026-11-07** — VOICE-1: language setting English / Japanese dub / off (D-043).
 - **0.17 — 2026-11-07** — M9: voice (VOICE-1), Tama → phone voice notes (TG-3 ◐), mute/reduced motion (PET-8), idle CPU work (NFR-1 ◐) (D-042). Portable .exe postponed by the user.
 - **0.16 — 2026-11-06** — Limits tab: what's left per service, trend, warnings (USE-5..7, D-041).
 - **0.15 — 2026-11-06** — M8 is now the usage & accounts dashboard (USE-1..4, D-040); voice and polish moved to M9.

@@ -63,6 +63,8 @@ const TOPICS = {
   ACCOUNTS_CHANGED: 'accounts.changed',
   /** { wav: base64, text, engine } — play this line on the desktop (D-042) */
   VOICE_PLAY: 'voice.play',
+  /** VoiceStatus - the voice setting changed (the tray menu follows it, D-043) */
+  VOICE_CHANGED: 'voice.changed',
   /** { text, kind: 'info'|'warn' } — brain messages worth a pet bubble (budget, missing engines) */
   BRAIN_NOTICE: 'brain.notice',
   /** { reason: string } — pet window was brought back on screen by summon() */
@@ -224,11 +226,11 @@ const TOPICS = {
   ACCOUNTS_SWITCH: 'accounts.switch',
   /** { text, purpose?: 'chat'|'test' } → { ok, engine? } | { ok: false, reason } — speak on the desktop if allowed (D-042) */
   VOICE_SAY: 'voice.say',
-  /** { text, voice? } → { wav: base64, engine, text } | null — render only (Telegram voice notes, onboarding preview) */
+  /** { text, voice?, lang?: 'en'|'ja' } → { wav: base64, engine, text, lang } | null — render only (Telegram voice notes, onboarding preview) */
   VOICE_RENDER: 'voice.render',
-  /** () → VoiceStatus { enabled, chat, events, anime, speaker, engines, systemVoices } */
+  /** () → VoiceStatus { lang: 'en'|'ja'|'off', chat, events, speaker, engines, systemVoices } */
   VOICE_STATUS: 'voice.status',
-  /** { enabled?, chat?, events?, anime?: 'auto'|'always'|'never', speaker?: number|null } → VoiceStatus */
+  /** { lang?: 'en'|'ja'|'off', chat?, events?, speaker?: number|null } → VoiceStatus */
   VOICE_SET: 'voice.set',
   /** () → VoiceStatus — look for AivisSpeech / VOICEVOX again */
   VOICE_DETECT: 'voice.detect',

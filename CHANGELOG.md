@@ -17,7 +17,12 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## [Unreleased]
 ### Added
 - **M9 Voice & polish** (branch `m9-voice`, D-042):
-  - **Her voice:** chat replies and moments are spoken on the desktop, and her mouth moves with the sound. AivisSpeech or VOICEVOX (anime voices) is used when it's running; otherwise the Windows voice with her pitch and speed. `/voice` (test, on/off, chat/events, anime auto|always|never, speakers, speaker <id>).
+  - **Her voice:** chat replies and moments are spoken on the desktop, and her mouth moves with the sound.
+  - **Voice language** (tray → Voice, or `/voice en|ja|off`, D-043):
+    - **English:** the Windows voice with her pitch and speed.
+    - **Japanese dub:** Gemini rewrites each line in her own casual Japanese and AivisSpeech (or VOICEVOX) reads it, while the text stays English.
+    - **No voice.**
+  - Also: `/voice test`, `/voice chat|events on|off`, `/voice speakers`, `/voice speaker <id>`.
   - **Telegram voice notes:** `/voice on` on the phone and she also answers with a voice note. Your own voice notes get a polite "can't listen yet".
   - **Mute and reduced motion:** `/mute`, `/motion auto|reduced|full` (auto follows Windows' animation setting).
   - Onboarding's "hear my voice" works again (it was silent inside Electron).

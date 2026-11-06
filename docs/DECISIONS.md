@@ -71,7 +71,8 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-039 | Event places: resolve pasted Maps links; otherwise look the place up and ask the user to confirm it before creating the event | Accepted |
 | D-040 | M8 = usage & accounts dashboard (voice → M9): numbers-only usage log, plan limits, account switching via official sign-ins | Accepted |
 | D-041 | Limits tab: Claude windows from the SDK (live /usage without a message + per-turn events), Gemini tier + quota-hit only, Google counts vs user cap | Accepted |
-| D-042 | Voice: AivisSpeech/VOICEVOX HTTP for Japanese lines, Windows SAPI (via PowerShell) for English; audio plays in the pet window; Telegram voice notes as M4A; calm-idle animation bursts | Accepted |
+| D-042 | Voice: AivisSpeech/VOICEVOX HTTP for Japanese lines, Windows SAPI (via PowerShell) for English; audio plays in the pet window; Telegram voice notes as M4A; calm-idle animation bursts | Accepted · engine choice superseded by D-043 |
+| D-043 | Voice language setting: English (Windows voice) / Japanese dub (Gemini translates in character, AivisSpeech reads) / off; tray Voice menu + `/voice en\|ja\|off` | Accepted · Supersedes D-042 (engine choice) |
 
 ---
 
@@ -481,7 +482,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Refs:** USE-5..7, D-040, src/main/engines/claude/limits.js, src/main/services/usage/limits.js, src/renderer/dashboard
 
 ### D-042 — Voice: AivisSpeech/VOICEVOX HTTP for Japanese lines, Windows SAPI (via PowerShell) for English; audio plays in the pet window; Telegram voice notes as M4A; calm-idle animation bursts
-- **Date:** 2026-11-07 · **Status:** Accepted
+- **Date:** 2026-11-07 · **Status:** Accepted · Engine choice (`/voice anime auto|always|never`) superseded by D-043
 - **Context:** M9 (VOICE-1, TG-3 voice, PET-8, NFR-1). Probes:
   - Chromium's `speechSynthesis` has **no voices inside Electron**, so the old onboarding preview (D-004) was silent.
   - Windows SAPI (`System.Speech`) has David and Zira and renders SSML with pitch/rate to WAV.
@@ -518,3 +519,25 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
   - Each SAPI line starts PowerShell (about 1 s).
   - Phone → Tama voice needs VOICE-4 (local whisper).
 - **Refs:** VOICE-1, VOICE-4, TG-3, PET-8, NFR-1, D-004, D-022, src/main/services/voice, src/main/platform/tts-sapi.js, src/renderer/pet/voice.js
+
+### D-043 — Voice language setting: English (Windows voice) / Japanese dub (Gemini translates in character, AivisSpeech reads) / off
+- **Date:** 2026-11-07 · **Status:** Accepted · Supersedes D-042 (engine choice)
+- **Context:** The user wants AivisSpeech to speak what Tama writes in English as a **Japanese dub**, with a setting to choose English, Japanese or no voice.
+- **Decision:**
+  - The voice has one setting, `lang` (`device.json` `voice.lang`, default `en`):
+    - **`en`**: the Windows voice reads the English text. Kana/kanji are removed first, because the installed voices are English-only.
+    - **`ja`**: the line is dubbed into Japanese by the composer (`brain.compose` kind `translate`). That is agy/Gemini in its own read-only session, so the dub is in character ("えへへ、…しよっか〜") and costs no Claude tokens. AivisSpeech/VOICEVOX then reads the Japanese. Lines that are already Japanese skip translation. Dubs are cached (last 60), so a phone voice note of the same reply doesn't translate again.
+    - **`off`**: no voice on the desktop.
+  - The chat bubble and chat window keep the English text; only the voice is Japanese.
+  - **Fallbacks:** if `ja` is chosen but no engine is running, or agy is unavailable, she speaks English with the Windows voice and says once why. She is never silent by accident.
+  - **Where to set it:** the tray menu **Voice ▸ English / Japanese dub / No voice** (radio items, rebuilt on `voice.changed`) and `/voice en|ja|off`. Telegram voice notes (`/voice on` on the phone) use the same language, with `off` meaning English there.
+  - Older saves (`enabled`, `anime`) map to the new setting (`enabled: false` → off, `anime: always` → ja).
+- **Alternatives:**
+  - Having the chat brain add a hidden `[[ja: …]]` to every reply: no extra call, but it doesn't cover event lines or diary-free paths, and it costs every chat turn even with voice off.
+  - Claude Haiku translation: spends Claude quota.
+  - Reading English with AivisSpeech: it mangles English (D-022).
+- **Consequences:**
+  - A dubbed line starts a few seconds after the text, because of the translation.
+  - Japanese needs AivisSpeech (or VOICEVOX) installed and running.
+  - The meaning comes from Gemini's translation and could drift slightly from the text shown.
+- **Refs:** VOICE-1, TG-3, D-022, D-033, D-042, src/main/services/voice/index.js, src/main/brain/compose.js, src/main/index.js (tray)
