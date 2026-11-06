@@ -173,8 +173,13 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
+_No commits._
+
+### v0.7.0
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `e959ce9` | 2026-11-06 | chore(release) | 0.7.0 |
+| `5141e51` | 2026-11-06 | docs(changelog) | regenerate commit table |
 | `08f25ab` | 2026-11-06 | feat(google) | check event places on Google Maps before creating (D-039) |
 | `398ba59` | 2026-11-06 | docs(changelog) | regenerate commit table |
 | `a601952` | 2026-11-06 | feat(google) | send email and calendar invitations after the user confirms the full content (D-038) |
