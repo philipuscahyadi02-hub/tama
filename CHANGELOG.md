@@ -123,8 +123,13 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
+_No commits._
+
+### v0.5.0
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `efff939` | 2026-11-06 | chore(release) | 0.5.0 |
+| `ee6667b` | 2026-11-06 | docs(changelog) | regenerate commit table |
 | `1e69f3a` | 2026-11-06 | feat(events) | M5 events, memory and diary |
 | `029d157` | 2026-11-06 | docs(changelog) | regenerate commit table for 0.4.0 |
 
