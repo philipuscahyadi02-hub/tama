@@ -169,6 +169,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `61ac8e2` | 2026-11-06 | fix(telegram) | confirm deadlock in the polling loop; invite flow via draft + add-to-calendar link |
+| `a8e51fb` | 2026-11-06 | docs(changelog) | regenerate commit table |
 | `43d1df2` | 2026-11-06 | feat(chat) | Gemini does Google tasks itself; hard read-only guard for agy (D-037) |
 | `34a0f55` | 2026-11-06 | docs(changelog) | regenerate commit table |
 | `e7fb5e0` | 2026-11-06 | feat(telegram) | "Let Claude do it" button for plain-language work, Tama's desk for remote tasks |
