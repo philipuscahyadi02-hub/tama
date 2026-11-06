@@ -4,7 +4,8 @@
 // chat brain may have just read an untrusted email. There are no send/delete/share tools (D-014, GOOG-7).
 const { TOPICS } = require('../bus-topics');
 
-const CONFIRM_MS = 5 * 60000;
+/** Must stay below agy's 3-minute MCP tool timeout (verified 2026-11-06), so Tama answers first. */
+const CONFIRM_MS = 150000;
 
 /** Plain param spec → JSON Schema (MCP inputSchema). @param {Record<string, any>} params */
 function jsonSchema(params) {
@@ -49,7 +50,7 @@ function createChatTools({ bus, tools, now = Date.now }) {
   /** @type {Map<number, (yes: boolean) => void>} */
   const waiting = new Map();
 
-  /** Ask the user; resolves false on "no" or after 5 minutes. @param {string} text */
+  /** Ask the user; resolves false on "no" or after 2.5 minutes. @param {string} text */
   function confirm(text) {
     const id = ++seq;
     return new Promise((resolve) => {

@@ -25,6 +25,10 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   - **Tama's desk:** remote tasks that need no project (like Google tasks) run in her own empty folder; your projects still need `/phone allow here` on the PC.
   - **Good morning / good night:** a morning brief and tonight's diary page on your phone.
 - **Gemini does your Google tasks itself** (D-037): in the 💬 chat and on Telegram, "what's on tomorrow?", "draft a reply to…", "make a gym sheet" are done by the chat brain (your agy/Gemini login), not Claude. Anything that creates or changes something waits for your ✅ (chat window or phone). Still no sending, deleting or sharing.
+### Fixed
+- **Telegram confirm deadlock:** a ✅ tap could not be read while the message that asked for it was still waiting, so Google actions from the phone always timed out. Button presses are now handled immediately (regression test through the real polling loop).
+- Confirmations now expire after 2.5 minutes, before agy's own 3-minute tool timeout.
+- **Inviting someone:** calendar events now come with an "add to calendar" link, and the chat brain puts it into a Gmail draft to the guest (Tama still never sends invitations or emails).
 ### Security
 - **agy's plan mode turned out to be advisory**: a persuasive prompt made it write files. Every Tama agy session now has a hard guard hook that blocks all tools except Tama's own and web search (fail-closed). `npm run probe:agy` checks this.
   - Bot says "sleeping" when the PC app quits; `/phone awake on` keeps the PC awake for remote use.

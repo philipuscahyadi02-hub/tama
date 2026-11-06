@@ -31,7 +31,8 @@ function googleTools({ calendar, gmail, drive, onCreated = () => {}, now = Date.
     },
     {
       name: 'calendar_create_event', title: 'Create calendar event', policy: 'create',
-      description: 'Create an event on the primary calendar (no attendees; no invitations are sent). start/end: ISO date-time with timezone, or YYYY-MM-DD for all-day.',
+      description: 'Create an event on the user\'s own primary calendar (no attendees: invitations can NOT be sent). start/end: ISO date-time with timezone, or YYYY-MM-DD for all-day. '
+        + 'To invite someone, also create a Gmail draft to them that includes the returned shareLink ("add to your calendar" link); the user sends it.',
       params: {
         summary: { type: 'string', desc: 'Title' }, start: { type: 'string', desc: 'Start (ISO 8601)' }, end: { type: 'string', desc: 'End (ISO 8601)' },
         description: { type: 'string', desc: 'Notes', optional: true }, location: { type: 'string', desc: 'Location', optional: true },

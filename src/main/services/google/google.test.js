@@ -289,3 +289,15 @@ test('backup: uploads the .tama bytes to appData, keeps 7, lists and finds them 
   assert.equal(backups[0].tamaId, 'tama-1');
   s.stop();
 });
+
+test('calendar: a created event comes with an "add to calendar" link for guests (no invitations are sent)', async () => {
+  const g = fakeGoogle();
+  const cal = createCalendar(apiWith(g).api);
+  const e = await cal.create({ summary: 'Tennis with Ardy', start: '2026-11-07T19:00:00+07:00', end: '2026-11-07T21:00:00+07:00', location: 'Grand Sport Central' });
+  const u = new URL(e.shareLink);
+  assert.equal(u.hostname, 'calendar.google.com');
+  assert.equal(u.searchParams.get('action'), 'TEMPLATE');
+  assert.equal(u.searchParams.get('text'), 'Tennis with Ardy');
+  assert.equal(u.searchParams.get('dates'), '20261107T120000Z/20261107T140000Z');
+  assert.equal(u.searchParams.get('location'), 'Grand Sport Central');
+});

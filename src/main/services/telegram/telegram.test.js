@@ -218,3 +218,25 @@ test('a Google confirm from the chat brain during a phone chat becomes buttons o
   assert.equal(s.tg.sent().at(-1), 'made it!');
   s.stop();
 });
+
+test('regression: a ✅ tap is handled while the message that asked for it is still waiting (no poll deadlock)', async () => {
+  const s = await paired();
+  /** @type {any[]} */ const answers = [];
+  /** @type {(v?: any) => void} */ let release = () => {};
+  s.bus.handle('chat.confirm', (p) => { answers.push(p); release(); return { ok: true }; });
+  s.chatImpl.fn = () => {
+    // like the real chat brain: ask for confirmation, and only answer after the user decided
+    setTimeout(() => s.bus.emit('chat.event', { t: 'confirm', id: 5, text: '📅 Add "Tennis with Ardy"' }), 5);
+    new Promise((r) => { release = r; }).then(() => s.bus.emit('chat.event', { t: 'message', message: { role: 'tama', text: 'added! ✨' } }));
+    return { ok: true };
+  };
+  // Both arrive through the real long-polling loop, one after the other.
+  s.tg.queue.push({ update_id: 50, message: { chat: { id: 42, type: 'private' }, text: 'invite Ardy to tennis tomorrow 7pm' } });
+  await new Promise((r) => setTimeout(r, 60));
+  assert.ok(s.tg.sent().some((t) => /Tennis with Ardy/.test(t)), 'confirm buttons were sent');
+  s.tg.queue.push({ update_id: 51, callback_query: { id: 'cb', data: 'cfm:5:y', message: { chat: { id: 42 } } } });
+  await new Promise((r) => setTimeout(r, 80));
+  assert.deepEqual(answers, [{ id: 5, yes: true }]);
+  assert.equal(s.tg.sent().at(-1), 'added! ✨');
+  s.stop();
+});

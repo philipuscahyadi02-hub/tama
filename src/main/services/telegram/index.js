@@ -87,6 +87,16 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
   }
 
   // ---- updates ----
+  /** Messages are handled one after another; button presses never wait behind them (a chat turn can be waiting for
+   *  exactly that button: the confirm deadlock found on 2026-11-06). */
+  let messageQueue = Promise.resolve();
+  /** @param {any} u */
+  function dispatch(u) {
+    const run = () => onUpdate(u).catch((e) => bus.emit(TOPICS.APP_ERROR, { topic: 'telegram.update', message: String(e.message || e) }));
+    if (u.callback_query) { run(); return; }
+    messageQueue = messageQueue.then(run, run);
+  }
+
   /** @param {any} u */
   async function onUpdate(u) {
     const msg = u.message;
@@ -248,7 +258,7 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
   function restart() {
     if (stopPoll) { stopPoll(); stopPoll = null; }
     if (!cfg().enabled || !secrets.get('telegram.token')) { changed(); return; }
-    stopPoll = api.poll(onUpdate, { onError: (e) => bus.emit(TOPICS.APP_ERROR, { topic: 'telegram', message: e.message }) });
+    stopPoll = api.poll(dispatch, { onError: (e) => bus.emit(TOPICS.APP_ERROR, { topic: 'telegram', message: e.message }) });
     api.call('setMyShortDescription', { short_description: `✨ ${tama.name} is awake on your PC` }).catch(() => null);
     changed();
   }
@@ -274,7 +284,9 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
     const timer = setInterval(() => { daily().catch(() => null); }, 10 * 60000);
     const offs = [
       bus.on(TOPICS.ENGINE_EVENT, (/** @type {any} */ e) => { if (chatId()) remote.onEngineEvent(e).catch(() => null); }),
-      bus.on(TOPICS.CHAT_EVENT, (/** @type {any} */ ev) => { onChatConfirm(ev).catch(() => null); }),
+      bus.on(TOPICS.CHAT_EVENT, (/** @type {any} */ ev) => {
+        onChatConfirm(ev).catch((e) => bus.emit(TOPICS.APP_ERROR, { topic: 'telegram.confirm', message: String(e.message || e) }));
+      }),
       bus.handle(TOPICS.TELEGRAM_STATUS, () => status()),
       bus.handle(TOPICS.TELEGRAM_SETUP, (/** @type {any} */ p) => setup(p || {})),
       bus.handle(TOPICS.TELEGRAM_NEW_CODE, () => newCode()),
@@ -293,7 +305,7 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
     };
   }
 
-  return { start, status, setup, onUpdate, set, daily, remote };
+  return { start, status, setup, onUpdate, dispatch, set, daily, remote };
 }
 
 module.exports = { createTelegram };

@@ -13,6 +13,19 @@ function slim(e) {
   };
 }
 
+/**
+ * A Google Calendar "add this event" link for OTHER people (Tama never sends invitations, D-014/D-034): put it in a
+ * Gmail draft so the recipient can add the event with one click.
+ * @param {{ summary: string, start: string, end: string, location?: string, description?: string }} e
+ */
+function addLink(e) {
+  const fmt = (/** @type {string} */ s) => (/^\d{4}-\d{2}-\d{2}$/.test(s) ? s.replace(/-/g, '') : new Date(s).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''));
+  const q = new URLSearchParams({ action: 'TEMPLATE', text: e.summary || '', dates: `${fmt(e.start)}/${fmt(e.end)}` });
+  if (e.location) q.set('location', e.location);
+  if (e.description) q.set('details', e.description);
+  return `https://calendar.google.com/calendar/render?${q}`;
+}
+
 /** A date or date-time string → Calendar's { date } or { dateTime }. @param {string} s */
 function when(s) {
   const v = String(s || '').trim();
@@ -39,7 +52,8 @@ function createCalendar(api, now = Date.now) {
         query: { sendUpdates: 'none' },
         json: { summary: p.summary, start: when(p.start), end: when(p.end), description: p.description, location: p.location },
       });
-      return slim(r);
+      const ev = slim(r);
+      return { ...ev, shareLink: addLink({ ...p, start: ev.start, end: ev.end }) };
     },
     /** @param {{ eventId: string, summary?: string, start?: string, end?: string, description?: string, location?: string }} p */
     async update(p) {
@@ -54,4 +68,4 @@ function createCalendar(api, now = Date.now) {
   };
 }
 
-module.exports = { createCalendar, slim, when };
+module.exports = { createCalendar, slim, when, addLink };
