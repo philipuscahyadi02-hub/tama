@@ -109,7 +109,10 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `73bd25e` | 2026-11-06 | feat(terminal) | M4 terminal v2 themed from the CharacterSpec, bond-unlocked themes, tour, commands |
+| `f7abed6` | 2026-11-06 | docs(changelog) | regenerate commit table for 0.3.1 |
 
 ### v0.3.1
 | Commit | Date | Type | Subject |
