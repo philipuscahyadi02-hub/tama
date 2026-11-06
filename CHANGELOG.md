@@ -113,8 +113,14 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
+_No commits._
+
+### v0.4.0
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `aeed428` | 2026-11-06 | chore(release) | 0.4.0 |
+| `d8693db` | 2026-11-06 | feat(pet) | compact 5x2 action menu with hover caption |
+| `bafe08a` | 2026-11-06 | docs(changelog) | regenerate commit table |
 | `73bd25e` | 2026-11-06 | feat(terminal) | M4 terminal v2 themed from the CharacterSpec, bond-unlocked themes, tour, commands |
 | `f7abed6` | 2026-11-06 | docs(changelog) | regenerate commit table for 0.3.1 |
 
