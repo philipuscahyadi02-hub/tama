@@ -44,3 +44,11 @@ test('tour flag persists; a level-up that unlocks a theme announces it', async (
   assert.match(notices[0].text, /\/theme day/);
   stop();
 });
+
+test('walk marker pref: on by default, can be turned off per PC (SUM-5, D-035)', async () => {
+  const { bus, stop, device } = setup(0);
+  assert.equal((await bus.request('ui.prefs.get')).walkMarker, true);
+  assert.equal((await bus.request('ui.prefs.set', { walkMarker: false })).walkMarker, false);
+  assert.equal(device.get().ui.walkMarker, false);
+  stop();
+});

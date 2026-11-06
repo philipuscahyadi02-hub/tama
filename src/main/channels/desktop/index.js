@@ -84,7 +84,11 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.handle('ui:setPrefs', (p) => bus.request(TOPICS.UI_PREFS_SET, {
       termTheme: p?.termTheme == null ? undefined : String(p.termTheme), tourDone: p?.tourDone == null ? undefined : !!p.tourDone,
       dnd: p?.dnd == null ? undefined : !!p.dnd, nudges: p?.nudges == null ? undefined : !!p.nudges,
+      walkMarker: p?.walkMarker == null ? undefined : !!p.walkMarker, // M5 extras (D-035)
     }));
+    // ---- M5 extras: weather (D-035) ----
+    ipc.handle('weather:get', () => bus.request(TOPICS.WEATHER_GET));
+    ipc.handle('weather:set', (p) => bus.request(TOPICS.WEATHER_SET, p?.off ? { off: true } : { city: String(p?.city || '').slice(0, 80) }));
     // ---- chat window → core (agy, D-029) ----
     ipc.handle('chat:send', (t) => bus.request(TOPICS.CHAT_SEND, String(t || '')));
     ipc.handle('chat:history', () => bus.request(TOPICS.CHAT_HISTORY));

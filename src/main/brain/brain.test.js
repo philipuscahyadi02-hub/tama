@@ -28,6 +28,9 @@ test('persona: built from the spec, read-only chat with web search, knows how th
   assert.match(line, /3-day streak/);
   assert.match(line, /1 open todo/);
   assert.match(line, /focus session/);
+  assert.doesNotMatch(line, /weather/);
+  const wet = persona.statusLine(null, null, { location: { city: 'Tokyo, JP' }, current: { kind: 'rain', tempC: 12.6 } });
+  assert.match(wet, /weather in Tokyo, JP: rain, 13°C/); // D-035
 });
 
 // ---------------- budget ----------------

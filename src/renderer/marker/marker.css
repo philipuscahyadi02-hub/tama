@@ -1,0 +1,19 @@
+﻿/* "Out for a walk" marker (SUM-5). Colors are --tama-* tokens set from the CharacterSpec in marker.js (AGENTS §3). */
+:root {
+  --tama-head: #ffd9ea;
+  --tama-accent: #ff8fbf;
+}
+html, body { margin: 0; width: 44px; height: 44px; overflow: hidden; background: transparent; }
+#tab {
+  all: unset; box-sizing: border-box; display: block; cursor: pointer;
+  width: 44px; height: 44px; overflow: hidden;
+  border-radius: 22px 0 0 22px;               /* docked to the right edge: round on the left only */
+  border: 2px solid var(--tama-accent); border-right: 0;
+  background: var(--tama-head);
+  transform: translateX(6px); transition: transform .18s ease-out;
+}
+#tab:hover, #tab:focus-visible { transform: translateX(0); }
+#face { width: 44px; height: 44px; pointer-events: none; }
+/* Only the face shows (eyes at y≈115 of the 200x240 rig): she peeks in from the edge. */
+#face svg { width: 80px; height: 96px; margin: -21px 0 0 -20px; }
+#face.egg svg { width: 60px; height: 72px; margin: -24px 0 0 -10px; }

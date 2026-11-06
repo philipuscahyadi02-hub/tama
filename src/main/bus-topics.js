@@ -165,6 +165,14 @@ const TOPICS = {
   ENGINE_RESUME: 'engine.resume',
   /** { reason } → void — bring the pet back on screen */
   SUMMON: 'summon',
+
+  // ---- M5 extras: weather, fullscreen do-not-disturb (D-035) ----
+  /** () → { location: {city, lat, lon}|null, current: Weather|null, fetchedAt, summary } — refreshes at most every 30 min */
+  WEATHER_GET: 'weather.get',
+  /** { city } | { off: true } → { ok, location, current } | { error } — geocodes the city (Open-Meteo) */
+  WEATHER_SET: 'weather.set',
+  /** () → boolean — is the foreground window fullscreen (game, video, slides)? false on errors / non-Windows */
+  DEVICE_FULLSCREEN_GET: 'device.fullscreen.get',
 };
 
 module.exports = { TOPICS };

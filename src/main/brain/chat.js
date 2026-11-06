@@ -125,10 +125,11 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
     const e = getEngine();
     if (e.busy) { push({ role: 'note', text: 'one at a time~ I\'m still answering.', at: now() }); return { ok: false }; }
     reply = { text: '', tools: [], filter: markerFilter() };
-    const [pet, prod, mem] = await Promise.all([
+    const [pet, prod, mem, wx] = await Promise.all([
       bus.request(TOPICS.PET_GET).catch(() => null),
       bus.request(TOPICS.PROD_GET).catch(() => null),
       bus.request(TOPICS.MEMORY_GET).catch(() => null),
+      bus.request(TOPICS.WEATHER_GET).catch(() => null), // D-035: null without a location
     ]);
     const facts = (mem && mem.facts) || [];
     const sig = facts.map((/** @type {any} */ f) => f.id).join(',');
@@ -139,7 +140,7 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
         ? `[memory] What you remember about the user: ${facts.slice(-30).map((/** @type {any} */ f, /** @type {number} */ i) => `${i + 1}) ${f.text}`).join('; ')}\n`
         : '[memory] You don\'t remember anything about the user yet.\n';
     }
-    e.send(`${persona.statusLine(pet, prod)}\n${memLine}${text}`);
+    e.send(`${persona.statusLine(pet, prod, wx)}\n${memLine}${text}`);
     return { ok: true };
   }
 

@@ -32,6 +32,10 @@ const { ClaudeCodeEngine, CLAUDE_EXE } = require('./engines/claude/session');
 const { AgyEngine } = require('./engines/agy/session');
 const { findAgyExecutable } = require('./engines/agy/setup');
 const pathMod = require('path');
+// M5 extras (D-035): weather, fullscreen do-not-disturb, "out for a walk" marker.
+const { createWeather } = require('./services/weather');
+const { createFullscreenDetector } = require('./platform/fullscreen');
+const { createWalkMarker } = require('./platform/windows/walk-marker');
 
 const { createDesktopChannel } = require('./channels/desktop');
 
@@ -129,6 +133,21 @@ function boot() {
   stoppers.push(brain.start(), createUiPrefs({ bus, device }).start());
   // Events & memory (M5, D-033): facts + diary per Tama, event deck from assets/events.
   stoppers.push(createMemory({ bus, store, tamaId: active.id }).start(), createEvents({ bus, store, tamaId: active.id, deck: EVENT_DECK }).start());
+  // ---- M5 extras (D-035) ----
+  // Weather (EVT-1): Open-Meteo for the per-PC city set with /weather. Fullscreen DND (PET-6): asked once per events tick.
+  const fullscreen = createFullscreenDetector({ onError: (message) => bus.emit(TOPICS.APP_ERROR, { topic: 'fullscreen', message }) });
+  const offFullscreen = bus.handle(TOPICS.DEVICE_FULLSCREEN_GET, () => fullscreen.isFullscreen());
+  stoppers.push(createWeather({ bus, device }).start(), offFullscreen, () => fullscreen.stop());
+  // "Out for a walk" (SUM-5): a small edge tab while the user has hidden the pet; clicking it summons her.
+  const walkMarker = createWalkMarker();
+  const syncMarker = () => bus.request(TOPICS.UI_PREFS_GET).catch(() => null).then((ui) => {
+    if (pet.isHiddenByUser() && !(ui && ui.walkMarker === false)) walkMarker.show(); else walkMarker.hide();
+  }).catch((e) => bus.emit(TOPICS.APP_ERROR, { topic: 'walk-marker', message: String(e.message || e) }));
+  pet.win.on('hide', syncMarker);
+  pet.win.on('show', syncMarker);
+  stoppers.push(bus.on(TOPICS.UI_PREFS_CHANGED, syncMarker), () => walkMarker.destroy());
+  if (process.env.TAMA_HIDE_PET) setTimeout(() => pet.hide(), 1500); // dev: start hidden (walk-marker screenshots)
+
   summoner.startWatchdog();
   stoppers.push(() => summoner.stop(), () => petService.stop(), () => store.flush(), shell.unregisterHotkeys);
 

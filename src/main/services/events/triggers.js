@@ -2,10 +2,12 @@
 // Event triggers (EVT-1, D-033). Pure: deck + context in, the event to fire (or null) out.
 
 /**
- * Trigger.hours: `[from, to)` for type 'time'; the minimum hours away for type 'absence'.
+ * Trigger.hours: `[from, to)` for types 'time' and 'weather'; the minimum hours away for type 'absence'.
+ * Trigger.is (type 'weather'): any of 'clear'|'cloudy'|'rain'|'snow'|'storm'|'hot'|'cold' (D-035).
  * @typedef {{ type: string, hours?: number[] | number,
  *   days?: 'weekday'|'weekend', stat?: string, below?: number,
- *   atLeast?: number, md?: string, chance?: number, minutes?: number, hour?: number }} Trigger
+ *   atLeast?: number, md?: string, chance?: number, minutes?: number, hour?: number,
+ *   is?: string[] }} Trigger
  * @typedef {{ label: string, reply: string, bond?: number, remember?: string }} Choice
  * @typedef {{ label: string, reply: string, bond?: number, action?: string, source?: string }} Quest
  * @typedef {{ id: string, kind: 'chat'|'choice'|'quest'|'callback'|'nudge'|'diary', trigger: Trigger, cooldownH: number,
@@ -15,6 +17,7 @@
  *   pet: { hunger: number, energy: number, asleep: boolean, streak: number, level: number },
  *   hoursAway: number, startup: boolean, levelUp: boolean, activeMinutes: number, facts: number,
  *   birthdayMd: string, diaryDone: boolean, random: () => number,
+ *   weather?: { kind: string, hot: boolean, cold: boolean, tempC: number } | null,
  * }} Ctx
  * @typedef {{ last: Record<string, number>, lastAny: number }} EventsState
  */
@@ -46,8 +49,22 @@ function matches(t, c) {
     case 'diary': return !c.diaryDone && c.hour >= (t.hour ?? 21);
     case 'active': return c.activeMinutes >= (t.minutes || 90);
     case 'levelUp': return c.levelUp;
+    case 'weather': {
+      const [from, to] = Array.isArray(t.hours) ? t.hours : [0, 24]; // optional waking-hours window
+      return c.hour >= from && c.hour < to && weatherMatches(t.is || [], c.weather);
+    }
     default: return false;
   }
+}
+
+/**
+ * Weather trigger (EVT-1, D-035): true if the current weather is any of `is` (a kind, or 'hot' / 'cold').
+ * No weather (no location set, offline) never matches.
+ * @param {string[]} is @param {Ctx['weather']} w
+ */
+function weatherMatches(is, w) {
+  if (!w) return false;
+  return is.some((x) => (x === 'hot' ? w.hot : x === 'cold' ? w.cold : w.kind === x));
 }
 
 /**
@@ -79,4 +96,4 @@ function validateDeck(raw) {
     .map((/** @type {any} */ e) => ({ cooldownH: 12, minBond: 0, seed: '', lines: [], ...e }));
 }
 
-module.exports = { matches, pick, validateDeck, GAP_MS };
+module.exports = { matches, pick, validateDeck, weatherMatches, GAP_MS };
