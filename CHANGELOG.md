@@ -172,6 +172,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `08f25ab` | 2026-11-06 | feat(google) | check event places on Google Maps before creating (D-039) |
+| `398ba59` | 2026-11-06 | docs(changelog) | regenerate commit table |
 | `a601952` | 2026-11-06 | feat(google) | send email and calendar invitations after the user confirms the full content (D-038) |
 | `a46a321` | 2026-11-06 | docs(changelog) | regenerate commit table |
 | `61ac8e2` | 2026-11-06 | fix(telegram) | confirm deadlock in the polling loop; invite flow via draft + add-to-calendar link |
