@@ -46,6 +46,10 @@ const TOPICS = {
   MEMORY_CHANGED: 'memory.changed',
   /** { id, kind: TamaEvent kind | 'reply', text, choices: string[], quest: string|null } — show an event on the pet (EVT-2) */
   EVENT_SHOWN: 'event.shown',
+  /** GoogleStatus { configured, signedIn, email, readonly, backup, lastBackup, inMeeting, scopes } — after a change (D-034) */
+  GOOGLE_CHANGED: 'google.changed',
+  /** { summary, start, minutes } — a calendar event starts in ≤ 5 minutes (GOOG-3) */
+  GOOGLE_MEETING_SOON: 'google.meeting.soon',
   /** { text, kind: 'info'|'warn' } — brain messages worth a pet bubble (budget, missing engines) */
   BRAIN_NOTICE: 'brain.notice',
   /** { reason: string } — pet window was brought back on screen by summon() */
@@ -161,10 +165,38 @@ const TOPICS = {
   EVENTS_ANSWER: 'events.answer',
   /** { id? } → { ok } | { error } — show an event now (/event) */
   EVENTS_TRIGGER: 'events.trigger',
+  /** () → GoogleStatus */
+  GOOGLE_STATUS: 'google.status',
+  /** { clientId, clientSecret } → GoogleStatus | { error } — the user's own Desktop OAuth client (D-009) */
+  GOOGLE_SET_CLIENT: 'google.setClient',
+  /** () → GoogleStatus | { error } — browser sign-in (loopback + PKCE) */
+  GOOGLE_LOGIN: 'google.login',
+  /** () → GoogleStatus — revoke + delete tokens */
+  GOOGLE_LOGOUT: 'google.logout',
+  /** { readonly?, backup? } → GoogleStatus & { needsLogin } */
+  GOOGLE_SET: 'google.set',
+  /** () → { text, events, mail, todos } | { error } — morning brief (GOOG-8) */
+  GOOGLE_BRIEF: 'google.brief',
+  /** () → string — short read-only context line for the chat brain ('' when signed out) */
+  GOOGLE_CONTEXT: 'google.context',
+  /** () → { ok, name, size } — back up the active Tama to Drive appData (PORT-6) */
+  GOOGLE_BACKUP_NOW: 'google.backupNow',
+  /** () → { backups: [{ id, tamaId, day, size }] } */
+  GOOGLE_BACKUPS: 'google.backups',
+  /** { fileId } → roster import result — restore a backup as a new Tama */
+  GOOGLE_RESTORE: 'google.restore',
   /** sessionId|null → { ok } | { error } */
   ENGINE_RESUME: 'engine.resume',
   /** { reason } → void — bring the pet back on screen */
   SUMMON: 'summon',
+
+  // ---- M5 extras: weather, fullscreen do-not-disturb (D-035) ----
+  /** () → { location: {city, lat, lon}|null, current: Weather|null, fetchedAt, summary } — refreshes at most every 30 min */
+  WEATHER_GET: 'weather.get',
+  /** { city } | { off: true } → { ok, location, current } | { error } — geocodes the city (Open-Meteo) */
+  WEATHER_SET: 'weather.set',
+  /** () → boolean — is the foreground window fullscreen (game, video, slides)? false on errors / non-Windows */
+  DEVICE_FULLSCREEN_GET: 'device.fullscreen.get',
 };
 
 module.exports = { TOPICS };

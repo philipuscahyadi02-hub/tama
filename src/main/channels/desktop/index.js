@@ -16,12 +16,16 @@ const USER_ACTIONS = new Set(['feed', 'snack', 'play', 'clean', 'sleep', 'nap', 
  *   summon: (reason: string) => void,
  *   openOnboarding: (mode: 'hatch'|'restyle'|'rebirth') => void,
  *   openRoster: (importNow?: boolean) => unknown,
+ *   openGoogle: () => unknown,
+ *   pages?: () => Array<import('electron').BrowserWindow>,
  * }} deps
  */
-function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster }) {
+function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster, openGoogle, pages }) {
   /** The last .tama file the user picked; import only ever reads this path, never one sent by a page. */
   let pickedImport = /** @type {string | null} */ (null);
   const both = () => [pet.win, term.window(), chat.window()];
+  /** Framed pages (Google setup) that also want live status. */
+  const pageWindows = () => (pages ? pages() : []);
   /** Fire-and-forget request; failures surface on app.error instead of becoming unhandled rejections. @param {string} topic @param {any} [payload] */
   const fire = (topic, payload) => { bus.request(topic, payload).catch((e) => bus.emit(TOPICS.APP_ERROR, { topic, message: String(e.message || e) })); };
   /** @param {string} name @param {any} payload */
@@ -43,6 +47,8 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     });
     bus.on(TOPICS.BRAIN_NOTICE, (p) => ipc.sendUi(pet.win, 'brain.notice', p));
     bus.on(TOPICS.UI_PREFS_CHANGED, (p) => toAll('ui.prefs', p));
+    bus.on(TOPICS.GOOGLE_CHANGED, (p) => { toAll('google', p); for (const w of pageWindows()) ipc.sendUi(w, 'google', p); });
+    bus.on(TOPICS.GOOGLE_MEETING_SOON, (p) => shell.notify(`📅 ${p.summary}`, `starts in ${p.minutes} min`));
     bus.on(TOPICS.EVENT_SHOWN, (p) => {
       ipc.sendUi(pet.win, 'event', p);
       // A hidden pet can't show the bubble: tell the user with a Windows notification instead.
@@ -73,6 +79,21 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.on('term:show', () => term.show());
     ipc.on('chat:show', () => chat.show());
     ipc.handle('ui:prefs', () => bus.request(TOPICS.UI_PREFS_GET));
+    // ---- Google (M6, D-034) ----
+    ipc.on('google:open', () => openGoogle());
+    ipc.handle('google:status', () => bus.request(TOPICS.GOOGLE_STATUS));
+    ipc.handle('google:setClient', (p) => bus.request(TOPICS.GOOGLE_SET_CLIENT, { clientId: String(p?.clientId || ''), clientSecret: String(p?.clientSecret || '') }));
+    ipc.handle('google:login', () => bus.request(TOPICS.GOOGLE_LOGIN).catch((e) => ({ error: String(e.message || e) })));
+    ipc.handle('google:logout', () => bus.request(TOPICS.GOOGLE_LOGOUT));
+    ipc.handle('google:set', (p) => bus.request(TOPICS.GOOGLE_SET, {
+      readonly: typeof p?.readonly === 'boolean' ? p.readonly : undefined, backup: typeof p?.backup === 'boolean' ? p.backup : undefined,
+    }));
+    ipc.handle('google:brief', () => bus.request(TOPICS.GOOGLE_BRIEF).catch((e) => ({ error: String(e.message || e) })));
+    ipc.handle('google:backupNow', () => bus.request(TOPICS.GOOGLE_BACKUP_NOW).catch((e) => ({ error: String(e.message || e) })));
+    ipc.handle('google:backups', () => bus.request(TOPICS.GOOGLE_BACKUPS).catch((e) => ({ error: String(e.message || e) })));
+    ipc.handle('google:restore', (id) => bus.request(TOPICS.GOOGLE_RESTORE, { fileId: String(id || '') }).catch((e) => ({ error: String(e.message || e) })));
+    // Only allow-listed https sites (platform/shell.EXTERNAL_HOSTS).
+    ipc.handle('link:open', (url) => { try { shell.openExternal(String(url)); return { ok: true }; } catch (e) { return { error: String(/** @type {Error} */ (e).message) }; } });
     // ---- events & memory (M5) ----
     ipc.handle('events:answer', (p) => bus.request(TOPICS.EVENTS_ANSWER, { id: String(p?.id || ''), choice: Number(p?.choice), dismiss: !!p?.dismiss }));
     ipc.handle('events:trigger', (id) => bus.request(TOPICS.EVENTS_TRIGGER, { id: id ? String(id) : undefined }));
@@ -84,7 +105,11 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.handle('ui:setPrefs', (p) => bus.request(TOPICS.UI_PREFS_SET, {
       termTheme: p?.termTheme == null ? undefined : String(p.termTheme), tourDone: p?.tourDone == null ? undefined : !!p.tourDone,
       dnd: p?.dnd == null ? undefined : !!p.dnd, nudges: p?.nudges == null ? undefined : !!p.nudges,
+      walkMarker: p?.walkMarker == null ? undefined : !!p.walkMarker, // M5 extras (D-035)
     }));
+    // ---- M5 extras: weather (D-035) ----
+    ipc.handle('weather:get', () => bus.request(TOPICS.WEATHER_GET));
+    ipc.handle('weather:set', (p) => bus.request(TOPICS.WEATHER_SET, p?.off ? { off: true } : { city: String(p?.city || '').slice(0, 80) }));
     // ---- chat window → core (agy, D-029) ----
     ipc.handle('chat:send', (t) => bus.request(TOPICS.CHAT_SEND, String(t || '')));
     ipc.handle('chat:history', () => bus.request(TOPICS.CHAT_HISTORY));

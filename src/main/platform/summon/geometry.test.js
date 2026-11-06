@@ -49,3 +49,12 @@ test('summon with the cursor in a corner still keeps the body fully visible', ()
 test('home position is bottom-right of the work area', () => {
   assert.deepEqual(geo.homePosition(MAIN, SIZE), { x: 1920 - 380 - 40, y: 1040 - 470 });
 });
+
+test('walk marker docks at the right edge of the work area, fully inside it (SUM-5)', () => {
+  const M = { width: 48, height: 48 };
+  assert.deepEqual(geo.markerPosition(MAIN, M), { x: 1920 - 48, y: 1040 - 48 - 160 });
+  const p = geo.markerPosition(RIGHT, M);
+  assert.equal(geo.overlapArea({ ...p, ...M }, RIGHT), 48 * 48);
+  const tiny = { x: 0, y: 0, width: 300, height: 100 };
+  assert.equal(geo.markerPosition(tiny, M).y, 0); // never above the top
+});

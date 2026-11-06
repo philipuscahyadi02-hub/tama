@@ -21,10 +21,13 @@ const { createUiPrefs } = require('./services/ui');
 const { createMemory } = require('./services/memory');
 const { createEvents } = require('./services/events');
 const EVENT_DECK = require('../../assets/events/deck.json');
+const { createGoogle } = require('./services/google');
+const googleOAuth = require('./platform/google-oauth');
+const os = require('os');
 const { createGitWatcher } = require('./services/productivity/git-watcher');
 const git = require('./platform/git');
 const { askJson } = require('./engines/claude/oneshot');
-const { openPage } = require('./platform/windows/page-window');
+const { openPage, openPages } = require('./platform/windows/page-window');
 const { createPetService } = require('./services/pet');
 const { createBrain } = require('./brain');
 const { createPermissionGate } = require('./brain/permission-gate');
@@ -32,6 +35,10 @@ const { ClaudeCodeEngine, CLAUDE_EXE } = require('./engines/claude/session');
 const { AgyEngine } = require('./engines/agy/session');
 const { findAgyExecutable } = require('./engines/agy/setup');
 const pathMod = require('path');
+// M5 extras (D-035): weather, fullscreen do-not-disturb, "out for a walk" marker.
+const { createWeather } = require('./services/weather');
+const { createFullscreenDetector } = require('./platform/fullscreen');
+const { createWalkMarker } = require('./platform/windows/walk-marker');
 
 const { createDesktopChannel } = require('./channels/desktop');
 
@@ -61,11 +68,16 @@ function boot() {
   const device = createDeviceSettings(store);
   // Brain: terminal = Claude Code, chat = agy (D-029), every tool approval through one PermissionGate.
   const gate = createPermissionGate({ bus });
+  // Google (M6, D-034): the user's own OAuth client; tools reach Claude Code as an MCP server while signed in.
+  const google = createGoogle({
+    bus, secrets, device, oauth: googleOAuth, openExternal: shell.openExternal, tama: active, deviceName: os.hostname(),
+  });
+  gate.addRule(google.gateRule);
   const brain = createBrain({
     bus, device, gate, git, scratchDir: pathMod.join(appShell.paths.data(), 'agy-workspace'),
     available: { claude: !!CLAUDE_EXE, agy: !!findAgyExecutable() },
     factories: {
-      claudeWorker: (emit) => new ClaudeCodeEngine(emit, { role: 'worker', gate, tamaName: active.name }),
+      claudeWorker: (emit) => new ClaudeCodeEngine(emit, { role: 'worker', gate, tamaName: active.name, mcp: () => google.mcpServers() }),
       // agy always runs in read-only PLAN mode (verified: no commands, no file writes; npm run probe:agy, D-027).
       agyChat: (emit, persona) => new AgyEngine(emit, { role: 'lite', gate, persona, model: 'gemini-3.8-flash-low', thoughtLevel: 'low', mode: 'plan', lockMode: true }),
     },
@@ -92,9 +104,10 @@ function boot() {
   const openOnboarding = (/** @type {string} */ mode) =>
     openPage('onboarding/onboarding.html', { width: 940, height: 700, title: 'Hatch your Tama', query: { mode } });
 
+  const openGoogle = () => openPage('google/google.html', { width: 780, height: 720, title: 'Connect Google', frame: true });
   const openRoster = (/** @type {boolean | undefined} */ importNow) =>
     openPage('roster/roster.html', { width: 900, height: 660, title: 'My Tamas', query: importNow ? { import: '1' } : {} });
-  createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster }).start();
+  createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster, openGoogle, pages: openPages }).start();
   shell.createTray({
     tooltip: `${active.name} (Tama)`,
     onClick: () => summon('tray-click'),
@@ -104,6 +117,7 @@ function boot() {
       { label: 'Open terminal  (Ctrl+Alt+K)', click: () => term.show() },
       { label: 'Show / Hide', click: () => pet.toggleVisible() },
       { label: 'My Tamas…', click: () => openRoster(false) },
+      { label: 'Google…', click: () => openGoogle() },
       { label: 'Restyle…', click: () => openOnboarding('restyle') },
       { label: 'Rebirth…', click: () => openOnboarding('rebirth') },
       { type: 'separator' },
@@ -126,9 +140,24 @@ function boot() {
     onPower: (onAC) => bus.emit(TOPICS.DEVICE_POWER_CHANGED, { onAC }),
     onIdle: (idle, idleSeconds) => bus.emit(TOPICS.DEVICE_IDLE_CHANGED, { idle, idleSeconds }),
   }));
-  stoppers.push(brain.start(), createUiPrefs({ bus, device }).start());
+  stoppers.push(brain.start(), createUiPrefs({ bus, device }).start(), google.start());
   // Events & memory (M5, D-033): facts + diary per Tama, event deck from assets/events.
   stoppers.push(createMemory({ bus, store, tamaId: active.id }).start(), createEvents({ bus, store, tamaId: active.id, deck: EVENT_DECK }).start());
+  // ---- M5 extras (D-035) ----
+  // Weather (EVT-1): Open-Meteo for the per-PC city set with /weather. Fullscreen DND (PET-6): asked once per events tick.
+  const fullscreen = createFullscreenDetector({ onError: (message) => bus.emit(TOPICS.APP_ERROR, { topic: 'fullscreen', message }) });
+  const offFullscreen = bus.handle(TOPICS.DEVICE_FULLSCREEN_GET, () => fullscreen.isFullscreen());
+  stoppers.push(createWeather({ bus, device }).start(), offFullscreen, () => fullscreen.stop());
+  // "Out for a walk" (SUM-5): a small edge tab while the user has hidden the pet; clicking it summons her.
+  const walkMarker = createWalkMarker();
+  const syncMarker = () => bus.request(TOPICS.UI_PREFS_GET).catch(() => null).then((ui) => {
+    if (pet.isHiddenByUser() && !(ui && ui.walkMarker === false)) walkMarker.show(); else walkMarker.hide();
+  }).catch((e) => bus.emit(TOPICS.APP_ERROR, { topic: 'walk-marker', message: String(e.message || e) }));
+  pet.win.on('hide', syncMarker);
+  pet.win.on('show', syncMarker);
+  stoppers.push(bus.on(TOPICS.UI_PREFS_CHANGED, syncMarker), () => walkMarker.destroy());
+  if (process.env.TAMA_HIDE_PET) setTimeout(() => pet.hide(), 1500); // dev: start hidden (walk-marker screenshots)
+
   summoner.startWatchdog();
   stoppers.push(() => summoner.stop(), () => petService.stop(), () => store.flush(), shell.unregisterHotkeys);
 
@@ -155,6 +184,7 @@ function boot() {
     }
   }
   if (process.env.TAMA_OPEN_ROSTER) openRoster(false);
+  if (process.env.TAMA_OPEN_GOOGLE) openGoogle();
   if (process.env.TAMA_OPEN_ONBOARDING) openOnboarding(process.env.TAMA_OPEN_ONBOARDING);
   if (process.env.TAMA_ONBOARD_WALK) {
     require('./dev/onboarding-walk').runOnboardingWalk({

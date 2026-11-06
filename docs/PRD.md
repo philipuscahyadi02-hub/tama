@@ -5,8 +5,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.9 |
-| **Status** | v0.5.0 released (M0–M5). M6 in progress on `m6-google`; M5 leftovers on `m5-extras` |
+| **Version** | 0.10 |
+| **Status** | v0.6.0 released (M0–M6). M7 in progress on `m7-telegram` |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-06 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -82,7 +82,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | PET-3 | Easy energy: snack/energy drink (+25, cooldown), 10-min power nap (+50), charging when on AC power, auto-nap when PC idle >10 min (+30/h), focus-break recharge. | P0 | M2 | ☑ |
 | PET-4 | Agent work drains little (−1 per coding task); chatting costs no energy. | P0 | M2 | ☑ |
 | PET-5 | Interactions from kero-pet kept: click menu, head-pat rub, cheek poke, drag, wander, babble. | P0 | M1 | ☑ |
-| PET-6 | Do-not-disturb: no babble during fullscreen apps, meetings (calendar), or focus sessions. *(Focus, `/dnd`, away and asleep done; meetings with M6 Calendar; fullscreen later.)* | P1 | M5 | ◐ |
+| PET-6 | Do-not-disturb: no babble during fullscreen apps, meetings (calendar), or focus sessions. *(Focus, `/dnd`, away, asleep, fullscreen (D-035) and calendar meetings (D-034) all done.)* | P1 | M5 | ☑ |
 | PET-7 | Wellbeing nudges: water, stretch, late-night "go to sleep". Toggleable. | P2 | M5 | ☑ |
 | PET-8 | Reduced-motion and mute options. | P1 | M8 | ☐ |
 
@@ -100,7 +100,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.5 Events & conversations (EVT)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| EVT-1 | Event engine with triggers: time of day, weekday/weekend, holidays, Tama birthday, weather (Open-Meteo), stat states, productivity milestones, long absence, late-night coding, random. Per-event cooldowns and `minBond`. *(All but weather, which needs a location setting, D-033.)* | P0 | M5 | ◐ |
+| EVT-1 | Event engine with triggers: time of day, weekday/weekend, holidays, Tama birthday, weather (Open-Meteo), stat states, productivity milestones, long absence, late-night coding, random. Per-event cooldowns and `minBond`. *(D-033; weather via a per-PC city set with `/weather <city>`, D-035.)* | P0 | M5 | ☑ |
 | EVT-2 | Event types: chat topics, VN-style choices (2–3 options affecting mood/bond), mini-quests, memory callbacks, daily diary. | P0 | M5 | ☑ |
 | EVT-3 | Events defined as data (deck JSON); lines generated in-character by the lite brain from a seed. | P0 | M5 | ☑ |
 | EVT-4 | Memory: facts about the user, viewable ("what do you remember?") and forgettable. | P0 | M5 | ☑ |
@@ -136,7 +136,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | SUM-2 | Triggers: global hotkey `Ctrl+Alt+P`, tray left-click, tray menu, `/summon` (terminal & Telegram), second-instance launch. | P0 | M0 | ☑ |
 | SUM-3 | Drag & walk clamped to visible work areas (all monitors). Saved position validated against current displays. | P0 | M0 | ☑ |
 | SUM-4 | 30-s watchdog: if off-screen or lost topmost, fix it. | P0 | M0 | ☑ |
-| SUM-5 | "Out for a walk" edge marker — click to recall. | P2 | M5 | ☐ |
+| SUM-5 | "Out for a walk" edge marker — click to recall. *(Desktop-only; shown while the pet is hidden, `/marker on` / `off`, D-035.)* | P2 | M5 | ☑ |
 
 ### 4.9 Telegram / phone (TG)
 | ID | Requirement | Pri | MS | Status |
@@ -153,14 +153,14 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.10 Google (GOOG)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| GOOG-1 | Desktop OAuth (loopback + PKCE) with the user's own Google Cloud client in **Production (unverified)** status (Testing expires tokens in 7 days). Tokens in `secrets` only. | P0 | M6 | ☐ |
-| GOOG-2 | Google tools exposed as an MCP server, plugged into **every** engine. | P0 | M6 | ☐ |
-| GOOG-3 | Calendar: read, create/edit events; meeting reminders (sleeve-tug 5 min before) and DND during meetings. | P0 | M6 | ☐ |
-| GOOG-4 | Gmail: read/search, summarize, create drafts. **No sending** (D-014). | P0 | M6 | ☐ |
-| GOOG-5 | Drive: `drive.file` by default (create/edit own files); optional `drive.readonly` toggle for search/read across Drive. | P0 | M6 | ☐ |
-| GOOG-6 | Docs: create from Markdown, append, replace section. Sheets: create with tabs/headers/formulas, write range, append rows. | P0 | M6 | ☐ |
-| GOOG-7 | All created files go to a "Tama Drafts" folder; creation auto-allowed + announced; edits of existing files require approval; **no delete/share tools exist**. | P0 | M6 | ☐ |
-| GOOG-8 | Morning brief: today's events, important unread mail, todos (desktop + Telegram). | P1 | M6 | ☐ |
+| GOOG-1 | Desktop OAuth (loopback + PKCE) with the user's own Google Cloud client in **Production (unverified)** status (Testing expires tokens in 7 days). Tokens in `secrets` only. | P0 | M6 | ☑ |
+| GOOG-2 | Google tools exposed as an MCP server, plugged into **every** engine. *(Claude Code gets the tools; the read-only agy chat gets a calendar/mail context line instead, D-034.)* | P0 | M6 | ◐ |
+| GOOG-3 | Calendar: read, create/edit events; meeting reminders (sleeve-tug 5 min before) and DND during meetings. | P0 | M6 | ☑ |
+| GOOG-4 | Gmail: read/search, summarize, create drafts. **No sending** (D-014). | P0 | M6 | ☑ |
+| GOOG-5 | Drive: `drive.file` by default (create/edit own files); optional `drive.readonly` toggle for search/read across Drive. | P0 | M6 | ☑ |
+| GOOG-6 | Docs: create from Markdown, append, replace section. Sheets: create with tabs/headers/formulas, write range, append rows. *(All but "replace section".)* | P0 | M6 | ◐ |
+| GOOG-7 | All created files go to a "Tama Drafts" folder; creation auto-allowed + announced; edits of existing files require approval; **no delete/share tools exist**. | P0 | M6 | ☑ |
+| GOOG-8 | Morning brief: today's events, important unread mail, todos (desktop + Telegram). | P1 | M6 | ☑ |
 
 ### 4.11 Voice (VOICE)
 | ID | Requirement | Pri | MS | Status |
@@ -178,9 +178,9 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | PORT-3 | Roster: multiple Tamas, one active; inactive ones pause decay. | P1 | M2 | ☑ |
 | PORT-4 | Restyle (keep all), Rebirth (redesign; choose keep/clear memory & bond), Hatch another, Graduate (album; restorable), Delete (typed confirm). | P1 | M2 | ☑ |
 | PORT-5 | `.tama` export/import: single bundle file (D-025), password-encrypted by default; optional "include connections" (Telegram token). | P0 | M2 | ☑ |
-| PORT-6 | Daily Drive backup to `appDataFolder` (`drive.appdata`); restore offer on new PC. | P1 | M6 | ☐ |
-| PORT-7 | Single active device lock (lease file in Drive); "move her here?" takeover. | P1 | M6 | ☐ |
-| PORT-8 | New-PC checklist: log in `claude`/`agy`, Google sign-in, Telegram re-pair if needed. | P1 | M6 | ☐ |
+| PORT-6 | Daily Drive backup to `appDataFolder` (`drive.appdata`); restore offer on new PC. | P1 | M6 | ☑ |
+| PORT-7 | Single active device lock (lease file in Drive); "move her here?" takeover. *(Lease + warning, not a hard lock, D-034.)* | P1 | M6 | ◐ |
+| PORT-8 | New-PC checklist: log in `claude`/`agy`, Google sign-in, Telegram re-pair if needed. | P1 | M6 | ☑ |
 
 ### 4.13 Safety, privacy & non-functional (SAFE / NFR)
 | ID | Requirement | Pri | MS | Status |
@@ -205,7 +205,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M3 — Brain & engines.** *(released as 0.3.1)* Claude Code terminal + agy chat window, PermissionGate, budget (BRAIN-*, ENG-1..5, CHAT-1, SAFE-1, SAFE-5, ONB-7).
 - [x] **M4 — Terminal v2.** *(released as 0.4.0)* Theming from the CharacterSpec (no more hard-coded Kero), commands, first-run tour (TERM-*, ART-4, SAFE-4).
 - [x] **M5 — Events & memory.** *(released as 0.5.0; weather, fullscreen DND and SUM-5 deferred)* (EVT-*, PET-6..7, NFR-4, SUM-5).
-- [ ] **M6 — Google.** OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
+- [x] **M6 — Google.** *(released as 0.6.0; Tasks sync, Docs replace-section and a hard device lock deferred)* OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
 - [ ] **M7 — Telegram.** (TG-*, ART-5, SAFE-3).
 - [ ] **M8 — Voice & polish.** (VOICE-1, PET-8, NFR-1, NFR-3).
 
@@ -218,6 +218,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.10 — 2026-11-06** — M6 implemented: GOOG-1,3,4,5,7,8, PORT-6, PORT-8 done; GOOG-2, GOOG-6, PORT-7 partial; PROD-3 open (D-034).
 - **0.9 — 2026-11-06** — M5 implemented: EVT-2..4, NFR-4, PET-7 done; EVT-1 and PET-6 partial (D-033).
 - **0.8 — 2026-11-06** — M4 implemented: TERM-1..4, ART-4, SAFE-4; BOND-3 terminal themes (D-032).
 - **0.7 — 2026-11-06** — Terminal = Claude Code only, chat window = agy only (D-029, CHAT-1); M3 ships as 0.3.1 (D-030); progress + `/effort` (D-031).

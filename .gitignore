@@ -5,3 +5,6 @@ dist/
 secrets.bin
 *.tama
 .claude/settings.local.json
+
+# Agent worktrees (local only)
+.claude/worktrees/

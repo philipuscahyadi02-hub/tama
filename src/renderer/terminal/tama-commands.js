@@ -31,6 +31,9 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
     '  /memory          what your Tama remembers about you · /remember <fact> · /forget <n|all>',
     '  /diary [date]    read their diary (they write one every evening) · /diary list',
     '  /event [id]      start a little moment now · /dnd [on|off] quiet mode · /nudges [on|off] water & stretch',
+    '  /google [setup|status|login|logout|brief|backup|backups|restore <n>|readonly on|off]   Gmail drafts, Calendar, Drive, Docs, Sheets',
+    '  /brief           morning brief (calendar, important mail, todos) · /newpc  checklist for a new PC',
+    '  /weather <city>  set your city for weather moments (no arg = now · /weather off) · /marker [on|off] walk tab',
     '  coming soon: /phone (M7) · /voice (M8)',
     '',
     '  This terminal = Claude Code (asks before edits/commands).  Chat with your Tama = 💬 window (Ctrl+Alt+J, free via agy).',
@@ -164,8 +167,81 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
         await K.ui.setPrefs({ nudges: on });
         info(on ? '⎿  💧 wellbeing nudges on' : '⎿  wellbeing nudges off');
       }],
+      // ---- M5 extras (D-035) ----
+      weather: ['Weather where you are: /weather <city>, /weather off', async (arg) => {
+        const a = String(arg || '').trim();
+        if (a.toLowerCase() === 'off') { await K.weather.off(); return info('⎿  weather off. I forgot your city~'); }
+        const r = a ? await K.weather.set(a) : await K.weather.get();
+        if (r.error) return error(`✗ ${r.error}`);
+        if (!r.location) return info('⎿  No city set. /weather Tokyo (uses Open-Meteo, no account needed)');
+        info(`⎿  ${a ? '📍 saved: ' : '📍 '}${r.location.city} · ${r.summary || 'weather unavailable right now'}`);
+      }],
+      marker: ['"Out for a walk" tab on the screen edge while hidden: on/off', async (arg) => {
+        const p = await K.ui.prefs();
+        const on = arg ? /^(on|1|yes)$/i.test(arg) : !p.walkMarker;
+        await K.ui.setPrefs({ walkMarker: on });
+        info(on ? '⎿  🚶 walk tab on: when you hide your Tama, a little tab on the right edge calls them back' : '⎿  walk tab off');
+      }],
       phone: ['(M7) Pair your phone (Telegram)', () => info('⎿  Telegram pairing arrives in M7.')],
       voice: ['(M8) Voice settings', () => info('⎿  Voice (AivisSpeech) arrives in M8.')],
+      google: ['Connect Google: Gmail drafts, Calendar, Drive, Docs, Sheets', async (arg) => {
+        const G = K.google;
+        const [cmd, ...rest] = String(arg || 'status').trim().split(/\s+/);
+        const s = await G.status();
+        switch (cmd) {
+          case 'setup': G.open(); return info('⎿  opened the Google setup window 🔗');
+          case 'login': {
+            if (!s.configured) { G.open(); return info('⎿  first time: follow the steps in the Google window 🔗'); }
+            info('⎿  a browser window opened: pick your account and allow access~');
+            return show(await G.login(), (r) => `⎿  ✅ connected as ${r.email || 'your account'}`);
+          }
+          case 'logout': await G.logout(); return info('⎿  disconnected from Google');
+          case 'brief': return show(await G.brief(), (r) => r.text);
+          case 'backup': info('⎿  backing up…'); return show(await G.backupNow(), (r) => `⎿  ☁️ saved ${r.name} (${Math.round(r.size / 1024)} KB)`);
+          case 'backups': {
+            const r = await G.backups();
+            if (r.error) return error(`✗ ${r.error}`);
+            if (!r.backups.length) return info('⎿  no backups yet. /google backup makes one now');
+            return info(r.backups.map((b, i) => `  ${String(i + 1).padStart(2)}. ${b.day}  ${b.tamaId}  ${Math.round(b.size / 1024)} KB`).join('\n') + '\n  /google restore <n> brings one back as a new Tama');
+          }
+          case 'restore': {
+            const r = await G.backups();
+            const b = r.backups && r.backups[Number(rest[0]) - 1];
+            if (!b) return info('⎿  Usage: /google restore <n> (see /google backups)');
+            return show(await G.restore(b.id), (x) => `⎿  restored "${x.name}" as a new Tama. Switch to them in /tama`);
+          }
+          case 'readonly': {
+            const r = await G.set({ readonly: /^(on|1|yes)$/i.test(rest[0] || '') });
+            return info(`⎿  read all of Drive: ${r.readonly ? 'on' : 'off'}${r.needsLogin ? ' (needs /google login once more)' : ''}`);
+          }
+          default:
+            if (!s.configured) return info('⎿  Google is not set up yet. /google setup opens a 5-minute guide 🔗');
+            if (!s.signedIn) return info('⎿  Google app saved but not signed in: /google login');
+            return info([
+              `⎿  ✅ Google: ${s.email || 'connected'}${s.inMeeting ? ` · 📅 in a meeting (${s.inMeeting})` : ''}`,
+              `    access: ${s.scopes.join(', ')}`,
+              `    daily backup: ${s.backup ? 'on' : 'off'} (last: ${s.lastBackup ? new Date(s.lastBackup).toLocaleString() : 'never'}) · read all Drive: ${s.readonly ? 'on' : 'off'}`,
+              '    ask in plain words: "draft a reply to…", "what\'s on my calendar?", "make a sheet for…"',
+            ].join('\n'));
+        }
+      }],
+      brief: ['Morning brief: calendar, important mail, todos', async () => {
+        const r = await K.google.brief();
+        if (r.error) return info('⎿  connect Google first (/google setup) for the brief~');
+        info(`☀️ ${r.text}`);
+      }],
+      newpc: ['Checklist for setting up Tama on a new PC', async () => {
+        const [b, g] = await Promise.all([K.brain.status(), K.google.status()]);
+        const ok = (v) => (v ? '✅' : '☐');
+        info([
+          '  New PC checklist',
+          `  ${ok(b.available.claude)} Claude Code installed and logged in (run \`claude\` once)   → the terminal`,
+          `  ${ok(b.available.agy)} Antigravity CLI (agy) installed and logged in                → 💬 chat, events, diary`,
+          `  ${ok(g.signedIn)} Google connected (/google setup, same Google app works on every PC)`,
+          '  ☐ Telegram: comes in M7',
+          '  Moving your Tama: My Tamas (/tama) → Export on the old PC → Import here, or /google backups + /google restore <n>.',
+        ].join('\n'));
+      }],
       feed: ['Feed your Tama', async () => show(await K.act('feed'), (r) => (r.ok ? '⎿  🍙 itadakimasu!' : `⎿  (${r.reason})`))],
       snack: ['Energy snack (+25)', async () => show(await K.act('snack'), (r) => (r.ok ? '⎿  ⚡ energy +25' : r.reason === 'cooldown' ? `⎿  snack again in ${Math.ceil(r.retryInMs / 60000)} min` : `⎿  (${r.reason})`))],
       nap: ['10-minute power nap', async () => show(await K.act('nap'), (r) => (r.ok ? '⎿  💤 power nap, 10 min' : `⎿  (${r.reason})`))],

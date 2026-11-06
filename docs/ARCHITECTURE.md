@@ -80,13 +80,17 @@ src/main/
   services/ui/             per-PC UI prefs: terminal theme variant (bond-unlocked), tour flag, dnd, nudges (M4/M5, D-032)
   services/memory/         facts.json + diary/*.md in tamas/<id>/memory (M5, D-033)
   services/events/         triggers.js (pure) + index.js (tick, fire, answers, diary) over assets/events/deck.json (M5, D-033)
+  services/google/         index (sign-in state, calendar watch, brief, chat context), api (token refresh), calendar, gmail (no send),
+                           drive (+ Docs/Sheets, appData), markdown, tools (13 tools + gate policy), backup (appData + lease) (M6, D-034)
+  platform/google-oauth.js loopback + PKCE desktop OAuth (M6)
   platform/power.js        AC/battery + idle/lock → bus (easy energy)
   platform/git.js          read-only git log / user.email
   platform/files.js        whole-file read/write for user-picked paths
   brain/                   M3: index.js (terminal → Claude Code, engine.* requests), chat.js (chat window → agy, chat.*),
                            persona.js (persona + app guide), budget.js, permission-gate.js (SAFE-1)   (D-029)
                            compose.js: one-shot in-character lines + diary via its own agy session (D-033)
-  engines/claude/          session (Agent SDK), map-message (pure; text/tool/thinking progress), find-exe, input-queue, oneshot
+  engines/claude/          session (Agent SDK), map-message (pure; text/tool/thinking progress), find-exe, input-queue, oneshot,
+                           mcp.js (tool descriptions → in-process MCP server, D-034)
   engines/acp/client.js    generic Agent Client Protocol JSON-RPC client
   engines/agy/             AgyEngine (ACP, plan mode locked), map-update (pure), setup (exe + Tama-owned settings)
   channels/desktop/        renderer IPC ↔ bus
@@ -104,6 +108,14 @@ src/renderer/onboarding/   hatch / restyle / rebirth flow (M1)
 src/renderer/roster/       My Tamas: switch, hatch, graduate, restore, delete, export, import (M2)
 src/renderer/terminal/tama-commands.js  /todo /focus /remind /note /watch /feed /snack /nap /tama (M2)
 src/renderer/dev/          rig gallery (TAMA_GALLERY=designs|moods)
+```
+M5 extras (D-035):
+```
+src/main/services/weather/        logic.js (pure: WMO code → kind, hot/cold, parsers) + index.js (/weather city in device.json,
+                                  Open-Meteo fetch at most every 30 min, quiet failures)
+src/main/platform/fullscreen.js   fullscreen-foreground check via one hidden long-lived PowerShell + user32 helper (Windows only)
+src/main/platform/windows/walk-marker.js  44x44 "out for a walk" edge tab while the pet is hidden (SUM-5)
+src/renderer/marker/              the walk tab view (Tama's face; click = summon)
 ```
 
 ### 2.2 Shared code rule
@@ -139,8 +151,9 @@ bus.on('engine.event', handler)
 - Channels forward a filtered set of topics to renderers / Telegram.
 
 ### Topics in use (M0)
-Events: `app.error`, `pet.state.changed`, `pet.bond.changed`, `engine.event`, `chat.event`, `brain.notice`, `ui.prefs.changed`, `memory.changed`, `event.shown`, `summon.done`, `tray.action`, `character.changed`, `device.{power,idle}.changed`, `prod.{changed,focus.phase,reminder.due,commit.seen}`.
-Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,delete,export,import}`, `prod.*`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setEffort,setCwd,answerPermission,resume}`, `chat.{send,history,interrupt,clear,push}`, `ui.prefs.{get,set}`, `memory.{get,add,forget}`, `diary.{write,list,read}`, `events.{answer,trigger}`, `brain.compose`, `brain.{status,set}`, `summon`.
+Events: `app.error`, `pet.state.changed`, `pet.bond.changed`, `engine.event`, `chat.event`, `brain.notice`, `ui.prefs.changed`, `memory.changed`, `event.shown`, `google.changed`, `google.meeting.soon`, `summon.done`, `tray.action`, `character.changed`, `device.{power,idle}.changed`, `prod.{changed,focus.phase,reminder.due,commit.seen}`.
+Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,delete,export,import}`, `prod.*`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setEffort,setCwd,answerPermission,resume}`, `chat.{send,history,interrupt,clear,push}`, `ui.prefs.{get,set}`, `memory.{get,add,forget}`, `diary.{write,list,read}`, `events.{answer,trigger}`, `brain.compose`, `google.{status,setClient,login,logout,set,brief,context,backupNow,backups,restore}`, `brain.{status,set}`, `summon`.
+M5 extras (D-035): requests `weather.{get,set}`, `device.fullscreen.get`.
 Renderer messages arrive on one `ui` IPC channel: `pet.state`, `pet.bond`, `prod`, `focus`, `reminder`, `commit`, `summon`, `tray`, `agent.event`, `term.focus`, `character`.
 
 ## 5. Engine contract
@@ -169,7 +182,7 @@ stop(): void
 %APPDATA%\tama\
   tamas\<tamaId>\ character.json state.json events.json memory\facts.json memory\diary\*.md
   user/productivity.json  todos, notes, reminders, focus (the user's, not a Tama's; D-024)
-  device.json      engines, routing, hotkeys, window positions, watched git repos (this PC only)
+  device.json      engines, routing, hotkeys, window positions, watched git repos, weather city (this PC only)
   secrets.bin      safeStorage-encrypted (Telegram token, Google tokens)
   active.json      { activeTamaId }
   logs\

@@ -43,6 +43,9 @@ function buildPersona(spec, opts = {}) {
     'When the user shares a lasting personal fact (their name, birthday, job or studies, likes, goals, an important upcoming event), '
       + 'end your reply with a hidden marker on its own line: [[remember: <short fact in third person, e.g. "has a job interview on Friday">]]. '
       + 'At most one per reply, never for small talk, never for secrets like passwords. The marker is hidden from the user.',
+    'Messages may include a "[google] …" line (today\'s calendar, important unread mail, todos) when the user connected Google. '
+      + 'You can talk about it, but you cannot read more or create anything in Google: for drafts, docs, sheets or calendar changes, '
+      + 'tell the user to ask in the terminal (Claude Code has the Google tools).',
     'If the user asks what you remember, tell them kindly, and mention they can see or delete memories with /memory and /forget in the terminal.',
     GUIDE,
     'Be cute in chat, but never put cute flavor inside code, commands or file contents. Stay wholesome.',
@@ -53,8 +56,9 @@ function buildPersona(spec, opts = {}) {
 /**
  * One-line context for the next message (stats + day), so the persona can react to how she's doing.
  * @param {any} pet  PetSnapshot or null @param {any} prod  ProductivitySnapshot or null
+ * @param {any} [wx]  weather.get result ({ location, current }) or null (D-035)
  */
-function statusLine(pet, prod) {
+function statusLine(pet, prod, wx = null) {
   const parts = [];
   if (pet && pet.state) {
     const s = pet.state;
@@ -69,6 +73,11 @@ function statusLine(pet, prod) {
     const open = (prod.todos || []).filter((/** @type {any} */ t) => !t.done).length;
     if (open) parts.push(`user has ${open} open todo${open === 1 ? '' : 's'}`);
     if (prod.focus && prod.focus.phase === 'focus') parts.push('user is in a focus session');
+  }
+  const w = wx && wx.current;
+  if (w) {
+    const sky = /** @type {Record<string, string>} */ ({ clear: 'clear sky', cloudy: 'cloudy', rain: 'rain', snow: 'snow', storm: 'thunderstorm' })[w.kind] || w.kind;
+    parts.push(`weather${wx.location && wx.location.city ? ` in ${wx.location.city}` : ''}: ${sky}, ${Math.round(w.tempC)}°C`);
   }
   const now = new Date();
   parts.push(`local time ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);

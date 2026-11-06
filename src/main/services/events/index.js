@@ -37,6 +37,8 @@ function createEvents({ bus, store, tamaId, deck: rawDeck, now = Date.now, rando
 
   async function context() {
     const [pet, prod, mem, ui] = await Promise.all([req(TOPICS.PET_GET), req(TOPICS.PROD_GET), req(TOPICS.MEMORY_GET), req(TOPICS.UI_PREFS_GET)]);
+    // M5 extras (D-035): weather (cached, may be null) and fullscreen DND, one query each per tick.
+    const [wx, fullscreen, google] = await Promise.all([req(TOPICS.WEATHER_GET), req(TOPICS.DEVICE_FULLSCREEN_GET), req(TOPICS.GOOGLE_STATUS)]);
     const t = now();
     const d = new Date(t);
     const s = (pet && pet.state) || {};
@@ -50,8 +52,11 @@ function createEvents({ bus, store, tamaId, deck: rawDeck, now = Date.now, rando
       facts: ((mem && mem.facts) || []).length,
       birthdayMd: born && born.getFullYear() < d.getFullYear() ? dayOf(born.getTime()).slice(5) : '',
       diaryDone: st.diaryDay === dayOf(t), random,
+      weather: (wx && wx.current) || null,
     };
-    const quiet = !!(ui && ui.dnd) || idle || !!(prod && prod.focus && prod.focus.phase === 'focus') || ctx.pet.asleep || !!(pet && pet.egg);
+    const quiet = !!(ui && ui.dnd) || idle || !!(prod && prod.focus && prod.focus.phase === 'focus') || ctx.pet.asleep || !!(pet && pet.egg)
+      || fullscreen === true // PET-6: a game, video or slideshow fills the screen
+      || !!(google && google.inMeeting); // PET-6 / GOOG-3: a calendar meeting is running (D-034)
     return { ctx, quiet, nudges: !(ui && ui.nudges === false), pet, prod, mem };
   }
 

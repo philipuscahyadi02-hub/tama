@@ -55,6 +55,8 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
   let reply = { text: '', tools: /** @type {string[]} */ ([]), filter: markerFilter() };
   /** Which memories this agy session already knows (sent as a [memory] line when they change). */
   let memorySig = /** @type {string | null} */ (null); // null = this session hasn't been told yet
+  /** Last [google] context line sent to this session (calendar/mail summary, read-only, D-034). */
+  let googleSent = '';
 
   /** @param {any} ev */
   const out = (ev) => bus.emit(TOPICS.CHAT_EVENT, ev);
@@ -108,6 +110,7 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
       engine = factory(onEngineEvent, personaText);
       engine.setCwd(scratchDir);
       memorySig = null;
+      googleSent = '';
     }
     return engine;
   }
@@ -125,11 +128,15 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
     const e = getEngine();
     if (e.busy) { push({ role: 'note', text: 'one at a time~ I\'m still answering.', at: now() }); return { ok: false }; }
     reply = { text: '', tools: [], filter: markerFilter() };
-    const [pet, prod, mem] = await Promise.all([
+    const [pet, prod, mem, gctx, wx] = await Promise.all([
       bus.request(TOPICS.PET_GET).catch(() => null),
       bus.request(TOPICS.PROD_GET).catch(() => null),
       bus.request(TOPICS.MEMORY_GET).catch(() => null),
+      bus.request(TOPICS.GOOGLE_CONTEXT).catch(() => ''),
+      bus.request(TOPICS.WEATHER_GET).catch(() => null), // D-035: null without a location
     ]);
+    let googleLine = '';
+    if (gctx && gctx !== googleSent) { googleSent = gctx; googleLine = `${gctx}\n`; }
     const facts = (mem && mem.facts) || [];
     const sig = facts.map((/** @type {any} */ f) => f.id).join(',');
     let memLine = '';
@@ -139,7 +146,7 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
         ? `[memory] What you remember about the user: ${facts.slice(-30).map((/** @type {any} */ f, /** @type {number} */ i) => `${i + 1}) ${f.text}`).join('; ')}\n`
         : '[memory] You don\'t remember anything about the user yet.\n';
     }
-    e.send(`${persona.statusLine(pet, prod)}\n${memLine}${text}`);
+    e.send(`${persona.statusLine(pet, prod, wx)}\n${googleLine}${memLine}${text}`);
     return { ok: true };
   }
 

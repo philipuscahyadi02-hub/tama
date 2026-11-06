@@ -3,8 +3,36 @@
 Every version of Tama: what changed, which decisions were made, and the exact commits.
 
 **How this file works**
-- **Top part (hand-written):** add a line under `## [Unreleased]
+- **Top part (hand-written):** add a line under `## [Unreleased]` in every commit that changes
+  behavior, docs or decisions. Sections: `Added` / `Changed` / `Fixed` / `Removed` / `Decisions` / `Docs`.
+  Reference PRD IDs (`SUM-1`) and decision IDs (`D-014`).
+- **Release:** rename `[Unreleased]` to `[x.y.z] — YYYY-MM-DD`, bump `package.json`, commit,
+  tag `vx.y.z`, then run `npm run changelog` and commit the regenerated table.
+- **Bottom part (generated):** `npm run changelog` rebuilds the commit table per version from
+  `git log` and the `v*` tags. Don't edit it by hand. Run it before each commit; it lists every
+  commit up to the previous one (a commit can't contain its own hash).
+- **Versioning (D-015):** each finished milestone is a minor version (M0 → 0.1.0, M1 → 0.2.0, …).
+  Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
+
+## [Unreleased]
 _Nothing yet._
+
+## [0.6.0] — 2026-11-06 — M6 Google (+ M5 extras)
+### Added
+- **M6 Google** (D-034):
+  - **Connect Google** with your own Google app: a guided 5-minute setup page (tray → Google…, or `/google setup`), browser sign-in (loopback + PKCE). Tokens are stored only in Windows-encrypted secrets.
+  - **In the terminal, Claude Code can now:** read your calendar, create events (no invitations are ever sent), edit events (asks first); search and read Gmail and write **drafts** (there is no send); search and read Drive; create Google **Docs** from Markdown and **Sheets** with tabs and formulas in a "Tama Drafts" folder; append to Docs and write/append Sheet rows (asks first). There are no delete or share tools.
+  - **Meeting reminders:** a sleeve-tug bubble + notification 5 minutes before an event.
+  - **Morning brief** (once each morning, and `/brief`): today's events, important unread mail, open todos. The 💬 chat knows today's schedule too (read-only).
+  - **Drive backup:** daily, to Drive's hidden app folder (keeps 7). `/google backups`, `/google restore <n>`. After sign-in on a new PC she offers to restore missing Tamas; a warning if the same Tama is awake on another PC.
+  - `/google` (status, login, logout, brief, backup, backups, restore, readonly on|off) and `/newpc` checklist.
+- **M5 extras** (D-035):
+  - **Weather moments** (EVT-1): tell your Tama where you live with `/weather <city>` (Open-Meteo, no account or key). She notices thunderstorms, rainy days, very hot days (with a water quest) and cold or snowy days, and the 💬 chat knows the weather too. `/weather` shows it now, `/weather off` forgets the city. Offline? She just skips the weather.
+  - **Fullscreen = quiet time** (PET-6): no pop-up moments while a game, video or slideshow fills the screen (Windows).
+  - **Out for a walk** (SUM-5): when you hide your Tama, a tiny tab with her face peeks out from the right edge of the screen; click it to call her back. `/marker on|off`.
+### Changed
+- PermissionGate supports rules (Google reads/creations auto-allowed and announced; edits ask).
+- `zod` is now a declared dependency (it was already installed as the Agent SDK's peer); it is unpacked with the SDK in the portable build.
 
 ## [0.5.0] — 2026-11-06 — M5 Events & memory
 ### Added
@@ -123,7 +151,12 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `6415e4a` | 2026-11-06 | docs | add D-035, update PRD, architecture and changelog for M5 extras |
+| `0b3c72b` | 2026-11-06 | feat(events) | weather moments, fullscreen quiet time, walk marker (M5 extras) |
+| `02f258d` | 2026-11-06 | feat(google) | M6 Google sign-in, Gmail drafts, Calendar, Drive/Docs/Sheets, backup |
+| `ffa9a51` | 2026-11-06 | docs(changelog) | regenerate commit table for 0.5.0 |
 
 ### v0.5.0
 | Commit | Date | Type | Subject |
