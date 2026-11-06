@@ -139,17 +139,21 @@ function boot() {
     openPage('onboarding/onboarding.html', { width: 940, height: 700, title: 'Hatch your Tama', query: { mode } });
 
   const openGoogle = () => openPage('google/google.html', { width: 780, height: 720, title: 'Connect Google', frame: true });
+  const openVoice = () => openPage('voice/voice.html', { width: 980, height: 760, title: 'Voice', frame: true });
   const openDashboard = (tab = '') => openPage('dashboard/dashboard.html', { width: 1060, height: 780, title: 'Usage & accounts', frame: true, query: tab ? { tab } : {} });
   const openRoster = (/** @type {boolean | undefined} */ importNow) =>
     openPage('roster/roster.html', { width: 900, height: 660, title: 'My Tamas', query: importNow ? { import: '1' } : {} });
-  createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster, openGoogle, openDashboard, pages: openPages }).start();
+  createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, pages: openPages }).start();
   // Voice (M9, D-042/D-043): created before the tray, whose Voice submenu shows its setting; started with the services.
-  const engineProc = createVoiceEngineProcess({
-    exePath: () => (device.get().voice || {}).enginePath, gpu: () => (device.get().voice || {}).gpu !== false,
-    pidFile: pathMod.join(appShell.paths.data(), 'voice-engine.pid'),
-  });
-  if (engineProc.cleanupStale()) debug('voice: stopped an AivisSpeech engine left over from a previous run');
-  const voice = createVoice({ bus, device, sapi, vv: createVvEngines(), tamaId: active.id, engineProc });
+  /** @type {Record<string, ReturnType<typeof createVoiceEngineProcess>>} */ const voiceProcs = {};
+  for (const id of /** @type {const} */ (['aivis', 'voicevox'])) {
+    voiceProcs[id] = createVoiceEngineProcess({
+      id, exePath: () => ((device.get().voice || {}).enginePaths || {})[id], gpu: () => (device.get().voice || {}).gpu !== false,
+      pidFile: pathMod.join(appShell.paths.data(), id === 'aivis' ? 'voice-engine.pid' : `voice-engine-${id}.pid`),
+    });
+    if (voiceProcs[id].cleanupStale()) debug(`voice: stopped a ${id} engine left over from a previous run`);
+  }
+  const voice = createVoice({ bus, device, sapi, vv: createVvEngines(), tamaId: active.id, procs: voiceProcs });
   /** Tray menu; the Voice submenu shows the current choice (D-043). @param {string} lang */
   const trayItems = (lang) => [
       { label: `Summon ${active.name}  (Ctrl+Alt+P)`, click: () => summon('tray-menu') },
@@ -160,6 +164,8 @@ function boot() {
         { label: 'English (Windows voice)', type: 'radio', checked: lang === 'en', click: () => bus.request(TOPICS.VOICE_SET, { lang: 'en' }).catch(() => null) },
         { label: 'Japanese dub (AivisSpeech)', type: 'radio', checked: lang === 'ja', click: () => bus.request(TOPICS.VOICE_SET, { lang: 'ja' }).catch(() => null) },
         { label: 'No voice', type: 'radio', checked: lang === 'off', click: () => bus.request(TOPICS.VOICE_SET, { lang: 'off' }).catch(() => null) },
+        { type: 'separator' },
+        { label: 'Choose her voice…', click: () => openVoice() },
       ] },
       { label: 'My Tamas…', click: () => openRoster(false) },
       { label: 'Google…', click: () => openGoogle() },
@@ -261,6 +267,7 @@ function boot() {
   }
   if (process.env.TAMA_OPEN_ROSTER) openRoster(false);
   if (process.env.TAMA_OPEN_GOOGLE) openGoogle();
+  if (process.env.TAMA_OPEN_VOICE) openVoice();
   if (process.env.TAMA_OPEN_DASHBOARD) openDashboard(process.env.TAMA_OPEN_DASHBOARD === 'limits' ? 'limits' : undefined);
   if (process.env.TAMA_OPEN_ONBOARDING) openOnboarding(process.env.TAMA_OPEN_ONBOARDING);
   if (process.env.TAMA_ONBOARD_WALK) {
@@ -269,6 +276,8 @@ function boot() {
       prompt: process.env.TAMA_WALK_PROMPT || 'a sleepy cat boy with headphones who loves coffee',
     });
   }
+  // Dev: quit cleanly after N ms (stoppers run, so voice engines Tama started are stopped too).
+  if (process.env.TAMA_QUIT_AFTER) setTimeout(() => appShell.quit(), Number(process.env.TAMA_QUIT_AFTER) || 60000);
   if (process.env.TAMA_SELFTEST) {
     require('./dev/selftest').runSelfTest({ pet, summoner, workAreas: require('./platform/displays').workAreas, quit: appShell.quit });
   }

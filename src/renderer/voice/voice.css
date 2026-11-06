@@ -1,0 +1,30 @@
+/* Voice page (D-045). Base styles come from dashboard.css; colors are --tama-* tokens from the CharacterSpec. */
+.now { display: flex; gap: 16px; align-items: flex-start; }
+.portrait { width: 120px; min-width: 120px; height: 150px; border-radius: 12px; background: var(--tama-bubble) center / cover no-repeat;
+  border: 1px solid var(--tama-line); display: flex; align-items: center; justify-content: center; font-size: 40px; }
+.nowBody { flex: 1; min-width: 0; }
+.nowBody h2 { margin: 0; }
+.tune { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
+.tune label { display: flex; flex-direction: column; font-size: 12px; color: var(--tama-dim); gap: 2px; }
+.tune input[type=range] { width: 100%; accent-color: var(--tama-accent); padding: 0; border: 0; background: none; }
+.tune b { color: var(--tama-ink); font-size: 12px; }
+.switch { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; }
+.switch input { accent-color: var(--tama-accent); }
+.moods { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.moods span { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--tama-bubble); border: 1px solid var(--tama-bubble-line); }
+.moods span b { font-weight: 700; }
+.engines { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+.eng { border: 1px solid var(--tama-line); border-radius: 10px; padding: 6px 10px; font-size: 12.5px; background: var(--tama-bg); }
+.eng b { font-weight: 700; }
+.group h4 { margin: 14px 0 6px; font-size: 13px; }
+.vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.vcard { border: 1px solid var(--tama-line); border-radius: 12px; padding: 8px 10px; background: var(--tama-panel); }
+.vcard.sel { border-color: var(--tama-accent); box-shadow: 0 0 0 2px var(--tama-accent) inset; }
+.vcard .top { display: flex; align-items: center; gap: 6px; }
+.vcard .name { font-weight: 700; flex: 1; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.chip { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--tama-line); background: var(--tama-bg); cursor: pointer; font-weight: 600; }
+.chip:hover { border-color: var(--tama-accent); }
+.chip.on { background: var(--tama-accent); color: var(--tama-accent-ink); border-color: var(--tama-accent); }
+details.terms { margin-top: 6px; font-size: 12px; }
+details.terms pre { white-space: pre-wrap; max-height: 180px; overflow: auto; background: var(--tama-bg); padding: 8px; border-radius: 8px; border: 1px solid var(--tama-line); }

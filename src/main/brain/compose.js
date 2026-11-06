@@ -20,8 +20,9 @@ Reply with the entry text only (no title, no date, no tools).`,
   translate: (/** @type {string} */ seed) => `[dub] Say this line in natural spoken Japanese, the way you (in character) would say it out loud:
 casual and cute, same meaning and about the same length, keep names as they are, no emoji.
 Japanese only (kana/kanji): no romaji, no English.
+Also tag the feeling you say it with, one of: normal, happy, excited, sweet, tease, sad, sleepy, calm, angry.
 Line: ${seed}
-Reply with the Japanese line only: no quotes, no notes, no tools.`,
+Reply exactly as: <feeling> | <Japanese line>   (no quotes, no notes, no tools)`,
 };
 
 /**

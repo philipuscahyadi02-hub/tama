@@ -23,6 +23,11 @@ Every version of Tama: what changed, which decisions were made, and the exact co
     - **Japanese dub:** Gemini rewrites each line in her own casual Japanese and AivisSpeech (or VOICEVOX) reads it, while the text stays English.
     - **No voice.**
   - Also: `/voice test`, `/voice chat|events on|off`, `/voice gpu on|off`, `/voice speakers`, `/voice speaker <id>`.
+  - **Voice page** (tray → Voice → Choose her voice…, or `/voice pick`; D-045):
+    - Pick from AivisSpeech and **VOICEVOX** characters (44, e.g. ずんだもん, 四国めたん, 春日部つむぎ): click a style to hear it, "Use" to choose it.
+    - Tune pitch, speed and expression per Tama.
+    - Each character's portrait, credit and terms are shown.
+  - **Her voice follows her emotion:** each line gets a feeling (happy, sad, teasing, sleepy…), and she speaks it in the matching style (e.g. なみだめ when sad, ツンツン when scolding) with a fitting tone. `/voice mood on|off`.
   - **AivisSpeech runs only when needed** (D-044): Tama starts the installed AivisSpeech Engine hidden (on the graphics card) when you choose Japanese dub, warms it up, and stops it when you switch away or quit. If Tama crashes, the engine is stopped on the next start.
   - **Telegram voice notes:** `/voice on` on the phone and she also answers with a voice note. Your own voice notes get a polite "can't listen yet".
     Asking in plain words ("send it as voice", "vn dong", "kirim suara", "声で") gets that one reply as a voice note. The bot menu now updates on every start, so `/voice` appears without pairing again. She also knows she can send voice notes.

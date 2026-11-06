@@ -31,7 +31,7 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
     '  /memory          what your Tama remembers about you · /remember <fact> · /forget <n|all>',
     '  /diary [date]    read their diary (they write one every evening) · /diary list',
     '  /event [id]      start a little moment now · /dnd [on|off] quiet mode · /nudges [on|off] water & stretch',
-    '  /voice en|ja|off English voice, Japanese dub or none · /voice test · /mute · /motion auto|reduced|full',
+    '  /voice pick      choose & tune her voice · /voice en|ja|off · /voice test · /mute · /motion auto|reduced|full',
     '  /google [setup|status|login|logout|brief|backup|backups|restore <n>|readonly on|off|maps-key <key|off>]   Gmail, Calendar, Drive, Docs, Sheets',
     '  /brief           morning brief (calendar, important mail, todos) · /newpc  checklist for a new PC',
     '  /usage [here]    Usage & accounts dashboard: Claude, Gemini, Google, Telegram usage + switch accounts',
@@ -183,27 +183,28 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
         await K.ui.setPrefs({ motion: m });
         info(`⎿  motion: ${m}${m === 'reduced' ? ' (no wandering, no bouncing)' : ''}`);
       }],
-      voice: ['Voice: /voice [en|ja|off|test [text]|chat on|off|events on|off|speakers|speaker <id>]', async (arg) => {
+      voice: ['Voice: /voice [pick|en|ja|off|test [text]|mood on|off|chat on|off|events on|off|gpu on|off|speakers|speaker <id>]', async (arg) => {
         const a = String(arg || '').trim();
         const [cmd, val] = a.split(/\s+/, 2).map((x) => (x || '').toLowerCase());
         const onOff = (v) => /^(on|1|yes)$/i.test(v);
-        const LANG = { en: 'English (Windows voice)', ja: 'Japanese dub (AivisSpeech)', off: 'no voice' };
+        const LANG = { en: 'English (Windows voice)', ja: 'Japanese dub', off: 'no voice' };
         let st;
+        if (cmd === 'pick' || cmd === 'choose') { K.voice.open(); return info('⎿  🎙️ opening the Voice page~'); }
         if (!cmd) st = await K.voice.detect();
         else if (cmd === 'test') {
           const r = await K.voice.say(a.slice(4).trim() || 'Hi hi! This is my voice. Do you like it?');
-          return r.ok ? info(`⎿  🔊 ${r.engine}${r.lang === 'ja' ? ` · 「${r.text}」` : ''}`) : error(`✗ couldn't speak (${r.reason})`);
+          return r.ok ? info(`⎿  🔊 ${r.engine}${r.style ? ` (${r.style})` : ''} · mood: ${r.mood}${r.lang === 'ja' ? ` · 「${r.text}」` : ''}`) : error(`✗ couldn't speak (${r.reason})`);
         } else if (cmd in LANG) st = await K.voice.set({ lang: cmd });
+        else if (cmd === 'mood') st = await K.voice.set({ moodStyles: onOff(val) });
         else if (cmd === 'chat' || cmd === 'events' || cmd === 'gpu') st = await K.voice.set({ [cmd]: onOff(val) });
         else if (cmd === 'speaker') st = await K.voice.set({ speaker: val === 'default' ? null : Number(val) });
         else if (cmd === 'speakers') {
           st = await K.voice.detect();
-          if (!st.engines.length) return info('⎿  No AivisSpeech / VOICEVOX running. Start it, then try again.');
-          return info(st.engines.map((e) => `⎿  ${e.name} ${e.version}\n${e.speakers.map((sp) => `     ${sp.name}: ${sp.styles.map((x) => `${x.name} #${x.id}`).join(', ')}`).join('\n')}`).join('\n') + '\n   Pick one with /voice speaker <id>');
-        } else return error('✗ /voice [en|ja|off|test|chat on|off|events on|off|gpu on|off|speakers|speaker <id>]');
-        const eng = st.engines.length ? `${st.engines.map((e) => `${e.name} ${e.version}`).join(', ')}${st.engineStartedByTama ? ` (started by me${st.gpu ? ', GPU' : ', CPU'})` : ''}`
-          : st.engineBooting ? 'warming up…' : st.engineInstalled ? 'installed, starts with Japanese dub' : 'not installed';
-        info(`⎿  voice: ${LANG[st.lang]} · chat ${st.chat ? 'on' : 'off'} · moments ${st.events ? 'on' : 'off'} · AivisSpeech/VOICEVOX: ${eng}${st.speaker != null ? ` · speaker #${st.speaker}` : ''}${st.lang === 'ja' && !st.engines.length ? '\n   (Japanese needs AivisSpeech running; until then I use my English voice)' : ''}\n   Also in the tray menu → Voice.`);
+          if (!st.voices.length) return info('⎿  No AivisSpeech / VOICEVOX voices known yet. Choose Japanese dub once (/voice ja) so the engine starts.');
+          return info(st.voices.map((v) => `⎿  [${v.engine}] ${v.name}: ${v.styles.map((x) => `${x.name} #${x.id}`).join(', ')}`).join('\n') + '\n   Easier: /voice pick opens the Voice page with previews.');
+        } else return error('✗ /voice [pick|en|ja|off|test|mood on|off|chat on|off|events on|off|gpu on|off|speakers|speaker <id>]');
+        const eng = st.engines.map((e) => `${e.name}: ${e.running ? `running${e.startedByTama ? ` (by me, ${st.gpu ? 'GPU' : 'CPU'})` : ''}` : e.booting ? 'warming up…' : e.installed ? 'installed' : 'not installed'}`).join(' · ');
+        info(`⎿  voice: ${LANG[st.lang]}${st.pick ? ` · ${st.pick.name} (${st.pick.styleName})` : ''} · mood styles ${st.moodStyles ? 'on' : 'off'} · chat ${st.chat ? 'on' : 'off'} · moments ${st.events ? 'on' : 'off'}\n   ${eng}\n   Choose and tune her voice: /voice pick (or tray → Voice → Choose her voice…)`);
       }],
       // ---- M5 extras (D-035) ----
       weather: ['Weather where you are: /weather <city>, /weather off', async (arg) => {

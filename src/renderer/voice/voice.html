@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data: blob:" />
+  <title>Voice</title>
+  <link rel="stylesheet" href="../dashboard/dashboard.css" />
+  <link rel="stylesheet" href="voice.css" />
+</head>
+<body>
+  <header>
+    <h1>🎙️ <span id="who">Her</span> voice</h1>
+    <span class="spacer"></span>
+    <div class="seg" id="lang">
+      <button data-lang="en">English</button><button data-lang="ja">Japanese dub</button><button data-lang="off">No voice</button>
+    </div>
+  </header>
+  <p class="dim note" id="langNote"></p>
+
+  <section class="card now">
+    <div class="portrait" id="portrait"></div>
+    <div class="nowBody">
+      <div class="row"><h2 id="nowName">—</h2><span class="badge" id="nowEngine"></span><span class="badge" id="nowStyle"></span></div>
+      <div class="kv dim" id="credit"></div>
+      <div class="tune">
+        <label>Pitch <input type="range" id="tPitch" min="-0.15" max="0.15" step="0.01" /><b id="vPitch"></b></label>
+        <label>Speed <input type="range" id="tSpeed" min="0.6" max="1.6" step="0.02" /><b id="vSpeed"></b></label>
+        <label>Expression <input type="range" id="tInto" min="0.3" max="1.8" step="0.05" /><b id="vInto"></b></label>
+      </div>
+      <div class="row">
+        <select id="tryMood" title="Hear how this voice sounds in each mood">
+          <option value="normal">normal</option><option value="happy">happy</option><option value="excited">excited</option>
+          <option value="sweet">sweet</option><option value="tease">teasing</option><option value="sad">sad</option>
+          <option value="sleepy">sleepy</option><option value="calm">calm</option><option value="angry">angry</option>
+        </select>
+        <button id="tryNow" class="primary">▶ Try</button>
+        <button id="resetTune">Reset tuning</button>
+        <span class="msg" id="msg"></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="row"><h3>💞 Match her emotion</h3><span class="spacer"></span>
+      <label class="switch"><input type="checkbox" id="moodStyles" /> on</label></div>
+    <div class="kv dim">Each line gets a feeling (Gemini tags it while writing the Japanese dub). Tama then picks the fitting style of this voice and adjusts speed and tone.</div>
+    <div class="moods" id="moodMap"></div>
+  </section>
+
+  <section class="card">
+    <div class="row"><h3>Voices</h3><span class="spacer"></span>
+      <label class="switch" title="Use the graphics card (much faster on your PC)"><input type="checkbox" id="gpu" /> use graphics card</label></div>
+    <div id="engines" class="engines"></div>
+    <div id="voices"></div>
+    <p class="dim note">Click a style to hear it, then "Use" to make it her voice. Engines run only while needed and stop again a few minutes after previews.</p>
+  </section>
+
+  <script src="../../shared/palette.js"></script>
+  <script src="../../shared/catalog.js"></script>
+  <script src="../../shared/spec.js"></script>
+  <script src="../../shared/theme.js"></script>
+  <script src="voice.js"></script>
+</body>
+</html>

@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.19 |
+| **Version** | 0.20 |
 | **Status** | v0.8.0 released (M0–M8). M9 (voice & polish) code complete on `m9-voice`; portable .exe postponed |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-06 |
@@ -179,6 +179,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | VOICE-1 | Voice with a language setting (D-043): **English** (Windows built-in voice, pitch/rate from `VoiceSpec`), **Japanese dub** (Gemini translates each line in character, **AivisSpeech**/VOICEVOX reads it, D-022), or **off**. Tray ▸ Voice and `/voice en\|ja\|off`. Speaks chat replies and moments on the desktop with a talking mouth (D-042). | P0 | M9 | ☑ |
 | VOICE-2 | Speaking style (tics, catchphrase frequency) from the same voice prompt. | P0 | M1 | ☑ |
 | VOICE-3 | Other providers pluggable later (e.g. ElevenLabs Voice Design, paid; Kokoro for English). | P2 | later | ☐ |
+| VOICE-5 | Voice page: pick her voice from AivisSpeech + VOICEVOX characters (previews, portrait, credit, terms), tune pitch/speed/expression per Tama; the voice style and tone follow the feeling of each line (D-045). | P1 | M9 | ☑ |
 | VOICE-4 | STT for Telegram voice notes (local whisper.cpp, optional download). | P2 | later | ☐ |
 
 ### 4.12 Portability & lifecycle (PORT)
@@ -230,6 +231,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.20 — 2026-11-07** — New VOICE-5: Voice page with VOICEVOX characters, tuning and mood-matched styles (D-045).
 - **0.19 — 2026-11-07** — VOICE-1: Tama starts/stops the headless AivisSpeech Engine (GPU) with the Japanese dub (D-044).
 - **0.18 — 2026-11-07** — VOICE-1: language setting English / Japanese dub / off (D-043).
 - **0.17 — 2026-11-07** — M9: voice (VOICE-1), Tama → phone voice notes (TG-3 ◐), mute/reduced motion (PET-8), idle CPU work (NFR-1 ◐) (D-042). Portable .exe postponed by the user.

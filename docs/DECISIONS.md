@@ -74,6 +74,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-042 | Voice: AivisSpeech/VOICEVOX HTTP for Japanese lines, Windows SAPI (via PowerShell) for English; audio plays in the pet window; Telegram voice notes as M4A; calm-idle animation bursts | Accepted · engine choice superseded by D-043 |
 | D-043 | Voice language setting: English (Windows voice) / Japanese dub (Gemini translates in character, AivisSpeech reads) / off; tray Voice menu + `/voice en\|ja\|off` | Accepted · Supersedes D-042 (engine choice) |
 | D-044 | Headless AivisSpeech Engine (GPU) started by Tama only while Japanese dub is on; stopped on switch/quit; crash leftovers cleaned via a PID file | Accepted |
+| D-045 | Voice page: VOICEVOX added (headless engine, 44 licensed TTS characters), per-Tama voice pick + tuning, mood-matched styles from the dub's feeling tag; no cloning of real people's voices | Accepted |
 
 ---
 
@@ -568,3 +569,42 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
   - The engine is unsigned third-party software from the official repo, installed at the user's request.
   - On PCs with only an integrated GPU, the README says `--use_gpu` is slower: use `/voice gpu off` there.
 - **Refs:** VOICE-1, D-022, D-043, src/main/platform/voice-engine-process.js, src/main/services/voice/index.js
+
+### D-045 — Voice page: VOICEVOX added, per-Tama voice pick + tuning, mood-matched styles; no cloning of real people's voices
+- **Date:** 2026-11-07 · **Status:** Accepted
+- **Context:**
+  - The user asked for a page to pick her voice, with the voice tuned to the emotion of each chat line.
+  - They also asked to clone a real voice actress's voice (Sora Amamiya) and anime characters' voices. Declined: cloning a real person's voice without consent is impersonation, whatever the use; ElevenLabs' terms also require rights to the voice.
+  - Offered instead: VOICEVOX's TTS characters, whose voice actors and owners allow this use.
+- **Findings:**
+  - **Install:** VOICEVOX Engine 0.26.1 (DirectML, official GitHub release, 1.9 GB download) was extracted to `%LOCALAPPDATA%\Programs\VOICEVOX-Engine\windows-directml` (2.2 GB) at the user's request. Its first start took about 7 s, and it lists 44 characters.
+  - **Style types:** VOICEVOX 0.26 marks styles `streaming_talk`; singing and frame-decode styles must be filtered out.
+  - **Portraits and terms:** both engines serve `/speaker_info` with a portrait and terms text.
+- **Decision:**
+  - **Engines:** `platform/voice-engine-process.js` handles both (`ENGINE_DEFS`: AivisSpeech `:10101`, VOICEVOX `:50021`), each with its own PID file for crash leftovers. `services/voice/engines.js` manages them:
+    - It remembers each engine's voices in `device.json` `voice.catalog`, so the page lists voices while an engine is off.
+    - It runs the chosen voice's engine while Japanese dub is on.
+    - A preview "leases" another engine for 3 minutes, after which it is stopped again.
+    - Engines Tama didn't start are never stopped.
+  - **Pick and tuning per Tama:** `voice.pickByTama[id] = { engine, uuid, style }` and `voice.tuneByTama[id] = { pitch (±0.15), speed, intonation }`. The old `speakerByTama` style IDs map to a pick.
+  - **Emotion** (`services/voice/emotion.js`, pure, table-tested):
+    - The composer's dub prompt now returns `<feeling> | <Japanese line>` with one of normal, happy, excited, sweet, tease, sad, sleepy, calm, angry. A keyword/emoji guess covers English lines and missing tags.
+    - `styleFor()` maps the feeling to the chosen character's best style by name (e.g. sad → なみだめ/せつなめ, tease/angry → ツンツン/からかい, sleepy → ヘロヘロ/ねむたい) and otherwise keeps the user's base style.
+    - `prosodyFor()` nudges speed, pitch and intonation; the English Windows voice gets the same nudges.
+    - `/voice mood on|off` (`moodStyles`) turns it off.
+  - **Voice page** (`renderer/voice/`; tray Voice ▸ Choose her voice…, `/voice pick`):
+    - Language (English / Japanese dub / No voice).
+    - The current voice with portrait, credit line ("VOICEVOX:<name>") and terms.
+    - Pitch, Speed and Expression sliders, and a mood "Try".
+    - The mood → style map, and a GPU switch.
+    - All voices grouped by engine: click a style to hear it (played by the pet, so her mouth moves), "Use" to choose it.
+  - Dev: `TAMA_OPEN_VOICE=1`, and `TAMA_QUIT_AFTER=<ms>` for clean quits in live tests (killing Electron left engines running).
+- **Alternatives:**
+  - Cloning real voices (declined, see Context).
+  - Asking the model for the emotion in a separate call (extra cost); it rides along with the dub instead.
+  - Always running both engines (about 2 GB of RAM).
+- **Consequences:**
+  - VOICEVOX characters each have their own terms; credit is shown on the page, and personal use is free for the shipped ones.
+  - Voice notes and the desktop use the same pick and mood.
+  - Live check: three lines were spoken with ずんだもん in ノーマル/なみだめ/ツンツン from the tags excited/sad/tease, in 4.6–9 s each (translation plus synthesis).
+- **Refs:** VOICE-1, VOICE-3, D-022, D-043, D-044, src/main/services/voice/{index,engines,emotion,vv-engine}.js, src/main/platform/voice-engine-process.js, src/renderer/voice

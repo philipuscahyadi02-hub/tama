@@ -228,10 +228,14 @@ const TOPICS = {
   VOICE_SAY: 'voice.say',
   /** { text, voice?, lang?: 'en'|'ja' } → { wav: base64, engine, text, lang } | null — render only (Telegram voice notes, onboarding preview) */
   VOICE_RENDER: 'voice.render',
-  /** () → VoiceStatus { lang: 'en'|'ja'|'off', chat, events, speaker, engines, systemVoices } */
+  /** () → VoiceStatus { lang, chat, events, gpu, moodStyles, tune, pick, engines[], voices[], systemVoices } (D-045) */
   VOICE_STATUS: 'voice.status',
-  /** { lang?: 'en'|'ja'|'off', chat?, events?, gpu?, speaker?: number|null } → VoiceStatus */
+  /** { lang?, chat?, events?, gpu?, moodStyles?, pick?: { engine, uuid, style }, tune?: { pitch, speed, intonation }, speaker? } → VoiceStatus */
   VOICE_SET: 'voice.set',
+  /** { engine, style, tune?, mood?, text? } → { ok, reason? } — Voice page preview, played by the pet (starts that engine for a few minutes) */
+  VOICE_PREVIEW: 'voice.preview',
+  /** { engine, uuid } → { policy, portrait } | null — a character's terms of use and portrait (engine must be running) */
+  VOICE_INFO: 'voice.info',
   /** () → VoiceStatus — look for AivisSpeech / VOICEVOX again */
   VOICE_DETECT: 'voice.detect',
   /** { wav: base64 } → { data: base64, mime } | { error } — WAV → M4A for Telegram voice notes (encoded in the pet window) */

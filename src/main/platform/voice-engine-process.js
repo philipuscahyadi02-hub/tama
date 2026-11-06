@@ -1,21 +1,36 @@
 // @ts-check
-// Runs the AivisSpeech Engine (headless run.exe) only while the Japanese dub is on (D-044). Tama only stops an
-// engine it started itself; an engine the user runs (AivisSpeech app, their own run.exe) is used and left alone.
+// Runs the local voice engines (AivisSpeech Engine, VOICEVOX Engine; both headless run.exe) only while a voice needs
+// them (D-044, D-045). Tama only stops an engine it started itself; an engine the user runs (their AivisSpeech or
+// VOICEVOX app) is used and left alone.
 const { spawn, execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-/** Where the engine is usually installed (the Tama-installed headless engine first, then the AivisSpeech app). */
-function defaultPaths() {
-  const local = process.env.LOCALAPPDATA || '';
-  return [
-    path.join(local, 'Programs', 'AivisSpeech-Engine', 'Windows-x64', 'run.exe'),
-    path.join(local, 'Programs', 'AivisSpeech', 'AivisSpeech-Engine', 'run.exe'),
-    path.join(process.env.ProgramFiles || 'C:\\Program Files', 'AivisSpeech', 'AivisSpeech-Engine', 'run.exe'),
-  ];
-}
+const local = () => process.env.LOCALAPPDATA || '';
+const programFiles = () => process.env.ProgramFiles || 'C:\\Program Files';
 
-/** Is `pid` a running AivisSpeech run.exe? (Windows) @param {number} pid */
+/** Where each engine is usually installed: Tama's headless install first, then the engine bundled with the app. */
+const ENGINE_DEFS = {
+  aivis: {
+    port: 10101,
+    paths: () => [
+      path.join(local(), 'Programs', 'AivisSpeech-Engine', 'Windows-x64', 'run.exe'),
+      path.join(local(), 'Programs', 'AivisSpeech', 'AivisSpeech-Engine', 'run.exe'),
+      path.join(programFiles(), 'AivisSpeech', 'AivisSpeech-Engine', 'run.exe'),
+    ],
+  },
+  voicevox: {
+    port: 50021,
+    paths: () => [
+      path.join(local(), 'Programs', 'VOICEVOX-Engine', 'windows-directml', 'run.exe'),
+      path.join(local(), 'Programs', 'VOICEVOX-Engine', 'windows-cpu', 'run.exe'),
+      path.join(local(), 'Programs', 'VOICEVOX', 'vv-engine', 'run.exe'),
+      path.join(programFiles(), 'VOICEVOX', 'vv-engine', 'run.exe'),
+    ],
+  },
+};
+
+/** Is `pid` a running engine run.exe? (Windows) @param {number} pid */
 function isEngine(pid) {
   try {
     const out = execFileSync('tasklist', ['/FI', `PID eq ${pid}`, '/FO', 'CSV', '/NH'], { windowsHide: true, encoding: 'utf8', timeout: 5000 });
@@ -30,10 +45,12 @@ function killTree(pid) {
 }
 
 /**
- * @param {{ exePath?: () => string | null | undefined, gpu?: () => boolean, onExit?: (code: number | null) => void, pidFile?: string }} [o]
+ * @param {{ id?: 'aivis'|'voicevox', exePath?: () => string | null | undefined, gpu?: () => boolean,
+ *   onExit?: (code: number | null) => void, pidFile?: string }} [o]
  *   pidFile: remembers the engine Tama started, so one left behind by a crash is stopped on the next start.
  */
-function createVoiceEngineProcess({ exePath = () => null, gpu = () => true, onExit = () => {}, pidFile } = {}) {
+function createVoiceEngineProcess({ id = 'aivis', exePath = () => null, gpu = () => true, onExit = () => {}, pidFile } = {}) {
+  const def = ENGINE_DEFS[id];
   /** @type {import('child_process').ChildProcess | null} */ let child = null;
 
   /** Stop an engine a previous (crashed or killed) Tama run started and never stopped. */
@@ -48,7 +65,7 @@ function createVoiceEngineProcess({ exePath = () => null, gpu = () => true, onEx
 
   function find() {
     const custom = exePath();
-    for (const p of [custom, ...defaultPaths()]) if (p && fs.existsSync(p)) return p;
+    for (const p of [custom, ...def.paths()]) if (p && fs.existsSync(p)) return p;
     return null;
   }
 
@@ -57,7 +74,7 @@ function createVoiceEngineProcess({ exePath = () => null, gpu = () => true, onEx
     if (child) return { ok: true, path: find() || undefined };
     const exe = find();
     if (!exe) return { ok: false, reason: 'not installed' };
-    const args = ['--host', '127.0.0.1', '--port', '10101', '--output_log_utf8'];
+    const args = ['--host', '127.0.0.1', '--port', String(def.port), '--output_log_utf8'];
     if (gpu()) args.push('--use_gpu');
     child = spawn(exe, args, { cwd: path.dirname(exe), windowsHide: true, stdio: 'ignore', env: { ...process.env, PYTHONUTF8: '1' } });
     const me = child;
@@ -76,7 +93,7 @@ function createVoiceEngineProcess({ exePath = () => null, gpu = () => true, onEx
     if (c.pid) killTree(c.pid);
   }
 
-  return { start, stop, find, cleanupStale, owned: () => !!child };
+  return { id, start, stop, find, cleanupStale, owned: () => !!child };
 }
 
-module.exports = { createVoiceEngineProcess, defaultPaths };
+module.exports = { createVoiceEngineProcess, ENGINE_DEFS };

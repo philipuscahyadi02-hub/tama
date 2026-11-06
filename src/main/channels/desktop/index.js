@@ -18,10 +18,11 @@ const USER_ACTIONS = new Set(['feed', 'snack', 'play', 'clean', 'sleep', 'nap', 
  *   openRoster: (importNow?: boolean) => unknown,
  *   openGoogle: () => unknown,
  *   openDashboard: (tab?: string) => unknown,
+ *   openVoice: () => unknown,
  *   pages?: () => Array<import('electron').BrowserWindow>,
  * }} deps
  */
-function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster, openGoogle, openDashboard, pages }) {
+function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, pages }) {
   /** The last .tama file the user picked; import only ever reads this path, never one sent by a page. */
   let pickedImport = /** @type {string | null} */ (null);
   const both = () => [pet.win, term.window(), chat.window()];
@@ -66,10 +67,21 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.handle('voice:set', (p) => bus.request(TOPICS.VOICE_SET, {
       lang: p?.lang ? String(p.lang) : undefined, chat: typeof p?.chat === 'boolean' ? p.chat : undefined,
       events: typeof p?.events === 'boolean' ? p.events : undefined, gpu: typeof p?.gpu === 'boolean' ? p.gpu : undefined,
+      moodStyles: typeof p?.moodStyles === 'boolean' ? p.moodStyles : undefined,
+      pick: p?.pick && typeof p.pick === 'object' ? { engine: String(p.pick.engine), uuid: String(p.pick.uuid), style: Number(p.pick.style) } : undefined,
+      tune: p?.tune && typeof p.tune === 'object' ? { pitch: Number(p.tune.pitch), speed: Number(p.tune.speed), intonation: Number(p.tune.intonation) } : undefined,
       speaker: p?.speaker === null ? null : Number.isInteger(p?.speaker) ? p.speaker : undefined,
     }));
     ipc.handle('voice:say', (t) => bus.request(TOPICS.VOICE_SAY, { text: String(t || '').slice(0, 500), purpose: 'test' }));
     ipc.handle('voice:detect', () => bus.request(TOPICS.VOICE_DETECT));
+    ipc.handle('voice:try', (p) => bus.request(TOPICS.VOICE_PREVIEW, {
+      engine: String(p?.engine || ''), style: Number(p?.style), mood: p?.mood ? String(p.mood) : undefined,
+      tune: p?.tune && typeof p.tune === 'object' ? { pitch: Number(p.tune.pitch), speed: Number(p.tune.speed), intonation: Number(p.tune.intonation) } : undefined,
+      text: p?.text ? String(p.text).slice(0, 200) : undefined,
+    }).catch((e) => ({ ok: false, reason: String(e.message || e) })));
+    ipc.handle('voice:info', (p) => bus.request(TOPICS.VOICE_INFO, { engine: String(p?.engine || ''), uuid: String(p?.uuid || '') }).catch(() => null));
+    ipc.on('voice:open', () => openVoice());
+    bus.on(TOPICS.VOICE_CHANGED, (st) => { for (const w of pageWindows()) ipc.sendUi(w, 'voice.changed', st); });
     ipc.handle('voice:preview', (t, v) => bus.request(TOPICS.VOICE_RENDER, { text: String(t || '').slice(0, 300), voice: v && typeof v === 'object' ? {
       pitch: Number(v.pitch) || 1, rate: Number(v.rate) || 1, voiceGender: ['female', 'male', 'neutral'].includes(v.voiceGender) ? v.voiceGender : 'female',
     } : undefined }).catch((e) => ({ error: String(e.message || e) })));
