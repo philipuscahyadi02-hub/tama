@@ -15,7 +15,14 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
 
 ## [Unreleased]
-_Nothing yet._
+### Added
+- **M7 Telegram** (branch `m7-telegram`, D-036): your Tama on your phone, served from your PC (no server).
+  - **Setup in 2 minutes:** create a bot with @BotFather, `/phone setup <token>`, open the link on your phone. Only that one chat is ever answered (SAFE-3).
+  - **Chat** with her from anywhere (Gemini via agy, same conversation as the 💬 window).
+  - **`/status`** with a picture of how she looks right now, `/feed /snack /nap /summon`, `/todo /done /focus /remind`, `/brief`.
+  - **Remote coding:** `/code <task>` runs in the terminal's Claude Code session, only in folders you allowed on the PC (`/phone allow here`), always asking first: permission prompts arrive as ✅ / ♾️ / ❌ buttons. Live progress, the result, and the diff as a file. `/stop`, `/repos`, `/cd`, `/remote off` kill switch. Every remote action shows on the desktop.
+  - **Good morning / good night:** a morning brief and tonight's diary page on your phone.
+  - Bot says "sleeping" when the PC app quits; `/phone awake on` keeps the PC awake for remote use.
 
 ## [0.6.0] — 2026-11-06 — M6 Google (+ M5 extras)
 ### Added

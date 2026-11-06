@@ -5,8 +5,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.10 |
-| **Status** | v0.6.0 released (M0–M6). M7 in progress on `m7-telegram` |
+| **Version** | 0.11 |
+| **Status** | v0.6.0 released (M0–M6). M7 code complete on `m7-telegram` (awaiting user check, then 0.7.0) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-06 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -61,7 +61,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | ONB-5 | Name + personality sliders (energy, tsundere, formality, chaos), prefilled from spec. | P0 | M1 | ☑ |
 | ONB-6 | Free-text **voice prompt**; produces a `VoiceSpec` + playable preview; can regenerate. | P0 | M1 | ☑ |
 | ONB-7 | Detect & smoke-test engines (`claude`, `agy`); show login instructions if missing. | P0 | M3 | ☑ |
-| ONB-8 | Optional steps: Telegram pairing, Google sign-in. Skippable, available later in settings. | P1 | M6/M7 | ☐ |
+| ONB-8 | Optional steps: Telegram pairing, Google sign-in. Skippable, available later in settings. | P1 | M6/M7 | ◐ |
 | ONB-9 | First screen offers "Hatch new 🥚" or "Bring my Tama 📦" (import/restore). | P0 | M2 | ☑ |
 
 ### 4.2 Character & art (ART)
@@ -71,7 +71,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | ART-2 | The model **selects and recolors** parts from the library; it never free-draws the core body. | P0 | M1 | ☑ |
 | ART-3 | Full expression set works for every design: happy, sparkle, blush, pout, teary, shock, dizzy, smug, sleep, focus (glasses), sad. | P0 | M1 | ☑ |
 | ART-4 | Character palette/motif drives UI theme tokens (terminal, menus, bubbles). | P0 | M4 | ☑ |
-| ART-5 | Render current expression to PNG (for Telegram status/stickers). | P1 | M7 | ☐ |
+| ART-5 | Render current expression to PNG (for Telegram status/stickers). | P1 | M7 | ☑ |
 | ART-6 | Optional model-generated accessory SVG, sanitized and bounded. | P2 | later | ☐ |
 
 ### 4.3 Pet loop (PET)
@@ -141,14 +141,14 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.9 Telegram / phone (TG)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| TG-1 | Bot API **long polling** from the PC; no webhook, no server. | P0 | M7 | ☐ |
-| TG-2 | Pairing: paste BotFather token → QR / deep link with one-time code → bind to one chat ID; ignore all others. | P0 | M7 | ☐ |
-| TG-3 | Chat with the Tama in character; voice notes both ways. | P0 / P1 | M7/M8 | ☐ |
-| TG-4 | Productivity: `/todo /focus /remind`, morning brief, evening recap. | P0 | M7 | ☐ |
-| TG-5 | Pet: `/feed /nap /status` (status replies with expression PNG). `/summon`. | P1 | M7 | ☐ |
-| TG-6 | Remote control: `/code <task>` in allow-listed repos; progress updates; **permission prompts as inline buttons** (Yes / Always / No); diffs as file attachments; `/stop`. | P0 | M7 | ☐ |
-| TG-7 | Remote sessions default to ask-every-tool; kill switch; desktop announces every remote action. | P0 | M7 | ☐ |
-| TG-8 | On quit, bot bio set to "💤 sleeping"; optional keep-PC-awake while remote mode is on. | P2 | M7 | ☐ |
+| TG-1 | Bot API **long polling** from the PC; no webhook, no server. | P0 | M7 | ☑ |
+| TG-2 | Pairing: paste BotFather token → QR / deep link with one-time code → bind to one chat ID; ignore all others. | P0 | M7 | ☑ |
+| TG-3 | Chat with the Tama in character; voice notes both ways. *(Text chat done in M7; voice notes in M8.)* | P0 / P1 | M7/M8 | ◐ |
+| TG-4 | Productivity: `/todo /focus /remind`, morning brief, evening recap. | P0 | M7 | ☑ |
+| TG-5 | Pet: `/feed /nap /status` (status replies with expression PNG). `/summon`. | P1 | M7 | ☑ |
+| TG-6 | Remote control: `/code <task>` in allow-listed repos; progress updates; **permission prompts as inline buttons** (Yes / Always / No); diffs as file attachments; `/stop`. | P0 | M7 | ☑ |
+| TG-7 | Remote sessions default to ask-every-tool; kill switch; desktop announces every remote action. | P0 | M7 | ☑ |
+| TG-8 | On quit, bot bio set to "💤 sleeping"; optional keep-PC-awake while remote mode is on. | P2 | M7 | ☑ |
 
 ### 4.10 Google (GOOG)
 | ID | Requirement | Pri | MS | Status |
@@ -187,7 +187,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 |---|---|---|---|---|
 | SAFE-1 | One `PermissionGate` for every tool approval from every engine and every channel. | P0 | M3 | ☑ |
 | SAFE-2 | Secrets only via the secrets module; never logged, never in plain JSON, never in exports without password. | P0 | M0 | ☑ |
-| SAFE-3 | Telegram accepts only the paired chat ID. | P0 | M7 | ☐ |
+| SAFE-3 | Telegram accepts only the paired chat ID. | P0 | M7 | ☑ |
 | SAFE-4 | Warn before accept-edits mode outside a git repo. | P1 | M4 | ☑ |
 | SAFE-5 | Daily cost/token budget shown in `/stats`; Tama warns near the limit. | P1 | M3 | ☑ |
 | NFR-1 | Idle CPU < 2%, RAM < 300 MB (excluding engine processes). | P1 | M8 | ☐ |
@@ -206,7 +206,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M4 — Terminal v2.** *(released as 0.4.0)* Theming from the CharacterSpec (no more hard-coded Kero), commands, first-run tour (TERM-*, ART-4, SAFE-4).
 - [x] **M5 — Events & memory.** *(released as 0.5.0; weather, fullscreen DND and SUM-5 deferred)* (EVT-*, PET-6..7, NFR-4, SUM-5).
 - [x] **M6 — Google.** *(released as 0.6.0; Tasks sync, Docs replace-section and a hard device lock deferred)* OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
-- [ ] **M7 — Telegram.** (TG-*, ART-5, SAFE-3).
+- [x] **M7 — Telegram.** *(code complete; voice notes in M8)* (TG-*, ART-5, SAFE-3).
 - [ ] **M8 — Voice & polish.** (VOICE-1, PET-8, NFR-1, NFR-3).
 
 ## 6. Open questions
@@ -218,6 +218,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.11 — 2026-11-06** — M7 implemented: TG-1,2,4..8, SAFE-3, ART-5 done; TG-3 text done (voice in M8) (D-036).
 - **0.10 — 2026-11-06** — M6 implemented: GOOG-1,3,4,5,7,8, PORT-6, PORT-8 done; GOOG-2, GOOG-6, PORT-7 partial; PROD-3 open (D-034).
 - **0.9 — 2026-11-06** — M5 implemented: EVT-2..4, NFR-4, PET-7 done; EVT-1 and PET-6 partial (D-033).
 - **0.8 — 2026-11-06** — M4 implemented: TERM-1..4, ART-4, SAFE-4; BOND-3 terminal themes (D-032).

@@ -71,6 +71,13 @@ function createPetWindow({ savedPosition, onMoved = () => {} }) {
     hide() { hiddenByUser = true; win.hide(); },
     toggleVisible() { if (win.isVisible()) { hiddenByUser = true; win.hide(); } else { hiddenByUser = false; win.showInactive(); } },
     isHiddenByUser: () => hiddenByUser,
+    /** PNG of the pet as she looks right now (ART-5: Telegram /status). Null when she's hidden. */
+    async snapshot() {
+      if (win.isDestroyed() || !win.isVisible()) return null;
+      const r = { x: geo.BODY.x - 30, y: geo.BODY.y - 40, width: geo.BODY.width + 60, height: geo.BODY.height + 40 };
+      const img = await win.webContents.capturePage(r);
+      return img.isEmpty() ? null : img.toPNG();
+    },
     clearHiddenByUser() { hiddenByUser = false; },
     cursor,
   };

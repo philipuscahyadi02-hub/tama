@@ -40,4 +40,13 @@ function watchPower({ onPower, onIdle }) {
   };
 }
 
-module.exports = { watchPower, IDLE_NAP_SECONDS };
+let blockerId = /** @type {number | null} */ (null);
+/** Keep the PC from sleeping (remote mode, TG-8). Screen may still turn off. @param {boolean} on */
+function keepAwake(on) {
+  const { powerSaveBlocker } = require('electron');
+  if (on && blockerId === null) blockerId = powerSaveBlocker.start('prevent-app-suspension');
+  if (!on && blockerId !== null) { powerSaveBlocker.stop(blockerId); blockerId = null; }
+  return blockerId !== null;
+}
+
+module.exports = { watchPower, keepAwake, IDLE_NAP_SECONDS };

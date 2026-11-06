@@ -48,6 +48,7 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     bus.on(TOPICS.BRAIN_NOTICE, (p) => ipc.sendUi(pet.win, 'brain.notice', p));
     bus.on(TOPICS.UI_PREFS_CHANGED, (p) => toAll('ui.prefs', p));
     bus.on(TOPICS.GOOGLE_CHANGED, (p) => { toAll('google', p); for (const w of pageWindows()) ipc.sendUi(w, 'google', p); });
+    bus.on(TOPICS.TELEGRAM_CHANGED, (p) => toAll('telegram', p));
     bus.on(TOPICS.GOOGLE_MEETING_SOON, (p) => shell.notify(`📅 ${p.summary}`, `starts in ${p.minutes} min`));
     bus.on(TOPICS.EVENT_SHOWN, (p) => {
       ipc.sendUi(pet.win, 'event', p);
@@ -79,6 +80,16 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.on('term:show', () => term.show());
     ipc.on('chat:show', () => chat.show());
     ipc.handle('ui:prefs', () => bus.request(TOPICS.UI_PREFS_GET));
+    // ---- Telegram (M7, D-036) ----
+    ipc.handle('telegram:status', () => bus.request(TOPICS.TELEGRAM_STATUS));
+    ipc.handle('telegram:setup', (t) => bus.request(TOPICS.TELEGRAM_SETUP, { token: String(t || '') }).catch((e) => ({ error: String(e.message || e) })));
+    ipc.handle('telegram:newCode', () => bus.request(TOPICS.TELEGRAM_NEW_CODE));
+    ipc.handle('telegram:unpair', () => bus.request(TOPICS.TELEGRAM_UNPAIR));
+    ipc.handle('telegram:set', (p) => bus.request(TOPICS.TELEGRAM_SET, {
+      enabled: typeof p?.enabled === 'boolean' ? p.enabled : undefined, remote: typeof p?.remote === 'boolean' ? p.remote : undefined,
+      awake: typeof p?.awake === 'boolean' ? p.awake : undefined,
+      allow: p?.allow ? String(p.allow) : undefined, disallow: p?.disallow ? String(p.disallow) : undefined,
+    }));
     // ---- Google (M6, D-034) ----
     ipc.on('google:open', () => openGoogle());
     ipc.handle('google:status', () => bus.request(TOPICS.GOOGLE_STATUS));

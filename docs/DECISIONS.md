@@ -65,6 +65,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-033 | Events & memory: deck JSON + pure triggers, agy composer, hidden [[remember]] markers, facts + diary in the Tama's folder | Accepted |
 | D-034 | Google: own OAuth client (loopback+PKCE), plain-fetch APIs, MCP tools for Claude Code with a gate policy, read-only context for chat, appData backups | Accepted |
 | D-035 | M5 extras: Open-Meteo weather per PC, fullscreen DND via one hidden PowerShell helper, "out for a walk" edge marker | Accepted |
+| D-036 | Telegram: long polling, one-time-code pairing to one chat, chat → agy, /code → shared Claude session in allow-listed folders with inline permission buttons | Accepted |
 
 ---
 
@@ -383,3 +384,17 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** OpenWeatherMap and similar (need an API key); IP-based location (imprecise, sends the IP to another service); a native addon or `ffi` for user32 (new native dependency); spawning PowerShell per query (about 1 s and a console flash risk each minute); `SHQueryUserNotificationState` (misses borderless games and browser video).
 - **Consequences:** Weather events only appear after the user sets a city. A maximized window without a title bar, on a monitor with an auto-hide taskbar, can read as fullscreen (it also hides the pet's moments, which is acceptable). Meetings (calendar) as quiet time arrive with M6. Telegram (M7) can reuse `weather.*`; the walk marker has no Telegram equivalent.
 - **Refs:** EVT-1, PET-6, SUM-5, D-019, D-033, src/main/services/weather, src/main/platform/fullscreen.js, src/main/platform/windows/walk-marker.js, src/renderer/marker, assets/events/deck.json
+
+### D-036 — Telegram: long polling, one-time-code pairing to one chat, chat → agy, /code → shared Claude session in allow-listed folders with inline permission buttons
+- **Date:** 2026-11-06 · **Status:** Accepted
+- **Context:** M7 (TG-1..8, SAFE-3, ART-5): talk to the Tama and give Claude Code work from the phone, with no server (D-008) and stricter rules for remote sessions (AGENTS §4).
+- **Decision:**
+  - **Transport:** `services/telegram/api.js` uses plain `fetch` `getUpdates` long polling (50 s) from the PC, with exponential backoff, `retry_after`, and a full stop on 401/404. The bot token is redacted from every error. There is no webhook and no extra dependency (multipart uses Node's FormData/Blob).
+  - **Pairing (TG-2, SAFE-3):** `/phone setup <token>` checks the token with `getMe`, then shows a deep link `t.me/<bot>?start=<code>` and the 6-character one-time code (valid 15 minutes). The first private chat that sends the code becomes the only paired chat (`telegram.chatId` in secrets). Every other chat and button press is ignored and counted. `/phone code` makes a new code; `/phone unpair` forgets the chat.
+  - **Routing:** plain text → the chat brain (`chat.send`, prefixed 📱 so the desktop chat shows where it came from), and the bot replies with the next Tama message. Commands: `/status` (stats + a PNG of how she looks right now, ART-5: `pet-window.snapshot()` via capturePage), `/feed /snack /nap /summon`, `/todo /todos /done /focus /remind`, `/brief`, `/code /stop /repos /cd /remote`.
+  - **Remote coding (TG-6/7):** `/code` uses the **same** Claude Code session as the terminal (one conversation, visible on the desktop). It only runs when the current folder is on the allow-list, and the allow-list is only editable on the PC (`/phone allow here`). Each remote turn switches the session to `default` mode (ask before every tool). Permission prompts become inline Yes / Always / No buttons, answered on the phone or the desktop, whichever comes first; the message is then edited to show the outcome. Progress is one message edited every 3 s. The result text comes with `git diff` (read-only) as `changes.diff`. `/stop` interrupts. `/remote off` (phone) or `/phone remote off` (PC) is the kill switch. Every remote action is announced in the terminal and the pet bubble.
+  - **Daily:** a morning brief (Google brief if connected, else todos) after 08:00, and an evening recap after 21:30 (tonight's diary page), once a day each.
+  - **TG-8:** the bot's short description is set to "awake" on start and "sleeping" on quit (best effort). `/phone awake on` keeps the PC from sleeping (`powerSaveBlocker`).
+- **Alternatives:** A separate remote Claude session (would hide remote work from the desktop and duplicate context); allowing any folder (too risky from a phone); QR code pairing (needs a QR encoder dependency; the deep link + code covers the same need).
+- **Consequences:** The bot only answers while the PC is on and Tama runs. Voice notes are M8 (TG-3 voice part). Telegram secrets travel in `.tama` exports only when password-protected (D-025).
+- **Refs:** TG-1..8, SAFE-3, ART-5, D-008, D-025, D-029, src/main/services/telegram, src/main/platform/{git,power}.js, src/main/platform/windows/pet-window.js

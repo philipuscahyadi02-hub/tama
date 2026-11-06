@@ -13,7 +13,7 @@ const { createSummoner } = require('./platform/summon');
 const ipc = require('./platform/ipc');
 const shell = require('./platform/shell');
 const files = require('./platform/files');
-const { watchPower } = require('./platform/power');
+const { watchPower, keepAwake } = require('./platform/power');
 const { createRoster } = require('./services/roster');
 const { createDesigner } = require('./services/designer');
 const { createProductivity } = require('./services/productivity');
@@ -23,6 +23,7 @@ const { createEvents } = require('./services/events');
 const EVENT_DECK = require('../../assets/events/deck.json');
 const { createGoogle } = require('./services/google');
 const googleOAuth = require('./platform/google-oauth');
+const { createTelegram } = require('./services/telegram');
 const os = require('os');
 const { createGitWatcher } = require('./services/productivity/git-watcher');
 const git = require('./platform/git');
@@ -141,6 +142,8 @@ function boot() {
     onIdle: (idle, idleSeconds) => bus.emit(TOPICS.DEVICE_IDLE_CHANGED, { idle, idleSeconds }),
   }));
   stoppers.push(brain.start(), createUiPrefs({ bus, device }).start(), google.start());
+  // Telegram (M7, D-008, D-036): long polling from this PC; one paired chat; /code via the same Claude session.
+  stoppers.push(createTelegram({ bus, secrets, device, git, snapshot: () => pet.snapshot(), keepAwake, tama: active }).start());
   // Events & memory (M5, D-033): facts + diary per Tama, event deck from assets/events.
   stoppers.push(createMemory({ bus, store, tamaId: active.id }).start(), createEvents({ bus, store, tamaId: active.id, deck: EVENT_DECK }).start());
   // ---- M5 extras (D-035) ----
