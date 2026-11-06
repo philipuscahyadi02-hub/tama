@@ -148,7 +148,12 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `6415e4a` | 2026-11-06 | docs | add D-035, update PRD, architecture and changelog for M5 extras |
+| `0b3c72b` | 2026-11-06 | feat(events) | weather moments, fullscreen quiet time, walk marker (M5 extras) |
+| `02f258d` | 2026-11-06 | feat(google) | M6 Google sign-in, Gmail drafts, Calendar, Drive/Docs/Sheets, backup |
+| `ffa9a51` | 2026-11-06 | docs(changelog) | regenerate commit table for 0.5.0 |
 
 ### v0.5.0
 | Commit | Date | Type | Subject |
