@@ -178,7 +178,10 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `276dd70` | 2026-11-06 | feat(usage) | M8 usage & accounts dashboard (D-040) |
+| `990c18f` | 2026-11-06 | docs(changelog) | regenerate commit table for 0.7.0 |
 
 ### v0.7.0
 | Commit | Date | Type | Subject |
