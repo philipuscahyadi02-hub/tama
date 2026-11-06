@@ -17,7 +17,7 @@ const USER_ACTIONS = new Set(['feed', 'snack', 'play', 'clean', 'sleep', 'nap', 
  *   openOnboarding: (mode: 'hatch'|'restyle'|'rebirth') => void,
  *   openRoster: (importNow?: boolean) => unknown,
  *   openGoogle: () => unknown,
- *   openDashboard: () => unknown,
+ *   openDashboard: (tab?: string) => unknown,
  *   pages?: () => Array<import('electron').BrowserWindow>,
  * }} deps
  */
@@ -87,6 +87,12 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.on('dashboard:open', () => openDashboard());
     ipc.handle('usage:get', (p) => bus.request(TOPICS.USAGE_GET, { days: Number(p?.days) || 14, provider: p?.provider ? String(p.provider) : undefined, limit: Number(p?.limit) || 300 }));
     ipc.handle('accounts:get', (refresh) => bus.request(TOPICS.ACCOUNTS_GET, { refresh: !!refresh }));
+    ipc.handle('limits:get', () => bus.request(TOPICS.USAGE_LIMITS_GET));
+    ipc.handle('limits:refresh', () => bus.request(TOPICS.USAGE_LIMITS_REFRESH));
+    ipc.handle('limits:set', (p) => bus.request(TOPICS.USAGE_LIMITS_SET, {
+      placesCap: p?.placesCap === null ? null : p?.placesCap === undefined ? undefined : Number(p.placesCap),
+      alertAt: Array.isArray(p?.alertAt) ? p.alertAt.map(Number) : undefined,
+    }));
     ipc.handle('accounts:switch', (kind) => bus.request(TOPICS.ACCOUNTS_SWITCH, { kind: String(kind || '') }).catch((e) => ({ error: String(e.message || e) })));
     // ---- Telegram (M7, D-036) ----
     ipc.handle('telegram:status', () => bus.request(TOPICS.TELEGRAM_STATUS));

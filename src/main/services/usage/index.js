@@ -93,7 +93,6 @@ function createUsageLog({ bus, store, device, now = Date.now }) {
     return {
       summary: summarize(recent, days, now()),
       entries: list.slice(-(Math.min(1000, Number(p.limit) || 300))).reverse(),
-      claudeLimits: (device.get().usageLimits || {}).claude || {},
     };
   }
 
@@ -101,19 +100,12 @@ function createUsageLog({ bus, store, device, now = Date.now }) {
     load();
     const offs = [
       bus.on(TOPICS.USAGE_RECORD, (/** @type {any} */ e) => { try { record(e); } catch (x) { bus.emit(TOPICS.APP_ERROR, { topic: 'usage', message: String(/** @type {Error} */ (x).message) }); } }),
-      // claude.ai plan limits, latest per window (5-hour, weekly, …).
-      bus.on(TOPICS.USAGE_LIMIT, (/** @type {any} */ l) => {
-        if (!l || !l.info) return;
-        const key = l.info.rateLimitType || 'unknown';
-        const cur = (device.get().usageLimits || {}).claude || {};
-        device.patch('usageLimits', { claude: { ...cur, [key]: { ...l.info, seenAt: now() } } });
-      }),
       bus.handle(TOPICS.USAGE_GET, (/** @type {any} */ p) => get(p || {})),
     ];
     return () => { for (const off of offs) off(); };
   }
 
-  return { start, record, get, load };
+  return { start, record, get, load, entries: () => recent };
 }
 
 module.exports = { createUsageLog, summarize, clean };

@@ -57,7 +57,7 @@ const TOPICS = {
   USAGE_RECORD: 'usage.record',
   /** { last: UsageEntry } — after a usage entry was written */
   USAGE_CHANGED: 'usage.changed',
-  /** { info: SDKRateLimitInfo } — claude.ai plan limit status (5-hour / weekly utilization) */
+  /** Limit news (D-041): { provider: 'claude', windows: { [window]: { used 0..1, resetsAt } }, source } | { provider: 'gemini', tier?, hit? } */
   USAGE_LIMIT: 'usage.limit',
   /** Accounts { claude, gemini, google, telegram } — after an account status changed (D-040) */
   ACCOUNTS_CHANGED: 'accounts.changed',
@@ -210,6 +210,12 @@ const TOPICS = {
   TELEGRAM_SET: 'telegram.set',
   /** { days?, provider?, limit? } → { summary, entries, claudeLimits } (D-040) */
   USAGE_GET: 'usage.get',
+  /** () → Limits { claude: { windows, history, extra, breakdown }, gemini: { tier, lastHit, today }, google: { month, placesCap, project } } */
+  USAGE_LIMITS_GET: 'usage.limits.get',
+  /** () → Limits — ask Claude for live plan limits now (no message, $0) */
+  USAGE_LIMITS_REFRESH: 'usage.limits.refresh',
+  /** { placesCap?: number | null, alertAt?: number[] } → Limits */
+  USAGE_LIMITS_SET: 'usage.limits.set',
   /** { refresh? } → Accounts */
   ACCOUNTS_GET: 'accounts.get',
   /** { kind: 'claude'|'gemini'|'google'|'google-project'|'telegram' } → { ok, message } | { error } — start switching an account */

@@ -10,6 +10,7 @@ const persona = require('./persona');
 const budget = require('./budget');
 const { createChat } = require('./chat');
 const { createComposer } = require('./compose');
+const { fromRateLimitEvent } = require('../engines/claude/limits');
 
 const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
 
@@ -88,7 +89,7 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
     if (!claude) {
       claude = factories.claudeWorker((ev) => {
         if (ev.t === 'session') device.patch('engine', { lastSessionId: ev.sessionId });
-        if (ev.t === 'rate-limit') bus.emit(TOPICS.USAGE_LIMIT, { info: ev.info });
+        if (ev.t === 'rate-limit') bus.emit(TOPICS.USAGE_LIMIT, { provider: 'claude', source: 'turn', ...fromRateLimitEvent(ev.info) });
         bus.emit(TOPICS.ENGINE_EVENT, { engine: 'claude', role: 'worker', ev });
         if (ev.t === 'result') recordUsage('claude', 'worker', ev);
       });

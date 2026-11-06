@@ -53,7 +53,7 @@ test('usage log: records to YYYY-MM.jsonl, survives a restart, summarizes per da
   assert.equal(Object.keys(r.summary.byDay).length, 7);
 });
 
-test('usage log: keeps 3 months; claude plan limits are stored per window', async () => {
+test('usage log: keeps 3 months of files', async () => {
   const s = setup();
   fs.mkdirSync(path.join(s.dir, 'usage'), { recursive: true });
   fs.writeFileSync(path.join(s.dir, 'usage', '2026-06.jsonl'), '{"at":1}\n');
@@ -61,11 +61,6 @@ test('usage log: keeps 3 months; claude plan limits are stored per window', asyn
   s.log.load();
   assert.equal(fs.existsSync(path.join(s.dir, 'usage', '2026-06.jsonl')), false);
   assert.equal(fs.existsSync(path.join(s.dir, 'usage', '2026-10.jsonl')), true);
-  s.bus.emit('usage.limit', { info: { status: 'allowed', rateLimitType: 'five_hour', utilization: 0.42, resetsAt: 1793960000 } });
-  s.bus.emit('usage.limit', { info: { status: 'allowed_warning', rateLimitType: 'seven_day', utilization: 0.81 } });
-  const r = await s.bus.request('usage.get', {});
-  assert.equal(r.claudeLimits.five_hour.utilization, 0.42);
-  assert.equal(r.claudeLimits.seven_day.status, 'allowed_warning');
   s.stop();
 });
 

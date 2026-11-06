@@ -84,7 +84,11 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
         out({ t: 'tool', text: describeTool(ev) });
         break;
       case 'status': out({ t: 'status', state: ev.state }); break;
-      case 'error': out({ t: 'error', message: ev.message }); break;
+      case 'init': if (ev.tier) bus.emit(TOPICS.USAGE_LIMIT, { provider: 'gemini', tier: ev.tier }); break; // plan tier for Limits (D-041)
+      case 'error':
+        if (/quota|RESOURCE_EXHAUSTED|rate.?limit|429/i.test(String(ev.message))) bus.emit(TOPICS.USAGE_LIMIT, { provider: 'gemini', hit: ev.message });
+        out({ t: 'error', message: ev.message });
+        break;
       case 'result': {
         onResult(ev);
         const tail = reply.filter.end();

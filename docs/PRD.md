@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.15 |
+| **Version** | 0.16 |
 | **Status** | v0.7.0 released (M0–M7). M8 code complete on `m8-dashboard` (awaiting user check, then 0.8.0); voice is M9 |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-06 |
@@ -168,6 +168,9 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | USE-1 | Usage log of every AI turn and service call Tama makes (Claude, Gemini/agy, Google APIs, Telegram): time, where, operation, model, tokens (in/out/cache), API-equivalent $, duration, ok. **Numbers only**, never contents; local, 3 months. | P0 | M8 | ☑ |
 | USE-2 | Dashboard (tray "Usage & accounts…", `/usage`): accounts, totals per service, per-day chart (calls/tokens/$), filterable log, CSV export. | P0 | M8 | ☑ |
 | USE-3 | Claude plan limits (5-hour / weekly utilization, reset time) from the Agent SDK. | P1 | M8 | ☑ |
+| USE-5 | **Limits tab:** Claude plan windows as % **left** (5-hour, weekly, per model), reset countdowns, extra-usage credits, 7-day trend; live check on demand (no message, $0) + after each turn. | P0 | M8 | ☑ |
+| USE-6 | Gemini: plan tier, today's usage, warning when Gemini reports the quota used up (agy shares no remaining-quota number). Google: calls this month per API; billable Places calls vs a user-set monthly cap; links to the project's quota and billing pages. | P1 | M8 | ☑ |
+| USE-7 | Warnings (pet bubble) when a Claude window falls below user-set thresholds (default 25 % and 10 % left), once per window. | P1 | M8 | ☑ |
 | USE-4 | Accounts: show who is signed in (Claude: email + plan + login expiry; Gemini/agy: email; Google: email + project + scopes + places mode; Telegram: bot + paired) and switch each via the official sign-in (Claude/agy console window, Google account picker, Google project change, Telegram re-setup); sessions restart on the new account. | P0 | M8 | ☑ |
 
 ### 4.11 Voice (VOICE)
@@ -215,7 +218,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M5 — Events & memory.** *(released as 0.5.0; weather, fullscreen DND and SUM-5 deferred)* (EVT-*, PET-6..7, NFR-4, SUM-5).
 - [x] **M6 — Google.** *(released as 0.6.0; Tasks sync, Docs replace-section and a hard device lock deferred)* OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
 - [x] **M7 — Telegram.** *(released as 0.7.0; voice notes in M9)* (TG-*, ART-5, SAFE-3).
-- [x] **M8 — Usage & accounts dashboard.** *(code complete)* Usage log, dashboard, Claude plan limits, account switching (USE-1..4, D-040).
+- [x] **M8 — Usage & accounts dashboard.** *(code complete)* Usage log, dashboard, Limits tab (what's left), account switching (USE-1..7, D-040, D-041).
 - [ ] **M9 — Voice & polish.** AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance, portable .exe (VOICE-1, TG-3 voice, PET-8, NFR-1, NFR-3).
 
 ## 6. Open questions
@@ -227,6 +230,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.16 — 2026-11-06** — Limits tab: what's left per service, trend, warnings (USE-5..7, D-041).
 - **0.15 — 2026-11-06** — M8 is now the usage & accounts dashboard (USE-1..4, D-040); voice and polish moved to M9.
 - **0.14 — 2026-11-06** — Event places verified on Google Maps before creating (D-039).
 - **0.13 — 2026-11-06** — Sending email and calendar invitations allowed after the user confirms the full content (D-038 supersedes D-014).

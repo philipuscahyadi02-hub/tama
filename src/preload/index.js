@@ -118,6 +118,11 @@ contextBridge.exposeInMainWorld('tama', {
     get: (/** @type {any} */ p) => ipcRenderer.invoke('usage:get', p),
     onChange: on('usage'),
   },
+  limits: {
+    get: () => ipcRenderer.invoke('limits:get'),
+    refresh: () => ipcRenderer.invoke('limits:refresh'),
+    set: (/** @type {any} */ p) => ipcRenderer.invoke('limits:set', p),
+  },
   accounts: {
     get: (/** @type {boolean} */ refresh) => ipcRenderer.invoke('accounts:get', !!refresh),
     switchTo: (/** @type {string} */ kind) => ipcRenderer.invoke('accounts:switch', kind),

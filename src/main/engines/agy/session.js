@@ -117,7 +117,8 @@ class AgyEngine {
     const s = await client.request('session/new', params, 60000);
     this.sessionId = s.sessionId;
     this.emit({ t: 'session', sessionId: s.sessionId });
-    this.emit({ t: 'init', model: s.models && s.models.currentModelId, cwd: this.cwd, mode: this.mode, commands: this.commands, version: 'agy' });
+    const tier = s._meta && s._meta.antigravity && s._meta.antigravity.tier;
+    this.emit({ t: 'init', model: s.models && s.models.currentModelId, cwd: this.cwd, mode: this.mode, commands: this.commands, version: 'agy', tier: tier && tier.name });
     if (this.model) await client.request('session/set_model', { sessionId: s.sessionId, modelId: this.model }).catch(() => null);
     if (this.thoughtLevel) await client.request('session/set_config_option', { sessionId: s.sessionId, configId: 'thought_level', value: this.thoughtLevel }).catch(() => null);
     if (this.mode !== 'default') await this.setMode(this.mode);

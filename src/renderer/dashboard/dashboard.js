@@ -1,7 +1,7 @@
 /* Usage & accounts dashboard (M8, D-040). A dumb view over window.tama.usage / window.tama.accounts. */
 const $ = (s) => document.querySelector(s);
 const K = window.tama;
-const st = { days: 14, metric: 'calls', data: null, accounts: null };
+const st = { days: 14, metric: 'calls', data: null, accounts: null, limits: null, tab: 'overview' };
 const NAMES = { claude: 'Claude', gemini: 'Gemini (agy)', google: 'Google', telegram: 'Telegram' };
 const COLORS = { claude: 'var(--c-claude)', gemini: 'var(--c-gemini)', google: 'var(--c-google)', telegram: 'var(--c-telegram)' };
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -11,17 +11,10 @@ const when = (t) => (t ? new Date(t).toLocaleString([], { month: 'short', day: '
 const say = (text, err) => { $('#acctMsg').textContent = text || ''; $('#acctMsg').classList.toggle('err', !!err); };
 
 // ---------------- accounts ----------------
-function limitBars(limits) {
-  const order = ['five_hour', 'seven_day', 'seven_day_opus', 'seven_day_sonnet'];
-  const label = { five_hour: '5-hour', seven_day: 'weekly', seven_day_opus: 'weekly Opus', seven_day_sonnet: 'weekly Sonnet' };
-  const rows = Object.entries(limits || {}).sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
-  if (!rows.length) return '<div class="kv dim">Plan limits appear after the next Claude turn.</div>';
-  return rows.map(([k, v]) => {
-    const pct = Math.round(Math.min(1, v.utilization || 0) * 100);
-    const cls = v.status === 'rejected' ? 'bad' : v.status === 'allowed_warning' || pct >= 80 ? 'warn' : '';
-    return `<div class="kv">${esc(label[k] || k)}: <b>${pct}%</b>${v.resetsAt ? ` · resets ${esc(when(v.resetsAt * (v.resetsAt < 1e12 ? 1000 : 1)))}` : ''}
-      <div class="bar"><i class="${cls}" style="width:${pct}%"></i></div></div>`;
-  }).join('');
+function limitBars() {
+  const w = st.limits && st.limits.claude && st.limits.claude.windows;
+  if (!w || !Object.keys(w).length) return '<div class="kv dim">Limits: see the Limits tab.</div>';
+  return `<div class="kv">${Object.values(w).slice(0, 2).map((v) => `${esc(v.label)} <b>${Math.round(v.left * 100)}% left</b>`).join(' · ')}</div>`;
 }
 
 function renderAccounts(a) {
@@ -34,7 +27,7 @@ function renderAccounts(a) {
   $('#accounts').innerHTML = [
     card('claude', c.loggedIn
       ? `<div class="kv"><b>${esc(c.email)}</b> <span class="badge">${esc(c.plan || c.method || '')}</span></div>
-         <div class="kv dim">${esc(c.org || '')}${c.expiresAt ? ` · login valid until ${esc(when(Date.parse(c.expiresAt)))}` : ''}</div>${limitBars((st.data || {}).claudeLimits)}`
+         <div class="kv dim">${esc(c.org || '')}${c.expiresAt ? ` · login valid until ${esc(when(Date.parse(c.expiresAt)))}` : ''}</div>${limitBars()}`
       : `<div class="kv"><span class="badge off">signed out</span></div><div class="kv dim">${esc(c.error || 'Sign in to use the terminal.')}</div>`,
     '<button data-switch="claude">Switch account</button>'),
     card('gemini', g.email
@@ -135,6 +128,95 @@ async function loadUsage() {
   if (st.accounts) renderAccounts(st.accounts); // refresh plan-limit bars
 }
 
+// ---------------- limits (D-041) ----------------
+const ORDER = ['five_hour', 'seven_day', 'seven_day_opus', 'seven_day_sonnet'];
+const LINE = { five_hour: 'var(--c-claude)', seven_day: 'var(--c-gemini)', seven_day_opus: 'var(--c-telegram)', seven_day_sonnet: 'var(--c-google)' };
+function inTime(t) {
+  if (!t) return '';
+  const ms = t - Date.now();
+  if (ms <= 0) return 'reset now (check again)';
+  const h = Math.floor(ms / 3600000); const m = Math.round((ms % 3600000) / 60000);
+  const at = new Date(t).toLocaleString([], { weekday: h >= 20 ? 'short' : undefined, hour: '2-digit', minute: '2-digit' });
+  return `resets in ${h >= 24 ? `${Math.floor(h / 24)}d ${h % 24}h` : h ? `${h}h ${m}m` : `${m}m`} (${at})`;
+}
+function renderLimits(L) {
+  st.limits = L;
+  const c = L.claude || {};
+  const wins = Object.entries(c.windows || {}).sort((a, b) => (ORDER.indexOf(a[0]) + 99) % 99 - (ORDER.indexOf(b[0]) + 99) % 99);
+  $('#limSub').textContent = c.subscription || '';
+  $('#limUpdated').textContent = c.updatedAt ? `updated ${when(c.updatedAt)} (${c.source === 'live' ? 'live check' : 'after a turn'})` : '';
+  $('#limWindows').innerHTML = wins.length ? wins.map(([k, v]) => {
+    const pct = Math.round(v.left * 100);
+    const cls = v.expired ? '' : pct <= 10 ? 'bad' : pct <= 25 ? 'warn' : '';
+    return `<div class="limw"><div class="kv"><b>${esc(v.label)}</b></div>
+      <div class="left">${v.expired ? '100' : pct}%<small> left</small></div>
+      <div class="bar"><i class="${cls}" style="width:${v.expired ? 100 : pct}%"></i></div>
+      <div class="kv dim">${Math.round(v.used * 100)}% used · ${esc(inTime(v.resetsAt))}</div></div>`;
+  }).join('') : '<div class="kv dim">No data yet: press "Check now" (no message is sent, it costs nothing).</div>';
+  const ex = c.extra;
+  const br = (c.breakdown || []).filter((b) => b.percent > 0).map((b) => `${esc(b.name)} ${b.percent}%`).join(' · ');
+  $('#limExtra').innerHTML = [ex && ex.enabled ? `Extra usage credits used this month: <b>$${(ex.usedUsd || 0).toFixed(2)}</b>` : '', br ? `This week by app: ${br}` : ''].filter(Boolean).join('<br>');
+  renderLimitChart(c.history || []);
+  const g = L.gemini || {};
+  $('#limGemini').innerHTML = `<div class="kv">Plan: <b>${esc(g.tier || 'unknown (chat once)')}</b></div>
+    <div class="kv">Today: <b>${g.today ? g.today.turns : 0}</b> turns · ${fmtN(g.today ? g.today.tokens : 0)} tokens</div>
+    <div class="kv">${g.lastHit ? `⚠️ Quota used up at ${esc(when(g.lastHit.at))}` : '✅ No quota warnings'}</div>
+    <div class="kv dim">agy doesn't share how much quota is left with other apps, so Tama shows your usage and warns when Gemini reports the quota is used up.</div>`;
+  const go = L.google || {};
+  const cap = go.placesCap;
+  const apis = Object.entries((go.month && go.month.byApi) || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${esc(k)} ${v}`).join(' · ');
+  $('#limGoogle').innerHTML = `<div class="kv">This month: <b>${go.month ? go.month.calls : 0}</b> API calls${apis ? ` (${apis})` : ''}</div>
+    <div class="kv">Gmail, Calendar, Drive, Docs, Sheets: free with generous per-user limits.</div>
+    <div class="kv">Maps Places (billable with a key): <b>${go.month ? go.month.places : 0}</b>${cap ? ` of your ${cap} cap · <b>${Math.max(0, cap - (go.month ? go.month.places : 0))} left</b>` : ''}
+      · cap <input id="placesCap" type="number" min="0" class="num" value="${cap || ''}" placeholder="none" /> <button id="capSave">Save</button></div>
+    ${go.project ? `<div class="kv"><a class="lnk" data-href="https://console.cloud.google.com/apis/dashboard?project=${encodeURIComponent(go.project)}">Quotas in Google Cloud ↗</a><a class="lnk" data-href="https://console.cloud.google.com/billing?project=${encodeURIComponent(go.project)}">Billing ↗</a></div>` : '<div class="kv dim">Connect Google to see your project links.</div>'}`;
+  document.querySelectorAll('#limGoogle a[data-href]').forEach((a) => a.addEventListener('click', () => K.openLink(a.dataset.href)));
+  $('#capSave').addEventListener('click', async () => { const v = $('#placesCap').value.trim(); renderLimits(await K.limits.set({ placesCap: v ? Number(v) : null })); });
+  const [a, b] = (L.alertAt || [0.25, 0.1]).slice().sort((x, y) => y - x);
+  $('#alertA').value = String(Math.round((a || 0.25) * 100));
+  $('#alertB').value = String(Math.round((b || 0.1) * 100));
+  if (st.accounts) renderAccounts(st.accounts);
+}
+function renderLimitChart(hist) {
+  const W = 1000, H = 170, padL = 40, padB = 20, now = Date.now(), from = now - 7 * 86400000;
+  const x = (t) => padL + ((t - from) / (now - from)) * (W - padL - 6);
+  const y = (left) => 8 + (1 - left) * (H - padB - 14);
+  const byWin = {};
+  for (const h of hist) (byWin[h.window] = byWin[h.window] || []).push(h);
+  let paths = '';
+  for (const [w, pts] of Object.entries(byWin)) {
+    // Remaining is a step line; at a window reset it jumps back to 100 %.
+    let d = ''; let prev = null;
+    for (const p of pts.sort((m, n) => m.at - n.at)) {
+      if (prev && prev.resetsAt && p.at > prev.resetsAt) d += ` L${x(prev.resetsAt)},${y(1 - prev.used)} L${x(prev.resetsAt)},${y(1)}`;
+      d += `${d ? ' L' : 'M'}${x(p.at)},${y(1 - p.used)}`;
+      prev = p;
+    }
+    if (prev) d += ` L${x(now)},${y(prev.resetsAt && prev.resetsAt < now ? 1 : 1 - prev.used)}`;
+    paths += `<path d="${d}" style="fill:none;stroke:${LINE[w] || 'var(--tama-dim)'};stroke-width:2.5"/>`;
+  }
+  const grid = [1, 0.5, 0.25, 0.1].map((l) => `<line x1="${padL}" x2="${W}" y1="${y(l)}" y2="${y(l)}" style="stroke:var(--tama-line);stroke-dasharray:${l === 1 ? 0 : 4}"/><text x="4" y="${y(l) + 4}" style="font-size:11px;fill:var(--tama-dim)">${l * 100}%</text>`).join('');
+  const days = [...Array(8)].map((_, i) => { const t = from + i * 86400000; return `<text x="${x(t)}" y="${H - 4}" text-anchor="middle" style="font-size:11px;fill:var(--tama-dim)">${new Date(t).toLocaleDateString([], { weekday: 'short' })}</text>`; }).join('');
+  $('#limChart').innerHTML = hist.length ? `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${grid}${days}${paths}</svg>` : '<div class="kv dim">The trend fills in as Tama checks (every 20 minutes and after each Claude turn).</div>';
+  $('#limLegend').innerHTML = Object.keys(byWin).map((w) => `<span><span class="dot" style="background:${LINE[w] || 'var(--tama-dim)'}"></span> ${esc(((st.limits && st.limits.claude.windows[w]) || {}).label || w)}</span>`).join('');
+}
+async function loadLimits() { renderLimits(await K.limits.get()); }
+
+function showTab(tab) {
+  st.tab = tab;
+  document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+  $('#tabOverview').classList.toggle('hidden', tab !== 'overview');
+  $('#tabLimits').classList.toggle('hidden', tab !== 'limits');
+  document.querySelectorAll('.ov').forEach((e) => e.classList.toggle('hidden', tab !== 'overview'));
+  if (tab === 'limits') loadLimits();
+}
+document.querySelectorAll('#tabs button').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+$('#limRefresh').addEventListener('click', async () => { $('#limUpdated').textContent = 'asking Claude…'; renderLimits(await K.limits.refresh()); });
+$('#alertSave').addEventListener('click', async () => {
+  const v = [Number($('#alertA').value), Number($('#alertB').value)].filter((n) => n > 0 && n < 100).map((n) => n / 100);
+  renderLimits(await K.limits.set({ alertAt: v }));
+});
+
 // ---------------- wiring ----------------
 document.querySelectorAll('#range button').forEach((b) => b.addEventListener('click', () => {
   document.querySelectorAll('#range button').forEach((x) => x.classList.toggle('on', x === b));
@@ -149,12 +231,16 @@ $('#fText').addEventListener('input', renderLog);
 $('#csv').addEventListener('click', exportCsv);
 $('#refresh').addEventListener('click', async () => { say('Checking accounts…'); renderAccounts(await K.accounts.get(true)); say(''); loadUsage(); });
 let pending = null;
-K.usage.onChange(() => { clearTimeout(pending); pending = setTimeout(loadUsage, 1500); });
+K.usage.onChange((p) => { clearTimeout(pending); pending = setTimeout(() => { if (p && p.limits) loadLimits(); else loadUsage(); }, 1500); });
 K.accounts.onChange((a) => renderAccounts(a));
 
 (async function boot() {
   const ch = await K.getCharacter().catch(() => null);
   if (ch && ch.stage !== 'egg') for (const [k, v] of Object.entries(window.TamaShared.theme.chatVars(ch.spec))) document.documentElement.style.setProperty(k, v);
   await loadUsage();
+  st.limits = await K.limits.get().catch(() => null);
   renderAccounts(await K.accounts.get(false));
+  if (/[?&]tab=limits/.test(location.search)) showTab('limits');
+  // A live check when the dashboard opens (no message, $0), so the numbers are fresh.
+  K.limits.refresh().then((L) => { if (L) { st.limits = L; if (st.tab === 'limits') renderLimits(L); else if (st.accounts) renderAccounts(st.accounts); } }).catch(() => {});
 })();

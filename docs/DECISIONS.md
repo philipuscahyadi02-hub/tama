@@ -70,6 +70,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-038 | Sending allowed after the user confirms the full draft/invitation (only Tama's own drafts; never automatic) | Accepted · Supersedes D-014 |
 | D-039 | Event places: resolve pasted Maps links; otherwise look the place up and ask the user to confirm it before creating the event | Accepted |
 | D-040 | M8 = usage & accounts dashboard (voice → M9): numbers-only usage log, plan limits, account switching via official sign-ins | Accepted |
+| D-041 | Limits tab: Claude windows from the SDK (live /usage without a message + per-turn events), Gemini tier + quota-hit only, Google counts vs user cap | Accepted |
 
 ---
 
@@ -459,3 +460,21 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Reading token files to show accounts (violates D-006); a cloud dashboard (data would leave the PC); logging full prompts (privacy).
 - **Consequences:** Claude $ is an API-price estimate; the user pays a flat plan. Gemini has no $ (quota-based). Account switching for agy relies on its interactive `/logout`. M9 now holds voice and polish.
 - **Refs:** USE-1..4, D-006, D-028, D-034, D-036, src/main/services/{usage,accounts}, src/main/engines/accounts.js, src/renderer/dashboard
+
+### D-041 — Limits tab: Claude windows from the SDK (live /usage without a message + per-turn events), Gemini tier + quota-hit only, Google counts vs user cap
+- **Date:** 2026-11-06 · **Status:** Accepted
+- **Context:** The user wants to keep an eye on what is LEFT (e.g. "24 % left for Claude") for Claude, Gemini and the Google Cloud project.
+- **Findings (probes 2026-11-06):**
+  - Claude's per-turn `rate_limit_event` carries `unifiedWindows` (5-hour and weekly utilization 0..1 plus reset times).
+  - The SDK's experimental `usage_EXPERIMENTAL_MAY_CHANGE_DO_NOT_RELY_ON_THIS_API_YET()` works on a session that never receives a message (about 2.6 s, $0). It returns the 5-hour and weekly windows (and per-model ones when present) as 0..100, plus extra-usage credits and the per-app weekly breakdown.
+  - agy shows its plan tier in `session/new` `_meta.antigravity.tier` ("Google AI Plus"). Its remaining quota (`retrieveUserQuotaSummary`, status-line buckets) is internal: not in ACP, not logged, and the status-line command is not run in ACP mode (tested in Tama's own settings, then restored).
+  - Reading Google Cloud quota or billing numbers would need the broad `cloud-platform` scope.
+- **Decision:**
+  - `engines/claude/limits.js`: `fetchClaudeLimits()` (live, experimental API wrapped in try/catch with a 30 s timeout; null on any failure) and `fromRateLimitEvent()`, both producing `{ windows: { name: { used 0..1, resetsAt ms } } }`.
+  - `services/usage/limits.js`: merges both sources (live on dashboard open, "Check now", and every 20 minutes; per-turn events otherwise). History goes to `usage/limits.jsonl` (90 days) for a step chart of % left. Warnings fire at user thresholds (default 25 % and 10 % left), once per window, keyed on the reset time rounded to the minute because the two sources differ by milliseconds.
+  - Gemini: tier plus today's usage; a "quota used up" warning when agy errors mention quota/RESOURCE_EXHAUSTED/429. No invented percentage.
+  - Google: calls this month per API from Tama's own log. Billable Places calls are counted against a monthly cap the user sets. Links open the project's quota and billing pages in Google Cloud (project number from the OAuth client ID). No `cloud-platform` scope.
+  - Dashboard: "Overview" and "Limits" tabs; tray "Limits left…"; `/usage here` includes % left.
+- **Alternatives:** Scraping agy's interactive UI for quota (brittle); `cloud-platform` scope for Google quotas (too much access for a pet app); polling Claude more often (each check starts a Claude process).
+- **Consequences:** If Anthropic renames the experimental API, live checks quietly stop and the per-turn events keep the numbers current. If agy ever exposes quota over ACP, add it to `USAGE_LIMIT` `provider: 'gemini'`.
+- **Refs:** USE-5..7, D-040, src/main/engines/claude/limits.js, src/main/services/usage/limits.js, src/renderer/dashboard

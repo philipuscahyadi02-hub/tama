@@ -27,6 +27,8 @@ const { createTelegram } = require('./services/telegram');
 const { createUsageLog } = require('./services/usage');
 const { createAccounts } = require('./services/accounts');
 const engineAccounts = require('./engines/accounts');
+const { createLimits } = require('./services/usage/limits');
+const { fetchClaudeLimits } = require('./engines/claude/limits');
 const { createChatTools } = require('./brain/chat-tools');
 const { startToolBridge } = require('./platform/tool-bridge');
 const os = require('os');
@@ -75,7 +77,10 @@ function boot() {
   const device = createDeviceSettings(store);
   // Brain: terminal = Claude Code, chat = agy (D-029), every tool approval through one PermissionGate.
   // Usage log first, so every service's calls are recorded from the start (M8, D-040).
-  stoppers.push(createUsageLog({ bus, store, device }).start());
+  const usageLog = createUsageLog({ bus, store, device });
+  stoppers.push(usageLog.start());
+  // What's left (D-041): Claude plan windows live (no message, $0) + from each turn; Gemini tier; Google month counts.
+  stoppers.push(createLimits({ bus, store, device, entries: () => usageLog.entries(), refreshClaude: fetchClaudeLimits }).start());
   const gate = createPermissionGate({ bus });
   // Google (M6, D-034): the user's own OAuth client; tools reach Claude Code as an MCP server while signed in.
   const google = createGoogle({
@@ -130,7 +135,7 @@ function boot() {
     openPage('onboarding/onboarding.html', { width: 940, height: 700, title: 'Hatch your Tama', query: { mode } });
 
   const openGoogle = () => openPage('google/google.html', { width: 780, height: 720, title: 'Connect Google', frame: true });
-  const openDashboard = () => openPage('dashboard/dashboard.html', { width: 1060, height: 780, title: 'Usage & accounts', frame: true });
+  const openDashboard = (tab = '') => openPage('dashboard/dashboard.html', { width: 1060, height: 780, title: 'Usage & accounts', frame: true, query: tab ? { tab } : {} });
   const openRoster = (/** @type {boolean | undefined} */ importNow) =>
     openPage('roster/roster.html', { width: 900, height: 660, title: 'My Tamas', query: importNow ? { import: '1' } : {} });
   createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster, openGoogle, openDashboard, pages: openPages }).start();
@@ -145,6 +150,7 @@ function boot() {
       { label: 'My Tamas…', click: () => openRoster(false) },
       { label: 'Google…', click: () => openGoogle() },
       { label: 'Usage & accounts…', click: () => openDashboard() },
+      { label: 'Limits left…', click: () => openDashboard('limits') },
       { label: 'Restyle…', click: () => openOnboarding('restyle') },
       { label: 'Rebirth…', click: () => openOnboarding('rebirth') },
       { type: 'separator' },
@@ -224,7 +230,7 @@ function boot() {
   }
   if (process.env.TAMA_OPEN_ROSTER) openRoster(false);
   if (process.env.TAMA_OPEN_GOOGLE) openGoogle();
-  if (process.env.TAMA_OPEN_DASHBOARD) openDashboard();
+  if (process.env.TAMA_OPEN_DASHBOARD) openDashboard(process.env.TAMA_OPEN_DASHBOARD === 'limits' ? 'limits' : undefined);
   if (process.env.TAMA_OPEN_ONBOARDING) openOnboarding(process.env.TAMA_OPEN_ONBOARDING);
   if (process.env.TAMA_ONBOARD_WALK) {
     require('./dev/onboarding-walk').runOnboardingWalk({

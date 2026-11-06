@@ -283,14 +283,14 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
       }],
       usage: ['Usage & accounts dashboard (Claude, Gemini, Google, Telegram)', async (arg) => {
         if (arg !== 'here') { K.usage.open(); return info('⎿  opened Usage & accounts 📊 (/usage here for a quick summary)'); }
-        const r = await K.usage.get({ days: 1 });
+        const [r, L] = await Promise.all([K.usage.get({ days: 1 }), K.limits.get()]);
         const t = r.summary.totals;
         const usd = (n) => `$${(n || 0).toFixed(2)}`;
-        const lim = Object.entries(r.claudeLimits || {}).map(([k, v]) => `${k} ${Math.round((v.utilization || 0) * 100)}%`).join(' · ');
+        const lim = Object.values((L.claude && L.claude.windows) || {}).map((v) => `${v.label} ${Math.round(v.left * 100)}% left`).join(' · ');
         info([
           '⎿  today',
-          `    Claude    ${t.claude.calls} turns · ${t.claude.tokens.toLocaleString()} tokens · ≈${usd(t.claude.costUsd)} (API-equivalent)${lim ? ` · plan: ${lim}` : ''}`,
-          `    Gemini    ${t.gemini.calls} turns · ${t.gemini.tokens.toLocaleString()} tokens`,
+          `    Claude    ${t.claude.calls} turns · ${t.claude.tokens.toLocaleString()} tokens · ≈${usd(t.claude.costUsd)} (API-equivalent)${lim ? ` · ${lim}` : ''}`,
+          `    Gemini    ${t.gemini.calls} turns · ${t.gemini.tokens.toLocaleString()} tokens${L.gemini && L.gemini.tier ? ` · ${L.gemini.tier}` : ''}`,
           `    Google    ${t.google.calls} API calls${t.google.errors ? ` (${t.google.errors} errors)` : ''}`,
           `    Telegram  ${t.telegram.calls} messages/calls`,
         ].join('\n'));
