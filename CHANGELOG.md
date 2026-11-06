@@ -196,6 +196,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `6969a77` | 2026-11-07 | feat(voice) | language setting English / Japanese dub / off (D-043) |
+| `c91f2bc` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `5e973a4` | 2026-11-07 | feat(voice) | her voice, Telegram voice notes, mute/reduced motion, idle CPU (D-042) |
 | `708681d` | 2026-11-06 | docs(changelog) | regenerate commit table for 0.8.0 |
 
