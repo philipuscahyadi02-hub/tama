@@ -4,7 +4,6 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { parseInput, pickWorker } = require('./router');
 const persona = require('./persona');
 const budget = require('./budget');
 const { createBrain } = require('.');
@@ -14,49 +13,21 @@ const { createStore } = require('../platform/store');
 const { createDeviceSettings } = require('../platform/store/device');
 const { normalizeSpec } = require('../../shared/spec');
 
-// ---------------- router ----------------
-test('parseInput: slash → worker, @prefixes, chat modes', () => {
-  assert.deepEqual(parseInput('/init', { chatMode: 'auto' }), { target: 'worker', text: '/init', slash: true });
-  assert.deepEqual(parseInput('@agy fix the test', { chatMode: 'auto' }), { target: 'worker', engine: 'agy', text: 'fix the test' });
-  assert.deepEqual(parseInput('@Claude hi', { chatMode: 'chat' }), { target: 'worker', engine: 'claude', text: 'hi' });
-  assert.deepEqual(parseInput('@chat what is love', { chatMode: 'code' }), { target: 'lite', text: 'what is love' });
-  assert.deepEqual(parseInput('refactor this', { chatMode: 'code' }), { target: 'worker', text: 'refactor this' });
-  assert.deepEqual(parseInput('how are you?', { chatMode: 'auto' }), { target: 'lite', text: 'how are you?' });
-  assert.equal(parseInput('   ', { chatMode: 'auto' }), null);
-});
-
-test('pickWorker: Claude by default; agy (read-only) on request or when Claude is tight (BRAIN-4)', () => {
-  const base = { codeEngine: /** @type {const} */ ('auto'), available: { claude: true, agy: true }, claudeTight: { tight: false, reason: '' } };
-  assert.deepEqual(pickWorker(base), { engine: 'claude' });
-  const tight = /** @type {any} */ (pickWorker({ ...base, claudeTight: { tight: true, reason: 'limit' } }));
-  assert.equal(tight.engine, 'agy');
-  assert.match(tight.notice, /read-only/);
-  assert.equal(/** @type {any} */ (pickWorker({ ...base, explicit: 'agy' })).engine, 'agy');
-  const noAgy = /** @type {any} */ (pickWorker({ ...base, explicit: 'agy', available: { claude: true, agy: false } }));
-  assert.equal(noAgy.engine, 'claude');
-  assert.match(noAgy.notice, /not installed/);
-  assert.equal(/** @type {any} */ (pickWorker({ ...base, codeEngine: 'claude', claudeTight: { tight: true, reason: 'x' } })).engine, 'claude'); // pinned
-  assert.match(/** @type {any} */ (pickWorker({ ...base, available: { claude: false, agy: false } })).error, /not available/);
-});
-
 // ---------------- persona ----------------
-test('persona: built from the spec, includes the escalation rule; status line', () => {
+test('persona: built from the spec, read-only chat with web search, knows how the app works; status line', () => {
   const p = persona.buildPersona(normalizeSpec({ name: 'Mochi', gender: 'boy', speech: { tics: ['nya~'] } }));
   assert.match(p, /You are Mochi/);
   assert.match(p, /he\/him/);
   assert.match(p, /nya~/);
-  assert.match(p, /\[\[ESCALATE\]\]/);
+  assert.match(p, /search_web/);
+  assert.match(p, /read-only/);
+  assert.match(p, /Ctrl\+Alt\+K/); // can guide the user to the terminal
+  assert.match(p, /\/cd/);
   const line = persona.statusLine({ state: { hunger: 10, happy: 50, energy: 80, clean: 90, streak: { count: 3 } }, level: { title: 'Buddy' } }, { todos: [{ done: false }], focus: { phase: 'focus' } });
   assert.match(line, /you feel hungry/);
   assert.match(line, /3-day streak/);
   assert.match(line, /1 open todo/);
   assert.match(line, /focus session/);
-});
-
-test('escalation marker detection works on partial streams', () => {
-  assert.deepEqual(persona.escalation('[[ESC'), { escalate: false, task: '', decided: false });
-  assert.deepEqual(persona.escalation('  [[ESCALATE]] fix tests'), { escalate: true, task: 'fix tests', decided: true });
-  assert.equal(persona.escalation('Sure! here').decided, true);
 });
 
 // ---------------- budget ----------------
@@ -78,24 +49,30 @@ test('budget: daily rollover, 75% warning, 90% tight, limit error cooldown', () 
 });
 
 // ---------------- brain with fake engines ----------------
-/** A fake engine that replies with a scripted text. */
-function fakeEngine(emit, reply = (/** @type {string} */ t) => `ok: ${t}`) {
+/** A fake engine that replies with a scripted text (and optionally a tool call first). */
+function fakeEngine(emit, reply = (/** @type {string} */ t) => `ok: ${t}`, /** @type {any} */ tool = null) {
   return {
     cwd: /** @type {string|null} */ (null), mode: 'default', model: null, busy: false, sessionId: null, totalCost: 0, commands: [],
-    sent: /** @type {string[]} */ ([]),
-    setCwd(/** @type {string} */ d) { this.cwd = d; }, setMode() {}, setModel() {}, interrupt() {}, stop() {}, setPersona() {},
+    sent: /** @type {string[]} */ ([]), persona: '',
+    setCwd(/** @type {string} */ d) { this.cwd = d; }, setMode() {}, setModel() {}, interrupt() {}, stop() {},
+    setPersona(/** @type {string} */ p) { this.persona = p; },
     async send(/** @type {string} */ t) {
       this.sent.push(t);
       const text = reply(t);
+      emit({ t: 'status', state: 'thinking' });
+      emit({ t: 'session', sessionId: 's1' });
+      if (tool) emit({ t: 'tool', id: 't1', name: tool.name, input: tool.input });
       emit({ t: 'text-start' });
       for (let i = 0; i < text.length; i += 4) emit({ t: 'text-delta', text: text.slice(i, i + 4) });
       emit({ t: 'text-end' });
       emit({ t: 'result', isError: false, text, cost: 0.5 });
+      emit({ t: 'status', state: 'idle' });
     },
   };
 }
 
-function setupBrain(liteReply, gitOverride = {}) {
+/** @param {{ chatReply?: (t: string) => string, tool?: any, agy?: boolean }} [o] */
+function setupBrain({ chatReply = (t) => `hi! (${t.length})`, tool = null, agy = true } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tama-brain-'));
   const repo = path.join(dir, 'repo');
   fs.mkdirSync(path.join(repo, '.git'), { recursive: true });
@@ -103,73 +80,103 @@ function setupBrain(liteReply, gitOverride = {}) {
   const device = createDeviceSettings(createStore(dir));
   const gate = createPermissionGate({ bus });
   /** @type {Record<string, any>} */ const made = {};
-  /** @type {any[]} */ const events = [];
-  bus.on('engine.event', (e) => events.push(e));
+  /** @type {any[]} */ const term = [];
+  /** @type {any[]} */ const chat = [];
+  bus.on('engine.event', (e) => term.push(e));
+  bus.on('chat.event', (e) => chat.push(e));
   bus.handle('character.get', () => ({ spec: normalizeSpec({ name: 'Mochi' }) }));
   const brain = createBrain({
     bus, device, gate, scratchDir: path.join(dir, 'scratch'),
-    git: { isRepo: (d) => fs.existsSync(path.join(d, '.git')), changedFiles: async () => [], ...gitOverride },
-    available: { claude: true, agy: true },
+    git: { isRepo: (d) => fs.existsSync(path.join(d, '.git')) },
+    available: { claude: true, agy },
     factories: {
       claudeWorker: (emit) => (made.claude = fakeEngine(emit)),
-      agyWorker: (emit) => (made.agy = fakeEngine(emit)),
-      agyLite: (emit) => (made.lite = fakeEngine(emit, liteReply)),
-      claudeLite: (emit) => (made.claudeLite = fakeEngine(emit, liteReply)),
+      agyChat: (emit, p) => { made.chat = fakeEngine(emit, chatReply, tool); made.chat.persona = p; return made.chat; },
     },
   });
-  brain.start();
-  return { bus, brain, made, events, repo, device };
+  const stop = brain.start();
+  stoppers.push(stop);
+  return { bus, brain, made, term, chat, repo, device };
 }
-const texts = (/** @type {any[]} */ evs, /** @type {string} */ role) => evs.filter((e) => e.role === role && e.ev.t === 'text-delta').map((e) => e.ev.text).join('');
+/** @type {Array<() => void>} */
+const stoppers = [];
+test.after(() => { for (const s of stoppers) s(); });
+const tick = () => new Promise((r) => setTimeout(r, 20));
 
-test('chat goes to the lite brain with a [status] line; the reply streams to the UI', async () => {
-  const { bus, made, events } = setupBrain(() => 'hi there! nya~');
-  await bus.request('engine.send', 'hello');
-  assert.match(made.lite.sent[0], /^\[status\] .*\nhello$/);
-  assert.equal(texts(events, 'lite'), 'hi there! nya~');
-  assert.equal(made.claude, undefined); // no worker started for chat
-});
-
-test('escalation: the marker is never shown; the original request goes to Claude Code', async () => {
-  const { bus, made, events, repo } = setupBrain(() => '[[ESCALATE]] fix the failing test');
+test('terminal = Claude Code only: every message goes to Claude, nothing to the chat brain (D-029)', async () => {
+  const { bus, made, term, repo } = setupBrain();
   await bus.request('engine.setCwd', repo);
-  await bus.request('engine.send', 'please fix the failing test in my repo');
-  await new Promise((r) => setTimeout(r, 20));
-  assert.equal(texts(events, 'lite'), '');
-  assert.deepEqual(made.claude.sent, ['please fix the failing test in my repo']);
-  assert.ok(events.some((e) => e.role === 'brain' && /handing this to Claude Code/.test(e.ev.text || '')));
+  await bus.request('engine.send', 'how are you?');
+  await bus.request('engine.send', '/init');
+  assert.deepEqual(made.claude.sent, ['how are you?', '/init']);
+  assert.equal(made.chat, undefined);
+  assert.ok(term.every((e) => e.engine !== 'agy'));
 });
 
-test('@agy: read-only notice once; unexpected file changes during its turn are flagged (D-027)', async () => {
-  let changed = ['M old.js'];
-  const { bus, made, events, repo } = setupBrain(() => 'x', { changedFiles: async () => changed });
-  await bus.request('engine.setCwd', repo);
-  const p = bus.request('engine.send', '@agy review the tests');
-  changed = ['M old.js', '?? sneaky.txt']; // something wrote a file during the turn
-  await p;
-  await new Promise((r) => setTimeout(r, 20));
-  assert.deepEqual(made.agy.sent, ['review the tests']);
-  const infos = events.filter((e) => e.role === 'brain').map((e) => e.ev.text || '').join('\n');
-  assert.match(infos, /read-only/);
-  assert.match(infos, /files changed during a read-only agy turn: \?\? sneaky\.txt/);
-  assert.doesNotMatch(infos, /old\.js/); // already changed before the turn
-});
-
-test('no project folder → friendly notice instead of a crash', async () => {
-  const { bus, events } = setupBrain(() => '[[ESCALATE]] do it');
+test('terminal without a project folder → friendly notice instead of a crash', async () => {
+  const { bus, term, made } = setupBrain();
   await bus.request('engine.send', 'refactor my code');
-  assert.ok(events.some((e) => /Pick a project folder/.test(e.ev.text || '')));
+  assert.ok(term.some((e) => /Pick a project folder/.test(e.ev.text || '')));
+  assert.equal(made.claude, undefined);
 });
 
-test('worker results are recorded as usage; brain.set validates input', async () => {
-  const { bus, repo } = setupBrain(() => 'x');
+test('chat = agy: status line + message go to agy; the reply becomes a chat message; history keeps both', async () => {
+  const { bus, made, chat, term } = setupBrain({ chatReply: () => 'hi there! nya~' });
+  await tick(); // persona from character.get
+  const r = await bus.request('chat.send', 'hello');
+  assert.equal(r.ok, true);
+  await tick();
+  assert.match(made.chat.sent[0], /^\[status\] .*\nhello$/);
+  assert.match(made.chat.persona, /You are Mochi/);
+  const msgs = chat.filter((e) => e.t === 'message').map((e) => [e.message.role, e.message.text]);
+  assert.deepEqual(msgs, [['user', 'hello'], ['tama', 'hi there! nya~']]);
+  assert.ok(chat.some((e) => e.t === 'delta'));
+  assert.ok(chat.some((e) => e.t === 'done'));
+  assert.ok(!chat.some((e) => e.t === 'session')); // engine housekeeping stays inside
+  assert.equal(term.length, 0); // nothing leaks into the terminal
+  const h = await bus.request('chat.history');
+  assert.equal(h.messages.length, 2);
+  assert.equal(h.available, true);
+});
+
+test('chat web search shows up as a tool line and is kept on the reply', async () => {
+  const { bus, chat } = setupBrain({ chatReply: () => 'Electron 45!', tool: { name: 'search_web', input: { query: 'latest electron' } } });
+  await bus.request('chat.send', 'latest electron?');
+  await tick();
+  assert.ok(chat.some((e) => e.t === 'tool' && /searched the web: latest electron/.test(e.text)));
+  const tama = chat.find((e) => e.t === 'message' && e.message.role === 'tama');
+  assert.deepEqual(tama.message.tools, ['🔎 searched the web: latest electron']);
+});
+
+test('chat without agy: a clear note, no Claude fallback (agy only)', async () => {
+  const { bus, chat, made } = setupBrain({ agy: false });
+  const r = await bus.request('chat.send', 'hello');
+  assert.equal(r.ok, false);
+  assert.ok(chat.some((e) => e.t === 'message' && e.message.role === 'note' && /Antigravity CLI/.test(e.message.text)));
+  assert.equal(made.chat, undefined);
+  assert.equal(made.claude, undefined);
+});
+
+test('an empty agy reply still answers (e.g. after a denied tool)', async () => {
+  const { bus, chat } = setupBrain({ chatReply: () => '' });
+  await bus.request('chat.send', 'run dir for me');
+  await tick();
+  const tama = chat.find((e) => e.t === 'message' && e.message.role === 'tama');
+  assert.match(tama.message.text, /Ask me again/);
+});
+
+test('usage: Claude turns and chat messages are recorded; brain.set validates the budget', async () => {
+  const { bus, repo } = setupBrain();
   await bus.request('engine.setCwd', repo);
-  await bus.request('engine.send', '@claude go');
+  await bus.request('engine.send', 'go');
+  await bus.request('chat.send', 'hi');
+  await tick();
   const s = await bus.request('brain.status');
   assert.equal(s.usage.claudeTurns, 1);
   assert.equal(s.usage.claudeUsd, 0.5);
-  const after = await bus.request('brain.set', { chatMode: 'code', codeEngine: 'nonsense', dailyClaudeUsd: 3 });
-  assert.equal(after.chatMode, 'code');
-  assert.equal(after.codeEngine, 'auto');
-  assert.equal(after.dailyClaudeUsd, 3);
+  assert.equal(s.usage.liteTurns, 1);
+  assert.equal(s.terminal, 'claude');
+  assert.equal(s.chat, 'agy');
+  assert.equal((await bus.request('brain.set', { dailyClaudeUsd: 3 })).dailyClaudeUsd, 3);
+  assert.equal((await bus.request('brain.set', { dailyClaudeUsd: -1 })).dailyClaudeUsd, 3);
 });

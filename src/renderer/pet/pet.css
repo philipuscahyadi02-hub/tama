@@ -81,13 +81,13 @@ html, body {
 /* ---------- menu ---------- */
 #menu {
   position: absolute; bottom: 206px; left: 50%; transform: translateX(-50%);
-  display: flex; gap: 5px; padding: 6px 8px;
+  display: flex; gap: 4px; padding: 5px 7px;
   background: var(--paper); border: 2.5px solid var(--ink); border-radius: 999px;
   box-shadow: 3px 3px 0 var(--ink); animation: pop .22s ease-out;
 }
 #menu button {
-  width: 34px; height: 34px; border-radius: 50%; border: 0; cursor: pointer;
-  background: var(--pink-l); font-size: 19px; transition: transform .1s, background .1s;
+  width: 31px; height: 31px; border-radius: 50%; border: 0; cursor: pointer; padding: 0;
+  background: var(--pink-l); font-size: 17px; transition: transform .1s, background .1s;
 }
 #menu button:nth-child(even) { background: var(--green-l); }
 #menu button:hover { transform: translateY(-3px) scale(1.1) rotate(-6deg); background: #ffd0e4; }

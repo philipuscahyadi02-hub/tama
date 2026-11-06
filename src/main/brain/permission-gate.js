@@ -31,7 +31,7 @@ function createPermissionGate({ bus }) {
   function request({ engine, role, sessionKey, tool }) {
     if (role !== 'worker') {
       emit(engine, role, { t: 'info', text: `⎿  (chat brain can't use tools; denied ${tool.name})` });
-      return Promise.resolve({ choice: 'no', feedback: 'You are in chat mode and cannot use tools. Answer in words, or reply with [[ESCALATE]] if real work is needed.' });
+      return Promise.resolve({ choice: 'no', feedback: 'You are a read-only chat companion: no commands or file edits. Answer in words; for real work, point the user to the terminal (Ctrl+Alt+K).' });
     }
     const key = `${engine}|${sessionKey}|${toolKey(tool)}`;
     if (always.has(key)) return Promise.resolve({ choice: 'yes' });

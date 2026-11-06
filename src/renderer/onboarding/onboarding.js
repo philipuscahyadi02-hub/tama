@@ -218,8 +218,8 @@ const STEPS = {
         const ok = (v) => (v ? '✓' : '✗');
         const hints = [];
         if (!b.available.claude) hints.push('Install Claude Code and log in (`claude`) for coding work.');
-        if (!b.available.agy) hints.push('Install the Antigravity CLI (`agy`) and log in for cheap chat; Claude Haiku is used meanwhile.');
-        $('#brains').innerHTML = `🧠 chat brain: <b>${esc(b.liteEngine)}</b> · Claude Code ${ok(b.available.claude)} · agy ${ok(b.available.agy)}`
+        if (!b.available.agy) hints.push('Install the Antigravity CLI (`agy`) and log in to chat with your Tama.');
+        $('#brains').innerHTML = `🧠 chat (agy) ${ok(b.available.agy)} · terminal (Claude Code) ${ok(b.available.claude)}`
           + (hints.length ? `<br><small>${hints.map(esc).join('<br>')}</small>` : '');
       }).catch(() => { $('#brains').textContent = '🧠 could not check the brains'; });
       const kb = $('#kb');

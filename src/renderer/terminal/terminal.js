@@ -7,12 +7,13 @@ const tx = $('#transcript');
 const input = $('#input');
 
 const st = {
-  cwd: null, mode: 'default', model: null, busy: false, totalCost: 0,
+  cwd: null, mode: 'default', model: null, effort: null, busy: false, totalCost: 0,
   lastSessionId: null, commands: [], history: [], histIdx: -1,
   tools: new Map(), // tool_use id -> { el, name, input }
   textEl: null, textBuf: '',
   perms: [], // queue of pending permission requests
   turnStart: 0,
+  progress: null, // { verb, chars } while a tool's input is still streaming (e.g. a big Write)
 };
 
 // ---------------- helpers ----------------
@@ -140,12 +141,24 @@ function setBusy(b) {
     $('#spinVerb').textContent = VERBS[Math.floor(Math.random() * VERBS.length)] + '…';
     spinTimer = setInterval(() => {
       $('#spinGlyph').textContent = GLYPHS[spinI++ % GLYPHS.length];
-      const secs = Math.round((Date.now() - st.turnStart) / 1000);
-      $('#spinMeta').textContent = `(${secs}s · esc to interrupt)`;
-      if (spinI % 40 === 0) $('#spinVerb').textContent = VERBS[Math.floor(Math.random() * VERBS.length)] + '…';
+      const p = st.progress;
+      const size = p && p.chars ? ` · ${p.chars >= 1000 ? (p.chars / 1000).toFixed(1) + 'k' : p.chars} chars` : '';
+      const model = st.model ? ` · ${shortModel(st.model)}` : '';
+      $('#spinMeta').textContent = `(${fmtDur(Date.now() - st.turnStart)}${size}${model} · esc to interrupt)`;
+      if (p) $('#spinVerb').textContent = p.verb;
+      else if (spinI % 40 === 0) $('#spinVerb').textContent = VERBS[Math.floor(Math.random() * VERBS.length)] + '…';
     }, 120);
     scroll();
-  } else st.turnStart = 0;
+  } else { st.turnStart = 0; st.progress = null; }
+}
+const shortModel = (m) => String(m).replace(/^claude-/, '').replace(/-\d{8}$/, '');
+/** Verb for a tool whose input is still being written by the model. */
+function progressVerb(name, file) {
+  const f = file ? rel(file).split('/').pop() : '';
+  if (name === 'Write') return `Writing ${f || 'a file'}…`;
+  if (name === 'Edit' || name === 'MultiEdit') return `Preparing an edit${f ? ' to ' + f : ''}…`;
+  if (name === 'Bash') return 'Preparing a command…';
+  return `Preparing ${name}…`;
 }
 
 // ---------------- status / mode ----------------
@@ -159,7 +172,7 @@ function renderStatus() {
   $('#modeHint').textContent = MODE_TEXT[st.mode] || st.mode;
   $('#modeHint').className = st.mode;
   const cwd = st.cwd ? st.cwd.replace(/\\/g, '/').split('/').slice(-2).join('/') : 'no folder — /cd';
-  $('#statusLine').textContent = `${st.model || 'default model'} · ${cwd} · $${st.totalCost.toFixed(2)}`;
+  $('#statusLine').textContent = `${st.model || 'default model'}${st.effort ? ` · effort ${st.effort}` : ''} · ${cwd} · $${st.totalCost.toFixed(2)}`;
   $('#titleCwd').textContent = st.cwd || '';
 }
 
@@ -173,24 +186,31 @@ function flushText() {
   if (st.textEl) { st.textEl.querySelector('.body').innerHTML = md(st.textBuf); scroll(); }
 }
 
-/** Who is talking: ♡ chat brain, ● Claude Code, ◆ agy (M3; full badges come with the M4 terminal). */
-const dotFor = (ev) => (ev.role === 'lite' ? '♡' : ev.engine === 'agy' ? '◆' : '●');
+/** The terminal is Claude Code only (D-029); chat with the Tama lives in the chat window. */
+const dotFor = () => '●';
 K.onAgent((ev) => {
-  // Only Claude Code drives the status bar (mode/model/session). The chat brain and the read-only
-  // agy reviewer have their own sessions whose housekeeping must not overwrite it.
-  if ((ev.role === 'lite' || ev.engine === 'agy') && ['init', 'session', 'mode', 'model', 'cwd'].includes(ev.t)) return;
   switch (ev.t) {
     case 'status':
       if (ev.state === 'idle') setBusy(false);
       else if (!st.busy) setBusy(true);
       break;
+    case 'thinking-progress':
+      st.progress = { verb: 'Thinking…', chars: ev.chars || 0 };
+      if (!st.busy) setBusy(true);
+      break;
+    case 'tool-progress':
+      st.progress = { verb: progressVerb(ev.name, ev.file), chars: ev.chars || 0 };
+      if (!st.busy) setBusy(true);
+      $('#spinVerb').textContent = st.progress.verb;
+      break;
     case 'text-start':
       endText();
-      st.textEl = add(`<span class="dot">${dotFor(ev)}</span><div class="body md"></div>`, ev.role === 'lite' ? 'msg lite' : 'msg');
+      st.progress = null;
+      st.textEl = add(`<span class="dot">${dotFor()}</span><div class="body md"></div>`, 'msg');
       st.textBuf = '';
       break;
     case 'text-delta':
-      if (!st.textEl) st.textEl = add(`<span class="dot">${dotFor(ev)}</span><div class="body md"></div>`, ev.role === 'lite' ? 'msg lite' : 'msg');
+      if (!st.textEl) st.textEl = add(`<span class="dot">${dotFor()}</span><div class="body md"></div>`, 'msg');
       st.textBuf += ev.text;
       if (!rafPending) { rafPending = true; requestAnimationFrame(flushText); }
       break;
@@ -199,6 +219,7 @@ K.onAgent((ev) => {
       break;
     case 'tool': {
       endText();
+      st.progress = null;
       const [n, arg] = toolLabel(ev.name, ev.input);
       const el = add(
         `<span class="dot">●</span><div class="body"><span class="tname">${esc(n)}</span>${arg ? `<span class="targ">(${esc(arg)})</span>` : ''}${toolExtra(ev.name, ev.input)}</div>`,
@@ -232,7 +253,6 @@ K.onAgent((ev) => {
       break;
     case 'result': {
       endText();
-      if (ev.role === 'lite') { setBusy(false); break; } // chat replies don't need a "Done in…" line
       for (const t of st.tools.values()) t.el.classList.remove('running');
       st.totalCost = ev.totalCost || st.totalCost;
       if (ev.isError && ev.subtype !== 'success') {
@@ -253,6 +273,7 @@ K.onAgent((ev) => {
     case 'session': st.lastSessionId = ev.sessionId; break;
     case 'mode': st.mode = ev.mode; renderStatus(); break;
     case 'model': st.model = ev.model; renderStatus(); break;
+    case 'effort': st.effort = ev.effort; renderStatus(); break;
     case 'cwd':
       st.cwd = ev.cwd; renderStatus();
       document.querySelectorAll('.cwdline').forEach((e) => { e.textContent = 'cwd: ' + ev.cwd; });
@@ -343,7 +364,8 @@ const LOCAL = {
       '  /cd [path]       pick the project folder (no path = folder picker)',
       '  /clear           start a fresh conversation',
       '  /resume          continue the last conversation',
-      '  /model [name]    switch model (e.g. opus, sonnet, haiku; empty = default)',
+      '  /model [name]    switch model (opus = smartest, sonnet = faster, haiku = fastest; empty = default)',
+      '  /effort [level]  thinking effort: low (fast) · medium · high · xhigh · max (slow, deep) · default',
       '  /mode [m]        default | acceptEdits | plan',
       '  /cost            show session cost',
       '  /summon          bring your Tama back on screen (also Ctrl+Alt+P)',
@@ -366,6 +388,12 @@ const LOCAL = {
     if (r.error) error('✗ ' + r.error);
   }],
   model: ['Switch model', (arg) => { K.setModel(arg || null); info(`⎿  Model set to ${arg || 'default'}`); }],
+  effort: ['Thinking effort: low (fast) … max (deep)', (arg) => {
+    const a = String(arg || '').toLowerCase();
+    if (!['low', 'medium', 'high', 'xhigh', 'max', 'default'].includes(a)) return info(`⎿  Effort: low | medium | high | xhigh | max | default (now: ${st.effort || 'default'}). Lower = less thinking = faster.`);
+    K.setEffort(a === 'default' ? null : a);
+    info(`⎿  Effort set to ${a}`);
+  }],
   mode: ['Set permission mode', (arg) => {
     if (!MODES.includes(arg)) return info(`⎿  Modes: ${MODES.join(', ')} (current: ${st.mode})`);
     K.setMode(arg);
@@ -423,7 +451,7 @@ function submit() {
     LOCAL[m[1]][1](m[2].trim());
     return;
   }
-  // No folder check here: chat needs none; the brain asks for /cd only when real work needs one (M3).
+  // The brain asks for /cd if no project folder is set yet.
   add(esc(text) + (st.busy ? ' <span class="q">(queued)</span>' : ''), 'user');
   scroll(true);
   K.send(text);
@@ -503,7 +531,7 @@ function welcome() {
 
 (async function boot() {
   const s = await K.termInit();
-  Object.assign(st, { cwd: s.cwd, mode: s.mode, model: s.model, totalCost: s.totalCost || 0, lastSessionId: s.lastSessionId, commands: s.commands || [] });
+  Object.assign(st, { cwd: s.cwd, mode: s.mode, model: s.model, effort: s.effort || null, totalCost: s.totalCost || 0, lastSessionId: s.lastSessionId, commands: s.commands || [] });
   welcome();
   if (s.lastSessionId && s.cwd) info('⎿  Tip: /resume continues your last conversation');
   if (s.busy) setBusy(true);

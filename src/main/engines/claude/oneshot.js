@@ -1,6 +1,6 @@
 // @ts-check
 // One-shot structured generation through the Claude Agent SDK, with NO tools, no user settings and
-// no saved session. Used by the M1 designer until the M3 router/lite brain exists (D-021).
+// no saved session. Used by the character designer (D-021, kept by D-028: it needs strict JSON output).
 const path = require('path');
 const { pathToFileURL } = require('url');
 const { findClaudeExecutable } = require('./find-exe');

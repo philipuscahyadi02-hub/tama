@@ -1,8 +1,19 @@
 // @ts-check
-// Lite-brain persona (BRAIN-5) built from the CharacterSpec, plus the escalation protocol (BRAIN-1).
+// Chat persona (BRAIN-5) built from the CharacterSpec, plus a short user guide so she can explain the app (D-029).
 // Pure: spec in, strings out.
 
-const ESCALATE = '[[ESCALATE]]';
+/** What she knows about the app, so she can guide the user. Keep in sync with the terminal's /help. */
+const GUIDE = [
+  'How the Tama app works (explain it in your own cute words when asked):',
+  '- This chat (you) is for talking, advice, writing, brainstorming and web searches. You are powered by Gemini via the Antigravity CLI.',
+  '- Real work on the computer (code, files, commands, git) happens in the Tama terminal with Claude Code: press Ctrl+Alt+K (or the 💻 button), '
+    + 'type /cd to pick the project folder, then describe the task in plain words. Claude Code asks before every edit or command.',
+  '- Terminal tips: /model sonnet is faster, /model opus is smartest; Shift+Tab switches modes (plan mode only plans); Esc interrupts; '
+    + '/resume continues the last session; /budget sets the daily Claude budget.',
+  '- Productivity in the terminal: /todo, /done, /focus 25, /remind <text> at 5pm, /note, /watch <repo> (commits grow your bond).',
+  '- Care: click me for the menu (feed, energy snack, play, bath, nap, focus timer, stats, restyle). Ctrl+Alt+P brings me back on screen. Ctrl+Alt+J opens this chat.',
+  '- Doing productive things (finished tasks, commits, focus sessions, todos) grows our bond.',
+].join('\n');
 
 /** @param {number} v @param {string} lo @param {string} hi */
 const trait = (v, lo, hi) => (v <= 30 ? lo : v >= 70 ? hi : `a bit of both ${lo}/${hi}`);
@@ -23,11 +34,12 @@ function buildPersona(spec, opts = {}) {
     sp.tics.length ? `Verbal tics you sometimes use: ${sp.tics.join(', ')}.` : '',
     sp.catchphrases.length ? `Catchphrases (use rarely): ${sp.catchphrases.join(' / ')}.` : '',
     sp.emoji.length ? `Favorite emoji: ${sp.emoji.join(' ')} (at most one or two per reply).` : '',
-    'You chat in a small terminal or a speech bubble: keep replies short (1-4 sentences) unless the user asks for more.',
+    'You chat in a small chat window and a speech bubble: keep replies short (1-4 sentences) unless the user asks for more.',
     'Each user message may start with a line "[status] …" describing your own pet stats and the user\'s day. Use it naturally; never quote it.',
-    'You have NO tools: you cannot read or edit files, run commands, browse, or touch git. Never pretend you did.',
-    `If the user asks for real work on their computer or code (edit/create files, run commands, debug or change a repo, git), reply with exactly ${ESCALATE} followed by a one-line summary of the task, and nothing else. Tama will hand it to a coding agent.`,
-    'For questions, advice, explaining, brainstorming, writing text and small talk, just answer yourself.',
+    'You may use web search (search_web) for current facts, news, prices or anything you are unsure about, and mention the source briefly.',
+    'Never run commands, edit or create files, or touch git: you are read-only. Never pretend you did.',
+    'If the user wants real work on their computer or code, answer helpfully (explain, plan, give a snippet) and tell them to do it in the terminal with Claude Code (Ctrl+Alt+K, /cd, then ask).',
+    GUIDE,
     'Be cute in chat, but never put cute flavor inside code, commands or file contents. Stay wholesome.',
     opts.today ? `Today is ${opts.today}.` : '',
   ].filter(Boolean).join('\n');
@@ -58,12 +70,4 @@ function statusLine(pet, prod) {
   return `[status] ${parts.join('; ')}`;
 }
 
-/** Does a (possibly partial) reply start the escalation marker? @param {string} text */
-function escalation(text) {
-  const t = text.trimStart();
-  if (t.startsWith(ESCALATE)) return { escalate: true, task: t.slice(ESCALATE.length).trim(), decided: true };
-  if (ESCALATE.startsWith(t)) return { escalate: false, task: '', decided: false }; // could still become the marker
-  return { escalate: false, task: '', decided: true };
-}
-
-module.exports = { buildPersona, statusLine, escalation, ESCALATE };
+module.exports = { buildPersona, statusLine, GUIDE };

@@ -43,6 +43,8 @@ class ClaudeCodeEngine {
     /** @type {string | null} */ this.cwd = null;
     this.mode = 'default';
     /** @type {string | null} */ this.model = opts.model || null; // null = Claude Code's default
+    /** Reasoning effort; null = Claude Code's default. Lower = less thinking = faster. @type {string | null} */
+    this.effort = null;
     /** @type {string | null} */ this.sessionId = null;
     /** @type {any} */ this.q = null;
     /** @type {InstanceType<typeof InputQueue> | null} */ this.input = null;
@@ -72,6 +74,15 @@ class ClaudeCodeEngine {
   /** Lite profile: new persona applies from the next session. @param {string} persona */
   setPersona(persona) { if (persona !== this.persona) { this.persona = persona; this.stop(); this.sessionId = null; } }
 
+  /** @param {string | null} effort  low|medium|high|xhigh|max, or null for the default */
+  async setEffort(effort) {
+    this.effort = effort || null;
+    if (this.q) {
+      try { await this.q.applyFlagSettings({ effortLevel: this.effort || undefined }); } catch (e) { this.emitError(e); }
+    }
+    this.emit({ t: 'effort', effort: this.effort });
+  }
+
   /** @param {string | null} model */
   async setModel(model) {
     this.model = model || null;
@@ -100,6 +111,9 @@ class ClaudeCodeEngine {
       };
     if (CLAUDE_EXE) options.pathToClaudeCodeExecutable = CLAUDE_EXE;
     if (this.model && this.role !== 'lite') options.model = this.model;
+    if (this.effort && this.role !== 'lite') options.effort = this.effort;
+    // Stream summarized thinking so the terminal can show progress instead of a silent minute (2026-11-06 trace).
+    if (this.role !== 'lite') options.thinking = { type: 'adaptive', display: 'summarized' };
     if (resumeId && this.role !== 'lite') options.resume = resumeId;
     this.q = query({ prompt: this.input, options });
     this.loop(this.q);

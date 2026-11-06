@@ -194,6 +194,7 @@ const actions = {
   },
   wardrobe() { T.openOnboarding('restyle'); say(`ooh, new clothes?${tic()}`, 2000, { force: true }); },
   code() { T.showTerminal(); say('let\'s code! 💻✨', 2000, { force: true }); },
+  chat() { T.showChat(); say(pick(['let\'s talk~ 💬', 'hm? what is it~?', 'I\'m all ears! 👂✨']), 2000, { force: true }); },
 };
 
 function togglePanel(id) {
@@ -391,18 +392,16 @@ const TOOL_LINES = {
 const short = (s) => String(s || '').split(/[\\/]/).pop().slice(0, 28);
 let lastToolSay = 0;
 T.onBrainNotice((n) => { if (!isEgg) { emote(n.kind === 'warn' ? '💭' : '✨', 1800); say(n.text, 6000); } });
-let liteReply = '';
-T.onAgent((ev) => {
-  if (ev.role === 'lite') {
-    // Chat brain: show the reply in the bubble (desktop chat), no quest celebration (PET-4).
-    if (ev.t === 'text-start') liteReply = '';
-    else if (ev.t === 'text-delta') liteReply += ev.text;
-    else if (ev.t === 'result' && !ev.isError && liteReply.trim()) {
-      const t = liteReply.trim();
-      say(t.length > 220 ? `${t.slice(0, 217)}…` : t, Math.min(14000, 4000 + t.length * 45), { force: true });
-    }
-    return;
+// Chat (agy, D-029): her replies also appear in the speech bubble. Chat is not a quest (PET-4).
+T.chat.onEvent((ev) => {
+  if (isEgg) return;
+  if (ev.t === 'status' && ev.state !== 'idle') express('focus', 1500);
+  if (ev.t === 'message' && ev.message.role === 'tama') {
+    const t = ev.message.text.trim();
+    say(t.length > 220 ? `${t.slice(0, 217)}…` : t, Math.min(14000, 4000 + t.length * 45), { force: true });
   }
+});
+T.onAgent((ev) => {
   if (ev.role === 'brain') return;
   switch (ev.t) {
     case 'status':

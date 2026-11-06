@@ -56,8 +56,11 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-024 | Productivity data is the user's (user/), git watch is per PC (device.json) | Accepted |
 | D-025 | Roster lifecycle via relaunch; .tama = gzip JSON, AES-256-GCM + scrypt when password-protected | Accepted |
 | D-026 | agy via ACP with Tama-owned settings; lite brain sandboxed; agy coding only in git repos | Superseded by D-027 (worker part) |
-| D-027 | agy runs only read-only (plan mode): chat brain + review/plan worker; all edits via Claude Code | Accepted · Supersedes D-026 |
-| D-028 | Brain: lite chat brain with [[ESCALATE]] hand-off, status line, budget fallback, designer stays on Haiku | Accepted |
+| D-027 | agy runs only read-only (plan mode): chat brain + review/plan worker; all edits via Claude Code | Accepted · Supersedes D-026 · worker part superseded by D-029 (agy is chat-only) |
+| D-028 | Brain: lite chat brain with [[ESCALATE]] hand-off, status line, budget fallback, designer stays on Haiku | Partly superseded by D-029 (routing) |
+| D-029 | Two surfaces: terminal = Claude Code only, chat window = agy only (with web search) | Accepted · Supersedes D-028 routing |
+| D-030 | M3 ships as 0.3.1; milestone = minor resumes with M4 = 0.4.0 | Accepted |
+| D-031 | Claude Code sessions stream summarized thinking + tool-input progress; `/effort` per PC | Accepted |
 
 ---
 
@@ -266,7 +269,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Refs:** ENG-2, ENG-3, SAFE-1, BRAIN-2
 
 ### D-027 — agy runs only read-only (plan mode): chat brain + review/plan worker; all edits via Claude Code
-- **Date:** 2026-11-06 · **Status:** Accepted · Supersedes D-026 (worker part)
+- **Date:** 2026-11-06 · **Status:** Accepted · Supersedes D-026 (worker part) · Its `@agy` / budget-fallback worker and git-status check are superseded by D-029 (agy is chat-only); read-only plan mode still applies
 - **Context:** `npm run probe:agy` (now a repo script) showed that D-026's assumption was wrong: in agy's default mode, **file writes are never gated, anywhere on disk** (outside the working folder too, also with `--sandbox`). Shell commands are gated. In **plan** mode, agy ran no command and wrote no file, inside or outside. The user re-decided with the corrected facts.
 - **Decision:**
   - Every agy session runs in **plan mode, locked** (`lockMode`): the chat brain and the `@agy` / budget-fallback worker ("review & plan"). agy reviews, explains and proposes plans; real edits always go through Claude Code, which asks per edit.
@@ -277,7 +280,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Refs:** ENG-2, ENG-3, BRAIN-4, SAFE-1, scripts/agy-permission-probe.js
 
 ### D-028 — Brain: lite chat brain with [[ESCALATE]] hand-off, status line, budget fallback, designer stays on Haiku
-- **Date:** 2026-11-06 · **Status:** Accepted
+- **Date:** 2026-11-06 · **Status:** Partly superseded by D-029 (routing, hand-off, agy fallback worker; status line, budget tracking, quests and designer still apply)
 - **Context:** BRAIN-1..5: cheap everyday chat, real work to a coding agent, editable routing, budget awareness, persona.
 - **Decision:**
   - `src/main/brain/` (may import `engines/`; services talk to it only over the bus) owns all engines, answers the terminal's `engine.*` requests, and emits `engine.event` as `{ engine, role: 'worker'|'lite'|'brain', ev }`.
@@ -292,3 +295,29 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** A classifier call before every message (slower, costs twice); always-Claude (no savings).
 - **Consequences:** M4's terminal badges and chat/code toggle build on `role`/`engine`. Telegram (M7) sends `engine.send` the same way.
 - **Refs:** BRAIN-1..5, ENG-1, ENG-4, ENG-5, SAFE-5, ONB-7, src/main/brain
+
+### D-029 — Two surfaces: terminal = Claude Code only, chat window = agy only (with web search)
+- **Date:** 2026-11-06 · **Status:** Accepted · Supersedes D-028 (routing, `[[ESCALATE]]` hand-off, `@agy` / budget-fallback worker)
+- **Context:** The user found the mixed terminal (♡ chat brain, ● Claude, ◆ agy, auto hand-off) hard to understand. Their model: "productivity and code = Claude; chatting and googling with Tama = agy/Gemini".
+- **Decision:**
+  - **Terminal = Claude Code only.** Every message (and every unknown `/command`) goes to Claude Code. Tama's local commands (`/todo`, `/focus`, `/cd`, …) still run locally. No routing modes, no `@` prefixes, no agy worker. When Claude is over budget, the terminal only warns; it never switches engine.
+  - **Chat window = agy only** (`brain/chat.js`, `platform/windows/chat-window.js`, `renderer/chat/`): Gemini Flash in read-only plan mode (D-027) with its `search_web` tool, the persona + `[status]` line, and a short built-in guide to the app so she can explain how to use the terminal. No Claude fallback: without agy the chat says how to install it. Replies also show in the pet's speech bubble. Opened from the pet menu 💬, the tray or **Ctrl+Alt+J**. Themed from the CharacterSpec palette (`--tama-*` tokens).
+  - Bus: `chat.send`, `chat.history`, `chat.interrupt`, `chat.clear` requests and `chat.event`. History is kept in memory (long-term memory is M5). Telegram (M7) will use `chat.*` for talking and `engine.*` for work.
+- **Alternatives:** Keep auto-routing (confusing; the user asked to separate); a Haiku fallback for chat (spends Claude tokens; the user wants chat on agy only).
+- **Consequences:** PRD BRAIN-1/3/4 and TERM-3 change meaning; new CHAT-1. agy-only chat means no chat if agy is missing or logged out.
+- **Refs:** BRAIN-1..5, CHAT-1, ENG-2, ENG-3, TERM-3, D-027, src/main/brain/{index,chat}.js
+
+### D-030 — M3 ships as 0.3.1; milestone = minor resumes with M4 = 0.4.0
+- **Date:** 2026-11-06 · **Status:** Accepted
+- **Context:** D-015 maps each milestone to a minor version (M3 → 0.4.0). The user asked to release M3 (with the D-029 split) as v0.3.1.
+- **Decision:** Tag M3 as `v0.3.1`. M4 is `0.4.0`, M5 `0.5.0`, and so on, as in D-015.
+- **Consequences:** CHANGELOG has `[0.3.1]` for M3; the generated commit table follows the tags as usual.
+- **Refs:** D-015, CHANGELOG.md
+
+### D-031 — Claude Code sessions stream summarized thinking + tool-input progress; `/effort` per PC
+- **Date:** 2026-11-06 · **Status:** Accepted
+- **Context:** Traced a "very slow" terminal answer: Claude Code (Opus, adaptive thinking) thought for about 65 s, then streamed an 18k-token Write for about 80 s, and the terminal showed nothing but a spinner. Native Claude Code shows progress. In Tama, thinking arrived with its text omitted, and tool input that was still streaming was not forwarded.
+- **Decision:** Worker sessions pass `thinking: { type: 'adaptive', display: 'summarized' }`. `map-message` emits `thinking-progress` and `tool-progress` (with the file name) every 1,500 characters. The terminal spinner shows "Thinking… 3.0k chars" or "Writing index.html… 15.1k chars", the elapsed time and the model. New `/effort low|medium|high|xhigh|max|default` (SDK `effort`, live via `applyFlagSettings`), saved in `device.json` `engine.effort`; it's shown in the status bar.
+- **Alternatives:** Disable thinking (worse results); pick a faster default model for the user (their choice: `/model`, `/effort`).
+- **Consequences:** More IPC traffic during long turns (throttled). The status bar and help mention `/model` and `/effort` as the speed controls.
+- **Refs:** TERM-1, src/main/engines/claude/{session,map-message}.js

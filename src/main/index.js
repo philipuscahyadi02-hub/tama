@@ -8,6 +8,7 @@ const { createDeviceSettings } = require('./platform/store/device');
 const { createSecrets, electronCipher } = require('./platform/secrets');
 const { createPetWindow } = require('./platform/windows/pet-window');
 const { createTerminalWindow } = require('./platform/windows/terminal-window');
+const { createChatWindow } = require('./platform/windows/chat-window');
 const { createSummoner } = require('./platform/summon');
 const ipc = require('./platform/ipc');
 const shell = require('./platform/shell');
@@ -28,11 +29,9 @@ const { AgyEngine } = require('./engines/agy/session');
 const { findAgyExecutable } = require('./engines/agy/setup');
 const pathMod = require('path');
 
-const AGY_REVIEWER = 'You are a read-only reviewer and planner inside the Tama app. You cannot edit files or run commands. '
-  + 'Analyze, explain, review and propose concrete step-by-step plans or diffs in your reply; the user will hand edits to Claude Code.';
 const { createDesktopChannel } = require('./channels/desktop');
 
-const HOTKEYS = { summon: 'CommandOrControl+Alt+P', terminal: 'CommandOrControl+Alt+K' };
+const HOTKEYS = { summon: 'CommandOrControl+Alt+P', terminal: 'CommandOrControl+Alt+K', chat: 'CommandOrControl+Alt+J' };
 const debug = (/** @type {string} */ m) => { if (process.env.TAMA_DEBUG) console.log('[tama]', m); };
 
 /** @type {Array<() => void>} */
@@ -41,6 +40,9 @@ const stoppers = [];
 function boot() {
   const bus = new Bus();
   bus.on(TOPICS.APP_ERROR, (e) => console.error('[bus error]', e.topic, e.message));
+  if (process.env.TAMA_DEBUG) {
+    bus.on(TOPICS.ENGINE_EVENT, ({ engine, ev }) => { if (ev.t !== 'text-delta') debug(`engine ${engine} ${ev.t} ${ev.t === 'tool-progress' ? ev.chars : ev.state || ev.name || ''}`); });
+  }
   const store = createStore(appShell.paths.data());
 
   // ---- services ----
@@ -53,17 +55,15 @@ function boot() {
   stoppers.push(roster.start(active));
   const petService = createPetService({ bus, store, tama: active });
   const device = createDeviceSettings(store);
-  // Brain (M3): lite chat brain + coding workers behind one PermissionGate (D-026, D-027).
+  // Brain: terminal = Claude Code, chat = agy (D-029), every tool approval through one PermissionGate.
   const gate = createPermissionGate({ bus });
   const brain = createBrain({
     bus, device, gate, git, scratchDir: pathMod.join(appShell.paths.data(), 'agy-workspace'),
     available: { claude: !!CLAUDE_EXE, agy: !!findAgyExecutable() },
     factories: {
       claudeWorker: (emit) => new ClaudeCodeEngine(emit, { role: 'worker', gate, tamaName: active.name }),
-      claudeLite: (emit, persona) => new ClaudeCodeEngine(emit, { role: 'lite', gate, persona, model: 'haiku' }),
       // agy always runs in read-only PLAN mode (verified: no commands, no file writes; npm run probe:agy, D-027).
-      agyWorker: (emit) => new AgyEngine(emit, { role: 'worker', gate, mode: 'plan', lockMode: true, persona: AGY_REVIEWER }),
-      agyLite: (emit, persona) => new AgyEngine(emit, { role: 'lite', gate, persona, model: 'gemini-3.8-flash-low', thoughtLevel: 'low', mode: 'plan', lockMode: true }),
+      agyChat: (emit, persona) => new AgyEngine(emit, { role: 'lite', gate, persona, model: 'gemini-3.8-flash-low', thoughtLevel: 'low', mode: 'plan', lockMode: true }),
     },
   });
 
@@ -74,6 +74,10 @@ function boot() {
     savedBounds: win.terminal, onBoundsChanged: (b) => device.patch('windows', { terminal: b }), isQuitting: appShell.isQuitting,
   });
   term.create();
+  const chatWin = createChatWindow({
+    savedBounds: win.chat, onBoundsChanged: (b) => device.patch('windows', { chat: b }), isQuitting: appShell.isQuitting,
+    anchor: () => pet.win.getBounds(),
+  });
   const summoner = createSummoner({ pet, log: debug, onSummoned: (reason) => bus.emit(TOPICS.SUMMON_DONE, { reason }) });
   const summon = (/** @type {string} */ reason) => summoner.summon(reason);
   bus.handle(TOPICS.SUMMON, (/** @type {{reason?: string}} */ p) => summon((p && p.reason) || 'bus'));
@@ -86,12 +90,13 @@ function boot() {
 
   const openRoster = (/** @type {boolean | undefined} */ importNow) =>
     openPage('roster/roster.html', { width: 900, height: 660, title: 'My Tamas', query: importNow ? { import: '1' } : {} });
-  createDesktopChannel({ bus, ipc, shell, pet, term, summon, openOnboarding, openRoster }).start();
+  createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster }).start();
   shell.createTray({
     tooltip: `${active.name} (Tama)`,
     onClick: () => summon('tray-click'),
     items: [
       { label: `Summon ${active.name}  (Ctrl+Alt+P)`, click: () => summon('tray-menu') },
+      { label: `Chat with ${active.name}  (Ctrl+Alt+J)`, click: () => chatWin.show() },
       { label: 'Open terminal  (Ctrl+Alt+K)', click: () => term.show() },
       { label: 'Show / Hide', click: () => pet.toggleVisible() },
       { label: 'My Tamas…', click: () => openRoster(false) },
@@ -106,7 +111,7 @@ function boot() {
       { label: 'Quit', click: appShell.quit },
     ],
   });
-  const failed = shell.registerHotkeys({ [HOTKEYS.summon]: () => summon('hotkey'), [HOTKEYS.terminal]: () => term.toggle() });
+  const failed = shell.registerHotkeys({ [HOTKEYS.summon]: () => summon('hotkey'), [HOTKEYS.terminal]: () => term.toggle(), [HOTKEYS.chat]: () => chatWin.toggle() });
   if (failed.length && !process.env.TAMA_DATA_DIR) shell.notify('Tama', `Hotkey already in use by another app: ${failed.join(', ')}`);
 
   petService.start();
@@ -134,6 +139,14 @@ function boot() {
     // Dev: run JS in the terminal window after load (e.g. type commands) for screenshots.
     const tw = term.get();
     tw.webContents.once('did-finish-load', () => setTimeout(() => tw.webContents.executeJavaScript(String(process.env.TAMA_TERM_EVAL)).catch(console.error), 1500));
+  }
+  if (process.env.TAMA_CHAT_EVAL || process.env.TAMA_OPEN_CHAT) {
+    // Dev: open the chat window, optionally run JS in it after load (e.g. send a message) for screenshots.
+    chatWin.show();
+    const cw = chatWin.window();
+    if (cw && process.env.TAMA_CHAT_EVAL) {
+      cw.webContents.once('did-finish-load', () => setTimeout(() => cw.webContents.executeJavaScript(String(process.env.TAMA_CHAT_EVAL)).catch(console.error), 1500));
+    }
   }
   if (process.env.TAMA_OPEN_ROSTER) openRoster(false);
   if (process.env.TAMA_OPEN_ONBOARDING) openOnboarding(process.env.TAMA_OPEN_ONBOARDING);
