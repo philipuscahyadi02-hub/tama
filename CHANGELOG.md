@@ -189,7 +189,10 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `5e973a4` | 2026-11-07 | feat(voice) | her voice, Telegram voice notes, mute/reduced motion, idle CPU (D-042) |
+| `708681d` | 2026-11-06 | docs(changelog) | regenerate commit table for 0.8.0 |
 
 ### v0.8.0
 | Commit | Date | Type | Subject |
