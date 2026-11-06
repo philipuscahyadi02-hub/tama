@@ -45,14 +45,26 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
     bus.emit(TOPICS.BRAIN_NOTICE, { text, kind });
   };
 
-  /** @param {'claude'|'agy'} engine @param {'lite'|'worker'} role @param {any} ev */
-  function recordUsage(engine, role, ev) {
+  /** @param {'claude'|'agy'} engine @param {'lite'|'worker'} role @param {any} ev @param {string} [surface] */
+  function recordUsage(engine, role, ev, surface) {
+    logTurn(engine, surface || (role === 'worker' ? 'terminal' : 'chat'), ev);
     const before = usage();
     const after = budget.record(device.get().usage, { engine, role, ev }, now());
     device.patch(null, { usage: after });
     if (budget.crossedWarning(before, after, cfg())) {
       notice(`Claude usage today is ≈$${after.claudeUsd.toFixed(2)} of your $${cfg().dailyClaudeUsd} budget. Maybe let me rest soon~ (/budget)`, 'warn');
     }
+  }
+
+  /** Usage log entry for one AI turn (D-040): numbers only. @param {'claude'|'agy'} engine @param {string} surface @param {any} ev */
+  function logTurn(engine, surface, ev) {
+    const t = ev.tokens;
+    bus.emit(TOPICS.USAGE_RECORD, {
+      provider: engine === 'claude' ? 'claude' : 'gemini', surface, op: 'turn', ok: !ev.isError, ms: ev.durationMs,
+      model: (ev.models && ev.models[0]) || ev.model || (engine === 'agy' ? 'gemini-flash' : undefined),
+      ...(t && typeof t === 'object' ? { tokensIn: t.in, tokensOut: t.out, cacheRead: t.cacheRead, cacheWrite: t.cacheWrite } : { tokens: typeof t === 'number' ? t : undefined }),
+      costUsd: typeof ev.cost === 'number' ? ev.cost : undefined,
+    });
   }
 
   // ---------------- chat (agy) ----------------
@@ -66,6 +78,7 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
   let personaText = '';
   const composer = createComposer({
     factory: factories.agyCompose || factories.agyChat, scratchDir: path.join(scratchDir, 'compose'), available: () => available.agy, persona: () => personaText,
+    onResult: (ev) => logTurn('agy', 'events', ev),
   });
 
   // ---------------- terminal (Claude Code) ----------------
@@ -75,6 +88,7 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
     if (!claude) {
       claude = factories.claudeWorker((ev) => {
         if (ev.t === 'session') device.patch('engine', { lastSessionId: ev.sessionId });
+        if (ev.t === 'rate-limit') bus.emit(TOPICS.USAGE_LIMIT, { info: ev.info });
         bus.emit(TOPICS.ENGINE_EVENT, { engine: 'claude', role: 'worker', ev });
         if (ev.t === 'result') recordUsage('claude', 'worker', ev);
       });
@@ -172,6 +186,8 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
       bus.handle(TOPICS.BRAIN_SET, setBrain),
       bus.handle(TOPICS.BRAIN_COMPOSE, (/** @type {any} */ p) => composer.compose({ kind: p && p.kind === 'diary' ? 'diary' : 'line', seed: String((p && p.seed) || '') })),
       bus.on(TOPICS.CHARACTER_CHANGED, (/** @type {any} */ c) => { updatePersona(c.spec); }),
+      // A different Gemini (agy) account: start fresh agy sessions (D-040).
+      bus.on(TOPICS.ACCOUNTS_CHANGED, () => { chat.reset(); composer.stop(); }),
       // Google tools for the chat brain come and go with sign-in (D-037): restart its session when that flips.
       bus.on(TOPICS.GOOGLE_CHANGED, (/** @type {any} */ g) => {
         const signedIn = !!(g && g.signedIn);

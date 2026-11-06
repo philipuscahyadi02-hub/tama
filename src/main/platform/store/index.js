@@ -112,6 +112,16 @@ function createStore(rootDir) {
     fs.renameSync(tmp, file);
   }
 
+  /** Append one line to a text file (logs, D-040). @param {string} rel @param {string} line */
+  function appendLine(rel, line) {
+    const file = abs(rel);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.appendFileSync(file, `${line.replace(/\n/g, ' ')}\n`);
+  }
+
+  /** Delete one file inside the store (no-op if missing). @param {string} rel */
+  function removeFile(rel) { fs.rmSync(abs(rel), { force: true }); }
+
   /** Delete a folder inside the store (never the root itself). @param {string} rel */
   function removeDir(rel) {
     const dir = abs(rel);
@@ -122,7 +132,7 @@ function createStore(rootDir) {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 
-  return { rootDir, read, write, writeSoon, flush, exists, listDirs, listFiles, readText, writeText, removeDir, readExternal };
+  return { rootDir, read, write, writeSoon, flush, exists, listDirs, listFiles, readText, writeText, appendLine, removeFile, removeDir, readExternal };
 }
 
 /** @typedef {ReturnType<typeof createStore>} Store */

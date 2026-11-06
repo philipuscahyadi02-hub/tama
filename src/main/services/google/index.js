@@ -44,7 +44,12 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
   const client = () => /** @type {{ clientId: string, clientSecret: string } | null} */ (json('google.client'));
   const tokens = () => json('google.tokens');
 
+  /** Usage log (D-040): one entry per Google API call, e.g. "gmail messages GET". */
+  const logCall = (/** @type {{ method: string, url: string, status: number, ms: number }} */ c) => {
+    bus.emit(TOPICS.USAGE_RECORD, { provider: 'google', surface: 'api', op: apiOp(c.method, c.url), ok: c.status > 0 && c.status < 400, ms: c.ms, account: (tokens() || {}).email });
+  };
   const api = createApi({
+    onCall: logCall,
     getTokens: tokens, saveTokens: (t) => secrets.set('google.tokens', JSON.stringify(t)), fetch: f, now,
     refresh: (rt) => { const c = client(); if (!c) throw new Error('Google client not set up.'); return oauth.refresh({ clientId: c.clientId, clientSecret: c.clientSecret, refreshToken: rt, fetch: f }); },
   });
@@ -59,6 +64,7 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
   };
   // Places (D-039): Google Places with the user's optional Maps Platform key; biased to the weather city (D-035).
   const maps = createMaps({
+    onCall: (c) => bus.emit(TOPICS.USAGE_RECORD, { provider: 'google', surface: 'api', op: c.op, ok: c.ok, ms: c.ms }),
     fetch: f, key: () => secrets.get('google.mapsKey'),
     near: () => { const w = device.get().weather; return w && typeof w.lat === 'number' ? { lat: w.lat, lng: w.lon, city: w.city } : null; },
   });
@@ -77,7 +83,7 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
     const p = prefs();
     const t = tokens();
     return {
-      configured: !!client(), signedIn: signedIn(), email: (t && t.email) || null, readonly: !!p.readonly, backup: p.backup !== false,
+      configured: !!client(), signedIn: signedIn(), email: (t && t.email) || null, clientId: (client() || {}).clientId || null, readonly: !!p.readonly, backup: p.backup !== false,
       lastBackup: p.lastBackup || 0, inMeeting: meeting && meeting.end > now() ? meeting.summary : null, maps: secrets.get('google.mapsKey') ? 'google' : 'web-search',
       scopes: t ? String(t.scope || '').split(' ').filter(Boolean).map((s) => s.replace('https://www.googleapis.com/auth/', '')) : [],
     };
@@ -252,4 +258,19 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
   };
 }
 
-module.exports = { createGoogle, SCOPES };
+/**
+ * "https://gmail.googleapis.com/gmail/v1/users/me/messages/abc" → "gmail messages GET" (ids dropped). Pure.
+ * @param {string} method @param {string} url
+ */
+function apiOp(method, url) {
+  let u;
+  try { u = new URL(url); } catch { return `${method} ?`; }
+  const parts = u.pathname.split('/').filter(Boolean);
+  const host = u.hostname.split('.')[0];
+  const api = host === 'www' ? (parts.find((p) => ['calendar', 'drive', 'gmail'].includes(p)) || parts[0]) : host === 'places' ? 'places' : host;
+  const upload = parts[0] === 'upload' ? ' upload' : '';
+  const nouns = parts.filter((p) => /^[a-z][a-zA-Z]+(:[a-zA-Z]+)?$/.test(p) && !/^v\d/.test(p) && !['users', 'me', 'calendars', 'primary', 'upload', api].includes(p));
+  return `${api}${upload} ${nouns.slice(-1)[0] || ''} ${method}`.replace(/\s+/g, ' ').trim();
+}
+
+module.exports = { createGoogle, SCOPES, apiOp };

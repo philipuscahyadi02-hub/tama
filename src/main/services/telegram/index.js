@@ -25,7 +25,10 @@ const CHAT_TIMEOUT_MS = 7 * 60000; // long enough for a Google confirm tap (D-03
  */
 function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, desk, fetch: f = fetch, now = Date.now }) {
   const cfg = () => ({ enabled: true, repos: /** @type {string[]} */ ([]), remote: true, awake: false, morningDay: '', eveningDay: '', bot: '', ...(device.get().telegram || {}) });
-  const api = createBotApi({ token: () => secrets.get('telegram.token'), fetch: f });
+  const api = createBotApi({
+    token: () => secrets.get('telegram.token'), fetch: f,
+    onCall: (c) => bus.emit(TOPICS.USAGE_RECORD, { provider: 'telegram', surface: 'bot', op: c.method, ok: c.ok }),
+  });
   const chatId = () => { const v = secrets.get('telegram.chatId'); return v ? Number(v) : null; };
   /** @type {{ code: string, until: number } | null} */ let pairing = null;
   /** @type {(() => void) | null} */ let stopPoll = null;
@@ -100,6 +103,7 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
   /** @param {any} u */
   async function onUpdate(u) {
     const msg = u.message;
+    if (msg || u.callback_query) bus.emit(TOPICS.USAGE_RECORD, { provider: 'telegram', surface: 'bot', op: msg ? 'message in' : 'button in', ok: true });
     const cb = u.callback_query;
     const from = msg ? msg.chat.id : cb ? cb.message && cb.message.chat.id : null;
     if (!from) return;

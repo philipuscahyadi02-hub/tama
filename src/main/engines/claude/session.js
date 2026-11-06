@@ -221,9 +221,13 @@ class ClaudeCodeEngine {
       this.procCost = m.total_cost_usd;
       this.totalCost = this.baseCost + m.total_cost_usd;
     }
+    const u = m.usage || {};
     this.emit({
       t: 'result', isError: m.subtype !== 'success' || !!m.is_error, subtype: m.subtype, text: m.result || '',
       cost: turnCost, totalCost: this.totalCost, durationMs: Date.now() - this.turnStart,
+      // For the usage log (D-040): numbers only.
+      tokens: { in: u.input_tokens || 0, out: u.output_tokens || 0, cacheRead: u.cache_read_input_tokens || 0, cacheWrite: u.cache_creation_input_tokens || 0 },
+      models: Object.keys(m.modelUsage || {}), apiMs: m.duration_api_ms || 0,
     });
     this.setBusy(false);
   }

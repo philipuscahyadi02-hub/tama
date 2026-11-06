@@ -142,7 +142,7 @@ class AgyEngine {
       this.tokensToday += tokens;
       this.emit({
         t: 'result', isError: r && r.stopReason === 'refusal', subtype: r && r.stopReason, text: this.ctx.text,
-        cost: 0, tokens, totalCost: 0, durationMs: Date.now() - t0,
+        cost: 0, tokens, totalCost: 0, durationMs: Date.now() - t0, model: this.model || undefined,
       });
     } catch (e) {
       this.emitError(e);

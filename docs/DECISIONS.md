@@ -69,6 +69,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-037 | Chat brain does Google itself: MCP relay → local bridge, Tama-side confirmations, and a hard PreToolUse guard (plan mode is only advisory) | Accepted · Supersedes D-027 ("plan mode = no side effects") |
 | D-038 | Sending allowed after the user confirms the full draft/invitation (only Tama's own drafts; never automatic) | Accepted · Supersedes D-014 |
 | D-039 | Event places: resolve pasted Maps links; otherwise look the place up and ask the user to confirm it before creating the event | Accepted |
+| D-040 | M8 = usage & accounts dashboard (voice → M9): numbers-only usage log, plan limits, account switching via official sign-ins | Accepted |
 
 ---
 
@@ -445,3 +446,16 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Always use OpenStreetMap (poor coverage for local venues); require a Maps key (billing setup for every user).
 - **Consequences:** The live test caught a real mix-up ("Grand Sport Central" → "Grand Central Sport Center", with its address) before anything was created. Without a key, accuracy depends on web search; the user verifies by tapping the map link.
 - **Refs:** GOOG-3, D-035, D-038, src/main/services/google/maps.js
+
+### D-040 — M8 = usage & accounts dashboard (voice → M9): numbers-only usage log, plan limits, account switching via official sign-ins
+- **Date:** 2026-11-06 · **Status:** Accepted
+- **Context:** The user moved voice to M9 and asked for a dashboard of everything Tama uses (Claude, Gemini/agy, the Google project, Telegram), with log details and a way to change each account.
+- **Decision:**
+  - **Usage log** (`services/usage`): `<data>/usage/YYYY-MM.jsonl` per PC, 3 months kept. Entries are built by `clean()` from whitelisted numeric/label fields only (provider, surface, op, model, tokens in/out/cache, API-equivalent $, ms, ok), so message, email or file contents can't end up there. Sources: brain (Claude terminal turns with SDK `usage` and cost; Gemini chat turns), composer (events/diary), Google `api.js`/`maps.js` call hooks (op like "gmail messages GET"; Places marked billable), Telegram Bot API calls and incoming messages (long polling excluded).
+  - **Claude plan limits:** the SDK's `rate_limit_event` (claude.ai subscriptions) is mapped to `rate-limit` and stored per window (`device.json` `usageLimits.claude`): 5-hour / weekly utilization, status, reset time.
+  - **Accounts** (`services/accounts` + `engines/accounts.js`): Claude via `claude auth status --json` (email, plan, org, login expiry); Gemini via agy's own log line (`applyAuthResult: email=…`); Google from its status (email, OAuth client → project number, scopes, places mode); Telegram from its status. Tama never reads or copies CLI tokens (D-006).
+  - **Switching:** Claude and agy open a visible console window running the official sign-in (`claude auth logout/login`; `agy` with `/logout`), with a warning that this is the same sign-in their own CLI uses. Google switches through the browser account picker (`prompt=select_account consent`) or "Change project" (sign out, open the setup page). Telegram points to `/phone setup` / `/phone code`. After a switch Tama re-checks every 10 s for 5 minutes. A changed Claude account clears the Claude session; a changed Gemini account restarts the agy chat and composer sessions.
+  - **UI:** `renderer/dashboard` (tray "Usage & accounts…", `/usage`, `/usage here` for a text summary): account cards with plan-limit bars, totals per service, per-day stacked chart (calls / tokens / Claude $), filterable log, CSV export.
+- **Alternatives:** Reading token files to show accounts (violates D-006); a cloud dashboard (data would leave the PC); logging full prompts (privacy).
+- **Consequences:** Claude $ is an API-price estimate; the user pays a flat plan. Gemini has no $ (quota-based). Account switching for agy relies on its interactive `/logout`. M9 now holds voice and polish.
+- **Refs:** USE-1..4, D-006, D-028, D-034, D-036, src/main/services/{usage,accounts}, src/main/engines/accounts.js, src/renderer/dashboard

@@ -12,9 +12,11 @@
  *   getTokens: () => Tokens | null, saveTokens: (t: Tokens) => void,
  *   refresh: (refreshToken: string) => Promise<{ access_token: string, expires_in?: number, scope?: string }>,
  *   fetch?: typeof fetch, now?: () => number,
+ *   onCall?: (c: { method: string, url: string, status: number, ms: number }) => void,
  * }} deps
+ *   onCall: one report per HTTP call, for the usage log (D-040).
  */
-function createApi({ getTokens, saveTokens, refresh, fetch: f = fetch, now = Date.now }) {
+function createApi({ getTokens, saveTokens, refresh, fetch: f = fetch, now = Date.now, onCall = () => {} }) {
   /** @type {Promise<string> | null} */
   let refreshing = null;
 
@@ -36,11 +38,19 @@ function createApi({ getTokens, saveTokens, refresh, fetch: f = fetch, now = Dat
   /** @param {string} url @param {ReqOpts} [o] */
   async function request(url, o = {}) {
     const q = o.query ? `?${new URLSearchParams(Object.entries(o.query).filter(([, v]) => v !== undefined && v !== null).map(([k, v]) => [k, String(v)]))}` : '';
-    const send = async (/** @type {string} */ tok) => f(url + q, {
-      method: o.method || (o.json || o.body ? 'POST' : 'GET'),
-      headers: { authorization: `Bearer ${tok}`, ...(o.json ? { 'content-type': 'application/json' } : {}), ...(o.headers || {}) },
-      body: o.json ? JSON.stringify(o.json) : o.body,
-    });
+    const method = o.method || (o.json || o.body ? 'POST' : 'GET');
+    const send = async (/** @type {string} */ tok) => {
+      const t0 = now();
+      /** @type {Response} */ let r;
+      try {
+        r = await f(url + q, {
+          method, headers: { authorization: `Bearer ${tok}`, ...(o.json ? { 'content-type': 'application/json' } : {}), ...(o.headers || {}) },
+          body: o.json ? JSON.stringify(o.json) : o.body,
+        });
+      } catch (e) { onCall({ method, url, status: 0, ms: now() - t0 }); throw e; }
+      onCall({ method, url, status: r.status, ms: now() - t0 });
+      return r;
+    };
     let r = await send(await token());
     if (r.status === 401) r = await send(await token(true));
     if (o.raw && r.ok) return r;
