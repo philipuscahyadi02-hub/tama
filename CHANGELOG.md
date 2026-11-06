@@ -204,6 +204,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `97c2e52` | 2026-11-07 | feat(voice) | English labels and separate listen/use controls on the Voice page (D-046) |
+| `696ef03` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `e099ef0` | 2026-11-07 | feat(voice) | Voice page, VOICEVOX characters, per-Tama tuning, mood-matched styles (D-045) |
 | `848b074` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `9decdd3` | 2026-11-07 | fix(telegram) | voice notes on request, bot menu refresh, persona knows her voice |
