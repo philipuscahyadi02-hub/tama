@@ -181,6 +181,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `02e74c3` | 2026-11-06 | feat(usage) | Limits tab: what's left for Claude, Gemini and Google (D-041) |
+| `c8d20bd` | 2026-11-06 | docs(changelog) | regenerate commit table |
 | `276dd70` | 2026-11-06 | feat(usage) | M8 usage & accounts dashboard (D-040) |
 | `990c18f` | 2026-11-06 | docs(changelog) | regenerate commit table for 0.7.0 |
 
