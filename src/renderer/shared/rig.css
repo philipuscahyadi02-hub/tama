@@ -65,7 +65,7 @@
 .mood-pat .eyes-happy, .mood-pat .mouth-cat { display: inline; }
 .mood-pat .blush, .mood-pout .blush { opacity: 1; filter: saturate(1.6); }
 .tama-rig.working .glasses { display: inline; }
-.tears .stream { animation: tear 1s linear infinite; }
+.mood-sad .tears .stream { animation: tear 1s linear infinite; } /* only while visible (NFR-1) */
 @keyframes tear { 50% { opacity: .4; } }
 
 
@@ -79,3 +79,14 @@
 .tama-rig.egg:hover .egg-crack, .tama-rig.egg.wobble .egg-crack { opacity: 1; }
 @keyframes eggIdle { 0%,100% { transform: rotate(0); } 48% { transform: rotate(0); } 52% { transform: rotate(-3deg); } 56% { transform: rotate(3deg); } 60% { transform: rotate(0); } }
 @keyframes eggWobble { 20% { transform: rotate(-9deg); } 40% { transform: rotate(8deg); } 60% { transform: rotate(-6deg); } 80% { transform: rotate(4deg); } }
+
+/* ---------- calm idle (NFR-1, D-042) ----------
+   Infinite SVG animations repaint the whole rig every frame (~4.5 % CPU on a transparent always-on-top window).
+   The pet window sets .calm between short "alive" bursts: idle sway pauses where it is, eyes stay open and blink
+   through a one-shot .blink-now. Other views (terminal avatar, onboarding, gallery) never set .calm. */
+.tama-rig.calm:not(.working):not(.walking):not(.dragging) .headGroup,
+.tama-rig.calm .tail-l, .tama-rig.calm .tail-r, .tama-rig.calm .tail-pony, .tama-rig.calm .motif-tail,
+.tama-rig.calm .ahoge, .tama-rig.calm .egg-body { animation-play-state: paused; }
+.tama-rig.calm .eyes-open .eye, .tama-rig.calm .hood-eyes { animation: none; }
+.tama-rig.calm.blink-now .eyes-open .eye, .tama-rig.calm.blink-now .hood-eyes { animation: blinkOnce .22s ease-in-out 1; }
+@keyframes blinkOnce { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.08); } }

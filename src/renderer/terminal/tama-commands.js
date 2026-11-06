@@ -31,6 +31,7 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
     '  /memory          what your Tama remembers about you · /remember <fact> · /forget <n|all>',
     '  /diary [date]    read their diary (they write one every evening) · /diary list',
     '  /event [id]      start a little moment now · /dnd [on|off] quiet mode · /nudges [on|off] water & stretch',
+    '  /voice [test]    her voice (AivisSpeech/VOICEVOX or Windows) · /mute · /motion auto|reduced|full',
     '  /google [setup|status|login|logout|brief|backup|backups|restore <n>|readonly on|off|maps-key <key|off>]   Gmail, Calendar, Drive, Docs, Sheets',
     '  /brief           morning brief (calendar, important mail, todos) · /newpc  checklist for a new PC',
     '  /usage [here]    Usage & accounts dashboard: Claude, Gemini, Google, Telegram usage + switch accounts',
@@ -168,6 +169,38 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
         const on = arg ? /^(on|1|yes)$/i.test(arg) : !p.nudges;
         await K.ui.setPrefs({ nudges: on });
         info(on ? '⎿  💧 wellbeing nudges on' : '⎿  wellbeing nudges off');
+      }],
+      // ---- voice & polish (M9, D-042) ----
+      mute: ['Voice off/on: /mute [on|off]', async (arg) => {
+        const p = await K.ui.prefs();
+        const on = arg ? /^(on|1|yes)$/i.test(arg) : !p.mute;
+        await K.ui.setPrefs({ mute: on });
+        info(on ? '⎿  🔇 muted. I will only talk in bubbles~' : '⎿  🔊 voice back on');
+      }],
+      motion: ['Animations: /motion auto|reduced|full', async (arg) => {
+        const m = String(arg || '').trim().toLowerCase();
+        if (!['auto', 'reduced', 'full'].includes(m)) { const p = await K.ui.prefs(); return info(`⎿  motion: ${p.motion || 'auto'} (auto follows Windows' "Animation effects" setting) · /motion auto|reduced|full`); }
+        await K.ui.setPrefs({ motion: m });
+        info(`⎿  motion: ${m}${m === 'reduced' ? ' (no wandering, no bouncing)' : ''}`);
+      }],
+      voice: ['Voice: /voice [test|on|off|chat on|off|events on|off|anime auto|always|never|speakers|speaker <id>]', async (arg) => {
+        const a = String(arg || '').trim();
+        const [cmd, val] = a.split(/\s+/, 2).map((x) => (x || '').toLowerCase());
+        const onOff = (v) => /^(on|1|yes)$/i.test(v);
+        let st;
+        if (!cmd) st = await K.voice.detect();
+        else if (cmd === 'test') { const r = await K.voice.say(a.slice(4).trim() || "Hi hi! This is my voice. Do you like it?"); return r.ok ? info(`⎿  🔊 speaking with ${r.engine}`) : error(`✗ couldn't speak (${r.reason})`); }
+        else if (cmd === 'on' || cmd === 'off') st = await K.voice.set({ enabled: cmd === 'on' });
+        else if (cmd === 'chat' || cmd === 'events') st = await K.voice.set({ [cmd]: onOff(val) });
+        else if (cmd === 'anime') st = await K.voice.set({ anime: val });
+        else if (cmd === 'speaker') st = await K.voice.set({ speaker: val === 'default' ? null : Number(val) });
+        else if (cmd === 'speakers') {
+          st = await K.voice.detect();
+          if (!st.engines.length) return info('⎿  No AivisSpeech / VOICEVOX running. Start it, then try again.');
+          return info(st.engines.map((e) => `⎿  ${e.name} ${e.version}\n${e.speakers.map((sp) => `     ${sp.name}: ${sp.styles.map((x) => `${x.name} #${x.id}`).join(', ')}`).join('\n')}`).join('\n') + '\n   Pick one with /voice speaker <id>');
+        } else return error('✗ /voice [test|on|off|chat on|off|events on|off|anime auto|always|never|speakers|speaker <id>]');
+        const eng = st.engines.length ? st.engines.map((e) => `${e.name} ${e.version}`).join(', ') : 'none running (using the Windows voice)';
+        info(`⎿  voice ${st.enabled ? 'on' : 'off'} · chat ${st.chat ? 'on' : 'off'} · moments ${st.events ? 'on' : 'off'} · anime engine: ${eng} · anime for: ${st.anime === 'auto' ? 'Japanese lines' : st.anime}${st.speaker != null ? ` · speaker #${st.speaker}` : ''}`);
       }],
       // ---- M5 extras (D-035) ----
       weather: ['Weather where you are: /weather <city>, /weather off', async (arg) => {

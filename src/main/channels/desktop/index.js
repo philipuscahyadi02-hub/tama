@@ -51,6 +51,28 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     bus.on(TOPICS.GOOGLE_CHANGED, (p) => { toAll('google', p); for (const w of pageWindows()) ipc.sendUi(w, 'google', p); });
     bus.on(TOPICS.TELEGRAM_CHANGED, (p) => toAll('telegram', p));
     bus.on(TOPICS.USAGE_CHANGED, (p) => { for (const w of pageWindows()) ipc.sendUi(w, 'usage', p); });
+    // ---- voice (M9, D-042): the pet window plays lines and encodes Telegram voice notes ----
+    bus.on(TOPICS.VOICE_PLAY, (p) => ipc.sendUi(pet.win, 'voice', p));
+    /** @type {Map<number, (r: any) => void>} */ const encodes = new Map();
+    let encSeq = 0;
+    bus.handle(TOPICS.VOICE_ENCODE, (/** @type {any} */ p) => new Promise((resolve) => {
+      const id = ++encSeq;
+      const t = setTimeout(() => { encodes.delete(id); resolve({ error: 'encode timeout' }); }, 60000);
+      encodes.set(id, (r) => { clearTimeout(t); encodes.delete(id); resolve(r); });
+      ipc.sendUi(pet.win, 'encode', { id, wav: p && p.wav });
+    }));
+    ipc.on('voice:encoded', (id, r) => { const fn = encodes.get(Number(id)); if (fn) fn(r && typeof r === 'object' ? { data: r.data ? String(r.data) : undefined, mime: r.mime ? String(r.mime) : undefined, error: r.error ? String(r.error) : undefined } : { error: 'bad reply' }); });
+    ipc.handle('voice:status', () => bus.request(TOPICS.VOICE_STATUS));
+    ipc.handle('voice:set', (p) => bus.request(TOPICS.VOICE_SET, {
+      enabled: typeof p?.enabled === 'boolean' ? p.enabled : undefined, chat: typeof p?.chat === 'boolean' ? p.chat : undefined,
+      events: typeof p?.events === 'boolean' ? p.events : undefined, anime: p?.anime ? String(p.anime) : undefined,
+      speaker: p?.speaker === null ? null : Number.isInteger(p?.speaker) ? p.speaker : undefined,
+    }));
+    ipc.handle('voice:say', (t) => bus.request(TOPICS.VOICE_SAY, { text: String(t || '').slice(0, 500), purpose: 'test' }));
+    ipc.handle('voice:detect', () => bus.request(TOPICS.VOICE_DETECT));
+    ipc.handle('voice:preview', (t, v) => bus.request(TOPICS.VOICE_RENDER, { text: String(t || '').slice(0, 300), voice: v && typeof v === 'object' ? {
+      pitch: Number(v.pitch) || 1, rate: Number(v.rate) || 1, voiceGender: ['female', 'male', 'neutral'].includes(v.voiceGender) ? v.voiceGender : 'female',
+    } : undefined }).catch((e) => ({ error: String(e.message || e) })));
     bus.on(TOPICS.ACCOUNTS_CHANGED, (p) => { for (const w of pageWindows()) ipc.sendUi(w, 'accounts', p); });
     bus.on(TOPICS.GOOGLE_MEETING_SOON, (p) => shell.notify(`📅 ${p.summary}`, `starts in ${p.minutes} min`));
     bus.on(TOPICS.EVENT_SHOWN, (p) => {
@@ -131,6 +153,7 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.handle('ui:setPrefs', (p) => bus.request(TOPICS.UI_PREFS_SET, {
       termTheme: p?.termTheme == null ? undefined : String(p.termTheme), tourDone: p?.tourDone == null ? undefined : !!p.tourDone,
       dnd: p?.dnd == null ? undefined : !!p.dnd, nudges: p?.nudges == null ? undefined : !!p.nudges,
+      mute: p?.mute == null ? undefined : !!p.mute, motion: p?.motion == null ? undefined : String(p.motion),
       walkMarker: p?.walkMarker == null ? undefined : !!p.walkMarker, // M5 extras (D-035)
     }));
     // ---- M5 extras: weather (D-035) ----

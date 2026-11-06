@@ -71,6 +71,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-039 | Event places: resolve pasted Maps links; otherwise look the place up and ask the user to confirm it before creating the event | Accepted |
 | D-040 | M8 = usage & accounts dashboard (voice → M9): numbers-only usage log, plan limits, account switching via official sign-ins | Accepted |
 | D-041 | Limits tab: Claude windows from the SDK (live /usage without a message + per-turn events), Gemini tier + quota-hit only, Google counts vs user cap | Accepted |
+| D-042 | Voice: AivisSpeech/VOICEVOX HTTP for Japanese lines, Windows SAPI (via PowerShell) for English; audio plays in the pet window; Telegram voice notes as M4A; calm-idle animation bursts | Accepted |
 
 ---
 
@@ -478,3 +479,42 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Scraping agy's interactive UI for quota (brittle); `cloud-platform` scope for Google quotas (too much access for a pet app); polling Claude more often (each check starts a Claude process).
 - **Consequences:** If Anthropic renames the experimental API, live checks quietly stop and the per-turn events keep the numbers current. If agy ever exposes quota over ACP, add it to `USAGE_LIMIT` `provider: 'gemini'`.
 - **Refs:** USE-5..7, D-040, src/main/engines/claude/limits.js, src/main/services/usage/limits.js, src/renderer/dashboard
+
+### D-042 — Voice: AivisSpeech/VOICEVOX HTTP for Japanese lines, Windows SAPI (via PowerShell) for English; audio plays in the pet window; Telegram voice notes as M4A; calm-idle animation bursts
+- **Date:** 2026-11-07 · **Status:** Accepted
+- **Context:** M9 (VOICE-1, TG-3 voice, PET-8, NFR-1). Probes:
+  - Chromium's `speechSynthesis` has **no voices inside Electron**, so the old onboarding preview (D-004) was silent.
+  - Windows SAPI (`System.Speech`) has David and Zira and renders SSML with pitch/rate to WAV.
+  - AivisSpeech and VOICEVOX are not on winget (VOICEVOX is), and neither was running on this PC.
+  - Electron's MediaRecorder records `audio/mp4` (AAC) but not OGG.
+  - agy's ACP reports `promptCapabilities.audio: false`, so Gemini can't listen to voice notes through it.
+  - The idle pet used about 5.8 % CPU, mostly continuous SVG animations (including an invisible tear loop).
+- **Decision:**
+  - `services/voice` picks the engine for each line:
+    - **AivisSpeech** (`127.0.0.1:10101`) or **VOICEVOX** (`:50021`) via their shared HTTP API, detected every 5 minutes, for lines with Japanese text. With `/voice anime always`, English lines use them too.
+    - Otherwise **Windows SAPI**, run by `platform/tts-sapi.js` (PowerShell with an encoded script) using the VoiceSpec gender, pitch and rate.
+    - Speakers are chosen per Tama (`/voice speakers`, `/voice speaker <id>`).
+  - `speakable()` strips emoji, kaomoji, markdown, links and `[[…]]` markers, and caps lines at about 280 characters.
+  - **What speaks:**
+    - Chat replies and event lines on the desktop. Replies to phone messages are not spoken on the desktop.
+    - Quiet when `/mute`, `/dnd`, in a focus session, or while she sleeps.
+    - `/voice chat|events on|off`.
+  - **Playback:** the WAV goes to the pet window (Web Audio). The mouth opens with the audio loudness (`.talk-open`), and new lines queue (max 3).
+  - **Telegram (`/voice on`):** each reply also comes as a voice note. The pet window converts WAV to M4A with MediaRecorder, and Tama sends it with `sendVoice`. Incoming voice notes get an honest "can't listen yet" reply; speech-to-text stays VOICE-4.
+  - **Onboarding preview** uses the same rendering (`voice.render`).
+  - **PET-8:**
+    - `/motion auto|reduced|full`: auto follows Windows' animation setting; reduced also stops wandering.
+    - `/mute`.
+    - Both are stored in `device.json` `ui`.
+  - **NFR-1:**
+    - The pet sets `.calm` between short "alive" bursts (6–9 s every 18–28 s). Idle sway pauses, and blinks are one-shots.
+    - Tears only animate while sad.
+    - Walking moves the window 3 px every 45 ms (same speed, fewer moves).
+    - Result: about 2.0 % CPU and about 200 MB private memory at idle.
+- **Alternatives:** Web Speech (no voices in Electron); an npm TTS or opus encoder (new dependency, D-005 spirit); ffmpeg (large download); ElevenLabs (paid, D-022).
+- **Consequences:**
+  - Without AivisSpeech/VOICEVOX running, she sounds like the Windows voice with a higher pitch.
+  - The anime engines read English poorly, so they're only used for Japanese lines by default (D-022).
+  - Each SAPI line starts PowerShell (about 1 s).
+  - Phone → Tama voice needs VOICE-4 (local whisper).
+- **Refs:** VOICE-1, VOICE-4, TG-3, PET-8, NFR-1, D-004, D-022, src/main/services/voice, src/main/platform/tts-sapi.js, src/renderer/pet/voice.js

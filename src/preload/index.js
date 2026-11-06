@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** Main → renderer messages arrive on one 'ui' channel as (name, payload). */
-const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram', 'usage', 'accounts']);
+const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram', 'usage', 'accounts', 'voice', 'encode']);
 /** @type {Map<string, Set<(p: any) => void>>} */
 const subs = new Map();
 ipcRenderer.on('ui', (_e, name, payload) => {
@@ -112,6 +112,17 @@ contextBridge.exposeInMainWorld('tama', {
     list: () => ipcRenderer.invoke('diary:list'),
   },
 
+  // ---- voice (M9) ----
+  voice: {
+    status: () => ipcRenderer.invoke('voice:status'),
+    set: (/** @type {any} */ p) => ipcRenderer.invoke('voice:set', p),
+    say: (/** @type {string} */ t) => ipcRenderer.invoke('voice:say', t),
+    detect: () => ipcRenderer.invoke('voice:detect'),
+    preview: (/** @type {string} */ t, /** @type {any} */ v) => ipcRenderer.invoke('voice:preview', t, v),
+    onPlay: on('voice'),
+    onEncode: on('encode'),
+    encoded: (/** @type {number} */ id, /** @type {any} */ r) => ipcRenderer.send('voice:encoded', id, r),
+  },
   // ---- Usage & accounts (M8) ----
   usage: {
     open: () => ipcRenderer.send('dashboard:open'),

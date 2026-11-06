@@ -29,6 +29,9 @@ const { createAccounts } = require('./services/accounts');
 const engineAccounts = require('./engines/accounts');
 const { createLimits } = require('./services/usage/limits');
 const { fetchClaudeLimits } = require('./engines/claude/limits');
+const { createVoice } = require('./services/voice');
+const { createVvEngines } = require('./services/voice/vv-engine');
+const sapi = require('./platform/tts-sapi');
 const { createChatTools } = require('./brain/chat-tools');
 const { startToolBridge } = require('./platform/tool-bridge');
 const os = require('os');
@@ -180,6 +183,8 @@ function boot() {
   const desk = pathMod.join(appShell.paths.data(), 'desk');
   require('fs').mkdirSync(desk, { recursive: true });
   stoppers.push(createTelegram({ bus, secrets, device, git, snapshot: () => pet.snapshot(), keepAwake, tama: active, desk }).start());
+  // Voice (M9, D-042): AivisSpeech / VOICEVOX when running, Windows' built-in voice otherwise.
+  stoppers.push(createVoice({ bus, device, sapi, vv: createVvEngines(), tamaId: active.id }).start());
   // Accounts (M8, D-040): sign-ins stay in the official tools; switching opens their sign-in in a console window.
   stoppers.push(createAccounts({
     bus,
@@ -210,6 +215,15 @@ function boot() {
   if (process.env.TAMA_SHOW_TERM) term.show();
   if (process.env.TAMA_GALLERY) {
     openPage('dev/gallery.html', { width: 1000, height: 760, frame: true, query: { set: process.env.TAMA_GALLERY } });
+  }
+  if (process.env.TAMA_VOICE_TEST) {
+    // Dev: speak once on the desktop, then render + encode a Telegram voice note and report sizes (D-042).
+    pet.win.webContents.once('did-finish-load', () => setTimeout(async () => {
+      const said = await bus.request(TOPICS.VOICE_SAY, { text: String(process.env.TAMA_VOICE_TEST), purpose: 'test' }).catch((e) => ({ error: String(e) }));
+      const r = await bus.request(TOPICS.VOICE_RENDER, { text: String(process.env.TAMA_VOICE_TEST) }).catch(() => null);
+      const enc = r ? await bus.request(TOPICS.VOICE_ENCODE, { wav: r.wav }).catch((e) => ({ error: String(e) })) : null;
+      console.log('[voice-test]', JSON.stringify({ said, engine: r && r.engine, wavBytes: r && Buffer.from(r.wav, 'base64').length, m4aBytes: enc && enc.data ? Buffer.from(enc.data, 'base64').length : 0, m4aHead: enc && enc.data ? Buffer.from(enc.data, 'base64').subarray(4, 8).toString() : enc && enc.error }));
+    }, 2000));
   }
   if (process.env.TAMA_PET_EVAL) {
     // Dev: run JS in the pet window after load (e.g. "actions.stats()") for screenshots.

@@ -15,7 +15,14 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
 
 ## [Unreleased]
-_Nothing yet._
+### Added
+- **M9 Voice & polish** (branch `m9-voice`, D-042):
+  - **Her voice:** chat replies and moments are spoken on the desktop, and her mouth moves with the sound. AivisSpeech or VOICEVOX (anime voices) is used when it's running; otherwise the Windows voice with her pitch and speed. `/voice` (test, on/off, chat/events, anime auto|always|never, speakers, speaker <id>).
+  - **Telegram voice notes:** `/voice on` on the phone and she also answers with a voice note. Your own voice notes get a polite "can't listen yet".
+  - **Mute and reduced motion:** `/mute`, `/motion auto|reduced|full` (auto follows Windows' animation setting).
+  - Onboarding's "hear my voice" works again (it was silent inside Electron).
+### Changed
+- Idle CPU from about 5.8 % to about 2 %: idle animations run in short bursts, blinks are one-shots, an invisible tear animation no longer runs, and wandering moves the window less often.
 
 ## [0.8.0] — 2026-11-06 — M8 Usage & accounts dashboard
 ### Added

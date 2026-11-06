@@ -142,7 +142,8 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
       return;
     }
     if (msg.text) await onText(String(msg.text));
-    else await send('I can only read text for now~ (voice notes come later!)');
+    else if (msg.voice || msg.audio) await send("I can't listen to voice notes yet, gomen~ 🙉 Type it for me? (I can send you voice notes though: /voice on)");
+    else await send('I can only read text for now~');
   }
 
   /** @param {string} text */
@@ -181,6 +182,14 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
       }
       case 'remind': { const t = await r(TOPICS.PROD_REMIND_ADD, { input: a }); return send(t.error ? `✗ ${t.error}` : `⏰ ok! ${new Date(t.reminder.at).toLocaleString()}: ${t.reminder.text}`); }
       case 'brief': return send(await briefText());
+      case 'voice': {
+        // TG-3 voice (D-042): her replies also come as a voice note.
+        if (!/^(on|off)$/i.test(a)) return send(`voice notes are ${cfg().voiceNotes ? 'on 🔊' : 'off'} · /voice on|off`);
+        device.patch('telegram', { voiceNotes: /^on$/i.test(a) });
+        changed();
+        if (/^on$/i.test(a)) { await send("🔊 okay! I'll talk to you too~"); return voiceNote('Yay! Now you can hear me on your phone too.'); }
+        return send('🔇 voice notes off');
+      }
       case 'code': return remote.start(a);
       case 'stop': return remote.stop();
       case 'repos': return remote.repos();
@@ -233,7 +242,19 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
       for (const k of [...offered.keys()]) if (k <= id - 20) offered.delete(k);
       return send(body, { reply_markup: { inline_keyboard: [[{ text: '💻 Let Claude do it', callback_data: `work:${id}` }]] } });
     }
-    return send(body);
+    const sent = await send(body);
+    if (cfg().voiceNotes) voiceNote(body).catch((e) => bus.emit(TOPICS.APP_ERROR, { topic: 'telegram.voice', message: String(e.message || e) }));
+    return sent;
+  }
+
+  /** Render a line with her voice, encode it to M4A in the pet window and send it as a Telegram voice note. @param {string} text */
+  async function voiceNote(text) {
+    await api.call('sendChatAction', { chat_id: chatId(), action: 'record_voice' }).catch(() => null);
+    const r = await bus.request(TOPICS.VOICE_RENDER, { text }).catch(() => null);
+    if (!r || !r.wav) return;
+    const enc = await bus.request(TOPICS.VOICE_ENCODE, { wav: r.wav }).catch((e) => ({ error: String(e.message || e) }));
+    if (!enc || !enc.data) throw new Error(`voice note: ${(enc && enc.error) || 'encode failed'}`);
+    await api.upload('sendVoice', { chat_id: chatId() }, 'voice', Buffer.from(enc.data, 'base64'), 'tama.m4a', 'audio/mp4');
   }
 
   async function briefText() {

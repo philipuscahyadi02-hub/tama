@@ -1,42 +1,30 @@
-/* Voice preview with the built-in Web Speech / Windows voices (VOICE-1 groundwork, D-004).
-   Picks a system voice matching voiceGender and applies pitch + rate from the VoiceSpec. */
+/* Voice preview for onboarding (VOICE-1, D-042). Chromium's speechSynthesis has no voices inside Electron, so the main
+   process renders the line (AivisSpeech / VOICEVOX or the Windows voice, with the VoiceSpec pitch + rate) and this
+   plays the WAV with Web Audio. */
 (function () {
-  const FEMALE = /zira|hazel|susan|aria|jenny|sonia|libby|nanami|haruka|female|woman|girl/i;
-  const MALE = /david|mark|george|guy|ryan|keita|ichiro|male|man|boy/i;
+  let ctx = null;
+  let current = null;
 
-  function voices() {
-    return new Promise((resolve) => {
-      const list = speechSynthesis.getVoices();
-      if (list.length) return resolve(list);
-      speechSynthesis.addEventListener('voiceschanged', () => resolve(speechSynthesis.getVoices()), { once: true });
-      setTimeout(() => resolve(speechSynthesis.getVoices()), 1500);
-    });
-  }
-
-  /** @param {{voiceGender: string}} voice */
-  async function pickVoice(voice) {
-    const list = await voices();
-    const en = list.filter((v) => /^en/i.test(v.lang));
-    const pool = en.length ? en : list;
-    const re = voice.voiceGender === 'male' ? MALE : voice.voiceGender === 'female' ? FEMALE : null;
-    return (re && pool.find((v) => re.test(v.name))) || pool[0] || null;
-  }
-
-  /** Speak `text` with a VoiceSpec. Resolves when done (or immediately if speech is unavailable). */
+  /** Speak `text` with a VoiceSpec. Resolves true when done, false if speech is unavailable. */
   async function speak(text, voice) {
-    if (!('speechSynthesis' in window)) return false;
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    const v = await pickVoice(voice);
-    if (v) u.voice = v;
-    u.pitch = voice.pitch;
-    u.rate = voice.rate;
-    return new Promise((resolve) => {
-      u.onend = () => resolve(true);
-      u.onerror = () => resolve(false);
-      speechSynthesis.speak(u);
-    });
+    try {
+      const r = await window.tama.voice.preview(text, voice);
+      if (!r || !r.wav) return false;
+      ctx = ctx || new AudioContext();
+      if (ctx.state === 'suspended') await ctx.resume();
+      const bytes = Uint8Array.from(atob(r.wav), (c) => c.charCodeAt(0));
+      const buf = await ctx.decodeAudioData(bytes.buffer);
+      if (current) { try { current.stop(); } catch { /* ended */ } }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      current = src;
+      return await new Promise((resolve) => { src.onended = () => resolve(true); src.start(); });
+    } catch (e) {
+      console.warn('[voice] preview failed', e);
+      return false;
+    }
   }
 
-  window.TamaVoice = { speak, pickVoice };
+  window.TamaVoice = { speak };
 }());

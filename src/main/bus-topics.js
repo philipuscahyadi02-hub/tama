@@ -61,6 +61,8 @@ const TOPICS = {
   USAGE_LIMIT: 'usage.limit',
   /** Accounts { claude, gemini, google, telegram } — after an account status changed (D-040) */
   ACCOUNTS_CHANGED: 'accounts.changed',
+  /** { wav: base64, text, engine } — play this line on the desktop (D-042) */
+  VOICE_PLAY: 'voice.play',
   /** { text, kind: 'info'|'warn' } — brain messages worth a pet bubble (budget, missing engines) */
   BRAIN_NOTICE: 'brain.notice',
   /** { reason: string } — pet window was brought back on screen by summon() */
@@ -220,6 +222,18 @@ const TOPICS = {
   ACCOUNTS_GET: 'accounts.get',
   /** { kind: 'claude'|'gemini'|'google'|'google-project'|'telegram' } → { ok, message } | { error } — start switching an account */
   ACCOUNTS_SWITCH: 'accounts.switch',
+  /** { text, purpose?: 'chat'|'test' } → { ok, engine? } | { ok: false, reason } — speak on the desktop if allowed (D-042) */
+  VOICE_SAY: 'voice.say',
+  /** { text, voice? } → { wav: base64, engine, text } | null — render only (Telegram voice notes, onboarding preview) */
+  VOICE_RENDER: 'voice.render',
+  /** () → VoiceStatus { enabled, chat, events, anime, speaker, engines, systemVoices } */
+  VOICE_STATUS: 'voice.status',
+  /** { enabled?, chat?, events?, anime?: 'auto'|'always'|'never', speaker?: number|null } → VoiceStatus */
+  VOICE_SET: 'voice.set',
+  /** () → VoiceStatus — look for AivisSpeech / VOICEVOX again */
+  VOICE_DETECT: 'voice.detect',
+  /** { wav: base64 } → { data: base64, mime } | { error } — WAV → M4A for Telegram voice notes (encoded in the pet window) */
+  VOICE_ENCODE: 'voice.encode',
   /** sessionId|null → { ok } | { error } */
   ENGINE_RESUME: 'engine.resume',
   /** { reason } → void — bring the pet back on screen */

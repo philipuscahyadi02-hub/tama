@@ -5,8 +5,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.16 |
-| **Status** | v0.8.0 released (M0–M8). M9 (voice & polish) in progress on `m9-voice`; portable .exe postponed |
+| **Version** | 0.17 |
+| **Status** | v0.8.0 released (M0–M8). M9 (voice & polish) code complete on `m9-voice`; portable .exe postponed |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-06 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -84,7 +84,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | PET-5 | Interactions from kero-pet kept: click menu, head-pat rub, cheek poke, drag, wander, babble. | P0 | M1 | ☑ |
 | PET-6 | Do-not-disturb: no babble during fullscreen apps, meetings (calendar), or focus sessions. *(Focus, `/dnd`, away, asleep, fullscreen (D-035) and calendar meetings (D-034) all done.)* | P1 | M5 | ☑ |
 | PET-7 | Wellbeing nudges: water, stretch, late-night "go to sleep". Toggleable. | P2 | M5 | ☑ |
-| PET-8 | Reduced-motion and mute options. | P1 | M9 | ☐ |
+| PET-8 | Reduced-motion and mute options. *(`/motion auto|reduced|full` (auto follows Windows), `/mute`; D-042.)* | P1 | M9 | ☑ |
 
 ### 4.4 Bond & productivity (BOND / PROD)
 | ID | Requirement | Pri | MS | Status |
@@ -143,7 +143,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 |---|---|---|---|---|
 | TG-1 | Bot API **long polling** from the PC; no webhook, no server. | P0 | M7 | ☑ |
 | TG-2 | Pairing: paste BotFather token → QR / deep link with one-time code → bind to one chat ID; ignore all others. | P0 | M7 | ☑ |
-| TG-3 | Chat with the Tama in character; voice notes both ways. *(Text chat done in M7; voice notes in M9.)* | P0 / P1 | M7/M9 | ◐ |
+| TG-3 | Chat with the Tama in character; voice notes both ways. *(Text chat M7. Tama → phone voice notes M9 (`/voice on`, D-042). Phone → Tama needs speech-to-text: VOICE-4.)* | P0 / P1 | M7/M9 | ◐ |
 | TG-4 | Productivity: `/todo /focus /remind`, morning brief, evening recap. | P0 | M7 | ☑ |
 | TG-5 | Pet: `/feed /nap /status` (status replies with expression PNG). `/summon`. | P1 | M7 | ☑ |
 | TG-6 | Remote control: `/code <task>` in allow-listed repos; progress updates; **permission prompts as inline buttons** (Yes / Always / No); diffs as file attachments; `/stop`. | P0 | M7 | ☑ |
@@ -176,7 +176,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.11 Voice (VOICE)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| VOICE-1 | `VoiceProvider` interface; main provider = **AivisSpeech** local engine (anime voices, D-022); fallback = built-in Windows / Web Speech TTS (pitch, rate from `VoiceSpec`). | P0 | M9 | ☐ |
+| VOICE-1 | Voice provider; main = **AivisSpeech** (or VOICEVOX) local engine (anime voices, D-022); fallback = Windows built-in voice (pitch, rate from `VoiceSpec`). Speaks chat replies and moments on the desktop, with a talking mouth (D-042). | P0 | M9 | ☑ |
 | VOICE-2 | Speaking style (tics, catchphrase frequency) from the same voice prompt. | P0 | M1 | ☑ |
 | VOICE-3 | Other providers pluggable later (e.g. ElevenLabs Voice Design, paid; Kokoro for English). | P2 | later | ☐ |
 | VOICE-4 | STT for Telegram voice notes (local whisper.cpp, optional download). | P2 | later | ☐ |
@@ -201,7 +201,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | SAFE-3 | Telegram accepts only the paired chat ID. | P0 | M7 | ☑ |
 | SAFE-4 | Warn before accept-edits mode outside a git repo. | P1 | M4 | ☑ |
 | SAFE-5 | Daily cost/token budget shown in `/stats`; Tama warns near the limit. | P1 | M3 | ☑ |
-| NFR-1 | Idle CPU < 2%, RAM < 300 MB (excluding engine processes). | P1 | M9 | ☐ |
+| NFR-1 | Idle CPU < 2%, RAM < 300 MB (excluding engine processes). *(Measured 2026-11-07: about 2.0% CPU (was 5.8%) and about 200 MB private memory, D-042. Borderline: wandering is most of what is left.)* | P1 | M9 | ◐ |
 | NFR-2 | Multi-monitor & mixed-DPI safe. | P0 | M0 | ◐ |
 | NFR-3 | Ships as a portable `.exe` (electron-builder), uses installed `claude`/`agy`. *(Postponed by the user, 2026-11-06.)* | P0 | later | ☐ |
 | NFR-4 | Memory view + forget; local-only data except the user's own Drive backup. | P0 | M5 | ☑ |
@@ -219,7 +219,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M6 — Google.** *(released as 0.6.0; Tasks sync, Docs replace-section and a hard device lock deferred)* OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
 - [x] **M7 — Telegram.** *(released as 0.7.0; voice notes in M9)* (TG-*, ART-5, SAFE-3).
 - [x] **M8 — Usage & accounts dashboard.** *(released as 0.8.0)* Usage log, dashboard, Limits tab (what's left), account switching (USE-1..7, D-040, D-041).
-- [ ] **M9 — Voice & polish.** AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
+- [x] **M9 — Voice & polish.** *(code complete)* AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
 
 ## 6. Open questions
 
@@ -230,6 +230,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.17 — 2026-11-07** — M9: voice (VOICE-1), Tama → phone voice notes (TG-3 ◐), mute/reduced motion (PET-8), idle CPU work (NFR-1 ◐) (D-042). Portable .exe postponed by the user.
 - **0.16 — 2026-11-06** — Limits tab: what's left per service, trend, warnings (USE-5..7, D-041).
 - **0.15 — 2026-11-06** — M8 is now the usage & accounts dashboard (USE-1..4, D-040); voice and polish moved to M9.
 - **0.14 — 2026-11-06** — Event places verified on Google Maps before creating (D-039).
