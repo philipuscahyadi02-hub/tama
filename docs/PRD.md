@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.9 |
+| **Version** | 0.10 |
 | **Status** | v0.5.0 released (M0–M5). M6 in progress on `m6-google`; M5 leftovers on `m5-extras` |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-06 |
@@ -153,14 +153,14 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.10 Google (GOOG)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| GOOG-1 | Desktop OAuth (loopback + PKCE) with the user's own Google Cloud client in **Production (unverified)** status (Testing expires tokens in 7 days). Tokens in `secrets` only. | P0 | M6 | ☐ |
-| GOOG-2 | Google tools exposed as an MCP server, plugged into **every** engine. | P0 | M6 | ☐ |
-| GOOG-3 | Calendar: read, create/edit events; meeting reminders (sleeve-tug 5 min before) and DND during meetings. | P0 | M6 | ☐ |
-| GOOG-4 | Gmail: read/search, summarize, create drafts. **No sending** (D-014). | P0 | M6 | ☐ |
-| GOOG-5 | Drive: `drive.file` by default (create/edit own files); optional `drive.readonly` toggle for search/read across Drive. | P0 | M6 | ☐ |
-| GOOG-6 | Docs: create from Markdown, append, replace section. Sheets: create with tabs/headers/formulas, write range, append rows. | P0 | M6 | ☐ |
-| GOOG-7 | All created files go to a "Tama Drafts" folder; creation auto-allowed + announced; edits of existing files require approval; **no delete/share tools exist**. | P0 | M6 | ☐ |
-| GOOG-8 | Morning brief: today's events, important unread mail, todos (desktop + Telegram). | P1 | M6 | ☐ |
+| GOOG-1 | Desktop OAuth (loopback + PKCE) with the user's own Google Cloud client in **Production (unverified)** status (Testing expires tokens in 7 days). Tokens in `secrets` only. | P0 | M6 | ☑ |
+| GOOG-2 | Google tools exposed as an MCP server, plugged into **every** engine. *(Claude Code gets the tools; the read-only agy chat gets a calendar/mail context line instead, D-034.)* | P0 | M6 | ◐ |
+| GOOG-3 | Calendar: read, create/edit events; meeting reminders (sleeve-tug 5 min before) and DND during meetings. | P0 | M6 | ☑ |
+| GOOG-4 | Gmail: read/search, summarize, create drafts. **No sending** (D-014). | P0 | M6 | ☑ |
+| GOOG-5 | Drive: `drive.file` by default (create/edit own files); optional `drive.readonly` toggle for search/read across Drive. | P0 | M6 | ☑ |
+| GOOG-6 | Docs: create from Markdown, append, replace section. Sheets: create with tabs/headers/formulas, write range, append rows. *(All but "replace section".)* | P0 | M6 | ◐ |
+| GOOG-7 | All created files go to a "Tama Drafts" folder; creation auto-allowed + announced; edits of existing files require approval; **no delete/share tools exist**. | P0 | M6 | ☑ |
+| GOOG-8 | Morning brief: today's events, important unread mail, todos (desktop + Telegram). | P1 | M6 | ☑ |
 
 ### 4.11 Voice (VOICE)
 | ID | Requirement | Pri | MS | Status |
@@ -178,9 +178,9 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | PORT-3 | Roster: multiple Tamas, one active; inactive ones pause decay. | P1 | M2 | ☑ |
 | PORT-4 | Restyle (keep all), Rebirth (redesign; choose keep/clear memory & bond), Hatch another, Graduate (album; restorable), Delete (typed confirm). | P1 | M2 | ☑ |
 | PORT-5 | `.tama` export/import: single bundle file (D-025), password-encrypted by default; optional "include connections" (Telegram token). | P0 | M2 | ☑ |
-| PORT-6 | Daily Drive backup to `appDataFolder` (`drive.appdata`); restore offer on new PC. | P1 | M6 | ☐ |
-| PORT-7 | Single active device lock (lease file in Drive); "move her here?" takeover. | P1 | M6 | ☐ |
-| PORT-8 | New-PC checklist: log in `claude`/`agy`, Google sign-in, Telegram re-pair if needed. | P1 | M6 | ☐ |
+| PORT-6 | Daily Drive backup to `appDataFolder` (`drive.appdata`); restore offer on new PC. | P1 | M6 | ☑ |
+| PORT-7 | Single active device lock (lease file in Drive); "move her here?" takeover. *(Lease + warning, not a hard lock, D-034.)* | P1 | M6 | ◐ |
+| PORT-8 | New-PC checklist: log in `claude`/`agy`, Google sign-in, Telegram re-pair if needed. | P1 | M6 | ☑ |
 
 ### 4.13 Safety, privacy & non-functional (SAFE / NFR)
 | ID | Requirement | Pri | MS | Status |
@@ -205,7 +205,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M3 — Brain & engines.** *(released as 0.3.1)* Claude Code terminal + agy chat window, PermissionGate, budget (BRAIN-*, ENG-1..5, CHAT-1, SAFE-1, SAFE-5, ONB-7).
 - [x] **M4 — Terminal v2.** *(released as 0.4.0)* Theming from the CharacterSpec (no more hard-coded Kero), commands, first-run tour (TERM-*, ART-4, SAFE-4).
 - [x] **M5 — Events & memory.** *(released as 0.5.0; weather, fullscreen DND and SUM-5 deferred)* (EVT-*, PET-6..7, NFR-4, SUM-5).
-- [ ] **M6 — Google.** OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
+- [x] **M6 — Google.** *(code complete; Tasks sync, Docs replace-section and a hard device lock deferred)* OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
 - [ ] **M7 — Telegram.** (TG-*, ART-5, SAFE-3).
 - [ ] **M8 — Voice & polish.** (VOICE-1, PET-8, NFR-1, NFR-3).
 
@@ -218,6 +218,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.10 — 2026-11-06** — M6 implemented: GOOG-1,3,4,5,7,8, PORT-6, PORT-8 done; GOOG-2, GOOG-6, PORT-7 partial; PROD-3 open (D-034).
 - **0.9 — 2026-11-06** — M5 implemented: EVT-2..4, NFR-4, PET-7 done; EVT-1 and PET-6 partial (D-033).
 - **0.8 — 2026-11-06** — M4 implemented: TERM-1..4, ART-4, SAFE-4; BOND-3 terminal themes (D-032).
 - **0.7 — 2026-11-06** — Terminal = Claude Code only, chat window = agy only (D-029, CHAT-1); M3 ships as 0.3.1 (D-030); progress + `/effort` (D-031).

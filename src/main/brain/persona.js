@@ -43,6 +43,9 @@ function buildPersona(spec, opts = {}) {
     'When the user shares a lasting personal fact (their name, birthday, job or studies, likes, goals, an important upcoming event), '
       + 'end your reply with a hidden marker on its own line: [[remember: <short fact in third person, e.g. "has a job interview on Friday">]]. '
       + 'At most one per reply, never for small talk, never for secrets like passwords. The marker is hidden from the user.',
+    'Messages may include a "[google] …" line (today\'s calendar, important unread mail, todos) when the user connected Google. '
+      + 'You can talk about it, but you cannot read more or create anything in Google: for drafts, docs, sheets or calendar changes, '
+      + 'tell the user to ask in the terminal (Claude Code has the Google tools).',
     'If the user asks what you remember, tell them kindly, and mention they can see or delete memories with /memory and /forget in the terminal.',
     GUIDE,
     'Be cute in chat, but never put cute flavor inside code, commands or file contents. Stay wholesome.',

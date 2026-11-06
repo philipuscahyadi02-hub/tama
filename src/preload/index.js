@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** Main → renderer messages arrive on one 'ui' channel as (name, payload). */
-const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event']);
+const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google']);
 /** @type {Map<string, Set<(p: any) => void>>} */
 const subs = new Map();
 ipcRenderer.on('ui', (_e, name, payload) => {
@@ -110,6 +110,22 @@ contextBridge.exposeInMainWorld('tama', {
     read: (/** @type {string|undefined} */ day) => ipcRenderer.invoke('diary:read', day),
     list: () => ipcRenderer.invoke('diary:list'),
   },
+
+  // ---- Google (M6) ----
+  google: {
+    open: () => ipcRenderer.send('google:open'),
+    status: () => ipcRenderer.invoke('google:status'),
+    setClient: (/** @type {any} */ p) => ipcRenderer.invoke('google:setClient', p),
+    login: () => ipcRenderer.invoke('google:login'),
+    logout: () => ipcRenderer.invoke('google:logout'),
+    set: (/** @type {any} */ p) => ipcRenderer.invoke('google:set', p),
+    brief: () => ipcRenderer.invoke('google:brief'),
+    backupNow: () => ipcRenderer.invoke('google:backupNow'),
+    backups: () => ipcRenderer.invoke('google:backups'),
+    restore: (/** @type {string} */ id) => ipcRenderer.invoke('google:restore', id),
+    onChange: on('google'),
+  },
+  openLink: (/** @type {string} */ url) => ipcRenderer.invoke('link:open', url),
 
   // ---- both ----
   onAgent: on('agent.event'),

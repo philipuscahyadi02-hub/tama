@@ -4,7 +4,17 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 
 **How this file works**
 - **Top part (hand-written):** add a line under `## [Unreleased]
-_Nothing yet._
+### Added
+- **M6 Google** (branch `m6-google`, D-034):
+  - **Connect Google** with your own Google app: a guided 5-minute setup page (tray → Google…, or `/google setup`), browser sign-in (loopback + PKCE). Tokens are stored only in Windows-encrypted secrets.
+  - **In the terminal, Claude Code can now:** read your calendar, create events (no invitations are ever sent), edit events (asks first); search and read Gmail and write **drafts** (there is no send); search and read Drive; create Google **Docs** from Markdown and **Sheets** with tabs and formulas in a "Tama Drafts" folder; append to Docs and write/append Sheet rows (asks first). There are no delete or share tools.
+  - **Meeting reminders:** a sleeve-tug bubble + notification 5 minutes before an event.
+  - **Morning brief** (once each morning, and `/brief`): today's events, important unread mail, open todos. The 💬 chat knows today's schedule too (read-only).
+  - **Drive backup:** daily, to Drive's hidden app folder (keeps 7). `/google backups`, `/google restore <n>`. After sign-in on a new PC she offers to restore missing Tamas; a warning if the same Tama is awake on another PC.
+  - `/google` (status, login, logout, brief, backup, backups, restore, readonly on|off) and `/newpc` checklist.
+### Changed
+- PermissionGate supports rules (Google reads/creations auto-allowed and announced; edits ask).
+- `zod` is now a declared dependency (it was already installed as the Agent SDK's peer); it is unpacked with the SDK in the portable build.
 
 ## [0.5.0] — 2026-11-06 — M5 Events & memory
 ### Added

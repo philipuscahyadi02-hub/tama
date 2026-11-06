@@ -63,6 +63,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-031 | Claude Code sessions stream summarized thinking + tool-input progress; `/effort` per PC | Accepted |
 | D-032 | UI theme from the CharacterSpec (shared/theme.js); terminal variants unlocked by bond; UI prefs in device.json | Accepted |
 | D-033 | Events & memory: deck JSON + pure triggers, agy composer, hidden [[remember]] markers, facts + diary in the Tama's folder | Accepted |
+| D-034 | Google: own OAuth client (loopback+PKCE), plain-fetch APIs, MCP tools for Claude Code with a gate policy, read-only context for chat, appData backups | Accepted |
 
 ---
 
@@ -351,3 +352,22 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Hard-coded event code (not data-driven, AGENTS rule 12); LLM-generated choices (buttons could not be trusted to map to effects); a separate memory model call per message (slower, costs more).
 - **Consequences:** Weather (needs a location) and fullscreen/meeting detection are not done yet (EVT-1/PET-6 ◐; meetings come with Calendar in M6). New events = a deck entry plus a test row. Telegram (M7) will relay `event.shown` and `events.answer`.
 - **Refs:** EVT-1..4, PET-6, PET-7, NFR-4, BOND-3, assets/events/deck.json, src/main/services/{events,memory}, src/main/brain/compose.js
+
+### D-034 — Google: own OAuth client (loopback+PKCE), plain-fetch APIs, MCP tools for Claude Code with a gate policy, read-only context for chat, appData backups
+- **Date:** 2026-11-06 · **Status:** Accepted
+- **Context:** M6 (GOOG-1..8, PORT-6..8): Gmail (drafts only, D-014), Calendar, Drive/Docs/Sheets, Drive backup, without a server and without reusing anyone's tokens (D-006, D-009, D-010).
+- **Decision:**
+  - **Sign-in:** `platform/google-oauth.js` runs the desktop flow: loopback redirect on `127.0.0.1:<random port>`, PKCE S256, `state` check, `access_type=offline` + `prompt=consent`. The user's own Desktop OAuth client (id + secret) and the tokens are stored only in `platform/secrets`. A guided setup page (`renderer/google/`, tray "Google…", `/google setup`) walks through creating the client and publishing it to Production (D-009).
+  - **Scopes:** `calendar.events`, `gmail.readonly`, `gmail.compose`, `drive.file`, `drive.appdata`; `drive.readonly` only when the user turns on "read all of Drive" (then signs in again). Google Tasks (PROD-3) is not requested yet.
+  - **APIs:** plain `fetch` wrappers (`services/google/{api,calendar,gmail,drive,markdown}.js`), with no googleapis dependency. Access tokens refresh automatically, with one retry on 401. Calendar events are created with `sendUpdates=none` and no attendees, so Tama never sends invitations. Gmail has no send function. Drive has no delete or share function, except pruning Tama's own hidden backups in appData. New Docs (Markdown → HTML conversion) and Sheets (USER_ENTERED, so formulas work) go into a "Tama Drafts" folder that is created once.
+  - **Tools for the coding agent (GOOG-2):** `services/google/tools.js` describes 13 tools; `engines/claude/mcp.js` turns them into an in-process MCP server (`mcp__google__*`) passed to Claude Code sessions while signed in. zod (the SDK's peer dependency, now listed in package.json and unpacked with the SDK) builds the schemas. Mail/file/calendar content is returned as `UNTRUSTED …` data (AGENTS §4).
+  - **Policy (GOOG-7):** `PermissionGate.addRule`: Google reads and creations (drafts, new Docs/Sheets/events) are auto-allowed and announced; edits to existing items (`calendar_update_event`, `docs_append`, `sheets_write_range`, `sheets_append_rows`) ask the user. Rules never apply to the chat brain.
+  - **Chat (agy) gets no Google tools:** agy stays read-only (D-027) and can't use in-process MCP. Instead the chat gets a cached `[google]` context line (today's events, important unread mail, todos) and tells the user to ask the terminal for drafts, docs and changes. This is a deliberate deviation from "plugged into every engine" (GOOG-2).
+  - **Calendar watch (GOOG-3):** every minute: a sleeve-tug bubble + Windows notification 5 minutes before an event; `status.inMeeting` while one is running (events quiet time is wired when M5 extras merge).
+  - **Morning brief (GOOG-8):** once a day between 07:00 and 12:00 (bubble + chat history) and on demand (`/brief`).
+  - **Backup (PORT-6):** about once a day, the active Tama's `.tama` bytes (same as a manual export, including `user/`) go to the hidden appDataFolder; the newest 7 per Tama are kept. `/google backups`, `/google restore <n>` (always imported as a new Tama). After sign-in on a PC that lacks some backed-up Tamas, she offers a restore.
+  - **Lease (PORT-7):** a 5-minute heartbeat file per Tama in appData. If another PC was active in the last 15 minutes, Tama warns once. It is a warning, not a hard lock (◐).
+  - **New PC (PORT-8):** `/newpc` checklist.
+- **Alternatives:** googleapis npm (large dependency); a Google MCP server process per engine (more moving parts; agy plan mode can't use tools anyway); a hosted OAuth proxy (needs a server, breaks D-008/D-009 spirit).
+- **Consequences:** The live sign-in can only be tested with the user's own client; everything else is tested against a fake Google. Docs "replace section" (GOOG-6) and Google Tasks (PROD-3) remain open.
+- **Refs:** GOOG-1..8, PORT-6..8, D-006, D-009, D-010, D-014, D-027, src/main/services/google, src/main/platform/google-oauth.js, src/main/engines/claude/mcp.js

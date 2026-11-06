@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>Connect Google</title>
+  <link rel="stylesheet" href="google.css" />
+</head>
+<body>
+  <header>
+    <h1>🔗 Connect Google</h1>
+    <p class="dim">Your Tama can read your calendar and mail, write <b>drafts</b> (never sends), and create Docs &amp; Sheets in a
+      <b>"Tama Drafts"</b> folder. Everything runs on this PC with <b>your own</b> Google app, so no one else ever sees your data.</p>
+  </header>
+
+  <section id="statusBox" class="card"></section>
+
+  <section id="setup" class="card">
+    <h2>One-time setup <span class="dim">(about 5 minutes)</span></h2>
+    <ol class="steps">
+      <li><b>Create a Google Cloud project.</b> <a data-href="https://console.cloud.google.com/projectcreate">Open ↗</a>
+        <div class="dim">Name it anything, e.g. "Tama".</div></li>
+      <li><b>Turn on the APIs</b> (Gmail, Calendar, Drive, Docs, Sheets) for that project.
+        <a data-href="https://console.cloud.google.com/flows/enableapi?apiid=gmail.googleapis.com,calendar-json.googleapis.com,drive.googleapis.com,docs.googleapis.com,sheets.googleapis.com">Enable all ↗</a></li>
+      <li><b>Set up the consent screen:</b> Google Auth Platform → Branding/Audience: user type <b>External</b>, app name "Tama", your email.
+        Then on <b>Audience</b> press <b>Publish app</b> (In production), otherwise Google logs you out every 7 days.
+        <a data-href="https://console.cloud.google.com/auth/overview">Open ↗</a></li>
+      <li><b>Create a client:</b> Clients → Create client → Application type <b>Desktop app</b> → Create. Copy the client ID and secret.
+        <a data-href="https://console.cloud.google.com/auth/clients">Open ↗</a></li>
+      <li><b>Paste them here and sign in.</b> Google will say <i>"Google hasn't verified this app"</i>: that's expected for your own app.
+        Click <b>Advanced → Go to Tama</b>.</li>
+    </ol>
+    <div class="form">
+      <label>Client ID <input id="clientId" spellcheck="false" placeholder="1234-abc.apps.googleusercontent.com" /></label>
+      <label>Client secret <input id="clientSecret" type="password" spellcheck="false" placeholder="GOCSPX-…" /></label>
+      <button id="save" class="primary">Save &amp; sign in</button>
+    </div>
+    <p id="msg" class="msg"></p>
+  </section>
+
+  <section id="connected" class="card hidden">
+    <h2>Connected ✨</h2>
+    <label class="toggle"><input type="checkbox" id="optBackup" /> Daily backup of your Tama to Google Drive (hidden app folder, keeps 7)</label>
+    <label class="toggle"><input type="checkbox" id="optReadonly" /> Let Tama search and read <b>all</b> my Drive files (otherwise only files Tama made)</label>
+    <div class="row">
+      <button id="brief">Morning brief now</button>
+      <button id="backupNow">Back up now</button>
+      <button id="relogin">Sign in again</button>
+      <span class="spacer"></span>
+      <button id="logout" class="danger">Disconnect</button>
+    </div>
+    <p id="msg2" class="msg"></p>
+    <h3>Try it in the terminal (Ctrl+Alt+K)</h3>
+    <ul class="dim">
+      <li>"what's on my calendar this week?"</li>
+      <li>"draft a reply to the latest email from my landlord"</li>
+      <li>"make a Google Sheet to track my gym sessions with a weekly total"</li>
+    </ul>
+  </section>
+
+  <script src="../../shared/palette.js"></script>
+  <script src="../../shared/catalog.js"></script>
+  <script src="../../shared/spec.js"></script>
+  <script src="../../shared/theme.js"></script>
+  <script src="google.js"></script>
+</body>
+</html>

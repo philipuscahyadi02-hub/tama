@@ -37,4 +37,7 @@ function closePage(page) {
   if (w && !w.isDestroyed()) w.close();
 }
 
-module.exports = { openPage, closePage };
+/** Open framed pages (for live status pushes such as Google sign-in state). */
+const openPages = () => [...open.values()].filter((w) => !w.isDestroyed());
+
+module.exports = { openPage, closePage, openPages };

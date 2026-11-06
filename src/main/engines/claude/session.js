@@ -6,12 +6,17 @@ const { pathToFileURL } = require('url');
 const { InputQueue } = require('./input-queue');
 const { findClaudeExecutable } = require('./find-exe');
 const { mapSdkMessage } = require('./map-message');
+const { buildMcpServer } = require('./mcp');
 
 // In the packaged app the SDK lives in app.asar.unpacked (see "asarUnpack" in package.json).
 const APP_ROOT = path.join(__dirname, '..', '..', '..', '..');
 const SDK_URL = pathToFileURL(
   path.join(APP_ROOT, 'node_modules', '@anthropic-ai', 'claude-agent-sdk', 'sdk.mjs')
     .replace(`app.asar${path.sep}`, `app.asar.unpacked${path.sep}`),
+).href;
+
+const ZOD_URL = pathToFileURL(
+  path.join(APP_ROOT, 'node_modules', 'zod', 'index.js').replace(`app.asar${path.sep}`, `app.asar.unpacked${path.sep}`),
 ).href;
 
 const CLAUDE_EXE = findClaudeExecutable();
@@ -29,7 +34,9 @@ const persona = (name) =>
  * Profiles: 'worker' = full Claude Code (tools, CLAUDE.md, permissions via the gate);
  * 'lite' = Tama's chat brain fallback (D-027): Haiku, no tools, no user settings, not saved, persona prompt.
  * @typedef {{ role?: 'worker'|'lite', tamaName?: string, gate?: import('../../brain/permission-gate').PermissionGate | null,
- *   persona?: string, model?: string | null }} ClaudeOpts
+ *   persona?: string, model?: string | null,
+ *   mcp?: () => Array<{ name: string, tools: import('./mcp').ToolDef[] }> }} ClaudeOpts
+ *   mcp: tool servers for worker sessions (e.g. Google when signed in, D-034); read at each session start.
  */
 
 class ClaudeCodeEngine {
@@ -40,6 +47,7 @@ class ClaudeCodeEngine {
     this.gate = opts.gate || null;
     this.persona = opts.persona || '';
     this.tamaName = opts.tamaName || 'Tama';
+    this.mcp = opts.mcp || null;
     /** @type {string | null} */ this.cwd = null;
     this.mode = 'default';
     /** @type {string | null} */ this.model = opts.model || null; // null = Claude Code's default
@@ -115,6 +123,12 @@ class ClaudeCodeEngine {
     // Stream summarized thinking so the terminal can show progress instead of a silent minute (2026-11-06 trace).
     if (this.role !== 'lite') options.thinking = { type: 'adaptive', display: 'summarized' };
     if (resumeId && this.role !== 'lite') options.resume = resumeId;
+    const servers = this.role === 'worker' && this.mcp ? this.mcp() : [];
+    if (servers.length) {
+      const z = await import(ZOD_URL);
+      const sdk = await import(SDK_URL);
+      options.mcpServers = Object.fromEntries(servers.map((s) => [s.name, buildMcpServer({ sdk, z: z.z || z.default || z }, s.name, s.tools)]));
+    }
     this.q = query({ prompt: this.input, options });
     this.loop(this.q);
   }

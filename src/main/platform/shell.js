@@ -74,4 +74,13 @@ function createTray({ tooltip, onClick, items }) {
   return tray;
 }
 
-module.exports = { notify, pickFolder, pickSaveTama, pickOpenTama, registerHotkeys, unregisterHotkeys, createTray };
+/** Hosts Tama may open in the user's browser (Google sign-in, setup help, links Tama created). */
+const EXTERNAL_HOSTS = ['accounts.google.com', 'console.cloud.google.com', 'myaccount.google.com', 'docs.google.com', 'drive.google.com', 'mail.google.com', 'calendar.google.com', 'support.google.com', 'developers.google.com'];
+/** @param {string} url */
+function openExternal(url) {
+  const u = new URL(url);
+  if (u.protocol !== 'https:' || !EXTERNAL_HOSTS.includes(u.hostname)) throw new Error(`Not opening ${u.hostname}: not an allowed site.`);
+  return require('electron').shell.openExternal(u.toString());
+}
+
+module.exports = { notify, pickFolder, pickSaveTama, pickOpenTama, registerHotkeys, unregisterHotkeys, createTray, openExternal, EXTERNAL_HOSTS };

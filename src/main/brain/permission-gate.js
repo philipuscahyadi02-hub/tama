@@ -3,6 +3,8 @@
 // - role 'lite' (chat brain): every tool request is denied automatically (D-026).
 // - role 'worker': the request is shown to the user (terminal now, Telegram in M7) and waits for an answer.
 // - "Always" answers are remembered for the rest of that engine session only.
+// - Rules (addRule) may auto-allow specific tools, e.g. Google reads and new drafts (GOOG-7, D-034); they never
+//   apply to the chat brain, and anything a rule doesn't recognize falls through to asking the user.
 // Bond level never changes any of this (BOND-4).
 const { TOPICS } = require('../bus-topics');
 
@@ -18,6 +20,8 @@ function createPermissionGate({ bus }) {
   const pending = new Map();
   /** "engine|session|tool-key" → always allowed */
   const always = new Set();
+  /** @type {Array<(tool: ToolAsk) => 'allow' | 'ask' | null>} */
+  const rules = [];
 
   /** @param {string} engine @param {string} role @param {any} ev */
   const emit = (engine, role, ev) => bus.emit(TOPICS.ENGINE_EVENT, { engine, role, ev });
@@ -32,6 +36,14 @@ function createPermissionGate({ bus }) {
     if (role !== 'worker') {
       emit(engine, role, { t: 'info', text: `⎿  (chat brain can't use tools; denied ${tool.name})` });
       return Promise.resolve({ choice: 'no', feedback: 'You are a read-only chat companion: no commands or file edits. Answer in words; for real work, point the user to the terminal (Ctrl+Alt+K).' });
+    }
+    for (const rule of rules) {
+      const r = rule(tool);
+      if (r === 'allow') {
+        emit(engine, role, { t: 'info', text: `⎿  ✓ ${tool.title || tool.name} (allowed by Tama's Google rules)` });
+        return Promise.resolve({ choice: 'yes' });
+      }
+      if (r === 'ask') break;
     }
     const key = `${engine}|${sessionKey}|${toolKey(tool)}`;
     if (always.has(key)) return Promise.resolve({ choice: 'yes' });
@@ -70,7 +82,10 @@ function createPermissionGate({ bus }) {
     for (const k of [...always]) if (k.startsWith(`${engine}|${sessionKey}|`)) always.delete(k);
   }
 
-  return { request, answer, cancelAll, resetSession, pendingCount: () => pending.size };
+  /** @param {(tool: ToolAsk) => 'allow' | 'ask' | null} rule */
+  function addRule(rule) { rules.push(rule); }
+
+  return { request, answer, cancelAll, resetSession, addRule, pendingCount: () => pending.size };
 }
 
 /** @typedef {ReturnType<typeof createPermissionGate>} PermissionGate */
