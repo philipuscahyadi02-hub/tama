@@ -6,7 +6,7 @@
 | | |
 |---|---|
 | **Version** | 0.10 |
-| **Status** | v0.5.0 released (M0–M5). M6 + M5 extras code complete on `m6-google` (awaiting user check, then 0.6.0) |
+| **Status** | v0.6.0 released (M0–M6). M7 in progress on `m7-telegram` |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-06 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -205,7 +205,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M3 — Brain & engines.** *(released as 0.3.1)* Claude Code terminal + agy chat window, PermissionGate, budget (BRAIN-*, ENG-1..5, CHAT-1, SAFE-1, SAFE-5, ONB-7).
 - [x] **M4 — Terminal v2.** *(released as 0.4.0)* Theming from the CharacterSpec (no more hard-coded Kero), commands, first-run tour (TERM-*, ART-4, SAFE-4).
 - [x] **M5 — Events & memory.** *(released as 0.5.0; weather, fullscreen DND and SUM-5 deferred)* (EVT-*, PET-6..7, NFR-4, SUM-5).
-- [x] **M6 — Google.** *(code complete; Tasks sync, Docs replace-section and a hard device lock deferred)* OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
+- [x] **M6 — Google.** *(released as 0.6.0; Tasks sync, Docs replace-section and a hard device lock deferred)* OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
 - [ ] **M7 — Telegram.** (TG-*, ART-5, SAFE-3).
 - [ ] **M8 — Voice & polish.** (VOICE-1, PET-8, NFR-1, NFR-3).
 

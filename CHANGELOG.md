@@ -15,8 +15,11 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
 
 ## [Unreleased]
+_Nothing yet._
+
+## [0.6.0] — 2026-11-06 — M6 Google (+ M5 extras)
 ### Added
-- **M6 Google** (branch `m6-google`, D-034):
+- **M6 Google** (D-034):
   - **Connect Google** with your own Google app: a guided 5-minute setup page (tray → Google…, or `/google setup`), browser sign-in (loopback + PKCE). Tokens are stored only in Windows-encrypted secrets.
   - **In the terminal, Claude Code can now:** read your calendar, create events (no invitations are ever sent), edit events (asks first); search and read Gmail and write **drafts** (there is no send); search and read Drive; create Google **Docs** from Markdown and **Sheets** with tabs and formulas in a "Tama Drafts" folder; append to Docs and write/append Sheet rows (asks first). There are no delete or share tools.
   - **Meeting reminders:** a sleeve-tug bubble + notification 5 minutes before an event.
