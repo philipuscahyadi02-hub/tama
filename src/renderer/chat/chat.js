@@ -94,9 +94,32 @@ K.chat.onEvent((ev) => {
     case 'status': if (ev.state !== 'idle' && !st.busy) setBusy(true); break;
     case 'done': setBusy(false); input.focus(); break;
     case 'cleared': log.innerHTML = ''; hello(); break;
+    case 'confirm': addConfirm(ev); break;
+    case 'confirm-done': {
+      const card = log.querySelector(`.confirm[data-id="${ev.id}"]`);
+      if (card) {
+        card.classList.add('answered');
+        card.querySelector('.cbtns').textContent = ev.yes ? '✅ okay, doing it~' : '❌ cancelled';
+      }
+      break;
+    }
     default: break;
   }
 });
+
+/** Google create/edit from the chat brain waits for your tap (D-037). */
+function addConfirm(ev) {
+  const d = document.createElement('div');
+  d.className = 'confirm';
+  d.dataset.id = String(ev.id);
+  d.innerHTML = `<div class="ctext"></div><div class="cbtns"><button class="yes">✅ Yes, do it</button><button class="no">No</button></div>`;
+  d.querySelector('.ctext').textContent = ev.text;
+  d.querySelector('.yes').addEventListener('click', () => K.chat.confirm(ev.id, true));
+  d.querySelector('.no').addEventListener('click', () => K.chat.confirm(ev.id, false));
+  log.appendChild(d);
+  $('#typingText').textContent = `${st.name} is waiting for your OK…`;
+  scroll(true);
+}
 
 // ---------------- input ----------------
 function autosize() { input.style.height = 'auto'; input.style.height = Math.min(140, input.scrollHeight) + 'px'; }
@@ -123,7 +146,7 @@ K.chat.onFocus(() => input.focus());
 K.onCharacter(applyCharacter);
 
 function hello() {
-  addMessage({ role: 'note', text: `This is your chat with ${st.name} (free, Gemini via agy · can search the web).\nCoding and real work → the terminal 💻 (Ctrl+Alt+K).` });
+  addMessage({ role: 'note', text: `This is your chat with ${st.name} (Gemini via agy, your Google login · web search · your Google calendar, mail drafts, Docs & Sheets when connected).\nCode and files → the terminal 💻 (Ctrl+Alt+K).` });
 }
 
 (async function boot() {

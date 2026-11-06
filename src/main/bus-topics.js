@@ -38,7 +38,8 @@ const TOPICS = {
   /** { engine: 'claude'|'agy'|'tama', role: 'worker'|'lite'|'brain', ev: EngineEvent } */
   ENGINE_EVENT: 'engine.event',
   /** Chat window events (D-029): { t: 'message', message } | { t: 'delta', text } | { t: 'tool', text } | { t: 'status', state }
-   *  | { t: 'error', message } | { t: 'done', isError } | { t: 'cleared' } */
+   *  | { t: 'error', message } | { t: 'done', isError } | { t: 'cleared' }
+   *  | { t: 'confirm', id, text } | { t: 'confirm-done', id, yes } — the chat brain wants to create/edit something in Google (D-037) */
   CHAT_EVENT: 'chat.event',
   /** UiPrefs { termTheme, tourDone, unlocked, variants } — after a change (D-032) */
   UI_PREFS_CHANGED: 'ui.prefs.changed',
@@ -143,6 +144,8 @@ const TOPICS = {
   CHAT_HISTORY: 'chat.history',
   CHAT_INTERRUPT: 'chat.interrupt',
   CHAT_CLEAR: 'chat.clear',
+  /** { id, yes } → { ok } | { error } — answer a chat-brain confirmation (D-037) */
+  CHAT_CONFIRM: 'chat.confirm',
   /** () → UiPrefs */
   UI_PREFS_GET: 'ui.prefs.get',
   /** { termTheme?, tourDone? } → UiPrefs | { error, minLevel? } */

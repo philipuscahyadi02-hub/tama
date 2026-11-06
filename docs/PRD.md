@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.11 |
+| **Version** | 0.12 |
 | **Status** | v0.6.0 released (M0–M6). M7 code complete on `m7-telegram` (awaiting user check, then 0.7.0) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-06 |
@@ -109,7 +109,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
 | BRAIN-1 | Two surfaces (D-029): the **terminal** sends everything to Claude Code (Tama's own `/commands` run locally, unknown `/x` forwarded); the **chat window** talks to the chat brain. | P0 | M3 | ☑ |
-| BRAIN-2 | Chat brain: Gemini Flash via `agy` only (read-only, web search); no Claude fallback (D-029). | P0 | M3 | ☑ |
+| BRAIN-2 | Chat brain: Gemini Flash via `agy` only (no files/commands: hard guard hook; web search; Google tools with confirmations); no Claude fallback (D-029, D-037). | P0 | M3 | ☑ |
 | BRAIN-3 | Fixed policy (D-029): chat/events/diary → agy; code & productivity work → Claude Code. Speed controls in the terminal: `/model`, `/effort` (D-031). | P0 | M3 | ☑ |
 | BRAIN-4 | Budget: daily Claude usage estimate, 75% warning and an in-character heads-up when tight; no automatic engine switch (D-029). | P1 | M3 | ☑ |
 | BRAIN-5 | Persona: cute in chat, **never** in code, commit messages, or file contents. | P0 | M3 | ☑ |
@@ -154,7 +154,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
 | GOOG-1 | Desktop OAuth (loopback + PKCE) with the user's own Google Cloud client in **Production (unverified)** status (Testing expires tokens in 7 days). Tokens in `secrets` only. | P0 | M6 | ☑ |
-| GOOG-2 | Google tools exposed as an MCP server, plugged into **every** engine. *(Claude Code gets the tools; the read-only agy chat gets a calendar/mail context line instead, D-034.)* | P0 | M6 | ◐ |
+| GOOG-2 | Google tools exposed as an MCP server, plugged into **every** engine. *(Claude Code in-process; the agy chat brain via a local relay with Tama-side confirmations, D-034, D-037.)* | P0 | M6 | ☑ |
 | GOOG-3 | Calendar: read, create/edit events; meeting reminders (sleeve-tug 5 min before) and DND during meetings. | P0 | M6 | ☑ |
 | GOOG-4 | Gmail: read/search, summarize, create drafts. **No sending** (D-014). | P0 | M6 | ☑ |
 | GOOG-5 | Drive: `drive.file` by default (create/edit own files); optional `drive.readonly` toggle for search/read across Drive. | P0 | M6 | ☑ |
@@ -218,6 +218,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.12 — 2026-11-06** — Chat brain does Google itself with confirmations; hard read-only guard for agy (D-037). GOOG-2 done.
 - **0.11 — 2026-11-06** — M7 implemented: TG-1,2,4..8, SAFE-3, ART-5 done; TG-3 text done (voice in M8) (D-036).
 - **0.10 — 2026-11-06** — M6 implemented: GOOG-1,3,4,5,7,8, PORT-6, PORT-8 done; GOOG-2, GOOG-6, PORT-7 partial; PROD-3 open (D-034).
 - **0.9 — 2026-11-06** — M5 implemented: EVT-2..4, NFR-4, PET-7 done; EVT-1 and PET-6 partial (D-033).

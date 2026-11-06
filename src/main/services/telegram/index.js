@@ -10,7 +10,7 @@ const fmt = require('./format');
 const { dayOf } = require('../pet/bond');
 
 const CODE_TTL_MS = 15 * 60000;
-const CHAT_TIMEOUT_MS = 120000;
+const CHAT_TIMEOUT_MS = 7 * 60000; // long enough for a Google confirm tap (D-037)
 
 /**
  * @param {{
@@ -43,6 +43,10 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
   /** Tasks the chat brain offered to hand to Claude Code ("💻 Let Claude do it" buttons). */
   const offered = new Map();
   let offerSeq = 0;
+  /** True while a phone message is with the chat brain: its confirm questions go to the phone (D-037). */
+  let phoneTurn = false;
+  /** confirm id → telegram message id */
+  const confirms = new Map();
 
   function status() {
     const c = cfg();
@@ -107,6 +111,8 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
     if (cb) {
       await api.call('answerCallbackQuery', { callback_query_id: cb.id }).catch(() => null);
       if (await remote.onCallback(String(cb.data || ''))) return;
+      const c = /^cfm:(\d+):(y|n)$/.exec(String(cb.data || ''));
+      if (c) { await bus.request(TOPICS.CHAT_CONFIRM, { id: Number(c[1]), yes: c[2] === 'y' }).catch(() => null); return; }
       const w = /^work:(\d+)$/.exec(String(cb.data || ''));
       if (w) {
         const task = offered.get(Number(w[1]));
@@ -176,6 +182,19 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
     }
   }
 
+  /** Google create/edit questions from the chat brain → buttons on the phone (D-037). @param {any} ev */
+  async function onChatConfirm(ev) {
+    if (!chatId()) return;
+    if (ev.t === 'confirm' && phoneTurn) {
+      const m = await send(`🙋 ${ev.text}\nShall I?`, { reply_markup: { inline_keyboard: [[{ text: '✅ Yes, do it', callback_data: `cfm:${ev.id}:y` }, { text: '❌ No', callback_data: `cfm:${ev.id}:n` }]] } });
+      confirms.set(ev.id, m.message_id);
+    } else if (ev.t === 'confirm-done' && confirms.has(ev.id)) {
+      const mid = confirms.get(ev.id);
+      confirms.delete(ev.id);
+      await edit(mid, ev.yes ? '✅ okay, doing it~' : '❌ cancelled', { reply_markup: { inline_keyboard: [] } });
+    }
+  }
+
   /** Talk to the chat brain; reply with its next message (TG-3). @param {string} text */
   async function chat(text) {
     await api.call('sendChatAction', { chat_id: chatId(), action: 'typing' }).catch(() => null);
@@ -186,8 +205,9 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
         if (ev.t === 'message' && ev.message.role !== 'user') { clearTimeout(timer); off(); resolve(ev.message); }
       });
     });
+    phoneTurn = true;
     const r = await bus.request(TOPICS.CHAT_SEND, `📱 ${text}`).catch(() => ({ ok: false }));
-    const answer = await reply;
+    const answer = await reply.finally(() => { phoneTurn = false; });
     const body = String((answer && answer.text) || (r && r.ok === false ? 'I can\'t chat right now (is agy set up on the PC?)' : 'uu… I got lost. say that again?'));
     if (answer && answer.work) {
       // Real work: one tap hands it to Claude Code on the PC (which still asks before every change).
@@ -254,6 +274,7 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
     const timer = setInterval(() => { daily().catch(() => null); }, 10 * 60000);
     const offs = [
       bus.on(TOPICS.ENGINE_EVENT, (/** @type {any} */ e) => { if (chatId()) remote.onEngineEvent(e).catch(() => null); }),
+      bus.on(TOPICS.CHAT_EVENT, (/** @type {any} */ ev) => { onChatConfirm(ev).catch(() => null); }),
       bus.handle(TOPICS.TELEGRAM_STATUS, () => status()),
       bus.handle(TOPICS.TELEGRAM_SETUP, (/** @type {any} */ p) => setup(p || {})),
       bus.handle(TOPICS.TELEGRAM_NEW_CODE, () => newCode()),

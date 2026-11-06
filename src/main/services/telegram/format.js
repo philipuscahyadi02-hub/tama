@@ -58,7 +58,8 @@ function statusText(pet) {
 
 const HELP = [
   'Just talk to me! (Gemini, using your Google login) ✨',
-  'Ask for real work (code, email drafts, Docs, Sheets, calendar) and I\'ll show a 💻 button to hand it to Claude Code on your PC.',
+  'Google things (calendar, email drafts, Docs, Sheets) I do myself: you just confirm with ✅.',
+  'Code on your PC: I\'ll show a 💻 button to hand it to Claude Code.',
   '',
   '/status · how I\'m doing (with a picture)',
   '/feed /snack /nap · take care of me',

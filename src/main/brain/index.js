@@ -29,6 +29,7 @@ const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
  *   factories: {
  *     claudeWorker: (emit: (ev: any) => void) => Engine,
  *     agyChat: (emit: (ev: any) => void, persona: string) => Engine,
+ *     agyCompose?: (emit: (ev: any) => void, persona: string) => Engine,
  *   },
  *   now?: () => number,
  * }} deps
@@ -60,10 +61,11 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
     onResult: (ev) => recordUsage('agy', 'lite', ev), now,
   });
 
+  let googleSignedIn = false;
   // Events + diary text (EVT-3): its own agy session, same persona.
   let personaText = '';
   const composer = createComposer({
-    factory: factories.agyChat, scratchDir: path.join(scratchDir, 'compose'), available: () => available.agy, persona: () => personaText,
+    factory: factories.agyCompose || factories.agyChat, scratchDir: path.join(scratchDir, 'compose'), available: () => available.agy, persona: () => personaText,
   });
 
   // ---------------- terminal (Claude Code) ----------------
@@ -170,6 +172,11 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
       bus.handle(TOPICS.BRAIN_SET, setBrain),
       bus.handle(TOPICS.BRAIN_COMPOSE, (/** @type {any} */ p) => composer.compose({ kind: p && p.kind === 'diary' ? 'diary' : 'line', seed: String((p && p.seed) || '') })),
       bus.on(TOPICS.CHARACTER_CHANGED, (/** @type {any} */ c) => { updatePersona(c.spec); }),
+      // Google tools for the chat brain come and go with sign-in (D-037): restart its session when that flips.
+      bus.on(TOPICS.GOOGLE_CHANGED, (/** @type {any} */ g) => {
+        const signedIn = !!(g && g.signedIn);
+        if (signedIn !== googleSignedIn) { googleSignedIn = signedIn; chat.reset(); }
+      }),
     ];
     bus.request(TOPICS.CHARACTER_GET).then((c) => updatePersona(c.spec)).catch(() => null);
     return () => { for (const off of offs) off(); stopChat(); composer.stop(); if (claude) claude.stop(); };

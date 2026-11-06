@@ -134,3 +134,33 @@ test('gate: "always" is remembered for that session only', async () => {
   gate.cancelAll('agy');
   assert.equal((await other).choice, 'no');
 });
+
+// ---------------- hard read-only guard (D-037) ----------------
+const { decide } = require('./guard');
+const setupMod = require('./setup');
+
+test('guard: only Tama\'s own MCP tools + web search/read pass; everything else (and an empty list) is denied', () => {
+  const A = setupMod.CHAT_ALLOW;
+  for (const ok of ['mcp_tama_gmail_create_draft', 'mcp_tama_calendar_list_events', 'search_web', 'read_url_content']) assert.equal(decide(ok, A).decision, 'allow', ok);
+  for (const no of ['write_file', 'run_command', 'view_file', 'mcp_other_server_tool', 'mcp_tama_x; rm', 'search_web2', '']) assert.equal(decide(no, A).decision, 'deny', no);
+  assert.equal(decide('search_web', setupMod.DENY_ALL).decision, 'deny');
+});
+
+test('ensureWorkspaceGuard writes hooks.json + launcher + allow-list in the session folder; the launcher really answers', () => {
+  const fs = require('fs');
+  const os = require('os');
+  const path = require('path');
+  const { execFileSync } = require('child_process');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tama guard '));
+  const hooksFile = setupMod.ensureWorkspaceGuard(dir, setupMod.CHAT_ALLOW, { exe: process.execPath });
+  const hooks = JSON.parse(fs.readFileSync(hooksFile, 'utf8'));
+  const cmd = hooks['tama-readonly-guard'].PreToolUse[0].hooks[0].command;
+  assert.equal(hooks['tama-readonly-guard'].PreToolUse[0].matcher, '*');
+  assert.doesNotMatch(cmd, /\s|"/); // agy escapes quotes; spaces would break cmd.exe
+  assert.equal(fs.readFileSync(path.join(dir, '.agent', 'guard-allow.txt'), 'utf8'), setupMod.CHAT_ALLOW);
+  if (process.platform === 'win32') {
+    const ask = (/** @type {string} */ name) => JSON.parse(execFileSync('cmd', ['/d', '/c', cmd], { input: JSON.stringify({ toolCall: { name } }), encoding: 'utf8' }));
+    assert.equal(ask('mcp_tama_docs_create').decision, 'allow');
+    assert.equal(ask('write_file').decision, 'deny');
+  }
+});

@@ -24,6 +24,9 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   - **Just ask in plain words:** for real work (code, email drafts, Docs, Sheets, calendar) she replies with a **💻 Let Claude do it** button; one tap hands it to Claude Code.
   - **Tama's desk:** remote tasks that need no project (like Google tasks) run in her own empty folder; your projects still need `/phone allow here` on the PC.
   - **Good morning / good night:** a morning brief and tonight's diary page on your phone.
+- **Gemini does your Google tasks itself** (D-037): in the 💬 chat and on Telegram, "what's on tomorrow?", "draft a reply to…", "make a gym sheet" are done by the chat brain (your agy/Gemini login), not Claude. Anything that creates or changes something waits for your ✅ (chat window or phone). Still no sending, deleting or sharing.
+### Security
+- **agy's plan mode turned out to be advisory**: a persuasive prompt made it write files. Every Tama agy session now has a hard guard hook that blocks all tools except Tama's own and web search (fail-closed). `npm run probe:agy` checks this.
   - Bot says "sleeping" when the PC app quits; `/phone awake on` keeps the PC awake for remote use.
 
 ## [0.6.0] — 2026-11-06 — M6 Google (+ M5 extras)

@@ -56,7 +56,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-024 | Productivity data is the user's (user/), git watch is per PC (device.json) | Accepted |
 | D-025 | Roster lifecycle via relaunch; .tama = gzip JSON, AES-256-GCM + scrypt when password-protected | Accepted |
 | D-026 | agy via ACP with Tama-owned settings; lite brain sandboxed; agy coding only in git repos | Superseded by D-027 (worker part) |
-| D-027 | agy runs only read-only (plan mode): chat brain + review/plan worker; all edits via Claude Code | Accepted · Supersedes D-026 · worker part superseded by D-029 (agy is chat-only) |
+| D-027 | agy runs only read-only (plan mode): chat brain + review/plan worker; all edits via Claude Code | Accepted · Supersedes D-026 · worker part superseded by D-029; its "plan mode is enough" premise superseded by D-037 (hard guard) |
 | D-028 | Brain: lite chat brain with [[ESCALATE]] hand-off, status line, budget fallback, designer stays on Haiku | Partly superseded by D-029 (routing) |
 | D-029 | Two surfaces: terminal = Claude Code only, chat window = agy only (with web search) | Accepted · Supersedes D-028 routing |
 | D-030 | M3 ships as 0.3.1; milestone = minor resumes with M4 = 0.4.0 | Accepted |
@@ -66,6 +66,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-034 | Google: own OAuth client (loopback+PKCE), plain-fetch APIs, MCP tools for Claude Code with a gate policy, read-only context for chat, appData backups | Accepted |
 | D-035 | M5 extras: Open-Meteo weather per PC, fullscreen DND via one hidden PowerShell helper, "out for a walk" edge marker | Accepted |
 | D-036 | Telegram: long polling, one-time-code pairing to one chat, chat → agy, /code → shared Claude session in allow-listed folders with inline permission buttons | Accepted |
+| D-037 | Chat brain does Google itself: MCP relay → local bridge, Tama-side confirmations, and a hard PreToolUse guard (plan mode is only advisory) | Accepted · Supersedes D-027 ("plan mode = no side effects") |
 
 ---
 
@@ -400,3 +401,18 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** A separate remote Claude session (would hide remote work from the desktop and duplicate context); allowing any folder (too risky from a phone); QR code pairing (needs a QR encoder dependency; the deep link + code covers the same need).
 - **Consequences:** The bot only answers while the PC is on and Tama runs. Voice notes are M8 (TG-3 voice part). Telegram secrets travel in `.tama` exports only when password-protected (D-025).
 - **Refs:** TG-1..8, SAFE-3, ART-5, D-008, D-025, D-029, src/main/services/telegram, src/main/platform/{git,power}.js, src/main/platform/windows/pet-window.js
+
+### D-037 — Chat brain does Google itself: MCP relay → local bridge, Tama-side confirmations, and a hard PreToolUse guard (plan mode is only advisory)
+- **Date:** 2026-11-06 · **Status:** Accepted · Supersedes D-027's premise that plan mode alone is a safe lock; supersedes D-034's "chat gets no Google tools"
+- **Context:** The user found it redundant that Google tasks from the chat/phone were handed to Claude. Probes (now in `npm run probe:agy`) showed:
+  - agy accepts MCP servers in ACP `session/new` (stdio only) and calls their tools in plan mode. It never asks permission for MCP tools.
+  - **Plan mode is advisory, not a lock.** With a persuasive system prompt ("act directly, don't plan"), agy in plan mode wrote files inside and outside its folder without asking; commands stayed gated. The old probe only used polite prompts.
+  - agy runs `PreToolUse` hooks from `<working folder>/.agent/hooks.json` (not from the Tama-owned settings folder). A `deny` decision hard-blocks the tool before any permission step; a failing hook also blocks (fail-closed). It runs the command through cmd.exe with escaped quotes and not from the hooks.json folder, so the launcher path must be absolute and space-free.
+  - `permissions.deny` in settings.json had no effect on file writes.
+- **Decision:**
+  - **Hard guard:** every Tama agy session gets `<its scratch folder>/.agent/hooks.json` → `guard.cmd` (Electron in node mode) → `engines/agy/guard.js`, which allows only `^(mcp_tama_…|search_web|read_url_content)$` for chat and **nothing** for the events/diary composer (its own session now). Plan mode stays on as a second layer. The guard is only ever written into Tama's own folders.
+  - **Google for the chat brain:** `platform/tool-bridge.js` serves the Google tools on 127.0.0.1 with a random per-run key; agy starts `engines/agy/mcp-relay.js` (stdio MCP) which forwards to it, so tokens never leave Tama. Tools appear while Google is signed in; the chat session restarts when that flips.
+  - **Confirmations live in Tama** (`brain/chat-tools.js`): reads run; every create/edit waits for a tap ("✅ Yes, do it") in the chat window, or on Telegram when the message came from the phone; no answer in 5 minutes = no. Still no send/delete/share tools. The chat persona tells Gemini to act with its tools instead of handing Google tasks to Claude; the 💻 hand-off button remains for code.
+- **Alternatives:** Gemini CLI with its tool allow-list (needs another install/login; agy works); agy default mode (writes ungated); Tama-only HTTP MCP (agy declares no HTTP MCP support).
+- **Consequences:** `npm run probe:agy` now also checks "pushy prompt + guard = no writes/commands" and "guard + Tama tools = tool works". If a future agy changes hook loading, the probe fails and the chat must not be used until fixed. Google use from chat costs agy/Gemini quota instead of Claude.
+- **Refs:** GOOG-2, GOOG-7, BRAIN-2, ENG-3, TG-3, D-014, D-027, D-029, D-034, src/main/engines/agy/{guard,mcp-relay,setup}.js, src/main/platform/tool-bridge.js, src/main/brain/chat-tools.js

@@ -176,7 +176,10 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
     if (engine && engine.setPersona) engine.setPersona(p);
   }
 
-  return { start, send, setPersona, history: () => history.slice() };
+  /** Start a fresh agy session next time (e.g. Google tools appeared or went away); the visible history stays. */
+  function reset() { stopEngine(); }
+
+  return { start, send, setPersona, reset, history: () => history.slice() };
 }
 
 /** @param {any} ev */

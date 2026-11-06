@@ -126,6 +126,7 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.handle('chat:history', () => bus.request(TOPICS.CHAT_HISTORY));
     ipc.on('chat:interrupt', () => fire(TOPICS.CHAT_INTERRUPT));
     ipc.on('chat:clear', () => fire(TOPICS.CHAT_CLEAR));
+    ipc.handle('chat:confirm', (id, yes) => bus.request(TOPICS.CHAT_CONFIRM, { id: Number(id), yes: !!yes }));
     ipc.on('summon', () => summon('ui'));
     ipc.handle('character:get', () => bus.request(TOPICS.CHARACTER_GET));
     // ---- productivity (pet + terminal) ----

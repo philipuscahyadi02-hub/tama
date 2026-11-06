@@ -83,6 +83,7 @@ contextBridge.exposeInMainWorld('tama', {
     history: () => ipcRenderer.invoke('chat:history'),
     interrupt: () => ipcRenderer.send('chat:interrupt'),
     clear: () => ipcRenderer.send('chat:clear'),
+    confirm: (/** @type {number} */ id, /** @type {boolean} */ yes) => ipcRenderer.invoke('chat:confirm', id, yes),
     onEvent: on('chat.event'),
     onFocus: on('chat.focus'),
   },

@@ -52,7 +52,9 @@ function setup(/** @type {{ desk?: string, work?: string }} */ o = {}) {
   bus.handle('pet.get', () => ({ name: 'Kero-chan', state: { hunger: 50, happy: 80, energy: 60, clean: 90, streak: { count: 3 } }, level: { title: 'Buddy', emoji: '✌️' } }));
   bus.handle('pet.act', (p) => { seen.push(['act', p.action]); return { ok: true }; });
   bus.handle('prod.todo.add', (p) => ({ ok: true, todo: { text: p.text } }));
+  /** @type {{ fn: ((t: string) => any) | null }} */ const chatImpl = { fn: null };
   bus.handle('chat.send', (t) => {
+    if (chatImpl.fn) return chatImpl.fn(t);
     seen.push(['chat', t]);
     setTimeout(() => {
       bus.emit('chat.event', { t: 'message', message: { role: 'user', text: t } });
@@ -69,7 +71,7 @@ function setup(/** @type {{ desk?: string, work?: string }} */ o = {}) {
   });
   const stop = telegram.start();
   const msg = (/** @type {number} */ chat, /** @type {string} */ text) => ({ update_id: 1, message: { chat: { id: chat, type: 'private' }, text } });
-  return { tg, bus, telegram, secrets, seen, notices, cwd, stop, msg, dev: () => dev };
+  return { tg, bus, telegram, secrets, seen, notices, cwd, stop, msg, chatImpl, dev: () => dev };
 }
 
 test('pairing: token checked, one-time code binds exactly one chat; everyone else is ignored (TG-2, SAFE-3)', async () => {
@@ -190,5 +192,29 @@ test('real work asked in plain words gets a "Let Claude do it" button; the tap r
   // the same button can't be used twice
   await s.telegram.onUpdate({ update_id: 6, callback_query: { id: 'c2', data: btn.callback_data, message: { chat: { id: 42 }, message_id: 1 } } });
   assert.match(s.tg.sent().at(-1), /expired|still working/);
+  s.stop();
+});
+
+test('a Google confirm from the chat brain during a phone chat becomes buttons on the phone (D-037)', async () => {
+  const s = await paired();
+  /** @type {any[]} */ const answers = [];
+  s.bus.handle('chat.confirm', (p) => { answers.push(p); s.bus.emit('chat.event', { t: 'confirm-done', id: p.id, yes: p.yes }); return { ok: true }; });
+  // the chat brain asks for confirmation while answering the phone message
+  s.chatImpl.fn = () => {
+    setTimeout(() => s.bus.emit('chat.event', { t: 'confirm', id: 9, text: '📊 Create a Google Sheet "Gym"' }), 5);
+    return { ok: true };
+  };
+  const chatting = s.telegram.onUpdate(s.msg(42, 'make a gym sheet'));
+  await new Promise((r) => setTimeout(r, 30));
+  const ask = s.tg.calls.filter((c) => c.method === 'sendMessage').at(-1);
+  assert.match(ask?.body.text, /Create a Google Sheet "Gym"/);
+  assert.deepEqual(ask?.body.reply_markup.inline_keyboard[0].map((b) => b.callback_data), ['cfm:9:y', 'cfm:9:n']);
+  await s.telegram.onUpdate({ update_id: 9, callback_query: { id: 'q', data: 'cfm:9:y', message: { chat: { id: 42 } } } });
+  assert.deepEqual(answers, [{ id: 9, yes: true }]);
+  await new Promise((r) => setTimeout(r, 10));
+  assert.ok(s.tg.calls.some((c) => c.method === 'editMessageText' && /doing it/.test(c.body.text)));
+  s.bus.emit('chat.event', { t: 'message', message: { role: 'tama', text: 'made it!' } });
+  await chatting;
+  assert.equal(s.tg.sent().at(-1), 'made it!');
   s.stop();
 });
