@@ -206,6 +206,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `e2cd0d1` | 2026-11-07 | feat(ui) | app icon is the Tama's face; tray menu grouped (D-047) |
+| `ebe46b3` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `97c2e52` | 2026-11-07 | feat(voice) | English labels and separate listen/use controls on the Voice page (D-046) |
 | `696ef03` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `e099ef0` | 2026-11-07 | feat(voice) | Voice page, VOICEVOX characters, per-Tama tuning, mood-matched styles (D-045) |
