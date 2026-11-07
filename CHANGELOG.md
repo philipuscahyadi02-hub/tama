@@ -238,6 +238,9 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `7ead590` | 2026-11-07 | feat(providers) | provider layer: capabilities, Claude/agy providers, opt-in Claude chat, Settings Brains (SHIP-8, D-057) |
+| `06ac9f5` | 2026-11-07 | docs(prd) | M12 = v1.0.0; plan v2 own agentic brain (AGT-1..6, D-056) |
+| `d4aa7cb` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `93382b2` | 2026-11-07 | fix(security) | keep windows on Tama's pages, no browser permissions, coerce IPC input, redact more secrets, untrusted Maps data (QC-6, D-055) |
 | `4ec89f1` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `ccdffcb` | 2026-11-07 | test | npm run coverage; tests for the desktop channel, composer, phone remote, git, input queue (QC-5) |
