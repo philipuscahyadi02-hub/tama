@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.35 |
+| **Version** | 0.36 |
 | **Status** | **v1.0.0 released** (M0–M11 + provider layer, D-058). Rest of M12 (installers, setup wizard, modular capabilities) ships as 1.x on `m12-shipping` |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-08 |
@@ -256,7 +256,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M11 — Quality control.** *(released in 1.0.0)* Architecture checks, dead code, performance, code review, coverage, security (QC-1..6, NFR-1).
 - [ ] **M12 — Shipping** (1.0.0 released early with SHIP-8 in part, D-058; the rest arrives as 1.x). Also closes the two open P0 rows (GOOG-6 replace section, NFR-2 mixed-DPI check) or defers them explicitly. Windows installer and macOS app, a provider layer, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..8, NFR-3).
 - [x] **M9 — Voice & polish.** *(released as 0.9.0; phone → Tama speech-to-text (VOICE-4) deferred)* AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
-- [ ] **1.x — Voice & hands** (planned, D-061): talk to her with push-to-talk (Ctrl+Alt+Space) and let her act on the PC through a few safe actions (VH-1..4).
+- [ ] **1.x — Voice & hands** (planned, D-061, D-062): talk to her with push-to-talk (Ctrl+Alt+Space), let her act on the PC through a few safe actions, run fixed voice commands without any AI, and an optional free local brain (VH-1..7).
 - [ ] **v2 (M13+) — Tama's own agentic brain + "the work buddy who grows when you ship"** (planned, not started; D-056, D-060). Tama runs its own agent loop instead of depending on one provider's agent (AGT-1..6), and the product story centres on her growing with your real work (USP-1..6).
 
 ### 5b. v2 roadmap: Tama's own agentic brain (planned)
@@ -276,6 +276,9 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | VH-2 | **Local speech-to-text:** Whisper (whisper.cpp) on the PC, free and offline (English, Indonesian, Japanese); the model is downloaded on demand from the setup wizard. Also transcribes Telegram voice notes (closes VOICE-4). | P0 | 1.x | ☐ |
 | VH-3 | **PC actions for the chat brain** (Tama-owned tools over the existing tool bridge): `play_music(song, service)` finds the track and opens it on YouTube Music, announced; `media_control(play/pause/next/prev/volume)`; `open_url` (known sites direct, others ask); `open_app` (apps on a user-controlled list; others ask). agy stays read-only otherwise. | P0 | 1.x | ☐ |
 | VH-4 | **Setup wizard:** a "Talk to her" card for the Whisper model and microphone check. | P1 | 1.x | ☐ |
+| VH-5 | **Voice commands without AI:** fixed phrases run instantly with no model at all: "play ___ (on YouTube Music)", "pause", "next", "louder/quieter", "open ___", "remind me at ___ to ___", "start focus", "feed her". Without a brain, "play" opens the YouTube Music search for the song and starts it with the media keys. With a brain, these phrases still run instantly and anything else goes to the chat brain. | P0 | 1.x | ☐ |
+| VH-6 | **Local brain (optional):** a third provider next to Claude Code and agy, running a small local model through Ollama (or llama.cpp): free, private, offline. Serves chat, moments and the diary, and simple tool use (the VH-3 actions), when the user picks it in Settings → Brains or has no subscription. Offered in the setup wizard with the model size shown (about 2–5 GB); a 3–4B model fits a 4 GB GPU. Less capable than Claude or Gemini; the persona says so. | P1 | 1.x | ☐ |
+| VH-7 | **Gemini API free tier (optional, off by default):** the user may add their own free Google AI Studio key as another chat provider ($0, daily limits). The setup card states that Google may use free-tier prompts to improve its models. Not part of the default setup. | P2 | 1.x | ☐ |
 
 ### 5c. v2 positioning and USP (planned, D-060)
 **Positioning:** *"The work buddy who grows when you ship."* A companion that lives on your desktop, works with the AI plans (or keys) you already have, remembers you, and turns your real progress into her growth. Tama sits where desktop pets (no real work), AI companions (cloud chat, no tools, no access to your day) and work agents (no personality, no memory of you, no reason to come back) don't meet. The hook other products can't copy cheaply: **she rewards finishing things, not clicking.**
@@ -298,6 +301,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.36 — 2026-11-08** — VH-5 (voice commands without AI), VH-6 (optional local brain), VH-7 (optional Gemini free key) (D-062).
 - **0.35 — 2026-11-08** — 1.x Voice & hands planned (VH-1..4, Ctrl+Alt+Space); AGT-2 (API keys) deferred (D-061).
 - **0.34 — 2026-11-08** — v2 positioning ("the work buddy who grows when you ship") and USP-1..6 added to the v2 roadmap (D-060).
 - **0.33 — 2026-11-08** — SHIP-1 ☑ (Windows installer), SHIP-4 ☑ (setup wizard), SHIP-3 ◐ (D-059).

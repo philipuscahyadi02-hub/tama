@@ -99,7 +99,8 @@ The user will answer with these buttons: ${buttons.join(' / ')}. Your line must 
       quest: e.quest ? e.quest.label : null,
     };
     bus.emit(TOPICS.EVENT_SHOWN, show);
-    bus.request(TOPICS.CHAT_PUSH, { role: 'tama', text }).catch(() => null);
+    // Spoken once through event.shown; the chat copy is quiet (it was spoken twice before).
+    bus.request(TOPICS.CHAT_PUSH, { role: 'tama', text, voice: false }).catch(() => null);
     logLine(`${e.kind === 'nudge' ? 'nudged' : 'said'}: ${text}`);
   }
 
@@ -116,7 +117,7 @@ The user will answer with these buttons: ${buttons.join(' / ')}. Your line must 
     if ((opt.bond || 0) > 0) await req(TOPICS.PET_AWARD, { source: opt.source || (e.kind === 'nudge' ? 'nudge' : 'event') });
     if (opt.remember) await req(TOPICS.MEMORY_ADD, { text: opt.remember, source: 'event' });
     bus.request(TOPICS.CHAT_PUSH, { role: 'user', text: opt.label }).catch(() => null);
-    bus.request(TOPICS.CHAT_PUSH, { role: 'tama', text: opt.reply }).catch(() => null);
+    bus.request(TOPICS.CHAT_PUSH, { role: 'tama', text: opt.reply, voice: false }).catch(() => null);
     bus.emit(TOPICS.EVENT_SHOWN, { id: e.id, kind: 'reply', text: opt.reply, choices: [], quest: null });
     logLine(`you answered "${opt.label}"`);
     return { ok: true, reply: opt.reply };

@@ -91,6 +91,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-059 | Installer = NSIS per-user (uninstaller asks about data); setup wizard runs the vendors' official one-line installers visibly and re-detects tools without a restart | Accepted |
 | D-060 | v2 positioning: "the work buddy who grows when you ship"; USP-1..6 (work → bond loop, day plan + stand-up, undo, shareable character, body-doubling, voice input) join the v2 roadmap | Accepted |
 | D-061 | 1.x "Voice & hands": push-to-talk Ctrl+Alt+Space, local Whisper, safe PC actions (play music, media keys, open URL/app); API-key models (AGT-2) deferred for cost | Accepted (plan) |
+| D-062 | No-subscription Tama: AI-free voice commands (VH-5), optional local brain via Ollama (VH-6), optional Gemini free-tier key off by default (VH-7) | Accepted (plan) · Revisits D-003 (Ollama) for the no-subscription case |
 
 ---
 
@@ -838,3 +839,14 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Letting agy run commands (breaks D-027/D-037); full desktop control (much larger risk surface); cloud speech-to-text (costs money and sends audio off the PC).
 - **Consequences:** Browsers may block autoplay; she then says the page is open and `media_control play` can start it. Song lookup depends on web search accuracy, so she names the track she picked.
 - **Refs:** VH-1..4, VOICE-4, AGT-2, AGT-3, SHIP-5, D-027, D-037, D-042, D-055, D-056
+
+### D-062 — What Tama does without any subscription: AI-free voice commands, an optional local brain, an optional free Gemini key
+- **Date:** 2026-11-08 · **Status:** Accepted (plan; not built yet) · Revisits D-003 (Ollama declined for v1) for users without Claude or Google AI plans
+- **Context:** The user asked what Tama can do with no subscription at all. Today, with neither Claude Code nor agy: the pet, care, bond, todos/focus/reminders/notes, the commit watcher, weather moments, Google calendar reminders, the morning brief and Drive backups (own free Google app), Telegram commands, the keyword designer, the deck's fallback moment lines and the English Windows voice all work. Chat, the diary, the Japanese dub, terminal coding and Google-from-chat do not. The user chose to add an AI-free command path and a local brain to the plan, and to keep a free Gemini key optional.
+- **Decision:**
+  - **VH-5:** fixed voice phrases (play/pause/next/volume, open, remind, focus, feed) are recognized directly from the local Whisper transcript and run without any model; "play" without a brain opens the YouTube Music search and starts it with the media keys. With a brain, these still run instantly; everything else goes to the chat brain.
+  - **VH-6:** an optional **local brain** provider (Ollama or llama.cpp, a 3–4B model) for chat, moments, the diary and simple tool use; offered in the setup wizard with its download size, and pickable in Settings → Brains. It is the free, private answer for users without subscriptions; its persona states its limits.
+  - **VH-7:** an optional Gemini API free-tier key (the user's own, $0, rate-limited), **off by default**, with the note that Google may use free-tier prompts to improve its models.
+- **Alternatives:** No free mode (Tama without subscriptions stays a pet only); a cloud free tier as the default (privacy note, rate limits, and API keys were just deferred in D-061).
+- **Consequences:** The provider layer gains a third provider; the local model must pass the same safety probes as the others before it may use the VH-3 actions (AGT-6). Model downloads follow SHIP-5 (on demand, with checksums).
+- **Refs:** VH-1..7, SHIP-4, SHIP-5, SHIP-8, AGT-6, D-003, D-054, D-061

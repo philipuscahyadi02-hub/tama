@@ -192,7 +192,7 @@ const TOPICS = {
   SETUP_ACTION: 'setup.action',
   /** void → { ok } — the user saw the wizard (it no longer opens by itself) */
   SETUP_SEEN: 'setup.seen',
-  /** { role: 'user'|'tama'|'note', text } → void — add a line to the chat history (events) */
+  /** { role: 'user'|'tama'|'note', text, voice?: false } → void — add a line to the chat history (events). voice: false = already spoken (event.shown), don't speak it again */
   CHAT_PUSH: 'chat.push',
   /** { id, choice?: number, dismiss?: boolean } → { ok, reply? } | { error } */
   EVENTS_ANSWER: 'events.answer',

@@ -167,6 +167,17 @@ test('voice: muted stays quiet; phone chats are not spoken on the desktop', asyn
   assert.deepEqual(s.played.map((p) => p.text), ['Hi desk!']);
 });
 
+test('voice: a moment is spoken once, not again when its line is copied into the chat (bug fix)', async () => {
+  const s = setup();
+  const stop = s.voice.start();
+  s.bus.emit('event.shown', { id: 'water', kind: 'nudge', text: 'Drink some water~' });
+  s.bus.emit('chat.event', { t: 'message', message: { role: 'tama', text: 'Drink some water~', quiet: true } });
+  s.bus.emit('chat.event', { t: 'message', message: { role: 'tama', text: 'Morning brief: 2 meetings' } });
+  await new Promise((r) => setTimeout(r, 50));
+  stop();
+  assert.deepEqual(s.played.map((p) => p.text), ['Drink some water', 'Morning brief: 2 meetings']); // "~" is not spoken
+});
+
 test('voice engines: Japanese dub starts the chosen voice\'s engine; others run only briefly for previews; never stop engines Tama didn\'t start', async () => {
   /** @type {string[]} */ const log = [];
   /** @type {Record<string, boolean>} */ const up = { aivis: false, voicevox: false };

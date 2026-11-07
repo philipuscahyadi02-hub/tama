@@ -86,6 +86,10 @@ test('triggers: weather (EVT-1, D-035) table', () => {
 });
 
 // ---------------- service ----------------
+/** @type {Array<() => void>} */
+const cleanups = [];
+test.after(() => { for (const c of cleanups) c(); });
+
 function setup({ compose = /** @type {any} */ (null), weather = /** @type {any} */ (null), fullscreen = false } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tama-ev-'));
   const store = createStore(dir);
@@ -113,7 +117,10 @@ function setup({ compose = /** @type {any} */ (null), weather = /** @type {any} 
   const stopEv = ev.start();
   /** @type {any[]} */ const shown = [];
   bus.on('event.shown', (p) => shown.push(p));
-  return { bus, ev, memory, shown, calls, chat, store, pet, google, setT: (/** @type {number} */ v) => { t = v; }, T0, stop: () => { stopEv(); stopMem(); } };
+  let stopped = false;
+  const stop = () => { if (!stopped) { stopped = true; stopEv(); stopMem(); } };
+  cleanups.push(stop); // runs after the file even when a test fails before its own s.stop()
+  return { bus, ev, memory, shown, calls, chat, store, pet, google, setT: (/** @type {number} */ v) => { t = v; }, T0, stop };
 }
 
 test('events: a running calendar meeting keeps her quiet (PET-6, GOOG-3)', async () => {
@@ -133,7 +140,8 @@ test('events: a choice shows on the pet and in chat; answering awards bond and c
   assert.equal(s.shown[0].id, 'lunch-check');
   assert.equal(s.shown[0].text, 'did you eat lunch yet, nya? 🍙');
   assert.deepEqual(s.shown[0].choices, ['Yes, I ate!', 'Not yet…']);
-  assert.deepEqual(s.chat[0], { role: 'tama', text: 'did you eat lunch yet, nya? 🍙' });
+  // The chat copy is quiet: the voice already spoke it through event.shown (it was spoken twice before).
+  assert.deepEqual(s.chat[0], { role: 'tama', text: 'did you eat lunch yet, nya? 🍙', voice: false });
   const r = await s.bus.request('events.answer', { id: 'lunch-check', choice: 0 });
   assert.equal(r.ok, true);
   assert.deepEqual(s.calls, [['award', 'event']]);
@@ -144,7 +152,6 @@ test('events: a choice shows on the pet and in chat; answering awards bond and c
   assert.equal(t2.ok, true);
   await s.bus.request('events.answer', { id: 'random-question', choice: 1 });
   assert.equal(s.memory.facts()[0].text, 'prefers dogs over cats');
-  s.stop();
 });
 
 test('events: deck lines are the fallback when the chat brain is unavailable; quests run the pet action', async () => {

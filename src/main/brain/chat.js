@@ -39,7 +39,7 @@ function markerFilter() {
   };
 }
 
-/** @typedef {{ role: 'user'|'tama'|'note', text: string, at: number, tools?: string[], work?: string, ja?: string }} ChatMessage */
+/** quiet: already spoken elsewhere (e.g. a moment via event.shown), so the voice skips it. @typedef {{ role: 'user'|'tama'|'note', text: string, at: number, tools?: string[], work?: string, ja?: string, quiet?: boolean }} ChatMessage */
 
 /**
  * @param {{
@@ -172,7 +172,7 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
       // Events and their answers also land in the chat history, so the conversation reads naturally (D-033).
       bus.handle(TOPICS.CHAT_PUSH, (/** @type {any} */ p) => {
         const role = p && (p.role === 'user' || p.role === 'tama') ? p.role : 'note';
-        push({ role, text: String((p && p.text) || '').slice(0, 2000), at: now() });
+        push({ role, text: String((p && p.text) || '').slice(0, 2000), at: now(), ...(p && p.voice === false ? { quiet: true } : {}) });
       }),
     ];
     return () => { for (const off of offs) off(); stopEngine(); };

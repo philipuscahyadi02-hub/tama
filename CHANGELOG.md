@@ -15,7 +15,10 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = first stable release (D-058); the rest of M12 ships as 1.x; 2.0.0 = Tama's own agentic brain.
 
 ## [Unreleased]
+### Fixed
+- **Her voice played moments twice:** a moment line (and her reply when you answer one) was spoken once when shown and again when it was copied into the chat. Now it is spoken once.
 ### Docs
+- Planned for Voice & hands (D-062): **voice commands that need no AI** (play/pause/next/volume, open, remind, focus, feed), an optional **free local brain** (Ollama) for people without subscriptions, and an optional Gemini free-tier key (off by default).
 - Planned **Voice & hands** for 1.x (D-061): push-to-talk with Ctrl+Alt+Space, local Whisper speech-to-text, and safe PC actions (play a song on YouTube Music, media keys, open a site or app). Paying per token for API-key models (AGT-2) is deferred.
 - **v2 roadmap** (D-060): positioning "the work buddy who grows when you ship" and USP-1..6 (shipped-today card and growth from real work, morning plan and stand-up draft, undo for agent work, shareable character, focus body-doubling, voice input) next to Tama's own agentic brain (AGT-1..6).
 ### Added

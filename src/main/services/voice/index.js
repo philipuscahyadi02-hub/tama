@@ -276,7 +276,7 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
       bus.on(TOPICS.CHAT_EVENT, (/** @type {any} */ ev) => {
         if (ev.t !== 'message') return;
         if (ev.message.role === 'user') { fromPhone = String(ev.message.text).startsWith('📱'); return; }
-        if (ev.message.role !== 'tama') return;
+        if (ev.message.role !== 'tama' || ev.message.quiet) return; // quiet = already spoken (a moment via event.shown)
         if (ev.message.ja) remember(ev.message.text, ev.message.ja); // SET-4: no translation call (also reused for the phone copy)
         if (!fromPhone) say(ev.message.text, 'chat').then((r) => { if (!r.ok) bus.emit(TOPICS.VOICE_SKIPPED, { reason: r.reason }); }).catch(() => null);
       }),
