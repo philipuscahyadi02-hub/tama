@@ -111,7 +111,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
 | QC-1 | Architecture check as a script in `npm run check`: only `platform/*` imports Electron, no deep imports across modules, every bus topic declared and used, renderers never require Node. *(`scripts/arch-check.js`, in `npm run check`; D-052.)* | P1 | M11 | ☑ |
-| QC-2 | Dead code: find and remove unused files, exports, bus topics, IPC channels, CSS and preload methods (script + review). | P1 | M11 | ☐ |
+| QC-2 | Dead code: find and remove unused files, exports, bus topics, IPC channels, CSS and preload methods (script + review). *(Scan 2026-11-07: every file reachable, all bus topics and IPC channels used (now enforced by QC-1), both dependencies used. Removed `git.changedFiles`, `closePage`, the `MARKER_SIZE` export, the unused `prod:remindCancel` IPC and preload method, and one CSS rule.)* | P1 | M11 | ☑ |
 | QC-3 | Performance: measure start-up time, idle CPU/RAM (NFR-1), event-loop lag, IPC chatter and timers; fix what slows Tama down; keep a repeatable `npm run perf`. | P1 | M11 | ☐ |
 | QC-4 | Code review of every module against AGENTS rules (file ≤ ~300 lines, function size, error handling, no floating promises, `start()`/`stop()`); split or simplify what fails. | P1 | M11 | ☐ |
 | QC-5 | Test coverage report; add tests for services and platform code with gaps (aim ≥ 80 % of service lines). | P2 | M11 | ☐ |

@@ -59,4 +59,4 @@ function createWalkMarker() {
 
 /** @typedef {ReturnType<typeof createWalkMarker>} WalkMarker */
 
-module.exports = { createWalkMarker, MARKER_SIZE: SIZE };
+module.exports = { createWalkMarker };

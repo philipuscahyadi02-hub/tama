@@ -17,6 +17,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## [Unreleased]
 ### Changed
 - **M11 Quality control** (branch `m11-quality`): the architecture rules are now checked automatically in `npm run check` (`npm run arch` for the report); fixed 11 deep imports by giving the engines public entry points and moving the day helpers out of the pet module (QC-1, D-052).
+- Removed dead code found by a scan: an unused git helper, page close helper, export, IPC channel and CSS rule. Everything else is reachable and used (QC-2).
 ### Docs
 - Planned **M11 quality control** (QC-1..6) and **M12 shipping**: installers for Windows and macOS, modular capabilities with a setup wizard, optional components on demand (SHIP-1..7, D-051).
 ### Added
@@ -221,6 +222,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `65476da` | 2026-11-07 | chore(arch) | enforce architecture rules in npm run check; engine public indexes; shared day helpers (D-052) |
 | `fe2025c` | 2026-11-07 | feat(app) | window rescue, crash log and renderer reload; plan M11 QC and M12 installers (D-050, D-051) |
 | `e1dcc8a` | 2026-11-07 | feat(voice) | faster Japanese voice: dub rides with the reply, sentence-by-sentence playback, audio cache (D-049) |
 | `ae1fd06` | 2026-11-07 | feat(settings) | Settings window, reply language, quiet hours (D-048) |

@@ -205,7 +205,6 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.handle('prod:todoRemove', (ref) => bus.request(TOPICS.PROD_TODO_REMOVE, { ref }));
     ipc.handle('prod:noteAdd', (t) => bus.request(TOPICS.PROD_NOTE_ADD, { text: String(t || '') }));
     ipc.handle('prod:remindAdd', (input) => bus.request(TOPICS.PROD_REMIND_ADD, { input: String(input || '') }));
-    ipc.handle('prod:remindCancel', (id) => bus.request(TOPICS.PROD_REMIND_CANCEL, { id: String(id || '') }));
     ipc.handle('prod:focusStart', (m) => bus.request(TOPICS.PROD_FOCUS_START, { minutes: Number(m) || 25 }));
     ipc.handle('prod:focusStop', () => bus.request(TOPICS.PROD_FOCUS_STOP));
     ipc.handle('prod:watchAdd', (p) => bus.request(TOPICS.PROD_WATCH_ADD, { path: String(p || '') }));

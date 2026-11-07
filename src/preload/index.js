@@ -194,7 +194,6 @@ contextBridge.exposeInMainWorld('tama', {
     todoRemove: (/** @type {string|number} */ ref) => ipcRenderer.invoke('prod:todoRemove', ref),
     noteAdd: (/** @type {string} */ t) => ipcRenderer.invoke('prod:noteAdd', t),
     remindAdd: (/** @type {string} */ input) => ipcRenderer.invoke('prod:remindAdd', input),
-    remindCancel: (/** @type {string} */ id) => ipcRenderer.invoke('prod:remindCancel', id),
     focusStart: (/** @type {number} */ m) => ipcRenderer.invoke('prod:focusStart', m),
     focusStop: () => ipcRenderer.invoke('prod:focusStop'),
     watchAdd: (/** @type {string} */ p) => ipcRenderer.invoke('prod:watchAdd', p),
