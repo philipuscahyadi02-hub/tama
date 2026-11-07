@@ -99,4 +99,24 @@ function markerPosition(area, size) {
   return { x: Math.round(x), y: Math.round(y) };
 }
 
-module.exports = { BODY, bodyRect, overlapArea, bestArea, clampToScreen, isVisibleEnough, homePosition, summonPosition, markerPosition };
+/**
+ * SET-5: a framed window (chat, terminal, Settings…) is reachable when at least 120 px of its title bar is on some
+ * work area. If not (its monitor was unplugged), it gets centered on the display under the cursor, shrunk to fit.
+ * Returns null when the window is fine. @param {Rect} win @param {Rect[]} areas @param {{x:number,y:number}} cursor
+ * @returns {Rect | null}
+ */
+function rescueRect(win, areas, cursor) {
+  if (!areas.length) return null;
+  const bar = { x: win.x, y: win.y, width: win.width, height: 32 };
+  const ok = areas.some((a) => {
+    const w = Math.min(bar.x + bar.width, a.x + a.width) - Math.max(bar.x, a.x);
+    return w >= 120 && bar.y >= a.y && bar.y + 20 <= a.y + a.height;
+  });
+  if (ok) return null;
+  const area = areas.find((a) => contains(a, cursor)) || areas[0];
+  const width = Math.min(win.width, area.width);
+  const height = Math.min(win.height, area.height);
+  return { x: Math.round(area.x + (area.width - width) / 2), y: Math.round(area.y + (area.height - height) / 2), width, height };
+}
+
+module.exports = { BODY, bodyRect, overlapArea, bestArea, clampToScreen, isVisibleEnough, homePosition, summonPosition, markerPosition, rescueRect };

@@ -127,6 +127,8 @@ M5 extras (D-035):
 ```
 src/main/services/weather/        logic.js (pure: WMO code → kind, hot/cold, parsers) + index.js (/weather city in device.json,
                                   Open-Meteo fetch at most every 30 min, quiet failures)
+src/main/platform/crash-log.js    daily error/crash log in <data>/logs (redacted, 7 days) + clean-quit marker (D-050)
+src/main/platform/crash-guard.js  uncaught errors → log; crashed renderers reload; helper crashes logged (D-050)
 src/main/platform/app-icon.js     app icon = the Tama's face: renders renderer/icon off-screen, applies to tray + windows, caches per Tama (D-047)
 src/main/platform/tts-sapi.js     Windows built-in speech (System.Speech via PowerShell) → WAV (D-042)
 src/main/platform/voice-engine-process.js  starts/stops the headless AivisSpeech / VOICEVOX engines when a voice needs them; PID files for crash leftovers (D-044, D-045)

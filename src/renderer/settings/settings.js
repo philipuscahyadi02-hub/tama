@@ -91,13 +91,32 @@ $('#tgUnpair').addEventListener('click', async () => renderTg(saved(await K.tele
 // ---- Google ----
 function renderGoogle(g) {
   if (!g) return;
+  renderDrive(g);
   $('#gBadge').textContent = g.signedIn ? 'signed in' : g.configured ? 'signed out' : 'not set up';
   $('#gBadge').classList.toggle('off', !g.signedIn);
   $('#gInfo').innerHTML = g.signedIn ? `Signed in as <b>${esc(g.email || '?')}</b>. Drive backup ${g.backup ? 'on' : 'off'}${g.lastBackup ? ` (last ${new Date(g.lastBackup).toLocaleString()})` : ''}.`
     : 'Calendar, Gmail drafts, Drive, Docs and Sheets, with your own Google project.';
 }
 
+// ---- her: summon + backups (SET-5) ----
+$('#summon').addEventListener('click', () => { K.summon(); say('here she is~'); });
+let gState = null;
+function renderDrive(g) {
+  gState = g || gState;
+  const on = !!(gState && gState.signedIn);
+  $('#driveNow').disabled = !on;
+  $('#driveInfo').textContent = !on ? 'Google Drive backup: connect Google first (Google tab).'
+    : `Google Drive backup: ${gState.backup ? 'about once a day' : 'off'}${gState.lastBackup ? `, last ${new Date(gState.lastBackup).toLocaleString()}` : ', none yet'}.`;
+}
+$('#driveNow').addEventListener('click', async () => {
+  say('backing up…');
+  const r = await K.google.backupNow().catch((e) => ({ error: String(e.message || e) }));
+  saved(r);
+  renderDrive(await K.google.status().catch(() => null));
+});
+
 // ---- accounts ----
+$('#logs').addEventListener('click', () => K.openLogs());
 async function renderBrain() { const b = await K.brain.status().catch(() => null); if (b) $('#budget').value = String(b.dailyClaudeUsd ?? ''); }
 $('#budgetSave').addEventListener('click', async () => { saved(await K.brain.set({ dailyClaudeUsd: Number($('#budget').value) })); renderBrain(); });
 

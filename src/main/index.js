@@ -34,6 +34,8 @@ const { createVvEngines } = require('./services/voice/vv-engine');
 const sapi = require('./platform/tts-sapi');
 const { createVoiceEngineProcess } = require('./platform/voice-engine-process');
 const { createAppIcon } = require('./platform/app-icon');
+const { createCrashLog } = require('./platform/crash-log');
+const { startCrashGuard, openLogs } = require('./platform/crash-guard');
 const { createChatTools } = require('./brain/chat-tools');
 const { startToolBridge } = require('./platform/tool-bridge');
 const os = require('os');
@@ -61,10 +63,22 @@ const debug = (/** @type {string} */ m) => { if (process.env.TAMA_DEBUG) console
 
 /** @type {Array<() => void>} */
 const stoppers = [];
+/** SET-6 (D-050): created at boot, ended on a clean quit. @type {ReturnType<typeof createCrashLog> | null} */
+let crashLog = null;
 
 function boot() {
   const bus = new Bus();
-  bus.on(TOPICS.APP_ERROR, (e) => console.error('[bus error]', e.topic, e.message));
+  crashLog = createCrashLog({ dir: pathMod.join(appShell.paths.data(), 'logs') });
+  const lastRun = crashLog.begin({ version: appShell.version() });
+  const log = crashLog;
+  let problemNoted = 0;
+  stoppers.push(startCrashGuard({ log, onProblem: () => {
+    // One in-character note per 10 minutes at most; the details are in the log.
+    if (Date.now() - problemNoted < 600000) return;
+    problemNoted = Date.now();
+    bus.emit(TOPICS.BRAIN_NOTICE, { text: 'Oops, something inside me glitched~ I picked myself back up. (Details: Settings → Accounts & usage → Open logs)', kind: 'info' });
+  } }));
+  bus.on(TOPICS.APP_ERROR, (e) => { console.error('[bus error]', e.topic, e.message); log.write('error', String(e.topic || 'app'), String(e.message || '')); });
   if (process.env.TAMA_DEBUG) {
     bus.on(TOPICS.ENGINE_EVENT, ({ engine, ev }) => { if (ev.t !== 'text-delta') debug(`engine ${engine} ${ev.t} ${ev.t === 'tool-progress' ? ev.chars : ev.state || ev.name || ''}`); });
   }
@@ -141,6 +155,7 @@ function boot() {
 
   const openGoogle = () => openPage('google/google.html', { width: 780, height: 720, title: 'Connect Google', frame: true });
   const openVoice = () => openPage('voice/voice.html', { width: 980, height: 760, title: 'Voice', frame: true });
+  ipc.on('logs:open', () => { openLogs(log.dir()).catch(() => null); });
   const openSettings = (tab = '') => openPage('settings/settings.html', { width: 900, height: 680, title: 'Settings', frame: true, query: tab ? { tab } : {} });
   const openDashboard = (tab = '') => openPage('dashboard/dashboard.html', { width: 1060, height: 780, title: 'Usage & accounts', frame: true, query: tab ? { tab } : {} });
   const openRoster = (/** @type {boolean | undefined} */ importNow) =>
@@ -283,6 +298,11 @@ function boot() {
     });
     bus.on(TOPICS.VOICE_PLAY, (/** @type {any} */ p) => console.log('[voice-trace]', at(), 'play', p.engine, `${(p.part ?? 0) + 1}/${p.parts ?? 1}`, String(p.text).slice(0, 30)));
   }
+  if (lastRun) {
+    pet.win.webContents.once('did-finish-load', () => setTimeout(() => bus.emit(TOPICS.BRAIN_NOTICE, {
+      text: 'Ehehe… I tripped and fell last time (Tama closed unexpectedly). I\'m all better now! (Settings → Accounts & usage → Open logs)', kind: 'info',
+    }), 4000));
+  }
   if (process.env.TAMA_PET_EVAL) {
     // Dev: run JS in the pet window after load (e.g. "actions.stats()") for screenshots.
     pet.win.webContents.once('did-finish-load', () => setTimeout(() => pet.win.webContents.executeJavaScript(String(process.env.TAMA_PET_EVAL)).catch(console.error), 1500));
@@ -326,7 +346,8 @@ appShell.run({
   onSecondInstance: () => secondInstance(),
   beforeQuit: () => {
     for (const stop of stoppers.splice(0).reverse()) {
-      try { stop(); } catch (e) { console.error('[tama] shutdown step failed', e); }
+      try { stop(); } catch (e) { console.error('[tama] shutdown step failed', e); if (crashLog) crashLog.write('error', 'shutdown', /** @type {any} */ (e)); }
     }
+    if (crashLog) crashLog.end(); // clean quit: the next start won't report a crash (SET-6)
   },
 });

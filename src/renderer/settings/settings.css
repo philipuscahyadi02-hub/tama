@@ -14,3 +14,5 @@ main section .card:first-child { margin-top: 0; }
 #tgToken { width: 300px; }
 .seg + .kv { margin-top: 8px; }
 .badge:empty { display: none; }
+.set button { white-space: nowrap; flex-shrink: 0; }
+button:disabled { opacity: .5; cursor: default; border-color: var(--tama-line); }

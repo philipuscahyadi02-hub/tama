@@ -15,12 +15,16 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
 
 ## [Unreleased]
+### Docs
+- Planned **M11 quality control** (QC-1..6) and **M12 shipping**: installers for Windows and macOS, modular capabilities with a setup wizard, optional components on demand (SHIP-1..7, D-051).
 ### Added
 - **M10 Settings & polish** (branch `m10-settings`, D-048):
   - **Settings window** (tray → Settings…, or `/settings`): her look and motion, talking & voice, quiet hours, phone (Telegram), Google, accounts and the Claude budget, all in one place. The Voice, Google and Usage pages open from it.
   - **Reply language:** she answers in your language (as before), or always in English, Bahasa Indonesia or Japanese. `/lang auto|en|id|ja`.
   - **Quiet hours:** e.g. 23:00–08:00, no voice, pop-up moments or daily phone messages; your reminders still ring. `/quiet 23:00-08:00|on|off`.
   - Telegram voice notes can be switched on from the PC too.
+  - **Bring her here** also brings back Tama's windows from a monitor that was unplugged, and that happens on its own when monitors change. Settings has Bring her here, file backup (My Tamas) and Drive "Back up now" (D-050).
+  - **Crash safety:** errors and crashes go to a small log on this PC (Settings → Accounts & usage → Open logs; 7 days, secrets removed). A crashed window reloads itself, and after an unexpected close she tells you once (D-050).
   - **Faster Japanese voice** (D-049): she starts speaking about 2.5 s after her reply appears (was 7–12 s). The reply brings its own Japanese line, the voice plays sentence by sentence, and repeated lines play instantly.
 
 ## [0.9.0] — 2026-11-07 — M9 Voice & polish
@@ -215,6 +219,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `e1dcc8a` | 2026-11-07 | feat(voice) | faster Japanese voice: dub rides with the reply, sentence-by-sentence playback, audio cache (D-049) |
 | `ae1fd06` | 2026-11-07 | feat(settings) | Settings window, reply language, quiet hours (D-048) |
 | `82cf1cb` | 2026-11-07 | docs(changelog) | regenerate commit table |
 

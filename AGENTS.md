@@ -47,7 +47,7 @@ past decisions → `docs/DECISIONS.md`.
 - One module = one folder = one responsibility, with a public `index.js`.
 - Pure functions for game math (decay, bond XP, caps) so they're trivially testable.
 - No new npm dependency without a reason. A heavy or native dependency needs a DECISIONS entry.
-- Errors: never swallow silently. Log through `platform/log` with a tag; user-facing failures get an in-character message plus the real error in logs.
+- Errors: never swallow silently. Log through `platform/crash-log` (or emit `app.error`, which is logged) with a tag; user-facing failures get an in-character message plus the real error in logs.
 - Async: no floating promises in main. Every long-running thing (engine, poller, watcher) has `start()` and `stop()` and is stopped on quit.
 - Tests: `node:test` next to the module (`*.test.js`). Required for services, store migrations, router and PermissionGate. Game-balance numbers get table tests.
 - Comments explain **why**, not what. Code ported from kero-pet keeps a `// Ported from kero-pet/<file>` note.

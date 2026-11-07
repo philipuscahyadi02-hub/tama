@@ -5,8 +5,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.22 |
-| **Status** | v0.9.0 released (M0–M9). M10 (settings & polish) in progress on `m10-settings`; portable .exe postponed |
+| **Version** | 0.23 |
+| **Status** | v0.9.0 released (M0–M9). M10 (settings & polish) code complete on `m10-settings`; M11 quality control next; M12 shipping (installers) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-07 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -104,8 +104,29 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | SET-2 | Reply language: same as the user (default), or always English / Bahasa Indonesia / Japanese, for chat and moments (`/lang`). *(D-048.)* | P1 | M10 | ☑ |
 | SET-3 | Quiet hours (e.g. 23:00–08:00): no voice, no pop-up moments, no daily phone messages; reminders still ring (`/quiet`). *(D-048.)* | P1 | M10 | ☑ |
 | SET-4 | Faster voice: first sound within about 2–3 s (speak sentence by sentence, start the engine when the chat opens, cache frequent lines). *(Measured 2.6 s from reply to first sound, was 7–12 s; D-049.)* | P1 | M10 | ☑ |
-| SET-5 | "Where is she?": bring her back from a missing monitor; `.tama` backup/restore in Settings. | P2 | M10 | ☐ |
-| SET-6 | Crash safety: a crash log and a "Tama restarted after a problem" note instead of failing silently. | P2 | M10 | ☐ |
+| SET-5 | "Where is she?": bring her back from a missing monitor; `.tama` backup/restore in Settings. *(Windows left on an unplugged monitor are moved back on display changes and on summon; Settings has Bring her here, My Tamas (file backup) and Drive backup now; D-050.)* | P2 | M10 | ☑ |
+| SET-6 | Crash safety: a crash log and a "Tama restarted after a problem" note instead of failing silently. *(Daily log in `<data>/logs`, 7 days, secrets redacted; crashed renderers reload; D-050.)* | P2 | M10 | ☑ |
+
+### 4.3c Quality control (QC), M11
+| ID | Requirement | Pri | MS | Status |
+|---|---|---|---|---|
+| QC-1 | Architecture check as a script in `npm run check`: only `platform/*` imports Electron, no deep imports across modules, every bus topic declared and used, renderers never require Node. | P1 | M11 | ☐ |
+| QC-2 | Dead code: find and remove unused files, exports, bus topics, IPC channels, CSS and preload methods (script + review). | P1 | M11 | ☐ |
+| QC-3 | Performance: measure start-up time, idle CPU/RAM (NFR-1), event-loop lag, IPC chatter and timers; fix what slows Tama down; keep a repeatable `npm run perf`. | P1 | M11 | ☐ |
+| QC-4 | Code review of every module against AGENTS rules (file ≤ ~300 lines, function size, error handling, no floating promises, `start()`/`stop()`); split or simplify what fails. | P1 | M11 | ☐ |
+| QC-5 | Test coverage report; add tests for services and platform code with gaps (aim ≥ 80 % of service lines). | P2 | M11 | ☐ |
+| QC-6 | Security pass: IPC input validation, CSP on every page, secrets never in logs or exports, untrusted-data handling. | P1 | M11 | ☐ |
+
+### 4.3d Shipping (SHIP), M12
+| ID | Requirement | Pri | MS | Status |
+|---|---|---|---|---|
+| SHIP-1 | **Windows installer** (not a bare portable exe): per-user install, Start-menu and optional autostart entries, uninstaller that asks whether to keep her data. | P0 | M12 | ☐ |
+| SHIP-2 | **macOS app** (`.dmg`, Apple Silicon + Intel): mac versions of the Windows-only parts (system voice, fullscreen detection, tray/menu-bar icon, hotkeys, engine processes, paths). | P1 | M12 | ☐ |
+| SHIP-3 | **Modular capabilities:** Tama works with whatever the user has. Claude Code only, Antigravity (agy) only, both, or neither; each feature declares what it needs and hides or explains itself when that is missing (e.g. agy only = chat, moments, Google and phone, no coding terminal; designer falls back to agy or keywords). | P0 | M12 | ☐ |
+| SHIP-4 | **Setup wizard** on first run (and in Settings): detects Claude Code, agy, AivisSpeech/VOICEVOX, Google and Telegram; shows what each unlocks; guides each install with official links and sign-ins, and re-checks. | P0 | M12 | ☐ |
+| SHIP-5 | **Optional components** downloaded on demand from official releases with checksums (voice engines first), never bundled into the installer. | P1 | M12 | ☐ |
+| SHIP-6 | Updates: check for new versions and update in place (electron-updater or a release check). | P2 | M12 | ☐ |
+| SHIP-7 | Signing: Windows code signing (SmartScreen) and Apple notarization; both need paid certificates/accounts, so decide before release. | P2 | M12 | ☐ |
 
 ### 4.5 Events & conversations (EVT)
 | ID | Requirement | Pri | MS | Status |
@@ -214,7 +235,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | SAFE-5 | Daily cost/token budget shown in `/stats`; Tama warns near the limit. | P1 | M3 | ☑ |
 | NFR-1 | Idle CPU < 2%, RAM < 300 MB (excluding engine processes). *(Measured 2026-11-07: about 2.0% CPU (was 5.8%) and about 200 MB private memory, D-042. Borderline: wandering is most of what is left.)* | P1 | M9 | ◐ |
 | NFR-2 | Multi-monitor & mixed-DPI safe. | P0 | M0 | ◐ |
-| NFR-3 | Ships as a portable `.exe` (electron-builder), uses installed `claude`/`agy`. *(Postponed by the user, 2026-11-06.)* | P0 | later | ☐ |
+| NFR-3 | Ships as a portable `.exe` (electron-builder), uses installed `claude`/`agy`. *(Replaced by installers for Windows and macOS: SHIP-1..7, M12, D-051.)* | P0 | M12 | ☐ |
 | NFR-4 | Memory view + forget; local-only data except the user's own Drive backup. | P0 | M5 | ☑ |
 
 ## 5. Milestones
@@ -230,7 +251,9 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M6 — Google.** *(released as 0.6.0; Tasks sync, Docs replace-section and a hard device lock deferred)* OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
 - [x] **M7 — Telegram.** *(released as 0.7.0; voice notes in M9)* (TG-*, ART-5, SAFE-3).
 - [x] **M8 — Usage & accounts dashboard.** *(released as 0.8.0)* Usage log, dashboard, Limits tab (what's left), account switching (USE-1..7, D-040, D-041).
-- [ ] **M10 — Settings & polish.** One Settings window, reply language, quiet hours, faster voice, small reliability fixes (SET-1..6, ONB-8, NFR-1, NFR-2).
+- [x] **M10 — Settings & polish.** *(code complete)* One Settings window, reply language, quiet hours, faster voice, small reliability fixes (SET-1..6, ONB-8).
+- [ ] **M11 — Quality control.** Architecture checks, dead code, performance, code review, coverage, security (QC-1..6, NFR-1).
+- [ ] **M12 — Shipping.** Windows installer and macOS app, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..7, NFR-3).
 - [x] **M9 — Voice & polish.** *(released as 0.9.0; phone → Tama speech-to-text (VOICE-4) deferred)* AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
 
 ## 6. Open questions
@@ -242,6 +265,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.23 — 2026-11-07** — M10 code complete (SET-4..6, D-049, D-050). Planned M11 quality control (QC-1..6) and M12 shipping with installers for Windows and macOS and modular capabilities (SHIP-1..7, D-051); NFR-3's portable exe is replaced.
 - **0.22 — 2026-11-07** — M10 Settings & polish planned (SET-1..6); SET-1..3 and ONB-8 done (D-048).
 - **0.21 — 2026-11-07** — v0.9.0 released (M9).
 - **0.20 — 2026-11-07** — New VOICE-5: Voice page with VOICEVOX characters, tuning and mood-matched styles (D-045).
