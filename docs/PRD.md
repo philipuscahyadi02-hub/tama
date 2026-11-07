@@ -5,10 +5,10 @@
 
 | | |
 |---|---|
-| **Version** | 0.20 |
-| **Status** | v0.8.0 released (M0–M8). M9 (voice & polish) code complete on `m9-voice`; portable .exe postponed |
+| **Version** | 0.21 |
+| **Status** | v0.9.0 released (M0–M9). M10 (settings & polish) in progress on `m10-settings`; portable .exe postponed |
 | **Owner** | philipuscahyadi02-hub |
-| **Last updated** | 2026-11-06 |
+| **Last updated** | 2026-11-07 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
 
 ---
@@ -220,7 +220,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M6 — Google.** *(released as 0.6.0; Tasks sync, Docs replace-section and a hard device lock deferred)* OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
 - [x] **M7 — Telegram.** *(released as 0.7.0; voice notes in M9)* (TG-*, ART-5, SAFE-3).
 - [x] **M8 — Usage & accounts dashboard.** *(released as 0.8.0)* Usage log, dashboard, Limits tab (what's left), account switching (USE-1..7, D-040, D-041).
-- [x] **M9 — Voice & polish.** *(code complete)* AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
+- [x] **M9 — Voice & polish.** *(released as 0.9.0; phone → Tama speech-to-text (VOICE-4) deferred)* AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
 
 ## 6. Open questions
 
@@ -231,6 +231,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.21 — 2026-11-07** — v0.9.0 released (M9).
 - **0.20 — 2026-11-07** — New VOICE-5: Voice page with VOICEVOX characters, tuning and mood-matched styles (D-045).
 - **0.19 — 2026-11-07** — VOICE-1: Tama starts/stops the headless AivisSpeech Engine (GPU) with the Japanese dub (D-044).
 - **0.18 — 2026-11-07** — VOICE-1: language setting English / Japanese dub / off (D-043).

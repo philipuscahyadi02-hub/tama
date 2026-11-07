@@ -15,8 +15,11 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
 
 ## [Unreleased]
+_Nothing yet._
+
+## [0.9.0] — 2026-11-07 — M9 Voice & polish
 ### Added
-- **M9 Voice & polish** (branch `m9-voice`, D-042):
+- **M9 Voice & polish** (D-042 … D-047):
   - **Her voice:** chat replies and moments are spoken on the desktop, and her mouth moves with the sound.
   - **Voice language** (tray → Voice, or `/voice en|ja|off`, D-043):
     - **English:** the Windows voice with her pitch and speed.
