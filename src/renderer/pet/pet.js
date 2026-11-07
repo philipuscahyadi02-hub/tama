@@ -532,8 +532,9 @@ T.onCharacter((ch) => {
 // Idle sway runs in short bursts instead of forever; blinks are one-shots. Keeps idle CPU low (see rig.css .calm).
 function aliveBurst() {
   petEl.classList.remove('calm');
-  setTimeout(() => petEl.classList.add('calm'), 6000 + Math.random() * 3000);
-  setTimeout(aliveBurst, 18000 + Math.random() * 10000);
+  // QC-3 (D-053): 5–7 s of sway every 28–40 s (was 6–9 s every 18–28 s); walking, blinks and talk fill the gaps.
+  setTimeout(() => petEl.classList.add('calm'), 5000 + Math.random() * 2000);
+  setTimeout(aliveBurst, 28000 + Math.random() * 12000);
 }
 function blinkLoop() {
   if (petEl.classList.contains('calm')) anim('blink-now', 260);

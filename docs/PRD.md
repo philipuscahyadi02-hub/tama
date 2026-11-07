@@ -112,7 +112,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 |---|---|---|---|---|
 | QC-1 | Architecture check as a script in `npm run check`: only `platform/*` imports Electron, no deep imports across modules, every bus topic declared and used, renderers never require Node. *(`scripts/arch-check.js`, in `npm run check`; D-052.)* | P1 | M11 | ☑ |
 | QC-2 | Dead code: find and remove unused files, exports, bus topics, IPC channels, CSS and preload methods (script + review). *(Scan 2026-11-07: every file reachable, all bus topics and IPC channels used (now enforced by QC-1), both dependencies used. Removed `git.changedFiles`, `closePage`, the `MARKER_SIZE` export, the unused `prod:remindCancel` IPC and preload method, and one CSS rule.)* | P1 | M11 | ☑ |
-| QC-3 | Performance: measure start-up time, idle CPU/RAM (NFR-1), event-loop lag, IPC chatter and timers; fix what slows Tama down; keep a repeatable `npm run perf`. | P1 | M11 | ☐ |
+| QC-3 | Performance: measure start-up time, idle CPU/RAM (NFR-1), event-loop lag, IPC chatter and timers; fix what slows Tama down; keep a repeatable `npm run perf`. *(Idle CPU 3.5 % → 1.6 %, memory 297 → 262 MB, ready in ~0.8 s; D-053.)* | P1 | M11 | ☑ |
 | QC-4 | Code review of every module against AGENTS rules (file ≤ ~300 lines, function size, error handling, no floating promises, `start()`/`stop()`); split or simplify what fails. | P1 | M11 | ☐ |
 | QC-5 | Test coverage report; add tests for services and platform code with gaps (aim ≥ 80 % of service lines). | P2 | M11 | ☐ |
 | QC-6 | Security pass: IPC input validation, CSP on every page, secrets never in logs or exports, untrusted-data handling. | P1 | M11 | ☐ |
@@ -233,7 +233,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | SAFE-3 | Telegram accepts only the paired chat ID. | P0 | M7 | ☑ |
 | SAFE-4 | Warn before accept-edits mode outside a git repo. | P1 | M4 | ☑ |
 | SAFE-5 | Daily cost/token budget shown in `/stats`; Tama warns near the limit. | P1 | M3 | ☑ |
-| NFR-1 | Idle CPU < 2%, RAM < 300 MB (excluding engine processes). *(Measured 2026-11-07: about 2.0% CPU (was 5.8%) and about 200 MB private memory, D-042. Borderline: wandering is most of what is left.)* | P1 | M9 | ◐ |
+| NFR-1 | Idle CPU < 2%, RAM < 300 MB (excluding engine processes). *(`npm run perf`, all Tama processes, % of one core: 1.6 % CPU and about 262 MB on 2026-11-07, D-053. Was 3.5 % / 297 MB with the same method.)* | P1 | M11 | ☑ |
 | NFR-2 | Multi-monitor & mixed-DPI safe. | P0 | M0 | ◐ |
 | NFR-3 | Ships as a portable `.exe` (electron-builder), uses installed `claude`/`agy`. *(Replaced by installers for Windows and macOS: SHIP-1..7, M12, D-051.)* | P0 | M12 | ☐ |
 | NFR-4 | Memory view + forget; local-only data except the user's own Drive backup. | P0 | M5 | ☑ |

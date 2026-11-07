@@ -162,3 +162,7 @@ body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after 
 body.reduce-motion .particle { display: none; }
 /* calm idle while asleep too (NFR-1): the zzz / snot bubble pause between bursts */
 #pet.calm #zzz span, #pet.calm #noseBubble { animation-play-state: paused; }
+
+/* QC-3 (D-053): mood and sleep effects also rest between "alive" bursts (they looped forever and cost ~1.8 % CPU
+   while she was sad or asleep). They still play during bursts, while walking and while dragged. */
+#pet.calm .tears .stream, #pet.calm #gloom i, #pet.calm #noseBubble, #pet.calm #zzz span { animation-play-state: paused; }

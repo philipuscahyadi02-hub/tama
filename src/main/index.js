@@ -36,6 +36,10 @@ const { createVoiceEngineProcess } = require('./platform/voice-engine-process');
 const { createAppIcon } = require('./platform/app-icon');
 const { createCrashLog } = require('./platform/crash-log');
 const { startCrashGuard, openLogs } = require('./platform/crash-guard');
+const STARTED_AT = Date.now();
+/** QC-3: with TAMA_PERF, slow timer callbacks are traced from the very start. */
+const slowCallbacks = process.env.TAMA_PERF ? require('./platform/perf').traceSlowCallbacks() : () => [];
+const ipcPerf = process.env.TAMA_PERF ? require('./platform/perf').ipcStats() : null;
 const { createChatTools } = require('./brain/chat-tools');
 const { startToolBridge } = require('./platform/tool-bridge');
 const os = require('os');
@@ -62,7 +66,9 @@ const stoppers = [];
 /** SET-6 (D-050): created at boot, ended on a clean quit. @type {ReturnType<typeof createCrashLog> | null} */
 let crashLog = null;
 
+let bootMs = 0;
 function boot() {
+  const bootStart = Date.now();
   const bus = new Bus();
   crashLog = createCrashLog({ dir: pathMod.join(appShell.paths.data(), 'logs') });
   const lastRun = crashLog.begin({ version: appShell.version() });
@@ -256,6 +262,7 @@ function boot() {
   if (process.env.TAMA_HIDE_PET) setTimeout(() => pet.hide(), 1500); // dev: start hidden (walk-marker screenshots)
 
   summoner.startWatchdog();
+  bootMs = Date.now() - bootStart;
   stoppers.push(() => summoner.stop(), () => petService.stop(), () => store.flush(), shell.unregisterHotkeys);
 
   secondInstance = () => summon('second-instance');
@@ -293,6 +300,14 @@ function boot() {
       bus.request(TOPICS.VOICE_SAY, { text: lastTama, purpose: 'test' }).catch(() => null);
     });
     bus.on(TOPICS.VOICE_PLAY, (/** @type {any} */ p) => console.log('[voice-trace]', at(), 'play', p.engine, `${(p.part ?? 0) + 1}/${p.parts ?? 1}`, String(p.text).slice(0, 30)));
+  }
+  if (ipcPerf) ipc.setProbe(ipcPerf.add);
+  if (process.env.TAMA_PERF) {
+    // Dev (QC-3): measure idle cost, print it and quit (npm run perf).
+    pet.win.webContents.once('did-finish-load', () => require('./platform/perf').runPerfProbe({
+      seconds: Number(process.env.TAMA_PERF) || 30, startedAt: STARTED_AT, quit: appShell.quit,
+      extra: () => ({ timers: process.getActiveResourcesInfo().filter((x) => x === 'Timeout').length, bootMs, slowCallbacks: slowCallbacks(), ipc: ipcPerf ? ipcPerf.top() : [] }),
+    }));
   }
   if (lastRun) {
     pet.win.webContents.once('did-finish-load', () => setTimeout(() => bus.emit(TOPICS.BRAIN_NOTICE, {

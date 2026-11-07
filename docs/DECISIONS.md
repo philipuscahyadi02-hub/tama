@@ -82,6 +82,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-050 | Reliability: window rescue from unplugged monitors; crash log + clean-quit marker + renderer reload | Accepted |
 | D-051 | Roadmap: M11 = quality control; M12 = installers (Windows + macOS) with modular capabilities instead of a portable exe | Accepted |
 | D-052 | Architecture rules enforced by `scripts/arch-check.js` in `npm run check`; engines get public index.js files; shared day helpers in `src/main/day.js` | Accepted |
+| D-053 | `npm run perf` measures idle cost the same way every time; mood/sleep effects rest between alive bursts; shorter, rarer bursts | Accepted · Refines D-042 (calm idle) |
 
 ---
 
@@ -703,3 +704,19 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** ESLint with import rules (new dev dependencies and config for rules a 100-line script covers); dependency-cruiser (same).
 - **Consequences:** New code that breaks a layer rule fails `npm run check`. Files over 300 lines (bootstrap, telegram, voice, pet.js, terminal.js, tama-commands.js) are QC-4 work.
 - **Refs:** QC-1, AGENTS §1, scripts/arch-check.js, src/main/day.js, src/main/engines/*/index.js
+
+### D-053 — Repeatable performance run; mood and sleep effects rest; shorter alive bursts
+- **Date:** 2026-11-07 · **Status:** Accepted · Refines D-042 (calm idle)
+- **Context:** QC-3. NFR-1 asks for idle CPU < 2 % and RAM < 300 MB, but each earlier number was measured a different way. A first repeatable run on the user's laptop gave 3.5 % CPU and 297 MB.
+- **Findings** (all Tama processes from `app.getAppMetrics()`, CPU as % of one core):
+  - Reduced motion idles at 0.5 %. Wandering alone (window moves, CSS animations off) costs almost nothing (0.6 % with 171 steps); all the cost is SVG animation repaint.
+  - Mood and sleep effects (tears, gloom, nose bubble, floating z's) looped forever and were not paused between bursts. A sad (hungry) or sleeping pet, which is common, cost about 1.8 % more.
+  - Main-process timer callbacks and IPC handlers are cheap: the slowest timer callback is the first Claude limits check (about 61 ms, every 20 minutes), and 90 walk steps cost 119 ms in total. The rare ~200 ms event-loop maximum is not in Tama's callbacks (likely Chromium or GC); the ~31 ms mean "lag" is Windows' 15.6 ms timer granularity.
+- **Decision:**
+  - `npm run perf` (`scripts/perf.js` + `platform/perf.js`, `TAMA_PERF=<s>`): starts Tama in a scratch folder (or `--data <dir>`), lets it settle for 15 s, then samples CPU and memory per process type each second, plus event-loop delay, slow (> 40 ms) timer callbacks with where they were scheduled, IPC calls per channel, active timers and boot time. It prints JSON and an NFR-1 verdict. The pet is shown (small, never focused) because hidden windows are throttled and would hide the cost.
+  - The mood and sleep effects also pause during `.calm`, so they play in bursts like the idle sway.
+  - Alive bursts: 5–7 s every 28–40 s (was 6–9 s every 18–28 s).
+- **Result:** 1.6 % CPU (two 60-second runs: 1.60 % and 1.65 %) and about 262 MB; ready about 0.8 s after launch.
+- **Alternatives:** Capping the pet window's frame rate (Electron only supports this for offscreen rendering); stepped CSS animations (choppy); turning wandering off (it costs almost nothing).
+- **Consequences:** She sways a little less often; walking, blinks, talk and expressions are unchanged. Use `npm run perf` before and after any animation or timer change.
+- **Refs:** QC-3, NFR-1, D-042, scripts/perf.js, src/main/platform/perf.js, src/main/platform/ipc.js, src/renderer/pet/{pet.js,pet.css}
