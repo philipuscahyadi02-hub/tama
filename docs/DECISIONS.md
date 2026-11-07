@@ -87,6 +87,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-055 | Security pass: no navigation, new windows or browser permissions; every IPC input coerced; more secret patterns redacted; Maps and [google] context marked untrusted | Accepted |
 | D-056 | M12 shipping = v1.0.0; v2 = Tama's own agentic brain over official model APIs (own keys or local models), not a single provider's SDK | Accepted · Refines D-015 (what 1.0.0 means) |
 | D-057 | Provider layer built: registry + per-engine descriptors; Claude chats as Haiku without tools, only after an opt-in (choosing it counts); Settings → Brains | Accepted · Implements D-054 |
+| D-058 | Release v1.0.0 now (M11 + provider layer), before the installer; the rest of M12 ships as 1.x; unsigned builds accepted | Accepted · Refines D-056 (what v1.0.0 contains), D-051 (signing) |
 
 ---
 
@@ -789,3 +790,14 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** A global "Claude fallback" switch (less control; moments and chat have different costs); giving Claude chat Tama's Google tools now (needs the chat-tools confirmations wired into the Claude lite profile; later in SHIP-8 or v2).
 - **Consequences:** New providers (v2's own agent, D-056) are one descriptor each. Still to do for SHIP-8: usage limits and the accounts page driven by the registry, and a shared contract test every provider must pass.
 - **Refs:** SHIP-8, D-027, D-029, D-037, D-054, D-056, src/main/providers, src/main/engines/{claude,agy}/provider.js, src/main/brain/{index,persona,chat}.js, src/renderer/settings
+
+### D-058 — v1.0.0 released now; the rest of M12 as 1.x; unsigned builds
+- **Date:** 2026-11-07 · **Status:** Accepted · Refines D-056 (v1.0.0 = all of M12) and D-051 (signing decided before release)
+- **Context:** After the provider layer (D-057) the user asked to update the README, write a Word/PowerPoint document about the tech and the business/user flows, and push to GitHub as **v1.0.0 stable**. The installer, setup wizard and modular capabilities (SHIP-1..7, SHIP-3/4) are not built yet. The user also accepted the "unknown publisher" warning (no code signing) and said Mac users will run from source with `npm start`.
+- **Decision:**
+  - Tag **v1.0.0** from `m12-shipping` merged into `main`: everything through M11 plus SHIP-8 so far. A GitHub release carries the notes and the Word documentation.
+  - The remaining M12 items ship as **1.x** minor releases (1.1 installer + setup wizard, …). 2.0 stays Tama's own agentic brain (D-056).
+  - **No code signing** for now (SHIP-7 decided: unsigned; Windows shows "unknown publisher"). macOS is supported from source until the mac app (SHIP-2) exists.
+- **Alternatives:** Wait for the installer before 1.0.0 (the user wanted the stable tag now); call it 1.0.0-rc (the user asked for stable).
+- **Consequences:** Release notes list the known gaps plainly (no installer, run from source; open P0 rows GOOG-6 replace section and NFR-2 mixed-DPI check). D-015's "1.0.0 = all P0 done" no longer holds.
+- **Refs:** SHIP-1..8, NFR-3, GOOG-6, NFR-2, D-015, D-051, D-056, D-057

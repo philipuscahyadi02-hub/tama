@@ -5,8 +5,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.31 |
-| **Status** | v0.10.0 released (M0–M10). M11 code complete on `m11-quality` (awaiting the user's check); M12 shipping = v1.0.0 in progress on `m12-shipping` |
+| **Version** | 0.32 |
+| **Status** | **v1.0.0 released** (M0–M11 + provider layer, D-058). Rest of M12 (installers, setup wizard, modular capabilities) ships as 1.x on `m12-shipping` |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-07 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -253,8 +253,8 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M7 — Telegram.** *(released as 0.7.0; voice notes in M9)* (TG-*, ART-5, SAFE-3).
 - [x] **M8 — Usage & accounts dashboard.** *(released as 0.8.0)* Usage log, dashboard, Limits tab (what's left), account switching (USE-1..7, D-040, D-041).
 - [x] **M10 — Settings & polish.** *(released as 0.10.0)* One Settings window, reply language, quiet hours, faster voice, small reliability fixes (SET-1..6, ONB-8).
-- [x] **M11 — Quality control.** *(code complete)* Architecture checks, dead code, performance, code review, coverage, security (QC-1..6, NFR-1).
-- [ ] **M12 — Shipping = v1.0.0** (D-056). Also closes the two open P0 rows (GOOG-6 replace section, NFR-2 mixed-DPI check) or defers them explicitly. Windows installer and macOS app, a provider layer, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..8, NFR-3).
+- [x] **M11 — Quality control.** *(released in 1.0.0)* Architecture checks, dead code, performance, code review, coverage, security (QC-1..6, NFR-1).
+- [ ] **M12 — Shipping** (1.0.0 released early with SHIP-8 in part, D-058; the rest arrives as 1.x). Also closes the two open P0 rows (GOOG-6 replace section, NFR-2 mixed-DPI check) or defers them explicitly. Windows installer and macOS app, a provider layer, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..8, NFR-3).
 - [x] **M9 — Voice & polish.** *(released as 0.9.0; phone → Tama speech-to-text (VOICE-4) deferred)* AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
 - [ ] **v2 (M13+) — Tama's own agentic brain** (planned, not started; D-056). Tama runs its own agent loop instead of depending on one provider's agent (AGT-1..6).
 
@@ -277,6 +277,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.32 — 2026-11-07** — v1.0.0 released (D-058): M11 plus the provider layer; installers and the setup wizard move to 1.x.
 - **0.31 — 2026-11-07** — SHIP-8 ◐: provider layer in place (D-057).
 - **0.30 — 2026-11-07** — M12 = v1.0.0; v2 roadmap (AGT-1..6) for Tama's own agentic brain (D-056).
 - **0.29 — 2026-11-07** — QC-6 ☑ (D-055); M11 code complete.

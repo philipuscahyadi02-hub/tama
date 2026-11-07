@@ -12,20 +12,24 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   `git log` and the `v*` tags. Don't edit it by hand. Run it before each commit; it lists every
   commit up to the previous one (a commit can't contain its own hash).
 - **Versioning (D-015):** each finished milestone is a minor version (M0 → 0.1.0, M1 → 0.2.0, …).
-  Fixes between milestones are patch versions. 1.0.0 = M12 shipping (D-056, refines "all P0 done"); 2.0.0 = Tama's own agentic brain.
+  Fixes between milestones are patch versions. 1.0.0 = first stable release (D-058); the rest of M12 ships as 1.x; 2.0.0 = Tama's own agentic brain.
 
 ## [Unreleased]
+_Nothing yet._
+
+## [1.0.0] — 2026-11-07 — Stable release (M11 quality control + provider layer)
 ### Added
-- **M12 Shipping → v1.0.0** (branch `m12-shipping`):
+- **Docs:** a new README and a Word document with the product, user flows and technical architecture (`docs/Tama-v1.0-Documentation.docx`).
+- **First steps of M12** (D-057, D-058):
   - **Provider layer** (SHIP-8, D-054, D-057): chat, her moments, designing looks and the terminal each use whichever brain you have. New **Settings → 🧠 Brains** shows who does what and lets you pick. If Gemini (Antigravity) isn't installed, you can let **Claude** chat with you instead (Claude Haiku, uses your Claude quota, no web search or Google tools); she then knows and says what she can do.
 ### Docs
-- **Version plan (D-056):** M12 shipping becomes **v1.0.0**. **v2** is planned: Tama's own agentic brain on official model APIs with your own keys or local models, so she no longer depends on one provider (AGT-1..6).
+- **Version plan (D-056, D-058):** this is **v1.0.0**; installers and the setup wizard follow as 1.x. **v2** is planned: Tama's own agentic brain on official model APIs with your own keys or local models, so she no longer depends on one provider (AGT-1..6).
 - Planned the **provider layer** for M12 (SHIP-8, D-054): features ask for a capability (chat, coding, structured output…) and Tama picks Claude Code or agy from your preference, falling back to whichever is installed.
 ### Fixed
 - `/voice` in the terminal works again: an old "arrives in M8" placeholder had replaced it (QC-4).
 - `/newpc` shows whether Telegram is paired instead of "comes in M7".
 ### Changed
-- **M11 Quality control** (branch `m11-quality`): the architecture rules are now checked automatically in `npm run check` (`npm run arch` for the report); fixed 11 deep imports by giving the engines public entry points and moving the day helpers out of the pet module (QC-1, D-052).
+- **M11 Quality control:** the architecture rules are now checked automatically in `npm run check` (`npm run arch` for the report); fixed 11 deep imports by giving the engines public entry points and moving the day helpers out of the pet module (QC-1, D-052).
 - **Lighter at idle:** about 1.6 % CPU and 262 MB (was 3.5 % and 297 MB). Her tears, gloom and sleep bubbles now rest between her lively moments, and those moments come a bit less often. New `npm run perf` measures this the same way every time (QC-3, D-053).
 - **Code review, part 1 (QC-4):** the large files are split by responsibility: the terminal (formatting, permission prompt, Claude events, commands), the pet window (care, pointer, reactions), Telegram's phone commands, the voice text helpers, and the bootstrap's dev-only switches (`src/main/dev/hooks.js`). The terminal's formatting is now unit-tested.
 - **Code review, part 2 (QC-4):** the desktop channel is split into small per-area functions (and `pages.js`); messages from agy that fail to process, the app-icon render and opening links no longer leave unhandled promises; a save file that can't be read is now written to the crash log too.
