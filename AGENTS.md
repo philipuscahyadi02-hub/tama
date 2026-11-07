@@ -83,6 +83,7 @@ past decisions → `docs/DECISIONS.md`.
 npm start          # run the app (dev)
 npm run check      # tsc --checkJs + architecture check (scripts/arch-check.js) + node --test
 npm run arch       # architecture report incl. files over ~300 lines
+npm run coverage   # line coverage per layer, files under 80 % and files no test loads (node:test, no extra dependency)
 npm run perf       # idle CPU / memory / event-loop / slow callbacks / IPC (shows a pet for ~45 s); -- --seconds 60 --data <dir>
 npm run dist       # portable exe
 ```

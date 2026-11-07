@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.27 |
+| **Version** | 0.28 |
 | **Status** | v0.10.0 released (M0–M10). M11 quality control in progress on `m11-quality`; M12 shipping (installers) next |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-07 |
@@ -114,7 +114,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | QC-2 | Dead code: find and remove unused files, exports, bus topics, IPC channels, CSS and preload methods (script + review). *(Scan 2026-11-07: every file reachable, all bus topics and IPC channels used (now enforced by QC-1), both dependencies used. Removed `git.changedFiles`, `closePage`, the `MARKER_SIZE` export, the unused `prod:remindCancel` IPC and preload method, and one CSS rule.)* | P1 | M11 | ☑ |
 | QC-3 | Performance: measure start-up time, idle CPU/RAM (NFR-1), event-loop lag, IPC chatter and timers; fix what slows Tama down; keep a repeatable `npm run perf`. *(Idle CPU 3.5 % → 1.6 %, memory 297 → 262 MB, ready in ~0.8 s; D-053.)* | P1 | M11 | ☑ |
 | QC-4 | Code review of every module against AGENTS rules (file ≤ ~300 lines, function size, error handling, no floating promises, `start()`/`stop()`); split or simplify what fails. *(Done: 7 large files split by responsibility (pet.js left at 353 lines); the desktop channel's 235-line `start()` became 13 small functions in two files; unhandled promises fixed (ACP messages, app icon, link opening) and corrupt saves now reach the crash log; all 20 empty `catch` blocks state why. Accepted as is: `googleTools` (a 138-line data table) and five functions of 54–74 lines that are one switch or one prompt. Found the terminal's `/voice` overridden by an old placeholder.)* | P1 | M11 | ☑ |
-| QC-5 | Test coverage report; add tests for services and platform code with gaps (aim ≥ 80 % of service lines). | P2 | M11 | ☐ |
+| QC-5 | Test coverage report; add tests for services and platform code with gaps (aim ≥ 80 % of service lines). *(`npm run coverage`: services 94 %, brain 96 %, channels 87 % (new), shared 96 %, engines 76 %. New tests: desktop channel, composer, phone /repos·/cd·/stop, git helpers, input queue, terminal formatting. Left untested on purpose: Electron-only platform files and the live Claude SDK session (checked in live runs).)* | P2 | M11 | ☑ |
 | QC-6 | Security pass: IPC input validation, CSP on every page, secrets never in logs or exports, untrusted-data handling. | P1 | M11 | ☐ |
 
 ### 4.3d Shipping (SHIP), M12
@@ -266,6 +266,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.28 — 2026-11-07** — QC-5 ☑ (`npm run coverage`).
 - **0.27 — 2026-11-07** — QC-4 ☑.
 - **0.26 — 2026-11-07** — New SHIP-8: provider layer for M12 (D-054).
 - **0.25 — 2026-11-07** — QC-4 ◐ (large files split).

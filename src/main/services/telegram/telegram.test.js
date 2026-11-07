@@ -246,3 +246,43 @@ test('wantsVoice: plain requests for a voice note (English, Indonesian, Japanese
   for (const t of ['send it as a voice note please', 'vn dong', 'kirim suara dong', 'pakai suara ya', 'mau dengar suaramu', 'reply with voice', 'say it out loud', '声で言って']) assert.equal(wantsVoice(t), true, t);
   for (const t of ['I lost my voice lol', "what's the weather", 'hello', 'the voice actor was great']) assert.equal(wantsVoice(t), false, t);
 });
+
+test('/repos, /cd and /stop from the phone; progress is one message; no /cd while working (TG-6, TG-7; QC-5)', async (t) => {
+  const s = await paired({ desk: 'C:\\tama\\desk' });
+  t.after(() => s.stop());
+  await s.bus.request('telegram.set', { allow: 'C:\\code\\app' });
+  await s.bus.request('telegram.set', { allow: 'C:\\code\\site' });
+  await s.telegram.onUpdate(s.msg(42, '/repos'));
+  const list = s.tg.sent().at(-1);
+  assert.match(list, /0\. Tama's desk/);
+  assert.match(list, /1\. C:\\code\\app {2}← current/);
+  assert.match(list, /2\. C:\\code\\site/);
+  await s.telegram.onUpdate(s.msg(42, '/cd 2'));
+  assert.equal(s.cwd.value, 'C:\\code\\site');
+  assert.ok(s.notices.some((n) => /switched project from your phone/.test(n)));
+  await s.telegram.onUpdate(s.msg(42, '/cd desk'));
+  assert.equal(s.cwd.value, 'C:\\tama\\desk');
+  await s.telegram.onUpdate(s.msg(42, '/cd app'));
+  assert.equal(s.cwd.value, 'C:\\code\\app');
+  await s.telegram.onUpdate(s.msg(42, '/cd nowhere'));
+  assert.match(s.tg.sent().at(-1), /Where Claude can work/);
+  // a turn: tool progress goes into one message, edited as it grows
+  await s.telegram.onUpdate(s.msg(42, '/code tidy up'));
+  await s.telegram.onUpdate(s.msg(42, '/code another'));
+  assert.match(s.tg.sent().at(-1), /still working/);
+  await s.telegram.onUpdate(s.msg(42, '/cd 2'));
+  assert.match(s.tg.sent().at(-1), /Not while I'm working/);
+  s.bus.emit('engine.event', { engine: 'claude', role: 'worker', ev: { t: 'tool', name: 'Read', input: { file_path: 'C:\\code\\app\\a.js' } } });
+  s.bus.emit('engine.event', { engine: 'claude', role: 'worker', ev: { t: 'tool', name: 'Bash', input: { command: 'npm test' } } });
+  await new Promise((r) => setTimeout(r, 3200)); // FLUSH_MS
+  const progress = s.tg.calls.filter((c) => c.method === 'sendMessage' && /working…/.test(c.body.text));
+  assert.equal(progress.length, 1);
+  assert.match(progress[0].body.text, /📖 read a\.js\n💻 npm test/);
+  await s.telegram.onUpdate(s.msg(42, '/stop'));
+  assert.ok(s.seen.some((x) => x[0] === 'interrupt'));
+  s.bus.emit('engine.event', { engine: 'claude', role: 'worker', ev: { t: 'tool', name: 'Grep', input: { pattern: 'x' } } });
+  s.bus.emit('engine.event', { engine: 'claude', role: 'worker', ev: { t: 'result', isError: true, subtype: 'error_during_execution' } });
+  await new Promise((r) => setTimeout(r, 30));
+  assert.ok(s.tg.calls.some((c) => c.method === 'editMessageText' && /🔍 search "x"/.test(c.body.text)), 'final progress edited into the same message');
+  assert.ok(s.tg.sent().some((t) => /stopped \(interrupted\)/.test(t)));
+});
