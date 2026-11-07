@@ -86,7 +86,8 @@ src/main/
   platform/google-oauth.js loopback + PKCE desktop OAuth (M6)
   services/telegram/       api (long polling, uploads), format (pure), remote (/code bridge), index (pairing, routing, daily) (M7, D-036)
   services/voice/          her voice: language, pick + tuning, quiet rules (index.js); engines.js = start/stop/catalog of the local
-                           engines; emotion.js = mood → style/prosody (pure); vv-engine.js = AivisSpeech/VOICEVOX HTTP (D-042..D-045)
+                           engines; emotion.js = mood → style/prosody (pure); vv-engine.js = AivisSpeech/VOICEVOX HTTP (D-042..D-045);
+                           chunks.js = sentence split + audio cache for a fast first sound (D-049)
   services/usage/          numbers-only usage log (usage/YYYY-MM.jsonl), summaries (M8, D-040); limits.js: what's left,
                            history (usage/limits.jsonl), warnings (D-041)
   engines/claude/limits.js live Claude plan limits without a message + rate-limit event normalizer (D-041)
@@ -120,11 +121,14 @@ src/renderer/onboarding/   hatch / restyle / rebirth flow (M1)
 src/renderer/roster/       My Tamas: switch, hatch, graduate, restore, delete, export, import (M2)
 src/renderer/terminal/tama-commands.js  /todo /focus /remind /note /watch /feed /snack /nap /tama (M2)
 src/renderer/dev/          rig gallery (TAMA_GALLERY=designs|moods)
+src/renderer/settings/     Settings window (M10, D-048): one view over ui/voice/telegram/google/weather/brain requests; opens other pages via page:open
 ```
 M5 extras (D-035):
 ```
 src/main/services/weather/        logic.js (pure: WMO code → kind, hot/cold, parsers) + index.js (/weather city in device.json,
                                   Open-Meteo fetch at most every 30 min, quiet failures)
+src/main/platform/crash-log.js    daily error/crash log in <data>/logs (redacted, 7 days) + clean-quit marker (D-050)
+src/main/platform/crash-guard.js  uncaught errors → log; crashed renderers reload; helper crashes logged (D-050)
 src/main/platform/app-icon.js     app icon = the Tama's face: renders renderer/icon off-screen, applies to tray + windows, caches per Tama (D-047)
 src/main/platform/tts-sapi.js     Windows built-in speech (System.Speech via PowerShell) → WAV (D-042)
 src/main/platform/voice-engine-process.js  starts/stops the headless AivisSpeech / VOICEVOX engines when a voice needs them; PID files for crash leftovers (D-044, D-045)
@@ -167,7 +171,7 @@ bus.on('engine.event', handler)
 
 ### Topics in use (M0)
 Events: `app.error`, `pet.state.changed`, `pet.bond.changed`, `engine.event`, `chat.event`, `brain.notice`, `ui.prefs.changed`, `memory.changed`, `event.shown`, `google.changed`, `google.meeting.soon`, `telegram.changed`, `usage.{record,changed,limit}`, `accounts.changed`, `summon.done`, `tray.action`, `character.changed`, `device.{power,idle}.changed`, `prod.{changed,focus.phase,reminder.due,commit.seen}`.
-Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,delete,export,import}`, `prod.*`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setEffort,setCwd,answerPermission,resume}`, `chat.{send,history,interrupt,clear,push,confirm}`, `ui.prefs.{get,set}`, `memory.{get,add,forget}`, `diary.{write,list,read}`, `events.{answer,trigger}`, `brain.compose`, `google.{status,setClient,login,logout,set,brief,context,backupNow,backups,restore}`, `telegram.{status,setup,newCode,unpair,set}`, `usage.get`, `usage.limits.{get,refresh,set}`, `voice.{say,render,status,set,detect,encode,preview,info}` + `voice.play` / `voice.changed`, `accounts.{get,switch}`, `brain.{status,set}`, `summon`.
+Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,delete,export,import}`, `prod.*`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setEffort,setCwd,answerPermission,resume}`, `chat.{send,history,interrupt,clear,push,confirm}`, `ui.prefs.{get,set}`, `memory.{get,add,forget}`, `diary.{write,list,read}`, `events.{answer,trigger}`, `brain.compose`, `google.{status,setClient,login,logout,set,brief,context,backupNow,backups,restore}`, `telegram.{status,setup,newCode,unpair,set}`, `usage.get`, `usage.limits.{get,refresh,set}`, `voice.{say,render,status,set,detect,encode,preview,info}` + `voice.play` / `voice.changed` / `voice.skipped`, `accounts.{get,switch}`, `brain.{status,set}`, `summon`.
 M5 extras (D-035): requests `weather.{get,set}`, `device.fullscreen.get`.
 Renderer messages arrive on one `ui` IPC channel: `pet.state`, `pet.bond`, `prod`, `focus`, `reminder`, `commit`, `summon`, `tray`, `agent.event`, `term.focus`, `character`.
 

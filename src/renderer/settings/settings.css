@@ -1,0 +1,18 @@
+/* Settings window (M10, D-048). Base styles come from dashboard.css; colors are --tama-* tokens. */
+.layout { display: flex; gap: 16px; margin-top: 12px; align-items: flex-start; }
+nav { display: flex; flex-direction: column; gap: 4px; width: 200px; min-width: 200px; position: sticky; top: 12px; }
+nav button { text-align: left; border: 1px solid transparent; background: none; padding: 8px 10px; border-radius: 10px; }
+nav button:hover { background: var(--tama-bubble); }
+nav button.on { background: var(--tama-panel); border-color: var(--tama-accent); }
+main { flex: 1; min-width: 0; }
+main section .card:first-child { margin-top: 0; }
+.card h3 { margin-bottom: 6px; }
+.set { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0; border-top: 1px solid var(--tama-line); }
+.card h3 + .set, .card .seg + .set { border-top: 0; }
+.set input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--tama-accent); }
+.set input[type=time] { padding: 3px 6px; }
+#tgToken { width: 300px; }
+.seg + .kv { margin-top: 8px; }
+.badge:empty { display: none; }
+.set button { white-space: nowrap; flex-shrink: 0; }
+button:disabled { opacity: .5; cursor: default; border-color: var(--tama-line); }

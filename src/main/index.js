@@ -34,6 +34,8 @@ const { createVvEngines } = require('./services/voice/vv-engine');
 const sapi = require('./platform/tts-sapi');
 const { createVoiceEngineProcess } = require('./platform/voice-engine-process');
 const { createAppIcon } = require('./platform/app-icon');
+const { createCrashLog } = require('./platform/crash-log');
+const { startCrashGuard, openLogs } = require('./platform/crash-guard');
 const { createChatTools } = require('./brain/chat-tools');
 const { startToolBridge } = require('./platform/tool-bridge');
 const os = require('os');
@@ -61,10 +63,22 @@ const debug = (/** @type {string} */ m) => { if (process.env.TAMA_DEBUG) console
 
 /** @type {Array<() => void>} */
 const stoppers = [];
+/** SET-6 (D-050): created at boot, ended on a clean quit. @type {ReturnType<typeof createCrashLog> | null} */
+let crashLog = null;
 
 function boot() {
   const bus = new Bus();
-  bus.on(TOPICS.APP_ERROR, (e) => console.error('[bus error]', e.topic, e.message));
+  crashLog = createCrashLog({ dir: pathMod.join(appShell.paths.data(), 'logs') });
+  const lastRun = crashLog.begin({ version: appShell.version() });
+  const log = crashLog;
+  let problemNoted = 0;
+  stoppers.push(startCrashGuard({ log, onProblem: () => {
+    // One in-character note per 10 minutes at most; the details are in the log.
+    if (Date.now() - problemNoted < 600000) return;
+    problemNoted = Date.now();
+    bus.emit(TOPICS.BRAIN_NOTICE, { text: 'Oops, something inside me glitched~ I picked myself back up. (Details: Settings → Accounts & usage → Open logs)', kind: 'info' });
+  } }));
+  bus.on(TOPICS.APP_ERROR, (e) => { console.error('[bus error]', e.topic, e.message); log.write('error', String(e.topic || 'app'), String(e.message || '')); });
   if (process.env.TAMA_DEBUG) {
     bus.on(TOPICS.ENGINE_EVENT, ({ engine, ev }) => { if (ev.t !== 'text-delta') debug(`engine ${engine} ${ev.t} ${ev.t === 'tool-progress' ? ev.chars : ev.state || ev.name || ''}`); });
   }
@@ -141,10 +155,12 @@ function boot() {
 
   const openGoogle = () => openPage('google/google.html', { width: 780, height: 720, title: 'Connect Google', frame: true });
   const openVoice = () => openPage('voice/voice.html', { width: 980, height: 760, title: 'Voice', frame: true });
+  ipc.on('logs:open', () => { openLogs(log.dir()).catch(() => null); });
+  const openSettings = (tab = '') => openPage('settings/settings.html', { width: 900, height: 680, title: 'Settings', frame: true, query: tab ? { tab } : {} });
   const openDashboard = (tab = '') => openPage('dashboard/dashboard.html', { width: 1060, height: 780, title: 'Usage & accounts', frame: true, query: tab ? { tab } : {} });
   const openRoster = (/** @type {boolean | undefined} */ importNow) =>
     openPage('roster/roster.html', { width: 900, height: 660, title: 'My Tamas', query: importNow ? { import: '1' } : {} });
-  createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, pages: openPages }).start();
+  createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings, pages: openPages }).start();
   // Voice (M9, D-042/D-043): created before the tray, whose Voice submenu shows its setting; started with the services.
   /** @type {Record<string, ReturnType<typeof createVoiceEngineProcess>>} */ const voiceProcs = {};
   for (const id of /** @type {const} */ (['aivis', 'voicevox'])) {
@@ -185,6 +201,7 @@ function boot() {
         { label: 'Limits left…', click: () => openDashboard('limits') },
         { label: 'Google…', click: () => openGoogle() },
       ] },
+      { label: 'Settings…', click: () => openSettings() },
       { type: 'separator' },
       { label: 'Quit', click: appShell.quit },
   ];
@@ -253,12 +270,38 @@ function boot() {
   if (process.env.TAMA_VOICE_TEST) {
     // Dev: speak once on the desktop, then render + encode a Telegram voice note and report sizes (D-042).
     pet.win.webContents.once('did-finish-load', () => setTimeout(async () => {
-      const said = await bus.request(TOPICS.VOICE_SAY, { text: String(process.env.TAMA_VOICE_TEST), purpose: 'test' }).catch((e) => ({ error: String(e) }));
+      // Several lines separated by "||" are spoken one after another; each logs how soon it started (SET-4).
+      let said = /** @type {any} */ (null);
+      for (const line of String(process.env.TAMA_VOICE_TEST).split('||')) {
+        said = await bus.request(TOPICS.VOICE_SAY, { text: line, purpose: 'test' }).catch((e) => ({ error: String(e) }));
+        console.log('[voice-test] said', JSON.stringify({ line: line.slice(0, 40), engine: said.engine, firstMs: said.firstMs, totalMs: said.totalMs, text: said.text }));
+      }
       const r = await bus.request(TOPICS.VOICE_RENDER, { text: String(process.env.TAMA_VOICE_TEST) }).catch(() => null);
       const enc = r ? await bus.request(TOPICS.VOICE_ENCODE, { wav: r.wav }).catch((e) => ({ error: String(e) })) : null;
-      const dubbed = await bus.request(TOPICS.BRAIN_COMPOSE, { kind: 'translate', seed: String(process.env.TAMA_VOICE_TEST) }).catch((e) => String(e));
+      const tDub = Date.now();
+      const dubbed = await bus.request(TOPICS.BRAIN_COMPOSE, { kind: 'translate', seed: `${String(process.env.TAMA_VOICE_TEST).split('||')[0]} (again)` }).catch((e) => String(e));
+      console.log('[voice-test] translate only', Date.now() - tDub, 'ms');
       console.log('[voice-test]', JSON.stringify({ dubbed, said, engine: r && r.engine, wavBytes: r && Buffer.from(r.wav, 'base64').length, m4aBytes: enc && enc.data ? Buffer.from(enc.data, 'base64').length : 0, m4aHead: enc && enc.data ? Buffer.from(enc.data, 'base64').subarray(4, 8).toString() : enc && enc.error }));
-    }, 2000));
+    }, Number(process.env.TAMA_VOICE_TEST_AT) || 2000));
+  }
+  if (process.env.TAMA_VOICE_TRACE) {
+    // Dev (SET-4): log when a chat message is sent, when the reply text is done, and when each voice part plays.
+    const t0 = Date.now();
+    const at = () => `${((Date.now() - t0) / 1000).toFixed(1)}s`;
+    bus.on(TOPICS.CHAT_EVENT, (/** @type {any} */ ev) => { if (ev.t === 'message') console.log('[voice-trace]', at(), ev.message.role, JSON.stringify(ev.message.text).slice(0, 60), ev.message.ja ? `ja=${ev.message.ja.slice(0, 40)}` : ''); });
+    // A skipped reply (e.g. she's asleep at night) is spoken through the test path, which ignores the quiet rules.
+    let lastTama = '';
+    bus.on(TOPICS.CHAT_EVENT, (/** @type {any} */ ev) => { if (ev.t === 'message' && ev.message.role === 'tama') lastTama = ev.message.text; });
+    bus.on(TOPICS.VOICE_SKIPPED, (/** @type {any} */ p) => {
+      console.log('[voice-trace]', at(), 'skipped:', p.reason, '→ speaking it via the test path');
+      bus.request(TOPICS.VOICE_SAY, { text: lastTama, purpose: 'test' }).catch(() => null);
+    });
+    bus.on(TOPICS.VOICE_PLAY, (/** @type {any} */ p) => console.log('[voice-trace]', at(), 'play', p.engine, `${(p.part ?? 0) + 1}/${p.parts ?? 1}`, String(p.text).slice(0, 30)));
+  }
+  if (lastRun) {
+    pet.win.webContents.once('did-finish-load', () => setTimeout(() => bus.emit(TOPICS.BRAIN_NOTICE, {
+      text: 'Ehehe… I tripped and fell last time (Tama closed unexpectedly). I\'m all better now! (Settings → Accounts & usage → Open logs)', kind: 'info',
+    }), 4000));
   }
   if (process.env.TAMA_PET_EVAL) {
     // Dev: run JS in the pet window after load (e.g. "actions.stats()") for screenshots.
@@ -280,6 +323,7 @@ function boot() {
   if (process.env.TAMA_OPEN_ROSTER) openRoster(false);
   if (process.env.TAMA_OPEN_GOOGLE) openGoogle();
   if (process.env.TAMA_OPEN_VOICE) openVoice();
+  if (process.env.TAMA_OPEN_SETTINGS) openSettings(process.env.TAMA_OPEN_SETTINGS === '1' ? '' : process.env.TAMA_OPEN_SETTINGS);
   if (process.env.TAMA_OPEN_DASHBOARD) openDashboard(process.env.TAMA_OPEN_DASHBOARD === 'limits' ? 'limits' : undefined);
   if (process.env.TAMA_OPEN_ONBOARDING) openOnboarding(process.env.TAMA_OPEN_ONBOARDING);
   if (process.env.TAMA_ONBOARD_WALK) {
@@ -302,7 +346,8 @@ appShell.run({
   onSecondInstance: () => secondInstance(),
   beforeQuit: () => {
     for (const stop of stoppers.splice(0).reverse()) {
-      try { stop(); } catch (e) { console.error('[tama] shutdown step failed', e); }
+      try { stop(); } catch (e) { console.error('[tama] shutdown step failed', e); if (crashLog) crashLog.write('error', 'shutdown', /** @type {any} */ (e)); }
     }
+    if (crashLog) crashLog.end(); // clean quit: the next start won't report a crash (SET-6)
   },
 });

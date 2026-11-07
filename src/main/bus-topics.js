@@ -63,6 +63,8 @@ const TOPICS = {
   ACCOUNTS_CHANGED: 'accounts.changed',
   /** { wav: base64, text, engine } — play this line on the desktop (D-042) */
   VOICE_PLAY: 'voice.play',
+  /** A chat line was not spoken (muted, quiet hours, asleep, focus…). Payload { reason }. For traces and the Settings test. */
+  VOICE_SKIPPED: 'voice.skipped',
   /** VoiceStatus - the voice setting changed (the tray menu follows it, D-043) */
   VOICE_CHANGED: 'voice.changed',
   /** { text, kind: 'info'|'warn' } — brain messages worth a pet bubble (budget, missing engines) */

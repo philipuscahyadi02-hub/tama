@@ -58,3 +58,14 @@ test('walk marker docks at the right edge of the work area, fully inside it (SUM
   const tiny = { x: 0, y: 0, width: 300, height: 100 };
   assert.equal(geo.markerPosition(tiny, M).y, 0); // never above the top
 });
+
+test('rescue: windows left on an unplugged monitor come back centered on the cursor display (SET-5)', () => {
+  const cur = { x: 300, y: 300 };
+  assert.equal(geo.rescueRect({ x: 100, y: 100, width: 900, height: 600 }, [MAIN], cur), null);          // fine
+  assert.equal(geo.rescueRect({ x: -700, y: 100, width: 900, height: 600 }, [MAIN], cur), null);         // 200 px of title bar visible
+  assert.deepEqual(geo.rescueRect({ x: 2500, y: 100, width: 900, height: 600 }, [MAIN], cur), { x: 510, y: 220, width: 900, height: 600 }); // monitor gone
+  assert.deepEqual(geo.rescueRect({ x: 100, y: -500, width: 900, height: 600 }, [MAIN], cur), { x: 510, y: 220, width: 900, height: 600 }); // title bar above the screen
+  const big = geo.rescueRect({ x: 2500, y: 0, width: 2500, height: 1400 }, [MAIN], cur);
+  assert.deepEqual(big, { x: 0, y: 0, width: 1920, height: 1040 }); // shrunk to fit
+  assert.equal(geo.rescueRect({ x: 2500, y: 100, width: 900, height: 600 }, [MAIN, RIGHT], cur), null); // the other monitor is still there
+});

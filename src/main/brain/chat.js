@@ -11,6 +11,8 @@ const HISTORY_MAX = 200;
 const REMEMBER_RE = /\[\[\s*remember\s*:\s*([^\]]+?)\s*\]\]/gi;
 /** `[[work: …]]` = a task the chat brain suggests handing to Claude Code (phone button, D-036). */
 const WORK_RE = /\[\[\s*work\s*:\s*([^\]]+?)\s*\]\]/i;
+/** `[[ja: <feeling> | <Japanese>]]` = the voice dub, written with the reply while the Japanese voice is on (SET-4). */
+const JA_RE = /\[\[\s*ja\s*:\s*([^\]]+?)\s*\]\]/i;
 
 /** Streaming filter that hides `[[…]]` markers, even when they arrive split across chunks. */
 function markerFilter() {
@@ -36,7 +38,7 @@ function markerFilter() {
   };
 }
 
-/** @typedef {{ role: 'user'|'tama'|'note', text: string, at: number, tools?: string[], work?: string }} ChatMessage */
+/** @typedef {{ role: 'user'|'tama'|'note', text: string, at: number, tools?: string[], work?: string, ja?: string }} ChatMessage */
 
 /**
  * @param {{
@@ -102,7 +104,8 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
         const text = reply.text.replace(REMEMBER_RE, '').replace(/\[\[[^\]]*\]\]/g, '').trim()
           || (ev.isError ? 'uu… my brain glitched. Can you say that again? (agy error)' : 'hmm… I lost my words. Ask me again?');
         const work = WORK_RE.exec(reply.text);
-        push({ role: 'tama', text, at: now(), tools: reply.tools.length ? reply.tools : undefined, work: work ? work[1].slice(0, 1000) : undefined });
+        const ja = JA_RE.exec(reply.text);
+        push({ role: 'tama', text, at: now(), tools: reply.tools.length ? reply.tools : undefined, work: work ? work[1].slice(0, 1000) : undefined, ja: ja ? ja[1].slice(0, 1000) : undefined });
         reply = { text: '', tools: [], filter: markerFilter() };
         out({ t: 'done', isError: !!ev.isError });
         break;

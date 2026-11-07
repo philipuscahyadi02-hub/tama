@@ -10,6 +10,7 @@
 const { TOPICS } = require('../../bus-topics');
 const { MOODS, detectMood, styleFor, prosodyFor, parseDub } = require('./emotion');
 const { createEngineManager } = require('./engines');
+const { splitSentences, quickStart, createLru } = require('./chunks');
 
 const DETECT_MS = 5 * 60000;
 const SYNC_MS = 60000;
@@ -66,6 +67,9 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
   /** @type {Map<string, any>} engine:uuid -> { policy, portrait } */
   const infos = new Map();
   let warnedNoEngine = false;
+  /** @type {ReturnType<typeof createLru<Buffer>>} recent audio per (engine, style, tuning, text): repeats are instant (SET-4) */
+  const wavs = createLru(40);
+  let lineSeq = 0;
   /** @type {any[]} */ let systemVoices = [];
   let fromPhone = false;
 
@@ -86,6 +90,14 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
     if (!sp) return null;
     const base = (want && sp.styles.find((s) => s.id === want.style)) || (Number.isInteger(legacy) && sp.styles.find((s) => s.id === legacy)) || sp.styles[0];
     return { engine: sp.engine, speaker: sp, style: base ? base.id : 0 };
+  }
+
+  /** Keep a dub the chat brain wrote with its reply. @param {string} raw @param {string} tagged "<feeling> | <Japanese>" */
+  function remember(raw, tagged) {
+    const d = parseDub(tagged);
+    if (!d.text || !JAPANESE.test(d.text)) return;
+    dubs.set(speakable(raw), { mood: d.mood, text: speakable(d.text) });
+    if (dubs.size > CACHE) dubs.delete(String(dubs.keys().next().value));
   }
 
   /** English line -> her Japanese line + mood (in character, via the composer). @param {string} text */
@@ -109,15 +121,20 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
     const pr = p.moodStyles ? prosodyFor(mood) : prosodyFor('normal');
     const style = p.moodStyles ? styleFor(who.speaker.styles, who.style, mood) : who.style;
     const styleName = (who.speaker.styles.find((/** @type {any} */ s) => s.id === style) || {}).name || '';
-    return vv.synthesize(engine, text, style, { speedScale: t.speed * pr.speed, pitchScale: t.pitch + pr.pitch, intonationScale: t.intonation * pr.intonation })
-      .then((wav) => ({ wav, styleName }));
+    const o = { speedScale: t.speed * pr.speed, pitchScale: t.pitch + pr.pitch, intonationScale: t.intonation * pr.intonation };
+    const key = `${engine.name}|${style}|${o.speedScale}|${o.pitchScale}|${o.intonationScale}|${text}`;
+    const hit = wavs.get(key);
+    if (hit) return Promise.resolve({ wav: hit, styleName });
+    return vv.synthesize(engine, text, style, o).then((wav) => { wavs.set(key, wav); return { wav, styleName }; });
   }
 
   /**
    * @param {string} raw @param {any} [voiceOverride] VoiceSpec @param {'en'|'ja'} [langOverride]
-   * @returns {Promise<{ wav: Buffer, engine: string, text: string, lang: 'en'|'ja', mood: string, style?: string } | null>}
+   * @param {(p: { wav: Buffer, text: string, i: number, n: number, engine: string, mood: string }) => void} [onPart]
+   *   SET-4: Japanese lines are synthesized sentence by sentence and handed over as each one is ready.
+   * @returns {Promise<{ wav: Buffer, engine: string, text: string, lang: 'en'|'ja', mood: string, style?: string, streamed?: boolean } | null>}
    */
-  async function render(raw, voiceOverride, langOverride) {
+  async function render(raw, voiceOverride, langOverride, onPart) {
     const text = speakable(raw);
     if (!text) return null;
     const ch = await bus.request(TOPICS.CHARACTER_GET).catch(() => null);
@@ -133,6 +150,16 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
         if (d) {
           mood = d.mood || detectMood(`${raw} ${d.text}`);
           try {
+            if (onPart) {
+              const parts = quickStart(splitSentences(d.text));
+              let first = /** @type {{ wav: Buffer, styleName: string } | null} */ (null);
+              for (let i = 0; i < parts.length; i++) {
+                const r = await synthJa(engine, parts[i], who, mood);
+                first = first || r;
+                onPart({ wav: r.wav, text: parts[i], i, n: parts.length, engine: engine.name, mood });
+              }
+              if (first) return { wav: first.wav, engine: engine.name, text: d.text, lang: 'ja', mood, style: first.styleName, streamed: true };
+            }
             const r = await synthJa(engine, d.text, who, mood);
             return { wav: r.wav, engine: engine.name, text: d.text, lang: 'ja', mood, style: r.styleName };
           } catch { mgr.detect().catch(() => null); /* engine went away: English now, re-detect */ }
@@ -143,7 +170,10 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
     const en = text.replace(/[぀-ヿ㐀-䶿一-鿿　-〿！-｠]+/g, ' ').replace(/\s+/g, ' ').trim();
     if (!en) return null;
     const pr = prefs().moodStyles ? prosodyFor(mood) : prosodyFor('normal');
-    const wav = await sapi.synthesize(en, { gender: voice.voiceGender, pitch: (voice.pitch || 1) * (1 + pr.pitch * 3), rate: (voice.rate || 1) * pr.speed });
+    const so = { gender: voice.voiceGender, pitch: (voice.pitch || 1) * (1 + pr.pitch * 3), rate: (voice.rate || 1) * pr.speed };
+    const key = `sapi|${so.gender}|${so.pitch}|${so.rate}|${en}`;
+    const wav = wavs.get(key) || await sapi.synthesize(en, so);
+    wavs.set(key, wav);
     return { wav, engine: 'Windows', text: en, lang: 'en', mood };
   }
 
@@ -167,14 +197,22 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
       const [ui, prod, pet] = await Promise.all([
         bus.request(TOPICS.UI_PREFS_GET).catch(() => null), bus.request(TOPICS.PROD_GET).catch(() => null), bus.request(TOPICS.PET_GET).catch(() => null),
       ]);
-      if (ui && (ui.mute || ui.dnd)) return { ok: false, reason: ui.mute ? 'muted' : 'dnd' };
+      if (ui && (ui.mute || ui.dnd || ui.quietNow)) return { ok: false, reason: ui.mute ? 'muted' : ui.dnd ? 'dnd' : 'quiet hours' };
       if (prod && prod.focus && prod.focus.phase === 'focus') return { ok: false, reason: 'focus' };
       if (pet && pet.state && pet.state.asleep) return { ok: false, reason: 'asleep' };
     }
-    const r = await render(text).catch((e) => { bus.emit(TOPICS.APP_ERROR, { topic: 'voice', message: String(e.message || e) }); return null; });
+    const line = ++lineSeq;
+    const t0 = Date.now();
+    let firstMs = 0;
+    /** @param {{ wav: Buffer, text: string, i: number, n: number, engine: string, mood: string }} pt */
+    const play = (pt) => {
+      if (!firstMs) firstMs = Date.now() - t0;
+      bus.emit(TOPICS.VOICE_PLAY, { wav: pt.wav.toString('base64'), text: pt.text, engine: pt.engine, mood: pt.mood, line, part: pt.i, parts: pt.n });
+    };
+    const r = await render(text, undefined, undefined, play).catch((e) => { bus.emit(TOPICS.APP_ERROR, { topic: 'voice', message: String(e.message || e) }); return null; });
     if (!r) return { ok: false, reason: 'error' };
-    bus.emit(TOPICS.VOICE_PLAY, { wav: r.wav.toString('base64'), text: r.text, engine: r.engine, mood: r.mood });
-    return { ok: true, engine: r.engine, lang: r.lang, text: r.text, mood: r.mood, style: r.style };
+    if (!r.streamed) play({ wav: r.wav, text: r.text, i: 0, n: 1, engine: r.engine, mood: r.mood });
+    return { ok: true, engine: r.engine, lang: r.lang, text: r.text, mood: r.mood, style: r.style, firstMs, totalMs: Date.now() - t0 };
   }
 
   /**
@@ -239,8 +277,11 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
       warmed.add(who.engine);
       await vv.synthesize(engine, 'はい', who.style).catch(() => null);
     }
+    // SET-4: wake the translator (its agy session) too, so the first dubbed line doesn't pay the cold start.
+    if (id && !warmedDub) { warmedDub = true; dub('Okay, I am ready!').catch(() => null); }
   }
   const warmed = new Set();
+  let warmedDub = false;
 
   /** @param {{ lang?: string, chat?: boolean, events?: boolean, gpu?: boolean, moodStyles?: boolean, speaker?: number | null,
    *   pick?: { engine: string, uuid: string, style: number } | null, tune?: { pitch?: number, speed?: number, intonation?: number } }} p */
@@ -261,7 +302,7 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
     }
     const restart = typeof p.gpu === 'boolean' && p.gpu !== (cur.gpu !== false);
     device.patch('voice', patch);
-    if (restart) { for (const proc of Object.values(procs)) proc.stop(); warmed.clear(); mgr.detect().catch(() => null); }
+    if (restart) { for (const proc of Object.values(procs)) proc.stop(); warmed.clear(); wavs.clear(); mgr.detect().catch(() => null); }
     if (patch.lang || patch.pickByTama || restart) syncEngines().catch(() => null);
     const st = status();
     bus.emit(TOPICS.VOICE_CHANGED, st);
@@ -282,7 +323,9 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
       bus.on(TOPICS.CHAT_EVENT, (/** @type {any} */ ev) => {
         if (ev.t !== 'message') return;
         if (ev.message.role === 'user') { fromPhone = String(ev.message.text).startsWith('📱'); return; }
-        if (ev.message.role === 'tama' && !fromPhone) say(ev.message.text, 'chat').catch(() => null);
+        if (ev.message.role !== 'tama') return;
+        if (ev.message.ja) remember(ev.message.text, ev.message.ja); // SET-4: no translation call (also reused for the phone copy)
+        if (!fromPhone) say(ev.message.text, 'chat').then((r) => { if (!r.ok) bus.emit(TOPICS.VOICE_SKIPPED, { reason: r.reason }); }).catch(() => null);
       }),
       bus.on(TOPICS.EVENT_SHOWN, (/** @type {any} */ e) => { if (e && e.text) say(e.text, 'event').catch(() => null); }),
       bus.handle(TOPICS.VOICE_SAY, (/** @type {any} */ p) => say(String((p && p.text) || ''), p && p.purpose === 'test' ? 'test' : 'chat')),

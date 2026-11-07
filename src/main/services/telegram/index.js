@@ -55,7 +55,7 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
     const c = cfg();
     return {
       configured: !!secrets.get('telegram.token'), paired: !!chatId(), running: !!stopPoll, enabled: c.enabled, bot: c.bot || null,
-      repos: c.repos, remote: c.remote, awake: c.awake, pairing: pairing && pairing.until > now() ? { code: pairing.code, link: c.bot ? `https://t.me/${c.bot}?start=${pairing.code}` : null } : null,
+      repos: c.repos, remote: c.remote, awake: c.awake, voiceNotes: !!c.voiceNotes, pairing: pairing && pairing.until > now() ? { code: pairing.code, link: c.bot ? `https://t.me/${c.bot}?start=${pairing.code}` : null } : null,
       ignored,
     };
   }
@@ -274,6 +274,9 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
   async function daily() {
     if (!chatId() || !stopPoll) return;
     const c = cfg();
+    // Quiet hours (M10): hold the daily messages until the window ends (the morning brief still comes if it ends before noon).
+    const ui = await bus.request(TOPICS.UI_PREFS_GET).catch(() => null);
+    if (ui && ui.quietNow) return;
     const t = new Date(now());
     const today = dayOf(now());
     if (c.morningDay !== today && t.getHours() >= 8 && t.getHours() < 12) {
@@ -297,13 +300,14 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
     changed();
   }
 
-  /** @param {{ enabled?: boolean, remote?: boolean, awake?: boolean, allow?: string, disallow?: string }} p */
+  /** @param {{ enabled?: boolean, remote?: boolean, awake?: boolean, voiceNotes?: boolean, allow?: string, disallow?: string }} p */
   function set(p) {
     const c = cfg();
     /** @type {Record<string, any>} */ const patch = {};
     if (typeof p.enabled === 'boolean') patch.enabled = p.enabled;
     if (typeof p.remote === 'boolean') patch.remote = p.remote;
     if (typeof p.awake === 'boolean') { patch.awake = p.awake; keepAwake(p.awake); }
+    if (typeof p.voiceNotes === 'boolean') patch.voiceNotes = p.voiceNotes; // same as /voice on|off on the phone
     if (p.allow) patch.repos = [...new Set([...c.repos, String(p.allow)])];
     if (p.disallow) patch.repos = c.repos.filter((r) => r.toLowerCase() !== String(p.disallow).toLowerCase());
     device.patch('telegram', patch);

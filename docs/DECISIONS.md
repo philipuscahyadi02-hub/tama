@@ -77,6 +77,10 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-045 | Voice page: VOICEVOX added (headless engine, 44 licensed TTS characters), per-Tama voice pick + tuning, mood-matched styles from the dub's feeling tag; no cloning of real people's voices | Accepted |
 | D-046 | Voice page readability: English labels from assets/voice/names.json (kana → romaji fallback); separate ▶ listen and ✓ use per style; off-screen test windows | Accepted |
 | D-047 | App icon = the active Tama's face (rendered off-screen, cached per Tama, re-rendered on restyle); tray menu grouped into submenus | Accepted |
+| D-048 | M10 = settings & polish: one Settings window over the existing services, reply language in the persona, quiet hours as scheduled DND | Accepted |
+| D-049 | Faster Japanese voice: the chat reply carries its own dub (`[[ja: …]]` while the Japanese voice is on), sentence-by-sentence synthesis, audio cache | Accepted · Refines D-043 |
+| D-050 | Reliability: window rescue from unplugged monitors; crash log + clean-quit marker + renderer reload | Accepted |
+| D-051 | Roadmap: M11 = quality control; M12 = installers (Windows + macOS) with modular capabilities instead of a portable exe | Accepted |
 
 ---
 
@@ -640,3 +644,50 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
     - Then Quit.
 - **Consequences:** The packaged exe's file icon stays static (set at build time; the exe is postponed). An egg shows the egg.
 - **Refs:** ART-4, SUM-*, src/main/platform/app-icon.js, src/renderer/icon, src/main/index.js (tray)
+
+### D-048 — M10 = settings & polish: one Settings window, reply language, quiet hours
+- **Date:** 2026-11-07 · **Status:** Accepted
+- **Context:** After M9 the user asked for quality-of-life ideas and chose a settings-and-polish milestone. Settings were spread over the tray, the Voice, Usage and Google pages and terminal commands. The chat also answered in Bahasa Indonesia when the user wrote in it, with no way to choose.
+- **Decision:**
+  - **Settings window** (`renderer/settings/`, tray "Settings…", `/settings [tab]`, `TAMA_OPEN_SETTINGS=<tab>`): tabs for her (look, motion, edge tab, terminal theme), talking & voice, quiet & moments (quiet hours, DND, nudges, weather city), phone (Telegram setup, pairing, voice notes, remote, keep awake), Google (status + the setup page), accounts & usage (Claude daily budget + the dashboard). It is a view over the existing services' bus requests; no new settings store. Detailed pages (Voice, Google setup, dashboard) open from it through `page:open`, which only accepts a fixed list of names.
+  - **Reply language** (`device.json` `ui.replyLang`: `auto` | `en` | `id` | `ja`, default `auto` = the current behavior, answering in the user's language). It is one line in the persona, so it covers chat and moments; a change rebuilds the persona, which restarts the agy sessions. `/lang`.
+  - **Quiet hours** (`ui.quiet = { on, from, to }`, HH:MM local, may cross midnight; pure `inQuietHours`). `ui.prefs.get` reports `quietNow`; events, voice and Telegram's daily messages treat it like `/dnd`. Reminders the user set still ring. `/quiet 23:00-08:00|on|off`.
+  - Page windows now also receive the `ui.prefs`, `character` and `telegram` pushes, so open pages stay in sync.
+- **Alternatives:** A separate settings store (two sources of truth); per-Tama reply language in the soul (it is the user's preference, not hers); quiet hours as a timer that flips `/dnd` (would overwrite the user's manual DND).
+- **Consequences:** New preferences get a control in the Settings window as well as a command. The remaining M10 items are SET-4..6.
+- **Refs:** SET-1..3, ONB-8, PET-6, src/renderer/settings, src/main/services/ui, src/main/brain/persona.js
+
+### D-049 — Faster Japanese voice: the reply carries its own dub, sentence-by-sentence synthesis, audio cache
+- **Date:** 2026-11-07 · **Status:** Accepted · Refines D-043 (where the dub comes from for chat replies)
+- **Context:** SET-4. Measured on the user's laptop (AivisSpeech on the GTX 1650): a dubbed chat reply started speaking 7–12 s after its text. About 4.2 s of that was the separate translation call to the composer (agy), about 3 s was synthesizing the whole line, and the composer's agy session was cold on the first line.
+- **Decision:**
+  - **Dub with the reply:** while the voice language is Japanese, the chat persona asks Gemini to end each reply with a hidden `[[ja: <feeling> | <spoken Japanese>]]` marker (short sentences of about 20 characters). The chat strips it like the other markers and attaches it to the message (`ja`); the voice service uses it directly and caches it, so the phone voice note reuses it too. The persona switches with `voice.changed`, so with English or no voice the replies cost nothing extra. Event lines and lines without a marker still use the composer translation (D-043), which is warmed once when the Japanese voice starts.
+  - **Sentence by sentence:** `services/voice/chunks.js` splits the Japanese line into sentences (very short pieces join the next; a long first sentence is cut at its first comma). Each part is sent to the pet as soon as it is synthesized, while the next one is made. The pet keeps every part of a line in order and still drops older lines.
+  - **Audio cache:** the last 40 rendered clips (engine, style, tuning, text; and the Windows voice's) are kept in memory, so repeated lines play at once.
+  - Dev: `TAMA_VOICE_TRACE=1` logs message, reply and each played part with times; `TAMA_VOICE_TEST` takes several lines separated by `||` and `TAMA_VOICE_TEST_AT=<ms>` delays it until the engine is up. `voice.skipped` reports why a chat line was not spoken.
+- **Alternatives:** Translating sentence by sentence (several agy calls on one serialized session; slower); a second agy session just for dubs (another process and login use); keeping the separate translation for chat (the 4 s we wanted gone).
+- **Consequences:** Measured: 2.4–2.6 s from the finished reply to the first sound, then the rest follows without gaps. With the Japanese voice on, each chat reply is a little longer for Gemini to write (the marker), and the Japanese may differ slightly from a separate translation. AivisSpeech needs about 2.5 s even for a short clip on this GPU; VOICEVOX is faster if the user wants less.
+- **Refs:** SET-4, VOICE-1, D-043, D-045, src/main/services/voice/{index,chunks}.js, src/main/brain/{chat,persona,compose}.js, src/renderer/pet/voice.js
+
+### D-050 — Reliability: window rescue from unplugged monitors; crash log, clean-quit marker, renderer reload
+- **Date:** 2026-11-07 · **Status:** Accepted
+- **Context:** SET-5/SET-6. The pet already came back from a missing monitor (D-019), but the chat, terminal and page windows could stay on a monitor that was unplugged. Errors only went to the console, so a crash left no trace and Tama said nothing afterwards. AGENTS.md mentions `platform/log`, which never existed.
+- **Decision:**
+  - **Window rescue:** pure `geometry.rescueRect` (a window is reachable when ≥ 120 px of its title bar is on a work area; otherwise it is centered on the cursor's display, shrunk to fit). `summoner.rescueWindows()` runs on display changes and on every summon. Windows parked off-screen by dev runs (x ≤ −3000) are left alone.
+  - **Crash log** (`platform/crash-log.js`, plain fs, unit-tested): `<data>/logs/tama-YYYY-MM-DD.log`, kept 7 days, max 2 MB per day, error messages and the top of stack traces only, with Telegram/Google/Anthropic tokens and `token=`/`Bearer` values redacted. Every `app.error` goes there too.
+  - **Clean-quit marker:** `logs/running.json` is written at start and removed after the shutdown steps on a clean quit. If it is still there at the next start, the crash is logged and she says once that she "tripped last time".
+  - **Crash guard** (`platform/crash-guard.js`): uncaught exceptions and unhandled rejections in main are logged instead of killing the app; a crashed renderer (pet, chat, terminal, pages) reloads after 1 s, at most 3 times a minute per window; crashed helper processes are logged. A short in-character note appears at most every 10 minutes.
+  - Settings: "Bring her here", "Open My Tamas…" (file backup), "Back up now" (Drive), "Open logs".
+- **Alternatives:** A logging library (new dependency for a few lines); sending crash reports online (data would leave the PC); restarting the whole app on any error (loses state; one window reload is enough).
+- **Consequences:** `platform/crash-log` is the `platform/log` that AGENTS.md refers to. Keeping the app alive after an uncaught exception can leave a service in a bad state; the log makes it visible. The renderer reload was not forced in a live test (it needs a real renderer crash); the clean-quit detection was tested live.
+- **Refs:** SET-5, SET-6, SUM-2, NFR-2, D-019, src/main/platform/{crash-log,crash-guard}.js, src/main/platform/summon
+
+### D-051 — Roadmap: M11 quality control; M12 installers for Windows and macOS with modular capabilities
+- **Date:** 2026-11-07 · **Status:** Accepted · Replaces NFR-3's portable exe (postponed since 2026-11-06)
+- **Context:** The user asked for M11 to be quality control and an architecture review (remove what slows Tama down or is unused), and for M12 to ship with an installer instead of an instant exe, because users have to install Claude Code, agy and the voice engines themselves. Tama should be modular (e.g. someone with only an Antigravity account), and ship for Windows and macOS.
+- **Decision:**
+  - **M11 (QC-1..6):** an architecture check script in `npm run check`, dead-code removal, a repeatable performance run (`npm run perf`) with fixes, a module-by-module review against AGENTS rules, a coverage report with new tests, and a security pass.
+  - **M12 (SHIP-1..7):** a Windows installer (per-user, Start menu, uninstaller that asks about her data) and a macOS `.dmg`; a capability model where each feature declares what it needs (Claude Code, agy, a voice engine, Google, Telegram) and explains itself when that is missing; a first-run setup wizard (also in Settings) that detects and guides each install with official links and sign-ins; optional components (voice engines) downloaded on demand with checksums, never bundled; updates; signing decided before release.
+- **Alternatives:** A portable exe (users still have to find and install every dependency by hand); bundling Claude Code, agy or the voice engines in the installer (their own licenses and sign-ins, several GB, and they update separately).
+- **Consequences:** M12 needs mac versions of the Windows-only parts (SAPI voice, PowerShell fullscreen helper, `run.exe` engines, `%LOCALAPPDATA%` paths, tray icon sizes). Windows code signing and Apple notarization need paid certificates or accounts; the user decides before release. The terminal stays Claude-only (D-029), so with only agy the coding terminal is hidden or explains how to add Claude Code.
+- **Refs:** QC-1..6, SHIP-1..7, NFR-1, NFR-3, D-005, D-006, D-029

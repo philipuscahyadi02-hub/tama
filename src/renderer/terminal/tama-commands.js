@@ -31,6 +31,8 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
     '  /memory          what your Tama remembers about you · /remember <fact> · /forget <n|all>',
     '  /diary [date]    read their diary (they write one every evening) · /diary list',
     '  /event [id]      start a little moment now · /dnd [on|off] quiet mode · /nudges [on|off] water & stretch',
+    '  /settings        every setting in one window',
+    '  /quiet 23:00-08:00  quiet hours every night (/quiet off) · /lang auto|en|id|ja  her reply language',
     '  /voice pick      choose & tune her voice · /voice en|ja|off · /voice test · /mute · /motion auto|reduced|full',
     '  /google [setup|status|login|logout|brief|backup|backups|restore <n>|readonly on|off|maps-key <key|off>]   Gmail, Calendar, Drive, Docs, Sheets',
     '  /brief           morning brief (calendar, important mail, todos) · /newpc  checklist for a new PC',
@@ -163,6 +165,27 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
         const on = arg ? /^(on|1|yes)$/i.test(arg) : !p.dnd;
         await K.ui.setPrefs({ dnd: on });
         info(on ? '⎿  🤫 quiet mode on: no events until /dnd off' : '⎿  quiet mode off~');
+      }],
+      // ---- M10 (D-048) ----
+      settings: ['Open the Settings window', async (arg) => { K.openSettings(String(arg || '').trim()); info('⎿  ⚙️ opening Settings~'); }],
+      quiet: ['Quiet hours: /quiet 23:00-08:00 | on | off', async (arg) => {
+        const a = String(arg || '').trim().toLowerCase();
+        const m = a.match(/^(\d{1,2}:\d{2})\s*[-–to ]+\s*(\d{1,2}:\d{2})$/);
+        const pad = (/** @type {string} */ t) => t.padStart(5, '0');
+        let r;
+        if (m) r = await K.ui.setPrefs({ quiet: { on: true, from: pad(m[1]), to: pad(m[2]) } });
+        else if (/^(on|off)$/.test(a)) r = await K.ui.setPrefs({ quiet: { on: a === 'on' } });
+        else r = await K.ui.prefs();
+        if (r.error) return info(`⎿  ${r.error}`);
+        const q = r.quiet;
+        info(q.on ? `⎿  🌙 quiet hours ${q.from}–${q.to}: no voice, moments or phone messages${r.quietNow ? ' (quiet right now)' : ''} · /quiet off` : '⎿  quiet hours off · /quiet 23:00-08:00 to set them');
+      }],
+      lang: ['Her reply language: /lang auto|en|id|ja', async (arg) => {
+        const NAMES = { auto: 'same as yours', en: 'English', id: 'Bahasa Indonesia', ja: 'Japanese' };
+        const a = String(arg || '').trim().toLowerCase();
+        const r = a ? await K.ui.setPrefs({ replyLang: a }) : await K.ui.prefs();
+        if (r.error) return info(`⎿  ${r.error}`);
+        info(`⎿  🗣️ she replies in: ${NAMES[r.replyLang] || r.replyLang}${a ? ' (from her next message)' : ''} · /lang auto|en|id|ja`);
       }],
       nudges: ['Water & stretch reminders on/off', async (arg) => {
         const p = await K.ui.prefs();

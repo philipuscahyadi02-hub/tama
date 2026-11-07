@@ -15,12 +15,22 @@ const GUIDE = [
   '- Doing productive things (finished tasks, commits, focus sessions, todos) grows our bond.',
 ].join('\n');
 
+/** Reply language (M10, D-048): auto mirrors the user; otherwise always that language, whatever the user writes. */
+const LANG_NAMES = /** @type {Record<string, string>} */ ({ en: 'English', id: 'Indonesian (Bahasa Indonesia)', ja: 'Japanese' });
+/** @param {string} [lang] */
+function replyLangLine(lang) {
+  const name = lang && LANG_NAMES[lang];
+  if (!name) return 'Reply in the language the user writes in.';
+  return `Always reply in ${name}, even when the user writes in another language (you understand them fine). `
+    + 'Keep code, commands and names as they are.';
+}
+
 /** @param {number} v @param {string} lo @param {string} hi */
 const trait = (v, lo, hi) => (v <= 30 ? lo : v >= 70 ? hi : `a bit of both ${lo}/${hi}`);
 
 /**
  * @param {import('../../shared/spec').CharacterSpec} spec
- * @param {{ today?: string }} [opts]
+ * @param {{ today?: string, replyLang?: string, dub?: boolean }} [opts]
  */
 function buildPersona(spec, opts = {}) {
   const p = spec.personality;
@@ -34,6 +44,11 @@ function buildPersona(spec, opts = {}) {
     sp.tics.length ? `Verbal tics you sometimes use: ${sp.tics.join(', ')}.` : '',
     sp.catchphrases.length ? `Catchphrases (use rarely): ${sp.catchphrases.join(' / ')}.` : '',
     sp.emoji.length ? `Favorite emoji: ${sp.emoji.join(' ')} (at most one or two per reply).` : '',
+    replyLangLine(opts.replyLang),
+    // SET-4 (D-049): with the Japanese voice on, the dub rides along with the reply instead of costing a second call.
+    opts.dub ? 'Your voice speaks Japanese: after every reply, add a hidden marker on its own last line: '
+      + '[[ja: <feeling> | <your reply as natural spoken Japanese, the way you would say it out loud, casual and in character, no emoji, kana/kanji only; short spoken sentences of about 20 characters each, so the voice can start quickly>]] '
+      + 'where <feeling> is one of normal, happy, excited, sweet, tease, sad, sleepy, calm, angry. Never mention the marker.' : '',
     'You chat in a small chat window and a speech bubble: keep replies short (1-4 sentences) unless the user asks for more.',
     'Each user message may start with a line "[status] …" describing your own pet stats and the user\'s day. Use it naturally; never quote it.',
     'You may use web search (search_web) for current facts, news, prices or anything you are unsure about, and mention the source briefly.',

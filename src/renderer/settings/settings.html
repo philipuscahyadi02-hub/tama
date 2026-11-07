@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data: blob:" />
+  <title>Settings</title>
+  <link rel="stylesheet" href="../dashboard/dashboard.css" />
+  <link rel="stylesheet" href="settings.css" />
+</head>
+<body>
+  <header><h1>⚙️ Settings</h1><span class="spacer"></span><span class="msg" id="msg"></span></header>
+  <div class="layout">
+    <nav id="nav">
+      <button data-tab="her" class="on">🎀 <span id="navName">Her</span></button>
+      <button data-tab="talk">🗣️ Talking &amp; voice</button>
+      <button data-tab="quiet">🌙 Quiet &amp; moments</button>
+      <button data-tab="phone">📱 Phone</button>
+      <button data-tab="google">🔗 Google</button>
+      <button data-tab="accounts">📊 Accounts &amp; usage</button>
+    </nav>
+    <main>
+      <!-- Her -->
+      <section data-pane="her">
+        <div class="card"><h3 id="herName">—</h3><div class="kv dim" id="herInfo"></div>
+          <div class="btns"><button data-open="roster">My Tamas…</button><button data-open="restyle">Restyle…</button><button data-open="rebirth">Rebirth…</button></div></div>
+        <div class="card"><h3>Can't find her?</h3>
+          <div class="set"><span>Brings her (and Tama's windows) to the screen your mouse is on. Same as Ctrl+Alt+P.</span><button class="primary" id="summon">Bring her here</button></div></div>
+        <div class="card"><h3>Backup &amp; moving</h3>
+          <div class="set"><span>Save her to a <b>.tama</b> file (optionally with a password), or load one: in My Tamas.</span><button data-open="roster">Open My Tamas…</button></div>
+          <div class="set"><span id="driveInfo">Google Drive backup: connect Google first.</span><button id="driveNow" disabled>Back up now</button></div></div>
+        <div class="card"><h3>Movement</h3>
+          <div class="set"><span>Animations</span><div class="seg" data-pref="motion"><button data-v="auto">Auto</button><button data-v="reduced">Reduced</button><button data-v="full">Full</button></div></div>
+          <div class="kv dim">Auto follows Windows' "Animation effects". Reduced stops wandering and bouncing.</div>
+          <label class="set"><span>Edge tab while she's hidden</span><input type="checkbox" data-pref="walkMarker" /></label>
+          <div class="set"><span>Terminal theme</span><select id="termTheme"></select></div>
+        </div>
+      </section>
+
+      <!-- Talking & voice -->
+      <section data-pane="talk" hidden>
+        <div class="card"><h3>She replies in</h3>
+          <div class="seg" data-pref="replyLang"><button data-v="auto">Same as you</button><button data-v="en">English</button><button data-v="id">Bahasa Indonesia</button><button data-v="ja">Japanese</button></div>
+          <div class="kv dim">"Same as you" answers in the language you write in. The others always answer in that language, also for her little moments.</div></div>
+        <div class="card"><h3>Her voice</h3>
+          <div class="seg" id="voiceLang"><button data-v="en">English</button><button data-v="ja">Japanese dub</button><button data-v="off">No voice</button></div>
+          <div class="kv dim" id="voiceInfo"></div>
+          <label class="set"><span>Speak chat replies</span><input type="checkbox" data-voice="chat" /></label>
+          <label class="set"><span>Speak her moments</span><input type="checkbox" data-voice="events" /></label>
+          <label class="set"><span>Mute everything</span><input type="checkbox" data-pref="mute" /></label>
+          <div class="btns"><button class="primary" data-open="voice">Choose &amp; tune her voice…</button><button id="voiceTest">▶ Test</button></div></div>
+      </section>
+
+      <!-- Quiet & moments -->
+      <section data-pane="quiet" hidden>
+        <div class="card"><h3>Quiet hours</h3>
+          <label class="set"><span>Every day</span><input type="checkbox" id="qOn" /></label>
+          <div class="set"><span>From <input type="time" id="qFrom" /> to <input type="time" id="qTo" /></span><span class="badge" id="qNow"></span></div>
+          <div class="kv dim">No voice, no pop-up moments and no daily phone messages in this window. Reminders you set still ring.</div></div>
+        <div class="card"><h3>Right now</h3>
+          <label class="set"><span>Do not disturb (until you turn it off)</span><input type="checkbox" data-pref="dnd" /></label>
+          <label class="set"><span>Water &amp; stretch nudges</span><input type="checkbox" data-pref="nudges" /></label></div>
+        <div class="card"><h3>Weather moments</h3>
+          <div class="set"><span>City <input id="city" placeholder="e.g. Jakarta" /></span><span><button id="citySave">Save</button> <button id="cityOff">Off</button></span></div>
+          <div class="kv dim" id="cityInfo"></div></div>
+      </section>
+
+      <!-- Phone -->
+      <section data-pane="phone" hidden>
+        <div class="card"><h3>Telegram <span class="badge" id="tgBadge"></span></h3><div class="kv" id="tgInfo"></div>
+          <div id="tgSetup" class="set" hidden><span>Bot token <input id="tgToken" type="password" placeholder="123456789:AA… from @BotFather" /></span><button class="primary" id="tgSave">Connect</button></div>
+          <div id="tgOpts" hidden>
+            <label class="set"><span>Bot on</span><input type="checkbox" data-tg="enabled" /></label>
+            <label class="set"><span>Voice notes with every reply</span><input type="checkbox" data-tg="voiceNotes" /></label>
+            <label class="set"><span>Allow /code from the phone</span><input type="checkbox" data-tg="remote" /></label>
+            <label class="set"><span>Keep the PC awake for the phone</span><input type="checkbox" data-tg="awake" /></label>
+            <div class="btns"><button id="tgCode">New pairing code</button><button id="tgUnpair">Unpair phone</button></div></div></div>
+      </section>
+
+      <!-- Google -->
+      <section data-pane="google" hidden>
+        <div class="card"><h3>Google <span class="badge" id="gBadge"></span></h3><div class="kv" id="gInfo"></div>
+          <div class="btns"><button class="primary" data-open="google">Open Google setup…</button></div></div>
+      </section>
+
+      <!-- Accounts & usage -->
+      <section data-pane="accounts" hidden>
+        <div class="card"><h3>Claude daily budget</h3>
+          <div class="set"><span>Warn at $<input id="budget" type="number" min="0" max="1000" step="1" class="num" /> a day (API-price estimate)</span><button id="budgetSave">Save</button></div></div>
+        <div class="card"><h3>Accounts, usage and limits</h3>
+          <div class="btns"><button class="primary" data-open="dashboard">Usage &amp; accounts…</button><button data-open="limits">Limits left…</button></div></div>
+        <div class="card"><h3>Problems</h3>
+          <div class="set"><span>Errors and crashes are written to a small log on this PC (kept 7 days, secrets removed, never your chats or files).</span><button id="logs">Open logs</button></div></div>
+      </section>
+    </main>
+  </div>
+  <script src="../../shared/palette.js"></script>
+  <script src="../../shared/catalog.js"></script>
+  <script src="../../shared/spec.js"></script>
+  <script src="../../shared/theme.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>

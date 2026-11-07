@@ -47,7 +47,7 @@ past decisions → `docs/DECISIONS.md`.
 - One module = one folder = one responsibility, with a public `index.js`.
 - Pure functions for game math (decay, bond XP, caps) so they're trivially testable.
 - No new npm dependency without a reason. A heavy or native dependency needs a DECISIONS entry.
-- Errors: never swallow silently. Log through `platform/log` with a tag; user-facing failures get an in-character message plus the real error in logs.
+- Errors: never swallow silently. Log through `platform/crash-log` (or emit `app.error`, which is logged) with a tag; user-facing failures get an in-character message plus the real error in logs.
 - Async: no floating promises in main. Every long-running thing (engine, poller, watcher) has `start()` and `stop()` and is stopped on quit.
 - Tests: `node:test` next to the module (`*.test.js`). Required for services, store migrations, router and PermissionGate. Game-balance numbers get table tests.
 - Comments explain **why**, not what. Code ported from kero-pet keeps a `// Ported from kero-pet/<file>` note.
@@ -92,7 +92,8 @@ Debug env vars: `TAMA_DEBUG=1`, `TAMA_SHOT=<dir>` (screenshots, `TAMA_SHOT_TIMES
 `TAMA_OPEN_ROSTER=1`, `TAMA_OPEN_CHAT=1`, `TAMA_OPEN_GOOGLE=1`, `TAMA_OPEN_DASHBOARD=1`, `TAMA_PET_EVAL=<js>` / `TAMA_TERM_EVAL=<js>` / `TAMA_CHAT_EVAL=<js>` (run JS in the pet / terminal / chat window after load;
 `TAMA_DEBUG=1` also logs terminal engine events).
 `TAMA_HIDE_PET=1` hides the pet shortly after start (as if by Show / Hide), for walk-marker checks.
-`TAMA_VOICE_TEST=<text>` speaks the text once, then renders + encodes it as a Telegram voice note and logs the sizes.
-`TAMA_OPEN_DASHBOARD=limits` opens the dashboard on the Limits tab. `TAMA_OPEN_VOICE=1` opens the Voice page.
+`TAMA_VOICE_TEST=<text>` speaks the text once (several lines: `a||b`, each logs `firstMs`), then renders + encodes it as a Telegram voice note and logs the sizes; `TAMA_VOICE_TEST_AT=<ms>` delays it until engines are up.
+`TAMA_VOICE_TRACE=1` logs chat message → reply → each voice part with times (a reply skipped by quiet rules is spoken via the test path).
+`TAMA_OPEN_DASHBOARD=limits` opens the dashboard on the Limits tab. `TAMA_OPEN_VOICE=1` opens the Voice page. `TAMA_OPEN_SETTINGS=1|her|talk|quiet|phone|google|accounts` opens Settings (on that tab).
 `TAMA_QUIT_AFTER=<ms>` quits cleanly (stoppers run) — use it for live tests instead of killing Electron.
 `TAMA_SHOT_OFFSCREEN=1` opens page windows off-screen (no pop-up over the user's work; screenshots still work).

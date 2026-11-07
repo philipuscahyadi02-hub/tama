@@ -32,6 +32,10 @@ contextBridge.exposeInMainWorld('tama', {
   /** App icon page (D-047): the face is drawn, capture it. */
   iconReady: () => ipcRenderer.send('icon:ready'),
   openOnboarding: (/** @type {string} */ mode) => ipcRenderer.send('onboarding:open', mode || 'hatch'),
+  /** Settings window (M10) and the pages it links to: voice, google, dashboard, limits, settings. */
+  openSettings: (/** @type {string|undefined} */ tab) => ipcRenderer.send('settings:open', tab || ''),
+  openPage: (/** @type {string} */ name) => ipcRenderer.send('page:open', String(name)),
+  openLogs: () => ipcRenderer.send('logs:open'),
 
   // ---- onboarding window ----
   designerGenerate: (/** @type {any} */ req) => ipcRenderer.invoke('designer:generate', req),
