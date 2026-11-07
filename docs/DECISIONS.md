@@ -77,6 +77,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-045 | Voice page: VOICEVOX added (headless engine, 44 licensed TTS characters), per-Tama voice pick + tuning, mood-matched styles from the dub's feeling tag; no cloning of real people's voices | Accepted |
 | D-046 | Voice page readability: English labels from assets/voice/names.json (kana → romaji fallback); separate ▶ listen and ✓ use per style; off-screen test windows | Accepted |
 | D-047 | App icon = the active Tama's face (rendered off-screen, cached per Tama, re-rendered on restyle); tray menu grouped into submenus | Accepted |
+| D-048 | M10 = settings & polish: one Settings window over the existing services, reply language in the persona, quiet hours as scheduled DND | Accepted |
 
 ---
 
@@ -640,3 +641,15 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
     - Then Quit.
 - **Consequences:** The packaged exe's file icon stays static (set at build time; the exe is postponed). An egg shows the egg.
 - **Refs:** ART-4, SUM-*, src/main/platform/app-icon.js, src/renderer/icon, src/main/index.js (tray)
+
+### D-048 — M10 = settings & polish: one Settings window, reply language, quiet hours
+- **Date:** 2026-11-07 · **Status:** Accepted
+- **Context:** After M9 the user asked for quality-of-life ideas and chose a settings-and-polish milestone. Settings were spread over the tray, the Voice, Usage and Google pages and terminal commands. The chat also answered in Bahasa Indonesia when the user wrote in it, with no way to choose.
+- **Decision:**
+  - **Settings window** (`renderer/settings/`, tray "Settings…", `/settings [tab]`, `TAMA_OPEN_SETTINGS=<tab>`): tabs for her (look, motion, edge tab, terminal theme), talking & voice, quiet & moments (quiet hours, DND, nudges, weather city), phone (Telegram setup, pairing, voice notes, remote, keep awake), Google (status + the setup page), accounts & usage (Claude daily budget + the dashboard). It is a view over the existing services' bus requests; no new settings store. Detailed pages (Voice, Google setup, dashboard) open from it through `page:open`, which only accepts a fixed list of names.
+  - **Reply language** (`device.json` `ui.replyLang`: `auto` | `en` | `id` | `ja`, default `auto` = the current behavior, answering in the user's language). It is one line in the persona, so it covers chat and moments; a change rebuilds the persona, which restarts the agy sessions. `/lang`.
+  - **Quiet hours** (`ui.quiet = { on, from, to }`, HH:MM local, may cross midnight; pure `inQuietHours`). `ui.prefs.get` reports `quietNow`; events, voice and Telegram's daily messages treat it like `/dnd`. Reminders the user set still ring. `/quiet 23:00-08:00|on|off`.
+  - Page windows now also receive the `ui.prefs`, `character` and `telegram` pushes, so open pages stay in sync.
+- **Alternatives:** A separate settings store (two sources of truth); per-Tama reply language in the soul (it is the user's preference, not hers); quiet hours as a timer that flips `/dnd` (would overwrite the user's manual DND).
+- **Consequences:** New preferences get a control in the Settings window as well as a command. The remaining M10 items are SET-4..6.
+- **Refs:** SET-1..3, ONB-8, PET-6, src/renderer/settings, src/main/services/ui, src/main/brain/persona.js

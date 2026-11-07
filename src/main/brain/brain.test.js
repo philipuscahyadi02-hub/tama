@@ -23,6 +23,11 @@ test('persona: built from the spec, read-only chat with web search, knows how th
   assert.match(p, /read-only/);
   assert.match(p, /Ctrl\+Alt\+K/); // can guide the user to the terminal
   assert.match(p, /\/cd/);
+  assert.match(p, /language the user writes in/); // M10: auto mirrors the user
+  const en = persona.buildPersona(normalizeSpec({ name: 'Mochi' }), { replyLang: 'en' });
+  assert.match(en, /Always reply in English/);
+  assert.doesNotMatch(en, /language the user writes in/);
+  assert.match(persona.buildPersona(normalizeSpec({ name: 'Mochi' }), { replyLang: 'id' }), /Bahasa Indonesia/);
   const line = persona.statusLine({ state: { hunger: 10, happy: 50, energy: 80, clean: 90, streak: { count: 3 } }, level: { title: 'Buddy' } }, { todos: [{ done: false }], focus: { phase: 'focus' } });
   assert.match(line, /you feel hungry/);
   assert.match(line, /3-day streak/);

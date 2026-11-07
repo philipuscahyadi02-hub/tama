@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.21 |
+| **Version** | 0.22 |
 | **Status** | v0.9.0 released (M0–M9). M10 (settings & polish) in progress on `m10-settings`; portable .exe postponed |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-07 |
@@ -61,7 +61,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | ONB-5 | Name + personality sliders (energy, tsundere, formality, chaos), prefilled from spec. | P0 | M1 | ☑ |
 | ONB-6 | Free-text **voice prompt**; produces a `VoiceSpec` + playable preview; can regenerate. | P0 | M1 | ☑ |
 | ONB-7 | Detect & smoke-test engines (`claude`, `agy`); show login instructions if missing. | P0 | M3 | ☑ |
-| ONB-8 | Optional steps: Telegram pairing, Google sign-in. Skippable, available later in settings. | P1 | M6/M7 | ◐ |
+| ONB-8 | Optional steps: Telegram pairing, Google sign-in. Skippable, available later in settings. *(Settings window, Phone and Google tabs: SET-1, M10.)* | P1 | M6/M7 | ☑ |
 | ONB-9 | First screen offers "Hatch new 🥚" or "Bring my Tama 📦" (import/restore). | P0 | M2 | ☑ |
 
 ### 4.2 Character & art (ART)
@@ -96,6 +96,16 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | PROD-1 | Todos (`/todo`), focus timer (`/focus 25`), reminders (`/remind`), notes (`/note`). Shared across desktop & Telegram. | P0 | M2 | ☑ |
 | PROD-2 | Git commit watcher for user-chosen repos. | P1 | M2 | ☑ |
 | PROD-3 | Google Tasks sync for todos. | P2 | M6 | ☐ |
+
+### 4.3b Settings & quality of life (SET), M10
+| ID | Requirement | Pri | MS | Status |
+|---|---|---|---|---|
+| SET-1 | One Settings window (tray "Settings…", `/settings`) with tabs: her (look, motion), talking & voice, quiet & moments, phone, Google, accounts & usage. Other pages open from it. *(D-048.)* | P1 | M10 | ☑ |
+| SET-2 | Reply language: same as the user (default), or always English / Bahasa Indonesia / Japanese, for chat and moments (`/lang`). *(D-048.)* | P1 | M10 | ☑ |
+| SET-3 | Quiet hours (e.g. 23:00–08:00): no voice, no pop-up moments, no daily phone messages; reminders still ring (`/quiet`). *(D-048.)* | P1 | M10 | ☑ |
+| SET-4 | Faster voice: first sound within about 2–3 s (speak sentence by sentence, start the engine when the chat opens, cache frequent lines). | P1 | M10 | ☐ |
+| SET-5 | "Where is she?": bring her back from a missing monitor; `.tama` backup/restore in Settings. | P2 | M10 | ☐ |
+| SET-6 | Crash safety: a crash log and a "Tama restarted after a problem" note instead of failing silently. | P2 | M10 | ☐ |
 
 ### 4.5 Events & conversations (EVT)
 | ID | Requirement | Pri | MS | Status |
@@ -220,6 +230,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M6 — Google.** *(released as 0.6.0; Tasks sync, Docs replace-section and a hard device lock deferred)* OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
 - [x] **M7 — Telegram.** *(released as 0.7.0; voice notes in M9)* (TG-*, ART-5, SAFE-3).
 - [x] **M8 — Usage & accounts dashboard.** *(released as 0.8.0)* Usage log, dashboard, Limits tab (what's left), account switching (USE-1..7, D-040, D-041).
+- [ ] **M10 — Settings & polish.** One Settings window, reply language, quiet hours, faster voice, small reliability fixes (SET-1..6, ONB-8, NFR-1, NFR-2).
 - [x] **M9 — Voice & polish.** *(released as 0.9.0; phone → Tama speech-to-text (VOICE-4) deferred)* AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
 
 ## 6. Open questions
@@ -231,6 +242,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.22 — 2026-11-07** — M10 Settings & polish planned (SET-1..6); SET-1..3 and ONB-8 done (D-048).
 - **0.21 — 2026-11-07** — v0.9.0 released (M9).
 - **0.20 — 2026-11-07** — New VOICE-5: Voice page with VOICEVOX characters, tuning and mood-matched styles (D-045).
 - **0.19 — 2026-11-07** — VOICE-1: Tama starts/stops the headless AivisSpeech Engine (GPU) with the Japanese dub (D-044).

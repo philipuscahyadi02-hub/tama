@@ -4,11 +4,30 @@
 const { TOPICS } = require('../../bus-topics');
 const theme = require('../../../shared/theme');
 
+/** Reply languages for chat and moments (M10, D-048). auto = answer in the language the user writes in. */
+const REPLY_LANGS = ['auto', 'en', 'id', 'ja'];
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 /**
- * @param {{ bus: import('../../bus').BusInstance, device: import('../../platform/store/device').DeviceSettings }} deps
+ * Is `d` inside the quiet window from..to (HH:MM, local time)? A window may cross midnight (23:00–08:00). Pure.
+ * @param {Date} d @param {string} from @param {string} to
  */
-function createUiPrefs({ bus, device }) {
-  const prefs = () => ({ termTheme: 'night', tourDone: false, dnd: false, nudges: true, walkMarker: true, mute: false, motion: 'auto', ...(device.get().ui || {}) });
+function inQuietHours(d, from, to) {
+  if (!HHMM.test(from) || !HHMM.test(to) || from === to) return false;
+  const m = (/** @type {string} */ s) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3));
+  const t = d.getHours() * 60 + d.getMinutes();
+  const a = m(from); const b = m(to);
+  return a < b ? t >= a && t < b : t >= a || t < b;
+}
+
+/**
+ * @param {{ bus: import('../../bus').BusInstance, device: import('../../platform/store/device').DeviceSettings, now?: () => number }} deps
+ */
+function createUiPrefs({ bus, device, now = () => Date.now() }) {
+  const prefs = () => ({
+    termTheme: 'night', tourDone: false, dnd: false, nudges: true, walkMarker: true, mute: false, motion: 'auto',
+    replyLang: 'auto', quiet: { on: false, from: '23:00', to: '08:00' }, ...(device.get().ui || {}),
+  });
 
   async function levelIndex() {
     const pet = await bus.request(TOPICS.PET_GET).catch(() => null);
@@ -23,11 +42,15 @@ function createUiPrefs({ bus, device }) {
     const termTheme = theme.VARIANTS.some((v) => v.id === p.termTheme) ? p.termTheme : 'night';
     return {
       termTheme, tourDone: !!p.tourDone, unlocked, dnd: !!p.dnd, nudges: p.nudges !== false, walkMarker: p.walkMarker !== false, mute: !!p.mute, motion: p.motion || 'auto',
+      replyLang: REPLY_LANGS.includes(p.replyLang) ? p.replyLang : 'auto',
+      quiet: { on: !!(p.quiet && p.quiet.on), from: (p.quiet && p.quiet.from) || '23:00', to: (p.quiet && p.quiet.to) || '08:00' },
+      // Quiet hours (M10): like /dnd while inside the window. Consumers check `dnd || quietNow`.
+      quietNow: !!(p.quiet && p.quiet.on && inQuietHours(new Date(now()), p.quiet.from, p.quiet.to)),
       variants: theme.VARIANTS.map((v) => ({ ...v, unlocked: unlocked.includes(v.id) })),
     };
   }
 
-  /** @param {{ termTheme?: string, tourDone?: boolean, dnd?: boolean, nudges?: boolean, walkMarker?: boolean, mute?: boolean, motion?: string }} p */
+  /** @param {{ termTheme?: string, tourDone?: boolean, dnd?: boolean, nudges?: boolean, walkMarker?: boolean, mute?: boolean, motion?: string, replyLang?: string, quiet?: { on?: boolean, from?: string, to?: string } }} p */
   async function set(p) {
     /** @type {Record<string, any>} */
     const patch = {};
@@ -43,6 +66,16 @@ function createUiPrefs({ bus, device }) {
     if (p.mute !== undefined) patch.mute = !!p.mute;        // PET-8: no voice at all
     if (['auto', 'reduced', 'full'].includes(String(p.motion))) patch.motion = p.motion; // PET-8: auto = follow Windows
     if (p.walkMarker !== undefined) patch.walkMarker = !!p.walkMarker; // SUM-5: edge marker while hidden (D-035)
+    if (p.replyLang !== undefined) {
+      if (!REPLY_LANGS.includes(String(p.replyLang))) return { error: `Unknown language. Try: ${REPLY_LANGS.join(', ')}` };
+      patch.replyLang = String(p.replyLang);
+    }
+    if (p.quiet && typeof p.quiet === 'object') {
+      const cur = prefs().quiet || {};
+      const q = { on: p.quiet.on !== undefined ? !!p.quiet.on : !!cur.on, from: p.quiet.from ?? cur.from ?? '23:00', to: p.quiet.to ?? cur.to ?? '08:00' };
+      if (!HHMM.test(q.from) || !HHMM.test(q.to)) return { error: 'Times look like 23:00 and 08:00.' };
+      patch.quiet = q;
+    }
     device.patch('ui', patch);
     const out = await get();
     bus.emit(TOPICS.UI_PREFS_CHANGED, out);
@@ -68,4 +101,4 @@ function createUiPrefs({ bus, device }) {
   return { start, get, set };
 }
 
-module.exports = { createUiPrefs };
+module.exports = { createUiPrefs, inQuietHours, REPLY_LANGS };

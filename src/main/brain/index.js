@@ -140,9 +140,12 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
     return status();
   }
 
+  let lastSpec = /** @type {any} */ (null);
+  let replyLang = 'auto';
   /** @param {any} spec */
   function updatePersona(spec) {
-    personaText = persona.buildPersona(spec, { today: new Date(now()).toDateString() });
+    lastSpec = spec;
+    personaText = persona.buildPersona(spec, { today: new Date(now()).toDateString(), replyLang });
     chat.setPersona(personaText);
     composer.setPersona(personaText);
   }
@@ -187,6 +190,11 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
       bus.handle(TOPICS.BRAIN_SET, setBrain),
       bus.handle(TOPICS.BRAIN_COMPOSE, (/** @type {any} */ p) => composer.compose({ kind: p && (p.kind === 'diary' || p.kind === 'translate') ? p.kind : 'line', seed: String((p && p.seed) || '') })),
       bus.on(TOPICS.CHARACTER_CHANGED, (/** @type {any} */ c) => { updatePersona(c.spec); }),
+      // Reply language (M10): a new persona restarts the agy sessions, so the next reply uses it.
+      bus.on(TOPICS.UI_PREFS_CHANGED, (/** @type {any} */ u) => {
+        const l = (u && u.replyLang) || 'auto';
+        if (l !== replyLang) { replyLang = l; if (lastSpec) updatePersona(lastSpec); }
+      }),
       // A different Gemini (agy) account: start fresh agy sessions (D-040).
       bus.on(TOPICS.ACCOUNTS_CHANGED, () => { chat.reset(); composer.stop(); }),
       // Google tools for the chat brain come and go with sign-in (D-037): restart its session when that flips.
@@ -195,7 +203,8 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
         if (signedIn !== googleSignedIn) { googleSignedIn = signedIn; chat.reset(); }
       }),
     ];
-    bus.request(TOPICS.CHARACTER_GET).then((c) => updatePersona(c.spec)).catch(() => null);
+    Promise.all([bus.request(TOPICS.CHARACTER_GET), bus.request(TOPICS.UI_PREFS_GET).catch(() => null)])
+      .then(([c, u]) => { replyLang = (u && u.replyLang) || 'auto'; updatePersona(c.spec); }).catch(() => null);
     return () => { for (const off of offs) off(); stopChat(); composer.stop(); if (claude) claude.stop(); };
   }
 

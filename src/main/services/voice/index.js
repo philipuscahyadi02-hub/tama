@@ -167,7 +167,7 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
       const [ui, prod, pet] = await Promise.all([
         bus.request(TOPICS.UI_PREFS_GET).catch(() => null), bus.request(TOPICS.PROD_GET).catch(() => null), bus.request(TOPICS.PET_GET).catch(() => null),
       ]);
-      if (ui && (ui.mute || ui.dnd)) return { ok: false, reason: ui.mute ? 'muted' : 'dnd' };
+      if (ui && (ui.mute || ui.dnd || ui.quietNow)) return { ok: false, reason: ui.mute ? 'muted' : ui.dnd ? 'dnd' : 'quiet hours' };
       if (prod && prod.focus && prod.focus.phase === 'focus') return { ok: false, reason: 'focus' };
       if (pet && pet.state && pet.state.asleep) return { ok: false, reason: 'asleep' };
     }

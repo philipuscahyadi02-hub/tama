@@ -15,7 +15,12 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
 
 ## [Unreleased]
-_Nothing yet._
+### Added
+- **M10 Settings & polish** (branch `m10-settings`, D-048):
+  - **Settings window** (tray → Settings…, or `/settings`): her look and motion, talking & voice, quiet hours, phone (Telegram), Google, accounts and the Claude budget, all in one place. The Voice, Google and Usage pages open from it.
+  - **Reply language:** she answers in your language (as before), or always in English, Bahasa Indonesia or Japanese. `/lang auto|en|id|ja`.
+  - **Quiet hours:** e.g. 23:00–08:00, no voice, pop-up moments or daily phone messages; your reminders still ring. `/quiet 23:00-08:00|on|off`.
+  - Telegram voice notes can be switched on from the PC too.
 
 ## [0.9.0] — 2026-11-07 — M9 Voice & polish
 ### Added
@@ -207,7 +212,9 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `82cf1cb` | 2026-11-07 | docs(changelog) | regenerate commit table |
 
 ### v0.9.0
 | Commit | Date | Type | Subject |

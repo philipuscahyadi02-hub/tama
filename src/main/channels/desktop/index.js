@@ -19,10 +19,11 @@ const USER_ACTIONS = new Set(['feed', 'snack', 'play', 'clean', 'sleep', 'nap', 
  *   openGoogle: () => unknown,
  *   openDashboard: (tab?: string) => unknown,
  *   openVoice: () => unknown,
+ *   openSettings?: (tab?: string) => unknown,
  *   pages?: () => Array<import('electron').BrowserWindow>,
  * }} deps
  */
-function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, pages }) {
+function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings = () => null, pages }) {
   /** The last .tama file the user picked; import only ever reads this path, never one sent by a page. */
   let pickedImport = /** @type {string | null} */ (null);
   const both = () => [pet.win, term.window(), chat.window()];
@@ -31,7 +32,7 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
   /** Fire-and-forget request; failures surface on app.error instead of becoming unhandled rejections. @param {string} topic @param {any} [payload] */
   const fire = (topic, payload) => { bus.request(topic, payload).catch((e) => bus.emit(TOPICS.APP_ERROR, { topic, message: String(e.message || e) })); };
   /** @param {string} name @param {any} payload */
-  const toAll = (name, payload) => { for (const w of both()) ipc.sendUi(w, name, payload); };
+  const toAll = (name, payload) => { for (const w of [...both(), ...pageWindows()]) ipc.sendUi(w, name, payload); };
 
   function start() {
     // ---- bus → renderers ----
@@ -119,6 +120,14 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.handle('ui:prefs', () => bus.request(TOPICS.UI_PREFS_GET));
     // ---- Usage & accounts (M8, D-040) ----
     ipc.on('dashboard:open', () => openDashboard());
+    // Settings window (M10): it opens the other pages by name; only these names are accepted.
+    ipc.on('settings:open', (tab) => openSettings(typeof tab === 'string' ? tab.slice(0, 20) : ''));
+    ipc.on('page:open', (name) => {
+      /** @type {Record<string, () => unknown>} */
+      const PAGES = { voice: () => openVoice(), google: () => openGoogle(), dashboard: () => openDashboard(), limits: () => openDashboard('limits'), settings: () => openSettings() };
+      const fn = PAGES[String(name)];
+      if (fn) fn();
+    });
     ipc.handle('usage:get', (p) => bus.request(TOPICS.USAGE_GET, { days: Number(p?.days) || 14, provider: p?.provider ? String(p.provider) : undefined, limit: Number(p?.limit) || 300 }));
     ipc.handle('accounts:get', (refresh) => bus.request(TOPICS.ACCOUNTS_GET, { refresh: !!refresh }));
     ipc.handle('limits:get', () => bus.request(TOPICS.USAGE_LIMITS_GET));
@@ -136,6 +145,7 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.handle('telegram:set', (p) => bus.request(TOPICS.TELEGRAM_SET, {
       enabled: typeof p?.enabled === 'boolean' ? p.enabled : undefined, remote: typeof p?.remote === 'boolean' ? p.remote : undefined,
       awake: typeof p?.awake === 'boolean' ? p.awake : undefined,
+      voiceNotes: typeof p?.voiceNotes === 'boolean' ? p.voiceNotes : undefined,
       allow: p?.allow ? String(p.allow) : undefined, disallow: p?.disallow ? String(p.disallow) : undefined,
     }));
     // ---- Google (M6, D-034) ----
@@ -167,6 +177,11 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
       dnd: p?.dnd == null ? undefined : !!p.dnd, nudges: p?.nudges == null ? undefined : !!p.nudges,
       mute: p?.mute == null ? undefined : !!p.mute, motion: p?.motion == null ? undefined : String(p.motion),
       walkMarker: p?.walkMarker == null ? undefined : !!p.walkMarker, // M5 extras (D-035)
+      replyLang: p?.replyLang == null ? undefined : String(p.replyLang), // M10 (D-048)
+      quiet: p?.quiet && typeof p.quiet === 'object' ? {
+        on: p.quiet.on == null ? undefined : !!p.quiet.on,
+        from: p.quiet.from == null ? undefined : String(p.quiet.from).slice(0, 5), to: p.quiet.to == null ? undefined : String(p.quiet.to).slice(0, 5),
+      } : undefined,
     }));
     // ---- M5 extras: weather (D-035) ----
     ipc.handle('weather:get', () => bus.request(TOPICS.WEATHER_GET));

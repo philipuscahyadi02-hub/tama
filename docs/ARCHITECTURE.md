@@ -120,6 +120,7 @@ src/renderer/onboarding/   hatch / restyle / rebirth flow (M1)
 src/renderer/roster/       My Tamas: switch, hatch, graduate, restore, delete, export, import (M2)
 src/renderer/terminal/tama-commands.js  /todo /focus /remind /note /watch /feed /snack /nap /tama (M2)
 src/renderer/dev/          rig gallery (TAMA_GALLERY=designs|moods)
+src/renderer/settings/     Settings window (M10, D-048): one view over ui/voice/telegram/google/weather/brain requests; opens other pages via page:open
 ```
 M5 extras (D-035):
 ```
