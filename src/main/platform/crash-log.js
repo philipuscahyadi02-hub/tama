@@ -16,7 +16,9 @@ function redact(s) {
     .replace(/(Bearer|token|key|secret|password|access_token|refresh_token)(["'=:\s]+)[A-Za-z0-9._~+/=-]{12,}/gi, '$1$2<redacted>')
     .replace(/ya29\.[A-Za-z0-9._-]+/g, '<google-token>')
     .replace(/GOCSPX-[A-Za-z0-9_-]+/g, '<google-secret>')
-    .replace(/sk-ant-[A-Za-z0-9_-]+/g, '<anthropic-key>');
+    .replace(/sk-ant-[A-Za-z0-9_-]+/g, '<anthropic-key>')
+    .replace(/AIza[0-9A-Za-z_-]{30,}/g, '<google-api-key>') // Maps Platform key (QC-6)
+    .replace(/\b1\/\/0[0-9A-Za-z_-]{20,}/g, '<google-refresh-token>');
 }
 
 /**

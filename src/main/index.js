@@ -28,7 +28,8 @@ const { createUsageLog } = require('./services/usage');
 const { createAccounts } = require('./services/accounts');
 const engineAccounts = require('./engines/accounts');
 const { createLimits } = require('./services/usage/limits');
-const { fetchClaudeLimits } = require('./engines/claude/limits');
+const { fetchClaudeLimits, claudeProvider } = require('./engines/claude');
+const { createProviders } = require('./providers');
 const { createVoice } = require('./services/voice');
 const { createVvEngines } = require('./services/voice/vv-engine');
 const sapi = require('./platform/tts-sapi');
@@ -36,20 +37,20 @@ const { createVoiceEngineProcess } = require('./platform/voice-engine-process');
 const { createAppIcon } = require('./platform/app-icon');
 const { createCrashLog } = require('./platform/crash-log');
 const { startCrashGuard, openLogs } = require('./platform/crash-guard');
+const STARTED_AT = Date.now();
+/** QC-3: with TAMA_PERF, slow timer callbacks are traced from the very start. */
+const slowCallbacks = process.env.TAMA_PERF ? require('./platform/perf').traceSlowCallbacks() : () => [];
+const ipcPerf = process.env.TAMA_PERF ? require('./platform/perf').ipcStats() : null;
 const { createChatTools } = require('./brain/chat-tools');
 const { startToolBridge } = require('./platform/tool-bridge');
 const os = require('os');
 const { createGitWatcher } = require('./services/productivity/git-watcher');
 const git = require('./platform/git');
-const { askJson } = require('./engines/claude/oneshot');
 const { openPage, openPages } = require('./platform/windows/page-window');
 const { createPetService } = require('./services/pet');
 const { createBrain } = require('./brain');
 const { createPermissionGate } = require('./brain/permission-gate');
-const { ClaudeCodeEngine, CLAUDE_EXE } = require('./engines/claude/session');
-const { AgyEngine } = require('./engines/agy/session');
-const { CHAT_ALLOW, DENY_ALL } = require('./engines/agy/setup');
-const { findAgyExecutable } = require('./engines/agy/setup');
+const { agyProvider } = require('./engines/agy');
 const pathMod = require('path');
 // M5 extras (D-035): weather, fullscreen do-not-disturb, "out for a walk" marker.
 const { createWeather } = require('./services/weather');
@@ -66,7 +67,9 @@ const stoppers = [];
 /** SET-6 (D-050): created at boot, ended on a clean quit. @type {ReturnType<typeof createCrashLog> | null} */
 let crashLog = null;
 
+let bootMs = 0;
 function boot() {
+  const bootStart = Date.now();
   const bus = new Bus();
   crashLog = createCrashLog({ dir: pathMod.join(appShell.paths.data(), 'logs') });
   const lastRun = crashLog.begin({ version: appShell.version() });
@@ -82,7 +85,7 @@ function boot() {
   if (process.env.TAMA_DEBUG) {
     bus.on(TOPICS.ENGINE_EVENT, ({ engine, ev }) => { if (ev.t !== 'text-delta') debug(`engine ${engine} ${ev.t} ${ev.t === 'tool-progress' ? ev.chars : ev.state || ev.name || ''}`); });
   }
-  const store = createStore(appShell.paths.data());
+  const store = createStore(appShell.paths.data(), { onError: (rel, e) => log.write('error', `store ${rel}`, e) });
 
   // ---- services ----
   const secrets = createSecrets(appShell.paths.data(), electronCipher());
@@ -115,22 +118,16 @@ function boot() {
     name: 'tama', command: process.execPath, args: [relay],
     env: [{ name: 'ELECTRON_RUN_AS_NODE', value: '1' }, { name: 'TAMA_BRIDGE_URL', value: bridge.url }, { name: 'TAMA_BRIDGE_KEY', value: bridge.key }],
   }] : []);
-  const brain = createBrain({
-    bus, device, gate, git, scratchDir: pathMod.join(appShell.paths.data(), 'agy-workspace'),
-    available: { claude: !!CLAUDE_EXE, agy: !!findAgyExecutable() },
-    factories: {
-      claudeWorker: (emit) => new ClaudeCodeEngine(emit, { role: 'worker', gate, tamaName: active.name, mcp: () => google.mcpServers() }),
-      // agy always runs in read-only PLAN mode (verified: no commands, no file writes; npm run probe:agy, D-027).
-      // Hard lock (D-037): a PreToolUse hook in the session folder denies every tool except Tama's own + web search.
-      agyChat: (emit, persona) => new AgyEngine(emit, {
-        role: 'lite', gate, persona, model: 'gemini-3.8-flash-low', thoughtLevel: 'low', mode: 'plan', lockMode: true, mcpServers: chatMcp, guard: CHAT_ALLOW,
-      }),
-      // Events + diary text: no tools at all.
-      agyCompose: (emit, persona) => new AgyEngine(emit, {
-        role: 'lite', gate, persona, model: 'gemini-3.8-flash-low', thoughtLevel: 'low', mode: 'plan', lockMode: true, guard: DENY_ALL,
-      }),
-    },
+  // Provider layer (SHIP-8, D-054): who serves chat, moments, structured output and coding. agy always runs in
+  // read-only plan mode with the workspace guard (D-027, D-037); Claude chats only when the user opted in.
+  const providers = createProviders({
+    bus, device, providers: [
+      claudeProvider({ gate, tamaName: active.name, mcp: () => google.mcpServers() }),
+      agyProvider({ gate, mcpServers: chatMcp }),
+    ],
   });
+  stoppers.push(providers.start());
+  const brain = createBrain({ bus, device, gate, git, providers, scratchDir: pathMod.join(appShell.paths.data(), 'agy-workspace') });
 
   // ---- windows ----
   const win = device.get().windows || {};
@@ -148,7 +145,8 @@ function boot() {
   bus.handle(TOPICS.SUMMON, (/** @type {{reason?: string}} */ p) => summon((p && p.reason) || 'bus'));
 
   // ---- channels ----
-  // Designer: Claude Haiku with tools disabled, keyword fallback (D-021). Moves to the M3 lite brain.
+  // Designer: the `json` provider (Claude Haiku, tools disabled, D-021), keyword fallback when there is none.
+  const askJson = (/** @type {any} */ req) => { const p = providers.pick('json'); return p && p.json ? p.json(req) : Promise.reject(new Error('no provider for structured output')); };
   stoppers.push(createDesigner({ bus, askJson: process.env.TAMA_OFFLINE_DESIGNER ? null : askJson, log: debug }).start());
   const openOnboarding = (/** @type {string} */ mode) =>
     openPage('onboarding/onboarding.html', { width: 940, height: 700, title: 'Hatch your Tama', query: { mode } });
@@ -214,7 +212,7 @@ function boot() {
   // App icon = her face (D-047): cached one right away, a fresh render shortly after start and on every restyle.
   const appIcon = createAppIcon({ cacheFile: () => pathMod.join(appShell.paths.data(), 'icons', `${active.id}.png`), getTray: () => tray });
   appIcon.loadCached();
-  setTimeout(() => { appIcon.render().then((ok) => debug(`app icon ${ok ? 'rendered' : 'not rendered'}`)); }, 2500);
+  setTimeout(() => { appIcon.render().then((ok) => debug(`app icon ${ok ? 'rendered' : 'not rendered'}`)).catch((e) => log.write('error', 'app-icon', e)); }, 2500);
   bus.on(TOPICS.CHARACTER_CHANGED, () => { appIcon.render().catch(() => null); });
   const failed = shell.registerHotkeys({ [HOTKEYS.summon]: () => summon('hotkey'), [HOTKEYS.terminal]: () => term.toggle(), [HOTKEYS.chat]: () => chatWin.toggle() });
   if (failed.length && !process.env.TAMA_DATA_DIR) shell.notify('Tama', `Hotkey already in use by another app: ${failed.join(', ')}`);
@@ -260,83 +258,21 @@ function boot() {
   if (process.env.TAMA_HIDE_PET) setTimeout(() => pet.hide(), 1500); // dev: start hidden (walk-marker screenshots)
 
   summoner.startWatchdog();
+  bootMs = Date.now() - bootStart;
   stoppers.push(() => summoner.stop(), () => petService.stop(), () => store.flush(), shell.unregisterHotkeys);
 
   secondInstance = () => summon('second-instance');
-  if (process.env.TAMA_SHOW_TERM) term.show();
-  if (process.env.TAMA_GALLERY) {
-    openPage('dev/gallery.html', { width: 1000, height: 760, frame: true, query: { set: process.env.TAMA_GALLERY } });
-  }
-  if (process.env.TAMA_VOICE_TEST) {
-    // Dev: speak once on the desktop, then render + encode a Telegram voice note and report sizes (D-042).
-    pet.win.webContents.once('did-finish-load', () => setTimeout(async () => {
-      // Several lines separated by "||" are spoken one after another; each logs how soon it started (SET-4).
-      let said = /** @type {any} */ (null);
-      for (const line of String(process.env.TAMA_VOICE_TEST).split('||')) {
-        said = await bus.request(TOPICS.VOICE_SAY, { text: line, purpose: 'test' }).catch((e) => ({ error: String(e) }));
-        console.log('[voice-test] said', JSON.stringify({ line: line.slice(0, 40), engine: said.engine, firstMs: said.firstMs, totalMs: said.totalMs, text: said.text }));
-      }
-      const r = await bus.request(TOPICS.VOICE_RENDER, { text: String(process.env.TAMA_VOICE_TEST) }).catch(() => null);
-      const enc = r ? await bus.request(TOPICS.VOICE_ENCODE, { wav: r.wav }).catch((e) => ({ error: String(e) })) : null;
-      const tDub = Date.now();
-      const dubbed = await bus.request(TOPICS.BRAIN_COMPOSE, { kind: 'translate', seed: `${String(process.env.TAMA_VOICE_TEST).split('||')[0]} (again)` }).catch((e) => String(e));
-      console.log('[voice-test] translate only', Date.now() - tDub, 'ms');
-      console.log('[voice-test]', JSON.stringify({ dubbed, said, engine: r && r.engine, wavBytes: r && Buffer.from(r.wav, 'base64').length, m4aBytes: enc && enc.data ? Buffer.from(enc.data, 'base64').length : 0, m4aHead: enc && enc.data ? Buffer.from(enc.data, 'base64').subarray(4, 8).toString() : enc && enc.error }));
-    }, Number(process.env.TAMA_VOICE_TEST_AT) || 2000));
-  }
-  if (process.env.TAMA_VOICE_TRACE) {
-    // Dev (SET-4): log when a chat message is sent, when the reply text is done, and when each voice part plays.
-    const t0 = Date.now();
-    const at = () => `${((Date.now() - t0) / 1000).toFixed(1)}s`;
-    bus.on(TOPICS.CHAT_EVENT, (/** @type {any} */ ev) => { if (ev.t === 'message') console.log('[voice-trace]', at(), ev.message.role, JSON.stringify(ev.message.text).slice(0, 60), ev.message.ja ? `ja=${ev.message.ja.slice(0, 40)}` : ''); });
-    // A skipped reply (e.g. she's asleep at night) is spoken through the test path, which ignores the quiet rules.
-    let lastTama = '';
-    bus.on(TOPICS.CHAT_EVENT, (/** @type {any} */ ev) => { if (ev.t === 'message' && ev.message.role === 'tama') lastTama = ev.message.text; });
-    bus.on(TOPICS.VOICE_SKIPPED, (/** @type {any} */ p) => {
-      console.log('[voice-trace]', at(), 'skipped:', p.reason, '→ speaking it via the test path');
-      bus.request(TOPICS.VOICE_SAY, { text: lastTama, purpose: 'test' }).catch(() => null);
-    });
-    bus.on(TOPICS.VOICE_PLAY, (/** @type {any} */ p) => console.log('[voice-trace]', at(), 'play', p.engine, `${(p.part ?? 0) + 1}/${p.parts ?? 1}`, String(p.text).slice(0, 30)));
-  }
   if (lastRun) {
     pet.win.webContents.once('did-finish-load', () => setTimeout(() => bus.emit(TOPICS.BRAIN_NOTICE, {
       text: 'Ehehe… I tripped and fell last time (Tama closed unexpectedly). I\'m all better now! (Settings → Accounts & usage → Open logs)', kind: 'info',
     }), 4000));
   }
-  if (process.env.TAMA_PET_EVAL) {
-    // Dev: run JS in the pet window after load (e.g. "actions.stats()") for screenshots.
-    pet.win.webContents.once('did-finish-load', () => setTimeout(() => pet.win.webContents.executeJavaScript(String(process.env.TAMA_PET_EVAL)).catch(console.error), 1500));
-  }
-  if (process.env.TAMA_TERM_EVAL) {
-    // Dev: run JS in the terminal window after load (e.g. type commands) for screenshots.
-    const tw = term.get();
-    tw.webContents.once('did-finish-load', () => setTimeout(() => tw.webContents.executeJavaScript(String(process.env.TAMA_TERM_EVAL)).catch(console.error), 1500));
-  }
-  if (process.env.TAMA_CHAT_EVAL || process.env.TAMA_OPEN_CHAT) {
-    // Dev: open the chat window, optionally run JS in it after load (e.g. send a message) for screenshots.
-    chatWin.show();
-    const cw = chatWin.window();
-    if (cw && process.env.TAMA_CHAT_EVAL) {
-      cw.webContents.once('did-finish-load', () => setTimeout(() => cw.webContents.executeJavaScript(String(process.env.TAMA_CHAT_EVAL)).catch(console.error), 1500));
-    }
-  }
-  if (process.env.TAMA_OPEN_ROSTER) openRoster(false);
-  if (process.env.TAMA_OPEN_GOOGLE) openGoogle();
-  if (process.env.TAMA_OPEN_VOICE) openVoice();
-  if (process.env.TAMA_OPEN_SETTINGS) openSettings(process.env.TAMA_OPEN_SETTINGS === '1' ? '' : process.env.TAMA_OPEN_SETTINGS);
-  if (process.env.TAMA_OPEN_DASHBOARD) openDashboard(process.env.TAMA_OPEN_DASHBOARD === 'limits' ? 'limits' : undefined);
-  if (process.env.TAMA_OPEN_ONBOARDING) openOnboarding(process.env.TAMA_OPEN_ONBOARDING);
-  if (process.env.TAMA_ONBOARD_WALK) {
-    require('./dev/onboarding-walk').runOnboardingWalk({
-      openOnboarding, petWin: pet.win, outDir: process.env.TAMA_ONBOARD_WALK, quit: appShell.quit, log: console.log,
-      prompt: process.env.TAMA_WALK_PROMPT || 'a sleepy cat boy with headphones who loves coffee',
-    });
-  }
-  // Dev: quit cleanly after N ms (stoppers run, so voice engines Tama started are stopped too).
-  if (process.env.TAMA_QUIT_AFTER) setTimeout(() => appShell.quit(), Number(process.env.TAMA_QUIT_AFTER) || 60000);
-  if (process.env.TAMA_SELFTEST) {
-    require('./dev/selftest').runSelfTest({ pet, summoner, workAreas: require('./platform/displays').workAreas, quit: appShell.quit });
-  }
+  // Dev-only switches (TAMA_SHOW_TERM, TAMA_*_EVAL, TAMA_OPEN_*, TAMA_VOICE_TEST, TAMA_PERF, TAMA_QUIT_AFTER, …).
+  require('./dev/hooks').runDevHooks({
+    env: process.env, bus, pet, term, chatWin, summoner, quit: appShell.quit, ipc,
+    open: { page: openPage, roster: openRoster, google: openGoogle, voice: openVoice, settings: openSettings, dashboard: openDashboard, onboarding: openOnboarding },
+    perf: { startedAt: STARTED_AT, bootMs: () => bootMs, slowCallbacks, ipcPerf },
+  });
 }
 
 let secondInstance = () => {};

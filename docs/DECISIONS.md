@@ -81,6 +81,13 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-049 | Faster Japanese voice: the chat reply carries its own dub (`[[ja: …]]` while the Japanese voice is on), sentence-by-sentence synthesis, audio cache | Accepted · Refines D-043 |
 | D-050 | Reliability: window rescue from unplugged monitors; crash log + clean-quit marker + renderer reload | Accepted |
 | D-051 | Roadmap: M11 = quality control; M12 = installers (Windows + macOS) with modular capabilities instead of a portable exe | Accepted |
+| D-052 | Architecture rules enforced by `scripts/arch-check.js` in `npm run check`; engines get public index.js files; shared day helpers in `src/main/day.js` | Accepted |
+| D-053 | `npm run perf` measures idle cost the same way every time; mood/sleep effects rest between alive bursts; shorter, rarer bursts | Accepted · Refines D-042 (calm idle) |
+| D-054 | M12 provider layer: features ask for capabilities, providers register what they can do, per-capability preference with fallback; D-029's split stays the default | Accepted · Refines D-029 (routing becomes a default, not a hard-wire) |
+| D-055 | Security pass: no navigation, new windows or browser permissions; every IPC input coerced; more secret patterns redacted; Maps and [google] context marked untrusted | Accepted |
+| D-056 | M12 shipping = v1.0.0; v2 = Tama's own agentic brain over official model APIs (own keys or local models), not a single provider's SDK | Accepted · Refines D-015 (what 1.0.0 means) |
+| D-057 | Provider layer built: registry + per-engine descriptors; Claude chats as Haiku without tools, only after an opt-in (choosing it counts); Settings → Brains | Accepted · Implements D-054 |
+| D-058 | Release v1.0.0 now (M11 + provider layer), before the installer; the rest of M12 ships as 1.x; unsigned builds accepted | Accepted · Refines D-056 (what v1.0.0 contains), D-051 (signing) |
 
 ---
 
@@ -691,3 +698,106 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** A portable exe (users still have to find and install every dependency by hand); bundling Claude Code, agy or the voice engines in the installer (their own licenses and sign-ins, several GB, and they update separately).
 - **Consequences:** M12 needs mac versions of the Windows-only parts (SAPI voice, PowerShell fullscreen helper, `run.exe` engines, `%LOCALAPPDATA%` paths, tray icon sizes). Windows code signing and Apple notarization need paid certificates or accounts; the user decides before release. The terminal stays Claude-only (D-029), so with only agy the coding terminal is hidden or explains how to add Claude Code.
 - **Refs:** QC-1..6, SHIP-1..7, NFR-1, NFR-3, D-005, D-006, D-029
+
+### D-052 — Architecture rules enforced by a script; engine public indexes; shared day helpers
+- **Date:** 2026-11-07 · **Status:** Accepted
+- **Context:** QC-1 (M11). The AGENTS §1 rules were only checked by reading. The first run of a checker found 11 deep imports (six services reached into `services/pet/bond.js` for `dayOf`; `brain` and `engines/accounts` into engine internals; `agy/session` into `acp/client`).
+- **Decision:**
+  - `scripts/arch-check.js` runs in `npm run check` (between tsc and the tests) and fails on: `electron` outside `platform/` and the preload; a deep import into another module under `services/`, `engines/` or `channels/` (only its `index.js`; the bootstrap, tests and `dev/` are exempt); any `require` in a renderer; a `TOPICS.X` that is used but not declared, or declared but never used; a preload IPC channel without a main handler, or the reverse. `npm run arch` also lists files over ~300 lines as warnings.
+  - `engines/claude`, `engines/agy` and `engines/acp` get an `index.js` with lazy getters (importing the limits helper doesn't load the Agent SDK).
+  - `dayOf`/`prevDay` move to `src/main/day.js` (top-level shared helpers, like `bus.js`); `pet/index.js` re-exports `levelOf` for the roster.
+- **Alternatives:** ESLint with import rules (new dev dependencies and config for rules a 100-line script covers); dependency-cruiser (same).
+- **Consequences:** New code that breaks a layer rule fails `npm run check`. Files over 300 lines (bootstrap, telegram, voice, pet.js, terminal.js, tama-commands.js) are QC-4 work.
+- **Refs:** QC-1, AGENTS §1, scripts/arch-check.js, src/main/day.js, src/main/engines/*/index.js
+
+### D-053 — Repeatable performance run; mood and sleep effects rest; shorter alive bursts
+- **Date:** 2026-11-07 · **Status:** Accepted · Refines D-042 (calm idle)
+- **Context:** QC-3. NFR-1 asks for idle CPU < 2 % and RAM < 300 MB, but each earlier number was measured a different way. A first repeatable run on the user's laptop gave 3.5 % CPU and 297 MB.
+- **Findings** (all Tama processes from `app.getAppMetrics()`, CPU as % of one core):
+  - Reduced motion idles at 0.5 %. Wandering alone (window moves, CSS animations off) costs almost nothing (0.6 % with 171 steps); all the cost is SVG animation repaint.
+  - Mood and sleep effects (tears, gloom, nose bubble, floating z's) looped forever and were not paused between bursts. A sad (hungry) or sleeping pet, which is common, cost about 1.8 % more.
+  - Main-process timer callbacks and IPC handlers are cheap: the slowest timer callback is the first Claude limits check (about 61 ms, every 20 minutes), and 90 walk steps cost 119 ms in total. The rare ~200 ms event-loop maximum is not in Tama's callbacks (likely Chromium or GC); the ~31 ms mean "lag" is Windows' 15.6 ms timer granularity.
+- **Decision:**
+  - `npm run perf` (`scripts/perf.js` + `platform/perf.js`, `TAMA_PERF=<s>`): starts Tama in a scratch folder (or `--data <dir>`), lets it settle for 15 s, then samples CPU and memory per process type each second, plus event-loop delay, slow (> 40 ms) timer callbacks with where they were scheduled, IPC calls per channel, active timers and boot time. It prints JSON and an NFR-1 verdict. The pet is shown (small, never focused) because hidden windows are throttled and would hide the cost.
+  - The mood and sleep effects also pause during `.calm`, so they play in bursts like the idle sway.
+  - Alive bursts: 5–7 s every 28–40 s (was 6–9 s every 18–28 s).
+- **Result:** 1.6 % CPU (two 60-second runs: 1.60 % and 1.65 %) and about 262 MB; ready about 0.8 s after launch.
+- **Alternatives:** Capping the pet window's frame rate (Electron only supports this for offscreen rendering); stepped CSS animations (choppy); turning wandering off (it costs almost nothing).
+- **Consequences:** She sways a little less often; walking, blinks, talk and expressions are unchanged. Use `npm run perf` before and after any animation or timer change.
+- **Refs:** QC-3, NFR-1, D-042, scripts/perf.js, src/main/platform/perf.js, src/main/platform/ipc.js, src/renderer/pet/{pet.js,pet.css}
+
+### D-054 — M12 provider layer: capabilities instead of named engines
+- **Date:** 2026-11-07 · **Status:** Accepted (plan; built in M12) · Refines D-029 (its split becomes the default routing)
+- **Context:** The user asked whether the service and provider layers depend on Claude. Findings:
+  - **Services don't.** None of the 13 services imports an engine (enforced by `scripts/arch-check.js`, D-052); they use bus requests or injected functions.
+  - **The routing is hard-wired** in `brain/` (D-029: terminal = Claude Code, chat = agy). There is no shared provider interface; the bootstrap passes fixed factories (`claudeWorker`, `agyChat`, `agyCompose`) and `available: { claude, agy }`.
+  - Without agy most of her personality is gone (chat, moments, Japanese dub, Telegram chat). Without Claude only the terminal, `/code` from the phone and the AI designer are lost.
+  - Claude-specific knowledge also sits in `services/usage/limits.js` (Claude windows), `services/accounts` (fixed claude/gemini slots), `services/telegram/remote.js` (`engine === 'claude'`) and `brain/index.js` (imports the Claude rate-limit helper).
+  - The user then asked to put a provider layer in the M12 plan.
+- **Decision (M12, SHIP-8, built before SHIP-3/4):**
+  - **Capabilities:** `chat` (persona conversation, streaming, hidden markers), `compose` (short one-shot lines: events, diary, dubs), `json` (structured output against a schema: designer), `code` (agentic work in a folder, every tool through PermissionGate), `tools` (Tama's MCP tools: Google), `webSearch`, plus optional `limits` and `account` reporting.
+  - **Providers** (`src/main/providers/` or `engines/<name>/provider.js`) register `{ id, name, capabilities, status(): { installed, signedIn, email?, plan? }, create(capability, opts) }`. Claude Code offers chat (opt-in), compose, json, code, tools, limits, account; agy offers chat, compose, tools, webSearch, account, never `code` (D-027, D-037).
+  - **Routing:** the brain asks `providers.pick(capability)`, which takes the user's preference order per capability (Settings; defaults = D-029: chat/compose → agy, json/code → Claude) and falls back to the next provider that is installed and signed in. Using Claude for chat or moments is **opt-in** (it spends Claude quota; D-029's reason), shown with the budget.
+  - **Safety travels with the provider**, not the feature: agy keeps plan mode + the workspace guard; Claude keeps PermissionGate; a provider without a safe mode for a capability simply doesn't declare it.
+  - **Services stay unaware.** Usage, limits and accounts get their rows from the registry (`provider` field already exists in the usage log), so a new provider shows up without service changes. Telegram `/code` asks for `code`.
+  - **Contract tests:** one shared test file that every provider (and a fake one) must pass: streaming, interrupt, stop, persona, permission round-trip.
+  - New providers later (e.g. other coding CLIs) each need their own decision about login (D-006) and safety.
+- **Alternatives:** Keep the hard-wired split and only hide missing features (SHIP-3 alone; a Claude-only user would get no chat); always fall back to Claude for chat (spends Claude quota without asking; the user chose agy-only chat in D-029).
+- **Consequences:** `brain/index.js` and `brain/chat.js` take a provider instead of factories; ARCHITECTURE §5 (Engine contract) gains the provider/capability contract; the setup wizard (SHIP-4) shows what each provider unlocks from the same registry. AGENTS rule 6 ("no `engine === 'agy'` outside engines") extends to providers.
+- **Refs:** SHIP-3, SHIP-4, SHIP-8, D-006, D-027, D-029, D-037, D-052, src/main/brain, src/main/services/{usage,accounts,telegram}
+
+### D-055 — Security pass: windows stay on Tama's pages, no browser permissions, IPC inputs coerced, more redaction
+- **Date:** 2026-11-07 · **Status:** Accepted
+- **Context:** QC-6 (M11). Already in place: CSP on all 12 pages, `sandbox` + `contextIsolation` + no `nodeIntegration` on every window, IPC accepted only from `file://` frames, HTML escaping in every renderer that shows model or user text, `UNTRUSTED …` labels on mail/Drive/calendar tool results, the tool bridge on 127.0.0.1 with a random key. Gaps found:
+  - Nothing stopped a window from navigating to a website or opening a new window (e.g. a link inside a reply). The `file://` check would still block its IPC calls, but the window would be lost.
+  - Browser permissions (camera, microphone, location, …) used Electron's defaults.
+  - A few IPC arguments reached the bus as sent (todo refs, the resume id, the permission answer's choice/feedback); `page:open` looked names up on a plain object, so `constructor` resolved to a function.
+  - The crash log's `redact()` missed Google API keys (`AIza…`, the Maps key) and refresh tokens (`1//0…`) when no "key=" word came before them.
+  - Maps results (place names anyone can write) and the chat's `[google]` line (mail subjects, event titles) reached the model without an "untrusted" note.
+  - The tool bridge compared header lengths in characters before `timingSafeEqual`, which throws when byte lengths differ.
+- **Decision:**
+  - `platform/app.js` `harden()`: every web contents denies `window.open`, cancels navigation and redirects away from `file://`, refuses `<webview>`; the default session grants no permission and answers every permission check with no. No page needs one (checked: voice playback and M4A encoding still work).
+  - The desktop channel coerces every argument (numbers, short strings, booleans) or checks it against a list; page names by own property only. `desktop.test.js` covers it.
+  - `redact()` gains Google API key and refresh-token patterns (tested).
+  - Maps tool results use the same `untrusted()` wrapper (source "Google Maps"); the persona says mail subjects and event titles in `[google]` are other people's data.
+  - Tool bridge: compare byte lengths, then `timingSafeEqual` (tested with a multi-byte header).
+- **Alternatives:** A separate Electron session/partition per window (no benefit with one origin); stripping links from replies (users like links; navigation is blocked anyway).
+- **Consequences:** A future page that needs a browser permission (e.g. a microphone for VOICE-4 speech-to-text) must allow exactly that permission for that page in `harden()`, with a decision entry.
+- **Refs:** QC-6, AGENTS §1.9, §4, D-034, D-037, D-050, src/main/platform/{app,crash-log,tool-bridge}.js, src/main/channels/desktop, src/main/services/google/tools.js, src/main/brain/persona.js
+
+### D-056 — v1.0.0 = M12 shipping; v2 = Tama's own agentic brain
+- **Date:** 2026-11-07 · **Status:** Accepted · Refines D-015 ("1.0.0 = all P0 requirements done")
+- **Context:** The user asked to ship M12 as version 1, and to continue later with v2: set up Tama's own agentic brain, cut the dependency on a single provider, and build Tama's own SDK instead of using Claude's.
+- **Decision:**
+  - **v1.0.0** is the M12 release (installers, provider layer, modular capabilities, setup wizard). M12 also closes the two open P0 rows (GOOG-6 replace section, NFR-2 mixed-DPI check) or lists them as known gaps in the release notes.
+  - **v2 (2.0.0)** is Tama's own agent loop (AGT-1..6): planning, tool calls, streaming, sessions and compaction in `src/main/agent/`, with Tama's own tools behind PermissionGate, running on the SHIP-8 provider layer.
+  - **How v2 reaches models:** through official model APIs with the user's **own API keys** (Anthropic Messages API, Gemini API, OpenAI-compatible endpoints) or **local models**. A Claude.ai or Antigravity **subscription can't be used directly**: subscriptions are only for their own apps (Claude Code / agy), and reusing their logins or tokens is ruled out (D-006). Claude Code and agy stay available as optional adapters (AGT-5) for users who want to use their subscriptions.
+  - The provider layer built in M12 (D-054) is the seam: v2 adds "Tama agent" providers next to the Claude Code and agy ones, so features don't change.
+- **Alternatives:** Keep depending on the Claude Agent SDK for coding (the user wants independence); use subscription tokens from the CLIs in Tama's own loop (violates D-006 and the providers' terms).
+- **Consequences:** v2 costs the user per-token API usage (or local compute) instead of a flat subscription; the dashboard (USE-*) must show that clearly. Local models (D-003 had declined Ollama for v1) get a fresh decision in v2. The safety work done for agy (guard hooks, probes) is redone for Tama's own loop (AGT-6).
+- **Refs:** SHIP-8, AGT-1..6, D-003, D-006, D-015, D-029, D-054
+
+### D-057 — Provider layer built: registry, descriptors, Claude chat opt-in, Settings → Brains
+- **Date:** 2026-11-07 · **Status:** Accepted · Implements D-054 (first part of SHIP-8)
+- **Context:** M12 starts with the provider layer (D-054, D-056). Choices made while building it.
+- **Decision:**
+  - `src/main/providers/index.js`: capabilities `chat`, `compose`, `json`, `code`; `pick(cap)` = first provider in the user's order (then the D-029 default, then any other) that offers the capability, is available, and, for an opt-in capability, was allowed. A throwing `available()` counts as unavailable. Preferences in device.json `providers` (`order`, `allow`); `providers.changed` makes the brain rebuild the persona and restart the chat and composer sessions.
+  - Descriptors live next to their engines: `claudeProvider` (code = the worker session with Google MCP tools; json = `askJson`; chat/compose = the existing `lite` profile: Haiku, `tools: []`, no user settings, not saved, and PermissionGate denies every tool to non-worker roles) and `agyProvider` (chat with web search and the Google MCP relay, compose with no tools; always plan mode + guard, D-027/D-037). agy is looked up once per run, as before.
+  - **Claude for chat/moments is opt-in per capability** (`claude:chat`, `claude:compose`). Picking Claude in Settings → Brains counts as the opt-in; the checkboxes there turn it on or off. Claude chat has no web search or Google tools, and the persona says so (`buildPersona` `provider` option: who powers her, web search yes/no, Google tools yes/no).
+  - The terminal still always shows Claude's state: without a `code` provider it explains how to add Claude Code instead of failing.
+  - Usage records name the provider that actually served the turn, so a Claude chat counts toward the daily Claude budget.
+- **Verified live (2026-11-07):** default chat answered via agy ("powered by Google's Gemini models via the Antigravity CLI"); with `claude:chat` allowed and preferred it answered via Claude Haiku ("powered by Claude Code running Claude Haiku") and logged a Claude turn.
+- **Alternatives:** A global "Claude fallback" switch (less control; moments and chat have different costs); giving Claude chat Tama's Google tools now (needs the chat-tools confirmations wired into the Claude lite profile; later in SHIP-8 or v2).
+- **Consequences:** New providers (v2's own agent, D-056) are one descriptor each. Still to do for SHIP-8: usage limits and the accounts page driven by the registry, and a shared contract test every provider must pass.
+- **Refs:** SHIP-8, D-027, D-029, D-037, D-054, D-056, src/main/providers, src/main/engines/{claude,agy}/provider.js, src/main/brain/{index,persona,chat}.js, src/renderer/settings
+
+### D-058 — v1.0.0 released now; the rest of M12 as 1.x; unsigned builds
+- **Date:** 2026-11-07 · **Status:** Accepted · Refines D-056 (v1.0.0 = all of M12) and D-051 (signing decided before release)
+- **Context:** After the provider layer (D-057) the user asked to update the README, write a Word/PowerPoint document about the tech and the business/user flows, and push to GitHub as **v1.0.0 stable**. The installer, setup wizard and modular capabilities (SHIP-1..7, SHIP-3/4) are not built yet. The user also accepted the "unknown publisher" warning (no code signing) and said Mac users will run from source with `npm start`.
+- **Decision:**
+  - Tag **v1.0.0** from `m12-shipping` merged into `main`: everything through M11 plus SHIP-8 so far. A GitHub release carries the notes and the Word documentation.
+  - The remaining M12 items ship as **1.x** minor releases (1.1 installer + setup wizard, …). 2.0 stays Tama's own agentic brain (D-056).
+  - **No code signing** for now (SHIP-7 decided: unsigned; Windows shows "unknown publisher"). macOS is supported from source until the mac app (SHIP-2) exists.
+- **Alternatives:** Wait for the installer before 1.0.0 (the user wanted the stable tag now); call it 1.0.0-rc (the user asked for stable).
+- **Consequences:** Release notes list the known gaps plainly (no installer, run from source; open P0 rows GOOG-6 replace section and NFR-2 mixed-DPI check). D-015's "1.0.0 = all P0 done" no longer holds.
+- **Refs:** SHIP-1..8, NFR-3, GOOG-6, NFR-2, D-015, D-051, D-056, D-057

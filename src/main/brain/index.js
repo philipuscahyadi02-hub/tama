@@ -1,7 +1,9 @@
 // @ts-check
 // The brain: owns the engines (BRAIN-1..5, ENG-1..5, SAFE-1, SAFE-5). Two separate surfaces (D-029):
-//   terminal = Claude Code only (coding, productivity work; asks before tools)
-//   chat     = agy only (talk + web search with your Tama; read-only plan mode, D-027), see ./chat.js
+//   terminal = the `code` provider (Claude Code; asks before tools)
+//   chat     = the `chat` provider (agy by default: talk + web search; read-only plan mode, D-027), see ./chat.js
+// Which engine serves which surface comes from the provider layer (SHIP-8, D-054): the user's preference, falling back
+// to whatever is installed. Claude only chats when the user opted in (it spends Claude quota).
 // It answers the terminal's engine.* requests and emits every terminal event as { engine, role, ev } on engine.event.
 const fs = require('fs');
 const path = require('path');
@@ -10,7 +12,7 @@ const persona = require('./persona');
 const budget = require('./budget');
 const { createChat } = require('./chat');
 const { createComposer } = require('./compose');
-const { fromRateLimitEvent } = require('../engines/claude/limits');
+const { fromRateLimitEvent } = require('../engines/claude');
 
 const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
 
@@ -26,16 +28,11 @@ const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
  *   gate: import('./permission-gate').PermissionGate,
  *   scratchDir: string,
  *   git: { isRepo: (d: string) => boolean },
- *   available: { claude: boolean, agy: boolean },
- *   factories: {
- *     claudeWorker: (emit: (ev: any) => void) => Engine,
- *     agyChat: (emit: (ev: any) => void, persona: string) => Engine,
- *     agyCompose?: (emit: (ev: any) => void, persona: string) => Engine,
- *   },
+ *   providers: import('../providers').Providers,
  *   now?: () => number,
  * }} deps
  */
-function createBrain({ bus, device, gate, scratchDir, git, available, factories, now = Date.now }) {
+function createBrain({ bus, device, gate, scratchDir, git, providers, now = Date.now }) {
   const cfg = () => ({ dailyClaudeUsd: 10, ...(device.get().brain || {}) });
   const eng = () => device.get().engine || {};
   const usage = () => budget.today(device.get().usage, now());
@@ -46,7 +43,7 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
     bus.emit(TOPICS.BRAIN_NOTICE, { text, kind });
   };
 
-  /** @param {'claude'|'agy'} engine @param {'lite'|'worker'} role @param {any} ev @param {string} [surface] */
+  /** @param {string} engine  provider id @param {'lite'|'worker'} role @param {any} ev @param {string} [surface] */
   function recordUsage(engine, role, ev, surface) {
     logTurn(engine, surface || (role === 'worker' ? 'terminal' : 'chat'), ev);
     const before = usage();
@@ -57,7 +54,7 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
     }
   }
 
-  /** Usage log entry for one AI turn (D-040): numbers only. @param {'claude'|'agy'} engine @param {string} surface @param {any} ev */
+  /** Usage log entry for one AI turn (D-040): numbers only. @param {string} engine  provider id @param {string} surface @param {any} ev */
   function logTurn(engine, surface, ev) {
     const t = ev.tokens;
     bus.emit(TOPICS.USAGE_RECORD, {
@@ -68,36 +65,47 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
     });
   }
 
-  // ---------------- chat (agy) ----------------
+  // ---------------- chat (the `chat` provider; agy by default) ----------------
+  /** Which provider made the current chat / composer session (for usage records). */
+  let chatBy = 'agy';
+  let composeBy = 'agy';
   const chat = createChat({
-    bus, scratchDir, available: () => available.agy, factory: factories.agyChat,
-    onResult: (ev) => recordUsage('agy', 'lite', ev), now,
+    bus, scratchDir, available: () => !!providers.pick('chat'),
+    factory: (emit, p) => { const pv = /** @type {any} */ (providers.pick('chat')); chatBy = pv.id; return pv.chat(emit, p); },
+    onResult: (ev) => recordUsage(chatBy, 'lite', ev), now,
   });
 
   let googleSignedIn = false;
-  // Events + diary text (EVT-3): its own agy session, same persona.
+  // Events + diary text (EVT-3): its own session, same persona, no tools.
   let personaText = '';
   const composer = createComposer({
-    factory: factories.agyCompose || factories.agyChat, scratchDir: path.join(scratchDir, 'compose'), available: () => available.agy, persona: () => personaText,
-    onResult: (ev) => logTurn('agy', 'events', ev),
+    factory: (emit, p) => { const pv = /** @type {any} */ (providers.pick('compose')); composeBy = pv.id; return pv.compose(emit, p); },
+    scratchDir: path.join(scratchDir, 'compose'), available: () => !!providers.pick('compose'), persona: () => personaText,
+    onResult: (ev) => logTurn(composeBy, 'events', ev),
   });
 
-  // ---------------- terminal (Claude Code) ----------------
+  // ---------------- terminal (the `code` provider: Claude Code) ----------------
   /** @type {Engine | null} */
   let claude = null;
+  /** @returns {Engine} */
   function worker() {
     if (!claude) {
-      claude = factories.claudeWorker((ev) => {
+      // Not installed yet still gives an engine (the terminal shows its state); send() checks availability first.
+      const pv = providers.pick('code') || providers.get('claude');
+      if (!pv || !pv.code) throw new Error('No coding provider is set up.');
+      /** @type {Engine} */
+      const w = pv.code((ev) => {
         if (ev.t === 'session') device.patch('engine', { lastSessionId: ev.sessionId });
         if (ev.t === 'rate-limit') bus.emit(TOPICS.USAGE_LIMIT, { provider: 'claude', source: 'turn', ...fromRateLimitEvent(ev.info) });
         bus.emit(TOPICS.ENGINE_EVENT, { engine: 'claude', role: 'worker', ev });
         if (ev.t === 'result') recordUsage('claude', 'worker', ev);
       });
       const e = eng();
-      if (e.cwd && fs.existsSync(e.cwd)) claude.cwd = e.cwd;
-      if (e.mode) claude.mode = e.mode;
-      if (e.model) claude.model = e.model;
-      if (e.effort) claude.effort = e.effort;
+      if (e.cwd && fs.existsSync(e.cwd)) w.cwd = e.cwd;
+      if (e.mode) w.mode = e.mode;
+      if (e.model) w.model = e.model;
+      if (e.effort) w.effort = e.effort;
+      claude = w;
     }
     return claude;
   }
@@ -106,7 +114,7 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
   function send(raw) {
     const text = String(raw || '').trim();
     if (!text) return;
-    if (!available.claude) return notice('Claude Code isn\'t available. Install it and log in (`claude`), then restart Tama.', 'warn');
+    if (!providers.pick('code')) return notice('Claude Code isn\'t available. Install it and log in (`claude`), then restart Tama. (Settings → Brains shows what is set up.)', 'warn');
     if (!eng().cwd) return notice('Pick a project folder first with /cd, then ask again~', 'warn');
     const tight = budget.claudeTight(device.get().usage, cfg(), now());
     if (tight.tight) notice(`heads-up: ${tight.reason}. I'll still try~ (/budget to change)`, 'warn');
@@ -128,8 +136,11 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
 
   function status() {
     const c = cfg();
+    const has = (/** @type {string} */ id) => { const p = providers.get(id); try { return !!(p && p.available()); } catch { return false; } };
+    const id = (/** @type {import('../providers').Capability} */ cap) => { const p = providers.pick(cap); return p ? p.id : null; };
     return {
-      terminal: 'claude', chat: 'agy', available, dailyClaudeUsd: c.dailyClaudeUsd, usage: usage(),
+      terminal: id('code'), chat: id('chat'), compose: id('compose'), json: id('json'),
+      available: { claude: has('claude'), agy: has('agy') }, dailyClaudeUsd: c.dailyClaudeUsd, usage: usage(),
       claudeTight: budget.claudeTight(device.get().usage, c, now()),
     };
   }
@@ -146,7 +157,11 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
   /** @param {any} spec */
   function updatePersona(spec) {
     lastSpec = spec;
-    personaText = persona.buildPersona(spec, { today: new Date(now()).toDateString(), replyLang, dub: dubOn });
+    const pv = providers.pick('chat');
+    const f = (pv && pv.features) || {};
+    const provider = pv ? { poweredBy: pv.id === 'agy' ? persona.AGY_CHAT.poweredBy : `${pv.name}${pv.id === 'claude' ? ' (Claude Haiku)' : ''}`,
+      webSearch: !!f.webSearch, googleTools: !!f.googleTools } : persona.AGY_CHAT;
+    personaText = persona.buildPersona(spec, { today: new Date(now()).toDateString(), replyLang, dub: dubOn, provider });
     chat.setPersona(personaText);
     composer.setPersona(personaText);
   }
@@ -202,6 +217,8 @@ function createBrain({ bus, device, gate, scratchDir, git, available, factories,
       }),
       // A different Gemini (agy) account: start fresh agy sessions (D-040).
       bus.on(TOPICS.ACCOUNTS_CHANGED, () => { chat.reset(); composer.stop(); }),
+      // Another provider for chat/moments (SHIP-8): new persona (what she can do) and fresh sessions on it.
+      bus.on(TOPICS.PROVIDERS_CHANGED, () => { if (lastSpec) updatePersona(lastSpec); chat.reset(); composer.stop(); }),
       // Google tools for the chat brain come and go with sign-in (D-037): restart its session when that flips.
       bus.on(TOPICS.GOOGLE_CHANGED, (/** @type {any} */ g) => {
         const signedIn = !!(g && g.signedIn);

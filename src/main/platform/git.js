@@ -35,12 +35,6 @@ async function recentCommits(repo, n = 30) {
   }) : [];
 }
 
-/** Paths changed in the working tree ("M src/a.js", "?? new.txt"). @param {string} repo */
-async function changedFiles(repo) {
-  const out = await git(repo, ['status', '--porcelain', '--untracked-files=normal']);
-  return out ? out.split('\n').map((l) => `${l.slice(0, 2).trim()} ${l.slice(3)}`.trim()) : [];
-}
-
 /**
  * The working tree's changes vs HEAD as a unified diff, plus untracked file names (read-only; for remote
  * /code results on Telegram, TG-6). Capped at `max` characters.
@@ -56,4 +50,4 @@ async function diff(repo, max = 400000) {
   return text.length > max ? `${text.slice(0, max)}\n# … diff truncated` : text;
 }
 
-module.exports = { isRepo, userEmail, recentCommits, changedFiles, diff };
+module.exports = { isRepo, userEmail, recentCommits, diff };

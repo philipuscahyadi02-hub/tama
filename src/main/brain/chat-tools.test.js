@@ -67,6 +67,9 @@ test('bridge + relay: MCP over stdio reaches Tama\'s tools; a wrong key is refus
   });
   const bad = await fetch(`${bridge.url}/list`, { method: 'POST', headers: { authorization: 'Bearer nope' }, body: '{}' });
   assert.equal(bad.status, 403);
+  // same character count as a real key but multi-byte: must be a clean 403, not a thrown error (QC-6)
+  const odd = await fetch(`${bridge.url}/list`, { method: 'POST', headers: { authorization: `Bearer ${'é'.repeat(64)}` }, body: '{}' }).catch((e) => e);
+  assert.equal(odd.status, 403);
 
   const relay = spawn(process.execPath, [path.join(__dirname, '..', 'engines', 'agy', 'mcp-relay.js')], {
     env: { ...process.env, TAMA_BRIDGE_URL: bridge.url, TAMA_BRIDGE_KEY: bridge.key }, stdio: ['pipe', 'pipe', 'inherit'],

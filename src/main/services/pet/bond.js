@@ -28,16 +28,7 @@ const SOURCES = {
 };
 const STREAK_BONUS = { daily: 1, 7: 5, 30: 15 };
 
-/** Local calendar day (YYYY-MM-DD) for a timestamp. @param {number} t */
-function dayOf(t) {
-  const d = new Date(t);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-/** @param {string} day */
-function prevDay(day) {
-  const [y, m, d] = day.split('-').map(Number);
-  return dayOf(new Date(y, m - 1, d - 1, 12).getTime());
-}
+const { dayOf, prevDay } = require('../../day');
 
 /** @param {number} xp */
 function levelOf(xp) {

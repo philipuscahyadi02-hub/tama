@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** Main → renderer messages arrive on one 'ui' channel as (name, payload). */
-const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram', 'usage', 'accounts', 'voice', 'encode', 'voice.changed']);
+const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram', 'usage', 'accounts', 'voice', 'encode', 'voice.changed', 'providers']);
 /** @type {Map<string, Set<(p: any) => void>>} */
 const subs = new Map();
 ipcRenderer.on('ui', (_e, name, payload) => {
@@ -187,6 +187,12 @@ contextBridge.exposeInMainWorld('tama', {
     status: () => ipcRenderer.invoke('brain:status'),
     set: (/** @type {any} */ p) => ipcRenderer.invoke('brain:set', p),
   },
+  /** Settings → Brains (SHIP-8): which provider serves chat, moments, design and coding. */
+  providers: {
+    get: () => ipcRenderer.invoke('providers:get'),
+    set: (/** @type {any} */ p) => ipcRenderer.invoke('providers:set', p),
+    onChange: on('providers'),
+  },
   prod: {
     get: () => ipcRenderer.invoke('prod:get'),
     todoAdd: (/** @type {string} */ t) => ipcRenderer.invoke('prod:todoAdd', t),
@@ -194,7 +200,6 @@ contextBridge.exposeInMainWorld('tama', {
     todoRemove: (/** @type {string|number} */ ref) => ipcRenderer.invoke('prod:todoRemove', ref),
     noteAdd: (/** @type {string} */ t) => ipcRenderer.invoke('prod:noteAdd', t),
     remindAdd: (/** @type {string} */ input) => ipcRenderer.invoke('prod:remindAdd', input),
-    remindCancel: (/** @type {string} */ id) => ipcRenderer.invoke('prod:remindCancel', id),
     focusStart: (/** @type {number} */ m) => ipcRenderer.invoke('prod:focusStart', m),
     focusStop: () => ipcRenderer.invoke('prod:focusStop'),
     watchAdd: (/** @type {string} */ p) => ipcRenderer.invoke('prod:watchAdd', p),

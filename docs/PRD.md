@@ -5,8 +5,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.24 |
-| **Status** | v0.10.0 released (M0–M10). M11 quality control in progress on `m11-quality`; M12 shipping (installers) next |
+| **Version** | 0.32 |
+| **Status** | **v1.0.0 released** (M0–M11 + provider layer, D-058). Rest of M12 (installers, setup wizard, modular capabilities) ships as 1.x on `m12-shipping` |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-07 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -110,22 +110,23 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.3c Quality control (QC), M11
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| QC-1 | Architecture check as a script in `npm run check`: only `platform/*` imports Electron, no deep imports across modules, every bus topic declared and used, renderers never require Node. | P1 | M11 | ☐ |
-| QC-2 | Dead code: find and remove unused files, exports, bus topics, IPC channels, CSS and preload methods (script + review). | P1 | M11 | ☐ |
-| QC-3 | Performance: measure start-up time, idle CPU/RAM (NFR-1), event-loop lag, IPC chatter and timers; fix what slows Tama down; keep a repeatable `npm run perf`. | P1 | M11 | ☐ |
-| QC-4 | Code review of every module against AGENTS rules (file ≤ ~300 lines, function size, error handling, no floating promises, `start()`/`stop()`); split or simplify what fails. | P1 | M11 | ☐ |
-| QC-5 | Test coverage report; add tests for services and platform code with gaps (aim ≥ 80 % of service lines). | P2 | M11 | ☐ |
-| QC-6 | Security pass: IPC input validation, CSP on every page, secrets never in logs or exports, untrusted-data handling. | P1 | M11 | ☐ |
+| QC-1 | Architecture check as a script in `npm run check`: only `platform/*` imports Electron, no deep imports across modules, every bus topic declared and used, renderers never require Node. *(`scripts/arch-check.js`, in `npm run check`; D-052.)* | P1 | M11 | ☑ |
+| QC-2 | Dead code: find and remove unused files, exports, bus topics, IPC channels, CSS and preload methods (script + review). *(Scan 2026-11-07: every file reachable, all bus topics and IPC channels used (now enforced by QC-1), both dependencies used. Removed `git.changedFiles`, `closePage`, the `MARKER_SIZE` export, the unused `prod:remindCancel` IPC and preload method, and one CSS rule.)* | P1 | M11 | ☑ |
+| QC-3 | Performance: measure start-up time, idle CPU/RAM (NFR-1), event-loop lag, IPC chatter and timers; fix what slows Tama down; keep a repeatable `npm run perf`. *(Idle CPU 3.5 % → 1.6 %, memory 297 → 262 MB, ready in ~0.8 s; D-053.)* | P1 | M11 | ☑ |
+| QC-4 | Code review of every module against AGENTS rules (file ≤ ~300 lines, function size, error handling, no floating promises, `start()`/`stop()`); split or simplify what fails. *(Done: 7 large files split by responsibility (pet.js left at 353 lines); the desktop channel's 235-line `start()` became 13 small functions in two files; unhandled promises fixed (ACP messages, app icon, link opening) and corrupt saves now reach the crash log; all 20 empty `catch` blocks state why. Accepted as is: `googleTools` (a 138-line data table) and five functions of 54–74 lines that are one switch or one prompt. Found the terminal's `/voice` overridden by an old placeholder.)* | P1 | M11 | ☑ |
+| QC-5 | Test coverage report; add tests for services and platform code with gaps (aim ≥ 80 % of service lines). *(`npm run coverage`: services 94 %, brain 96 %, channels 87 % (new), shared 96 %, engines 76 %. New tests: desktop channel, composer, phone /repos·/cd·/stop, git helpers, input queue, terminal formatting. Left untested on purpose: Electron-only platform files and the live Claude SDK session (checked in live runs).)* | P2 | M11 | ☑ |
+| QC-6 | Security pass: IPC input validation, CSP on every page, secrets never in logs or exports, untrusted-data handling. *(D-055: windows can't navigate away or open new windows, no browser permissions, every IPC input coerced or allow-listed (tested), Google keys and refresh tokens redacted from logs, Maps results and the chat's [google] line marked untrusted, tool-bridge auth hardened. CSP, sandbox and context isolation were already on every page.)* | P1 | M11 | ☑ |
 
 ### 4.3d Shipping (SHIP), M12
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
 | SHIP-1 | **Windows installer** (not a bare portable exe): per-user install, Start-menu and optional autostart entries, uninstaller that asks whether to keep her data. | P0 | M12 | ☐ |
 | SHIP-2 | **macOS app** (`.dmg`, Apple Silicon + Intel): mac versions of the Windows-only parts (system voice, fullscreen detection, tray/menu-bar icon, hotkeys, engine processes, paths). | P1 | M12 | ☐ |
-| SHIP-3 | **Modular capabilities:** Tama works with whatever the user has. Claude Code only, Antigravity (agy) only, both, or neither; each feature declares what it needs and hides or explains itself when that is missing (e.g. agy only = chat, moments, Google and phone, no coding terminal; designer falls back to agy or keywords). | P0 | M12 | ☐ |
+| SHIP-3 | **Modular capabilities:** Tama works with whatever the user has. Claude Code only, Antigravity (agy) only, both, or neither; each feature declares the capabilities it needs (SHIP-8) and hides or explains itself when no provider offers them (e.g. agy only = chat, moments, Google and phone, no coding terminal; designer falls back to agy or keywords). | P0 | M12 | ☐ |
 | SHIP-4 | **Setup wizard** on first run (and in Settings): detects Claude Code, agy, AivisSpeech/VOICEVOX, Google and Telegram; shows what each unlocks; guides each install with official links and sign-ins, and re-checks. | P0 | M12 | ☐ |
 | SHIP-5 | **Optional components** downloaded on demand from official releases with checksums (voice engines first), never bundled into the installer. | P1 | M12 | ☐ |
 | SHIP-6 | Updates: check for new versions and update in place (electron-updater or a release check). | P2 | M12 | ☐ |
+| SHIP-8 | **Provider layer** (D-054): features ask for a *capability* (chat, compose, structured JSON, coding, tools, web search) instead of a named engine. Claude Code and agy register what they can do and whether they are installed and signed in; the brain picks the user's preferred provider per capability and falls back to another when one is missing. Defaults keep today's split (terminal = Claude, chat = agy); using Claude for chat is opt-in because it spends Claude quota. Safety rules stay per provider (agy never codes). Usage, limits and accounts list providers from the registry instead of fixed Claude/Gemini slots. Built first in M12, because SHIP-3 and SHIP-4 build on it. *(Done: registry `src/main/providers/`, Claude Code and agy providers, the brain and designer pick through it, persona says what the chat provider can do, Settings → Brains, Claude chat tested live (D-057). Left: usage limits and accounts from the registry, shared provider contract tests.)* | P0 | M12 | ◐ |
 | SHIP-7 | Signing: Windows code signing (SmartScreen) and Apple notarization; both need paid certificates/accounts, so decide before release. | P2 | M12 | ☐ |
 
 ### 4.5 Events & conversations (EVT)
@@ -233,7 +234,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | SAFE-3 | Telegram accepts only the paired chat ID. | P0 | M7 | ☑ |
 | SAFE-4 | Warn before accept-edits mode outside a git repo. | P1 | M4 | ☑ |
 | SAFE-5 | Daily cost/token budget shown in `/stats`; Tama warns near the limit. | P1 | M3 | ☑ |
-| NFR-1 | Idle CPU < 2%, RAM < 300 MB (excluding engine processes). *(Measured 2026-11-07: about 2.0% CPU (was 5.8%) and about 200 MB private memory, D-042. Borderline: wandering is most of what is left.)* | P1 | M9 | ◐ |
+| NFR-1 | Idle CPU < 2%, RAM < 300 MB (excluding engine processes). *(`npm run perf`, all Tama processes, % of one core: 1.6 % CPU and about 262 MB on 2026-11-07, D-053. Was 3.5 % / 297 MB with the same method.)* | P1 | M11 | ☑ |
 | NFR-2 | Multi-monitor & mixed-DPI safe. | P0 | M0 | ◐ |
 | NFR-3 | Ships as a portable `.exe` (electron-builder), uses installed `claude`/`agy`. *(Replaced by installers for Windows and macOS: SHIP-1..7, M12, D-051.)* | P0 | M12 | ☐ |
 | NFR-4 | Memory view + forget; local-only data except the user's own Drive backup. | P0 | M5 | ☑ |
@@ -252,9 +253,20 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M7 — Telegram.** *(released as 0.7.0; voice notes in M9)* (TG-*, ART-5, SAFE-3).
 - [x] **M8 — Usage & accounts dashboard.** *(released as 0.8.0)* Usage log, dashboard, Limits tab (what's left), account switching (USE-1..7, D-040, D-041).
 - [x] **M10 — Settings & polish.** *(released as 0.10.0)* One Settings window, reply language, quiet hours, faster voice, small reliability fixes (SET-1..6, ONB-8).
-- [ ] **M11 — Quality control.** Architecture checks, dead code, performance, code review, coverage, security (QC-1..6, NFR-1).
-- [ ] **M12 — Shipping.** Windows installer and macOS app, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..7, NFR-3).
+- [x] **M11 — Quality control.** *(released in 1.0.0)* Architecture checks, dead code, performance, code review, coverage, security (QC-1..6, NFR-1).
+- [ ] **M12 — Shipping** (1.0.0 released early with SHIP-8 in part, D-058; the rest arrives as 1.x). Also closes the two open P0 rows (GOOG-6 replace section, NFR-2 mixed-DPI check) or defers them explicitly. Windows installer and macOS app, a provider layer, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..8, NFR-3).
 - [x] **M9 — Voice & polish.** *(released as 0.9.0; phone → Tama speech-to-text (VOICE-4) deferred)* AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
+- [ ] **v2 (M13+) — Tama's own agentic brain** (planned, not started; D-056). Tama runs its own agent loop instead of depending on one provider's agent (AGT-1..6).
+
+### 5b. v2 roadmap: Tama's own agentic brain (planned)
+| ID | Requirement | Pri | MS | Status |
+|---|---|---|---|---|
+| AGT-1 | **Own agent loop** (`src/main/agent/`): plan → call tools → observe → answer, with streaming, interrupt, sessions and context compaction, built on the provider layer (SHIP-8). | P0 | v2 | ☐ |
+| AGT-2 | **Model adapters over official APIs**, each with the user's own API key or a local model: Anthropic Messages API, Google Gemini API, OpenAI-compatible endpoints, local runtimes. Per-token billing and keys are shown plainly; keys live in `platform/secrets`. Never a subscription login or another app's tokens (D-006). | P0 | v2 | ☐ |
+| AGT-3 | **Tama's own tools**: files (read, edit, write in an allowed folder), shell, search, web fetch/search, Google, memory, with every call through PermissionGate (SAFE-1) and the same per-tool policies as today. | P0 | v2 | ☐ |
+| AGT-4 | **One brain for every surface**: terminal, chat, moments, Telegram and the designer run on the same loop with different tool sets and personas; the user picks a model per role. | P1 | v2 | ☐ |
+| AGT-5 | **Claude Code and agy stay optional adapters** behind the same interface, for users who prefer their subscriptions. | P1 | v2 | ☐ |
+| AGT-6 | **Evaluation and safety probes** for the own loop (like `npm run probe:agy`): tool gating, prompt injection from mail/web, cost limits. | P1 | v2 | ☐ |
 
 ## 6. Open questions
 
@@ -265,6 +277,14 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.32 — 2026-11-07** — v1.0.0 released (D-058): M11 plus the provider layer; installers and the setup wizard move to 1.x.
+- **0.31 — 2026-11-07** — SHIP-8 ◐: provider layer in place (D-057).
+- **0.30 — 2026-11-07** — M12 = v1.0.0; v2 roadmap (AGT-1..6) for Tama's own agentic brain (D-056).
+- **0.29 — 2026-11-07** — QC-6 ☑ (D-055); M11 code complete.
+- **0.28 — 2026-11-07** — QC-5 ☑ (`npm run coverage`).
+- **0.27 — 2026-11-07** — QC-4 ☑.
+- **0.26 — 2026-11-07** — New SHIP-8: provider layer for M12 (D-054).
+- **0.25 — 2026-11-07** — QC-4 ◐ (large files split).
 - **0.24 — 2026-11-07** — v0.10.0 released (M10).
 - **0.23 — 2026-11-07** — M10 code complete (SET-4..6, D-049, D-050). Planned M11 quality control (QC-1..6) and M12 shipping with installers for Windows and macOS and modular capabilities (SHIP-1..7, D-051); NFR-3's portable exe is replaced.
 - **0.22 — 2026-11-07** — M10 Settings & polish planned (SET-1..6); SET-1..3 and ONB-8 done (D-048).

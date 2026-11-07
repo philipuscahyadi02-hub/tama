@@ -8,39 +8,15 @@
 // Speaks chat replies and event lines on the desktop (not chats from the phone), stays quiet when muted, in /dnd,
 // in a focus session or while she sleeps.
 const { TOPICS } = require('../../bus-topics');
-const { MOODS, detectMood, styleFor, prosodyFor, parseDub } = require('./emotion');
+const { MOODS, detectMood, styleFor, prosodyFor } = require('./emotion');
 const { createEngineManager } = require('./engines');
 const { splitSentences, quickStart, createLru } = require('./chunks');
+const { speakable, JAPANESE, createDubs } = require('./text');
 
 const DETECT_MS = 5 * 60000;
 const SYNC_MS = 60000;
-const MAX_CHARS = 280;
 const LANGS = ['en', 'ja', 'off'];
-const CACHE = 60;
-const JAPANESE = /[぀-ヿ㐀-䶿一-鿿]/;
 const SAMPLE = 'こんにちは！今日もいっしょにがんばろうね。';
-
-/** Text → what should be spoken: no emoji, kaomoji, markdown, links or hidden markers. Pure. @param {string} s */
-function speakable(s) {
-  let t = String(s || '')
-    .replace(/\[\[[^\]]*\]\]/g, ' ')
-    .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/https?:\/\/\S+/g, ' ')
-    .replace(/[*_`#>|]/g, '')
-    .replace(/\p{Extended_Pictographic}|️|‍/gu, '')
-    .replace(/[(（][^()（）]{0,12}[)）]/g, (m) => (/[a-z]{3,}/i.test(m) ? m : ' ')) // (｡•̀ᴗ-)✧ style faces
-    .replace(/[♡♥✧✦✨★☆♪~]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .replace(/ ([!?.,])/g, '$1')
-    .trim();
-  if (t.length > MAX_CHARS) {
-    const cut = t.slice(0, MAX_CHARS);
-    const end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '), cut.lastIndexOf('。'));
-    t = end > 80 ? cut.slice(0, end + 1) : `${cut}…`;
-  }
-  return t;
-}
 
 /** @param {number | undefined} v @param {number} lo @param {number} hi @param {number} d */
 const num = (v, lo, hi, d) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d);
@@ -62,8 +38,7 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
     if (!LANGS.includes(p.lang)) p.lang = p.enabled === false ? 'off' : p.anime === 'always' ? 'ja' : 'en';
     return p;
   };
-  /** @type {Map<string, { mood: string | null, text: string }>} English line -> dub (also reused for the phone voice note). */
-  const dubs = new Map();
+  const { remember, dub } = createDubs({ translate: (seed) => bus.request(TOPICS.BRAIN_COMPOSE, { kind: 'translate', seed }) });
   /** @type {Map<string, any>} engine:uuid -> { policy, portrait } */
   const infos = new Map();
   let warnedNoEngine = false;
@@ -90,28 +65,6 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
     if (!sp) return null;
     const base = (want && sp.styles.find((s) => s.id === want.style)) || (Number.isInteger(legacy) && sp.styles.find((s) => s.id === legacy)) || sp.styles[0];
     return { engine: sp.engine, speaker: sp, style: base ? base.id : 0 };
-  }
-
-  /** Keep a dub the chat brain wrote with its reply. @param {string} raw @param {string} tagged "<feeling> | <Japanese>" */
-  function remember(raw, tagged) {
-    const d = parseDub(tagged);
-    if (!d.text || !JAPANESE.test(d.text)) return;
-    dubs.set(speakable(raw), { mood: d.mood, text: speakable(d.text) });
-    if (dubs.size > CACHE) dubs.delete(String(dubs.keys().next().value));
-  }
-
-  /** English line -> her Japanese line + mood (in character, via the composer). @param {string} text */
-  async function dub(text) {
-    if (JAPANESE.test(text)) return { mood: null, text };
-    const hit = dubs.get(text);
-    if (hit) return hit;
-    const raw = await bus.request(TOPICS.BRAIN_COMPOSE, { kind: 'translate', seed: text }).catch(() => null);
-    const d = parseDub(raw);
-    if (!d.text || !JAPANESE.test(d.text)) return null;
-    const out = { mood: d.mood, text: speakable(d.text) };
-    dubs.set(text, out);
-    if (dubs.size > CACHE) dubs.delete(String(dubs.keys().next().value));
-    return out;
   }
 
   /** @param {any} engine @param {string} text @param {{ speaker: any, style: number }} who @param {string} mood */

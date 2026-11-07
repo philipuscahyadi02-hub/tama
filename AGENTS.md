@@ -32,7 +32,7 @@ past decisions → `docs/DECISIONS.md`.
 3. **Renderers are dumb views.** No business logic, no Node, no direct storage. They render state they receive and send intents.
 4. **Everything crosses modules via the bus** or a module's public `index.js`. No deep imports into another module's internals.
 5. **New bus topic → declare it in `src/main/bus-topics.js` first** (name + JSDoc payload).
-6. **Engines implement the Engine contract** (ARCHITECTURE §5). No engine-specific `if (engine === 'agy')` outside `engines/`.
+6. **Engines implement the Engine contract** (ARCHITECTURE §5). No engine-specific `if (engine === 'agy')` outside `engines/`. Features ask the provider layer for a capability (`providers.pick('chat')`), never for a named engine (D-054).
 7. **Every tool approval goes through `brain/PermissionGate`.** No engine, channel or tool may auto-approve. Bond level never affects permissions.
 8. **Persistence only via `platform/store`**: atomic writes, `schemaVersion` on every file, and a migration for any shape change. Never break an existing user's save.
 9. **Secrets only via `platform/secrets`**: never in JSON, logs, errors, exports (unless password-encrypted), or commit history.
@@ -81,7 +81,10 @@ past decisions → `docs/DECISIONS.md`.
 
 ```
 npm start          # run the app (dev)
-npm run check      # tsc --checkJs + node --test
+npm run check      # tsc --checkJs + architecture check (scripts/arch-check.js) + node --test
+npm run arch       # architecture report incl. files over ~300 lines
+npm run coverage   # line coverage per layer, files under 80 % and files no test loads (node:test, no extra dependency)
+npm run perf       # idle CPU / memory / event-loop / slow callbacks / IPC (shows a pet for ~45 s); -- --seconds 60 --data <dir>
 npm run dist       # portable exe
 ```
 Debug env vars: `TAMA_DEBUG=1`, `TAMA_SHOT=<dir>` (screenshots, `TAMA_SHOT_TIMES=ms,ms`), `TAMA_SHOW_TERM=1`,

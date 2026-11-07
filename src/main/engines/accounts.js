@@ -6,8 +6,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFile } = require('child_process');
-const { CLAUDE_EXE } = require('./claude/session');
-const { findAgyExecutable, CLI_DIR_NAME } = require('./agy/setup');
+const { CLAUDE_EXE } = require('./claude');
+const { findAgyExecutable, CLI_DIR_NAME } = require('./agy');
 
 /** @returns {Promise<{ loggedIn: boolean, email?: string, plan?: string, org?: string, method?: string, expiresAt?: string, error?: string }>} */
 function claudeStatus() {

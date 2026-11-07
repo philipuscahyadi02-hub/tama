@@ -57,7 +57,6 @@ body { display: flex; flex-direction: column; border: 1px solid var(--tama-line)
 .res { color: var(--tama-dim); white-space: pre-wrap; margin-top: 1px; }
 .res.err { color: var(--tama-bad); }
 .res::before { content: "⎿  "; color: var(--tama-dim); }
-.res-more { color: var(--tama-dim); font-style: italic; }
 .info { color: var(--tama-dim); white-space: pre-wrap; }
 .error { color: var(--tama-bad); white-space: pre-wrap; }
 .done { color: var(--tama-accent); opacity: .8; font-size: 12px; }

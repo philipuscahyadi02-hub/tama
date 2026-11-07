@@ -32,13 +32,7 @@ function openPage(page, opts = {}) {
   return win;
 }
 
-/** @param {string} page */
-function closePage(page) {
-  const w = open.get(page);
-  if (w && !w.isDestroyed()) w.close();
-}
-
 /** Open framed pages (for live status pushes such as Google sign-in state). */
 const openPages = () => [...open.values()].filter((w) => !w.isDestroyed());
 
-module.exports = { openPage, closePage, openPages };
+module.exports = { openPage, openPages };

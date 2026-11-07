@@ -1,7 +1,7 @@
 // @ts-check
 // Electron app lifecycle + paths. The bootstrap (src/main/index.js) only talks to Electron through here.
 const path = require('path');
-const { app } = require('electron');
+const { app, session } = require('electron');
 
 let quitting = false;
 
@@ -13,6 +13,24 @@ const paths = {
 };
 
 /**
+ * QC-6: Tama's windows only ever show its own file:// pages. Links never navigate a window or open a new one (pages
+ * open allow-listed sites through link:open → platform/shell), no <webview>, and no browser permission (camera,
+ * microphone, location, notifications, …) is granted, since no page needs one.
+ */
+function harden() {
+  app.on('web-contents-created', (_e, wc) => {
+    wc.setWindowOpenHandler(() => ({ action: 'deny' }));
+    wc.on('will-navigate', (ev, url) => { if (!String(url).startsWith('file://')) ev.preventDefault(); });
+    wc.on('will-redirect', (ev, url) => { if (!String(url).startsWith('file://')) ev.preventDefault(); });
+    wc.on('will-attach-webview', (ev) => ev.preventDefault());
+  });
+  app.whenReady().then(() => {
+    session.defaultSession.setPermissionRequestHandler((_wc, _perm, cb) => cb(false));
+    session.defaultSession.setPermissionCheckHandler(() => false);
+  });
+}
+
+/**
  * Run `boot` once Electron is ready, as the only instance. A second launch calls `onSecondInstance`.
  * @param {{ boot: () => void, onSecondInstance: () => void, beforeQuit: () => void }} hooks
  */
@@ -21,6 +39,7 @@ function run({ boot, onSecondInstance, beforeQuit }) {
   // collide with (or quit because of) the Tama the user is actually running.
   if (process.env.TAMA_DATA_DIR) app.setPath('userData', path.join(process.env.TAMA_DATA_DIR, '.electron'));
   if (!app.requestSingleInstanceLock()) { app.quit(); return; }
+  harden();
   app.whenReady().then(boot);
   app.on('second-instance', onSecondInstance);
   app.on('before-quit', () => { quitting = true; beforeQuit(); });

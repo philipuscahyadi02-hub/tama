@@ -84,10 +84,11 @@ src/main/
                            drive (+ Docs/Sheets, appData), markdown, tools (+ gate policy), backup (appData + lease) (M6, D-034),
                            maps (pasted Maps links, Google Places lookup, D-039)
   platform/google-oauth.js loopback + PKCE desktop OAuth (M6)
-  services/telegram/       api (long polling, uploads), format (pure), remote (/code bridge), index (pairing, routing, daily) (M7, D-036)
+  services/telegram/       api (long polling, uploads), format (pure), remote (/code bridge), commands (the phone's /commands),
+                           index (pairing, routing, daily) (M7, D-036)
   services/voice/          her voice: language, pick + tuning, quiet rules (index.js); engines.js = start/stop/catalog of the local
                            engines; emotion.js = mood → style/prosody (pure); vv-engine.js = AivisSpeech/VOICEVOX HTTP (D-042..D-045);
-                           chunks.js = sentence split + audio cache for a fast first sound (D-049)
+                           chunks.js = sentence split + audio cache for a fast first sound (D-049); text.js = speakable() + the dub cache
   services/usage/          numbers-only usage log (usage/YYYY-MM.jsonl), summaries (M8, D-040); limits.js: what's left,
                            history (usage/limits.jsonl), warnings (D-041)
   engines/claude/limits.js live Claude plan limits without a message + rate-limit event normalizer (D-041)
@@ -106,7 +107,10 @@ src/main/
                            guard.js (PreToolUse hard lock), mcp-relay.js (stdio MCP → tool bridge) (D-037)
   platform/tool-bridge.js  localhost tool bridge for agent CLIs (random key per run) (D-037)
   brain/chat-tools.js      Google tools for the chat brain with Tama-side confirmations (D-037)
-  channels/desktop/        renderer IPC ↔ bus
+  providers/               provider registry: capability → provider, preference + fallback + opt-in (M12, D-054, D-057)
+  channels/desktop/        renderer IPC ↔ bus: index.js (pushes to windows, pet/voice/chat/terminal/productivity IPC),
+                           pages.js (usage, Telegram, Google, events, weather, onboarding, My Tamas pages)
+  dev/hooks.js             every dev-only TAMA_* switch (open windows, *_EVAL, voice test/trace, perf, quit-after), called once from the bootstrap
   dev/selftest.js          TAMA_SELFTEST live summon check
   dev/onboarding-walk.js   TAMA_ONBOARD_WALK scripted onboarding run with screenshots (M1)
   services/designer/       prompt.js (schemas) + fallback.js (keyword designer) + index.js (M1)
@@ -116,10 +120,13 @@ src/shared/                pure modules for main AND renderer (D-020): palette, 
                            rig/{kit,face,hair,headwear,outfit,accessories,compose}
 src/preload/index.js       window.tama allow-list
 src/renderer/shared/       rig.css (animations + expressions), rig-view.js (renderRig/renderEgg)
-src/renderer/pet|terminal  pet drawn by the rig from the CharacterSpec; terminal still kero-styled (M4)
 src/renderer/onboarding/   hatch / restyle / rebirth flow (M1)
 src/renderer/roster/       My Tamas: switch, hatch, graduate, restore, delete, export, import (M2)
-src/renderer/terminal/tama-commands.js  /todo /focus /remind /note /watch /feed /snack /nap /tama (M2)
+src/renderer/pet/          pet.js (state, mood, wandering, boot) + care.js (buttons, panels) + pointer.js (click, drag, pats)
+                           + reactions.js (Claude/chat reactions) + voice.js; plain scripts sharing one global scope, loaded in order
+src/renderer/terminal/     terminal.js (state, status, input, boot) + format.js (pure: markdown, diffs, tool lines; unit-tested)
+                           + permission.js + agent-events.js + local-commands.js (/help /cd /model …) + tama-commands.js
+                           (/todo /focus /remind /note /watch /tama …) + connect-commands.js (/phone /google /usage /newpc)
 src/renderer/dev/          rig gallery (TAMA_GALLERY=designs|moods)
 src/renderer/settings/     Settings window (M10, D-048): one view over ui/voice/telegram/google/weather/brain requests; opens other pages via page:open
 ```
@@ -127,6 +134,7 @@ M5 extras (D-035):
 ```
 src/main/services/weather/        logic.js (pure: WMO code → kind, hot/cold, parsers) + index.js (/weather city in device.json,
                                   Open-Meteo fetch at most every 30 min, quiet failures)
+src/main/platform/perf.js         dev performance probe for npm run perf (TAMA_PERF): idle CPU/memory, loop lag, slow callbacks, IPC (D-053)
 src/main/platform/crash-log.js    daily error/crash log in <data>/logs (redacted, 7 days) + clean-quit marker (D-050)
 src/main/platform/crash-guard.js  uncaught errors → log; crashed renderers reload; helper crashes logged (D-050)
 src/main/platform/app-icon.js     app icon = the Tama's face: renders renderer/icon off-screen, applies to tray + windows, caches per Tama (D-047)
@@ -152,6 +160,7 @@ renderer  ──IPC──►  channels/desktop  ──►  bus  ◄──  servi
 - `services/*` may import: other services' **public `index.js`**, `bus`, `platform/store`. **Never** `electron`, never `engines/*` directly (they ask the brain via the bus).
 - `engines/*` may import: `platform/*`, `bus`, `brain/permission-gate` (type only). Never services, never channels.
 - `brain/*` may import `engines/*`, `platform/*`, `bus`. Services and channels reach the brain only via bus topics.
+- `providers/` imports only `bus-topics`; provider descriptors are built in `engines/<name>/provider.js` and handed in by the bootstrap.
 - `channels/*` translate between the outside world and bus messages. No business rules in channels.
 - `renderer/*` never imports Node; only `window.tama.*` from preload.
 - Only `platform/*` imports `electron`, `fs`, `child_process` for app data. (Engines may spawn their CLI.)
@@ -192,6 +201,12 @@ stop(): void
 // emits on bus 'engine.event' with { engine, sessionId, ev } where ev.t ∈
 // 'status'|'text-delta'|'text'|'tool'|'tool-result'|'permission'|'todo'|'result'|'error'|'session'
 ```
+- **Provider layer (M12, D-054, D-057):** `src/main/providers/` keeps a registry of providers, each declaring capabilities
+  (`chat`, `compose`, `json`, `code`), features (`webSearch`, `googleTools`), `available()` and engine factories. `pick(cap)`
+  walks the user's order (device.json `providers.order`, default = D-029: chat/compose → agy, json/code → Claude) and skips
+  providers that are missing or need an opt-in (`providers.allow`, e.g. `claude:chat`). Providers live next to their engine
+  (`engines/claude/provider.js`, `engines/agy/provider.js`) and are wired in the bootstrap; the brain and the designer only see
+  the registry. Bus: `providers.get`, `providers.set`, `providers.changed` (the brain rebuilds the persona and restarts chat).
 - **All tool approvals** go out as `ev.t = 'permission'` and come back through `brain/PermissionGate`. An engine must not auto-approve on its own.
 - `agy`: headless default is `always-proceed` — the engine **must** start it in a mode that requires approval (see DECISIONS).
 
@@ -214,8 +229,12 @@ stop(): void
 - Engines: approval-required by default; PermissionGate is the single authority; per-channel policy (remote/Telegram = stricter).
 - Telegram: one paired chat ID; everything else dropped and logged.
 - Google: minimal scopes; no delete/share tools; edits to existing files need approval.
-- Renderer: `contextIsolation: true`, `nodeIntegration: false`, CSP in every HTML file, preload exposes an allow-list.
-- Logs never contain secrets, tokens, or email bodies.
+- Renderer: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, CSP in every HTML file, preload exposes an allow-list.
+  IPC is only accepted from file:// frames (`platform/ipc`), and the desktop channel coerces or allow-lists every argument (D-055).
+- Windows never navigate away from file://, never open new windows and get no browser permissions (`platform/app` `harden()`, D-055).
+  Links go through `link:open` → `platform/shell` (allow-listed https hosts only).
+- Untrusted content (mail, Drive files, calendar, Maps places, the `[google]` context line) reaches models labeled as data, never as instructions.
+- Logs never contain secrets, tokens, or email bodies (`platform/crash-log` `redact()`: Telegram, Google OAuth/API, Anthropic patterns).
 
 ## 8. Character rig (see D-020)
 - `CharacterSpec` (JSON) → rig composes layers from `assets/rig/<layer>/<part>.svg` and applies palette via CSS variables.

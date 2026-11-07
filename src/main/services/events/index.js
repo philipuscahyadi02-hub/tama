@@ -4,7 +4,7 @@
 // (and in the chat history). Answers can grow the bond, feed her, or become memories. Also writes the daily diary.
 const { TOPICS } = require('../../bus-topics');
 const { pick, validateDeck } = require('./triggers');
-const { dayOf } = require('../pet/bond');
+const { dayOf } = require('../../day');
 
 const TICK_MS = 60000;
 const SHOW_MS = 5 * 60000; // an unanswered event expires after this

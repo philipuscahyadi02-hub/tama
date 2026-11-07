@@ -12,10 +12,30 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   `git log` and the `v*` tags. Don't edit it by hand. Run it before each commit; it lists every
   commit up to the previous one (a commit can't contain its own hash).
 - **Versioning (D-015):** each finished milestone is a minor version (M0 → 0.1.0, M1 → 0.2.0, …).
-  Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
+  Fixes between milestones are patch versions. 1.0.0 = first stable release (D-058); the rest of M12 ships as 1.x; 2.0.0 = Tama's own agentic brain.
 
 ## [Unreleased]
 _Nothing yet._
+
+## [1.0.0] — 2026-11-07 — Stable release (M11 quality control + provider layer)
+### Added
+- **Docs:** a new README and a Word document with the product, user flows and technical architecture (`docs/Tama-v1.0-Documentation.docx`).
+- **First steps of M12** (D-057, D-058):
+  - **Provider layer** (SHIP-8, D-054, D-057): chat, her moments, designing looks and the terminal each use whichever brain you have. New **Settings → 🧠 Brains** shows who does what and lets you pick. If Gemini (Antigravity) isn't installed, you can let **Claude** chat with you instead (Claude Haiku, uses your Claude quota, no web search or Google tools); she then knows and says what she can do.
+### Docs
+- **Version plan (D-056, D-058):** this is **v1.0.0**; installers and the setup wizard follow as 1.x. **v2** is planned: Tama's own agentic brain on official model APIs with your own keys or local models, so she no longer depends on one provider (AGT-1..6).
+- Planned the **provider layer** for M12 (SHIP-8, D-054): features ask for a capability (chat, coding, structured output…) and Tama picks Claude Code or agy from your preference, falling back to whichever is installed.
+### Fixed
+- `/voice` in the terminal works again: an old "arrives in M8" placeholder had replaced it (QC-4).
+- `/newpc` shows whether Telegram is paired instead of "comes in M7".
+### Changed
+- **M11 Quality control:** the architecture rules are now checked automatically in `npm run check` (`npm run arch` for the report); fixed 11 deep imports by giving the engines public entry points and moving the day helpers out of the pet module (QC-1, D-052).
+- **Lighter at idle:** about 1.6 % CPU and 262 MB (was 3.5 % and 297 MB). Her tears, gloom and sleep bubbles now rest between her lively moments, and those moments come a bit less often. New `npm run perf` measures this the same way every time (QC-3, D-053).
+- **Code review, part 1 (QC-4):** the large files are split by responsibility: the terminal (formatting, permission prompt, Claude events, commands), the pet window (care, pointer, reactions), Telegram's phone commands, the voice text helpers, and the bootstrap's dev-only switches (`src/main/dev/hooks.js`). The terminal's formatting is now unit-tested.
+- **Code review, part 2 (QC-4):** the desktop channel is split into small per-area functions (and `pages.js`); messages from agy that fail to process, the app-icon render and opening links no longer leave unhandled promises; a save file that can't be read is now written to the crash log too.
+- **Test coverage (QC-5):** new `npm run coverage` (built into Node, no new dependency). Services are at 94 % of lines; new tests for the desktop channel (the boundary to every window), the composer, phone `/repos` `/cd` `/stop`, the git helpers and the Claude input queue (190 → 207 tests).
+- **Security pass (QC-6, D-055):** Tama's windows can no longer be navigated to a website or open new windows, and get no browser permissions (camera, microphone, location…). Every value a window sends is checked before it reaches the core. The crash log also hides Google API keys and refresh tokens. Maps results and mail subjects are marked as untrusted data for the models.
+- Removed dead code found by a scan: an unused git helper, page close helper, export, IPC channel and CSS rule. Everything else is reachable and used (QC-2).
 
 ## [0.10.0] — 2026-11-07 — M10 Settings & polish
 ### Docs
@@ -220,7 +240,24 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `7ead590` | 2026-11-07 | feat(providers) | provider layer: capabilities, Claude/agy providers, opt-in Claude chat, Settings Brains (SHIP-8, D-057) |
+| `06ac9f5` | 2026-11-07 | docs(prd) | M12 = v1.0.0; plan v2 own agentic brain (AGT-1..6, D-056) |
+| `d4aa7cb` | 2026-11-07 | docs(changelog) | regenerate commit table |
+| `93382b2` | 2026-11-07 | fix(security) | keep windows on Tama's pages, no browser permissions, coerce IPC input, redact more secrets, untrusted Maps data (QC-6, D-055) |
+| `4ec89f1` | 2026-11-07 | docs(changelog) | regenerate commit table |
+| `ccdffcb` | 2026-11-07 | test | npm run coverage; tests for the desktop channel, composer, phone remote, git, input queue (QC-5) |
+| `273a742` | 2026-11-07 | docs(changelog) | regenerate commit table |
+| `a6548e1` | 2026-11-07 | refactor | desktop channel per-area IPC (pages.js); handle floating promises; log unreadable saves (QC-4) |
+| `c7ab83a` | 2026-11-07 | docs(prd) | plan the M12 provider layer (SHIP-8, D-054) |
+| `8155641` | 2026-11-07 | docs(changelog) | regenerate commit table |
+| `800e96b` | 2026-11-07 | refactor | split large files by responsibility; fix terminal /voice (QC-4) |
+| `565b5da` | 2026-11-07 | docs(changelog) | regenerate commit table |
+| `0a2c422` | 2026-11-07 | docs(changelog) | regenerate commit table |
+| `c0eec77` | 2026-11-07 | perf | npm run perf; mood and sleep effects rest between bursts; shorter alive bursts (D-053) |
+| `234d429` | 2026-11-07 | chore | remove dead code found by the QC-2 scan |
+| `65476da` | 2026-11-07 | chore(arch) | enforce architecture rules in npm run check; engine public indexes; shared day helpers (D-052) |
 
 ### v0.10.0
 | Commit | Date | Type | Subject |
