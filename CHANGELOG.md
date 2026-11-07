@@ -249,6 +249,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `341f759` | 2026-11-08 | docs(prd) | v2 positioning and USP-1..6 roadmap (D-060) |
+| `51d3d75` | 2026-11-08 | docs(changelog) | regenerate commit table |
 | `5a0582b` | 2026-11-08 | feat(ship) | Windows installer (NSIS, per-user, uninstaller asks about data), setup wizard with official installers and live re-detection, start with Windows (SHIP-1, SHIP-4, D-059) |
 | `7f3da5f` | 2026-11-07 | docs(changelog) | regenerate commit table |
 
