@@ -234,6 +234,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `93382b2` | 2026-11-07 | fix(security) | keep windows on Tama's pages, no browser permissions, coerce IPC input, redact more secrets, untrusted Maps data (QC-6, D-055) |
+| `4ec89f1` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `ccdffcb` | 2026-11-07 | test | npm run coverage; tests for the desktop channel, composer, phone remote, git, input queue (QC-5) |
 | `273a742` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `a6548e1` | 2026-11-07 | refactor | desktop channel per-area IPC (pages.js); handle floating promises; log unreadable saves (QC-4) |
