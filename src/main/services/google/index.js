@@ -10,7 +10,7 @@ const { createDrive } = require('./drive');
 const { googleTools, policyRule } = require('./tools');
 const { createBackup } = require('./backup');
 const { createMaps } = require('./maps');
-const { dayOf } = require('../pet/bond');
+const { dayOf } = require('../../day');
 
 const SCOPES = {
   base: [

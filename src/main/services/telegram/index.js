@@ -7,7 +7,7 @@ const { TOPICS } = require('../../bus-topics');
 const { createBotApi } = require('./api');
 const { createRemote } = require('./remote');
 const fmt = require('./format');
-const { dayOf } = require('../pet/bond');
+const { dayOf } = require('../../day');
 
 const CODE_TTL_MS = 15 * 60000;
 const CHAT_TIMEOUT_MS = 7 * 60000; // long enough for a Google confirm tap (D-037)

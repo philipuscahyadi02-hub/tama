@@ -116,4 +116,4 @@ function createPetService({ bus, store, tama, now = Date.now }) {
   return { start, stop, getState: () => state };
 }
 
-module.exports = { createPetService };
+module.exports = { createPetService, levelOf: bond.levelOf };

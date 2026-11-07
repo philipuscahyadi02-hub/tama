@@ -3,7 +3,7 @@
 // (agy shares no remaining quota), Google calls this month incl. billable Places calls against a cap the user sets.
 // History in usage/limits.jsonl (kept 90 days) for the trend chart; warnings at 25 % and 10 % left, once per window.
 const { TOPICS } = require('../../bus-topics');
-const { dayOf } = require('../pet/bond');
+const { dayOf } = require('../../day');
 
 const REFRESH_MS = 20 * 60000;
 const HISTORY_DAYS = 90;

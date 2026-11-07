@@ -2,7 +2,7 @@
 // Usage log (M8, D-040): every AI turn and Google/Telegram call Tama makes, as numbers only (never prompt, email or file
 // contents), in <data>/usage/YYYY-MM.jsonl on this PC. Feeds the Usage & accounts dashboard. Keeps 3 months.
 const { TOPICS } = require('../../bus-topics');
-const { dayOf } = require('../pet/bond');
+const { dayOf } = require('../../day');
 
 const KEEP_MONTHS = 3;
 const MEMORY_MAX = 5000;

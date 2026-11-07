@@ -81,6 +81,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-049 | Faster Japanese voice: the chat reply carries its own dub (`[[ja: …]]` while the Japanese voice is on), sentence-by-sentence synthesis, audio cache | Accepted · Refines D-043 |
 | D-050 | Reliability: window rescue from unplugged monitors; crash log + clean-quit marker + renderer reload | Accepted |
 | D-051 | Roadmap: M11 = quality control; M12 = installers (Windows + macOS) with modular capabilities instead of a portable exe | Accepted |
+| D-052 | Architecture rules enforced by `scripts/arch-check.js` in `npm run check`; engines get public index.js files; shared day helpers in `src/main/day.js` | Accepted |
 
 ---
 
@@ -691,3 +692,14 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** A portable exe (users still have to find and install every dependency by hand); bundling Claude Code, agy or the voice engines in the installer (their own licenses and sign-ins, several GB, and they update separately).
 - **Consequences:** M12 needs mac versions of the Windows-only parts (SAPI voice, PowerShell fullscreen helper, `run.exe` engines, `%LOCALAPPDATA%` paths, tray icon sizes). Windows code signing and Apple notarization need paid certificates or accounts; the user decides before release. The terminal stays Claude-only (D-029), so with only agy the coding terminal is hidden or explains how to add Claude Code.
 - **Refs:** QC-1..6, SHIP-1..7, NFR-1, NFR-3, D-005, D-006, D-029
+
+### D-052 — Architecture rules enforced by a script; engine public indexes; shared day helpers
+- **Date:** 2026-11-07 · **Status:** Accepted
+- **Context:** QC-1 (M11). The AGENTS §1 rules were only checked by reading. The first run of a checker found 11 deep imports (six services reached into `services/pet/bond.js` for `dayOf`; `brain` and `engines/accounts` into engine internals; `agy/session` into `acp/client`).
+- **Decision:**
+  - `scripts/arch-check.js` runs in `npm run check` (between tsc and the tests) and fails on: `electron` outside `platform/` and the preload; a deep import into another module under `services/`, `engines/` or `channels/` (only its `index.js`; the bootstrap, tests and `dev/` are exempt); any `require` in a renderer; a `TOPICS.X` that is used but not declared, or declared but never used; a preload IPC channel without a main handler, or the reverse. `npm run arch` also lists files over ~300 lines as warnings.
+  - `engines/claude`, `engines/agy` and `engines/acp` get an `index.js` with lazy getters (importing the limits helper doesn't load the Agent SDK).
+  - `dayOf`/`prevDay` move to `src/main/day.js` (top-level shared helpers, like `bus.js`); `pet/index.js` re-exports `levelOf` for the roster.
+- **Alternatives:** ESLint with import rules (new dev dependencies and config for rules a 100-line script covers); dependency-cruiser (same).
+- **Consequences:** New code that breaks a layer rule fails `npm run check`. Files over 300 lines (bootstrap, telegram, voice, pet.js, terminal.js, tama-commands.js) are QC-4 work.
+- **Refs:** QC-1, AGENTS §1, scripts/arch-check.js, src/main/day.js, src/main/engines/*/index.js

@@ -10,7 +10,7 @@ const persona = require('./persona');
 const budget = require('./budget');
 const { createChat } = require('./chat');
 const { createComposer } = require('./compose');
-const { fromRateLimitEvent } = require('../engines/claude/limits');
+const { fromRateLimitEvent } = require('../engines/claude');
 
 const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
 

@@ -6,7 +6,7 @@
 | | |
 |---|---|
 | **Version** | 0.23 |
-| **Status** | v0.9.0 released (M0–M9). M10 (settings & polish) code complete on `m10-settings`; M11 quality control next; M12 shipping (installers) |
+| **Status** | v0.9.0 released (M0–M9). M10 code complete on `m10-settings` (awaiting the user's check); M11 quality control in progress on `m11-quality`; M12 shipping (installers) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-07 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -110,7 +110,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.3c Quality control (QC), M11
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| QC-1 | Architecture check as a script in `npm run check`: only `platform/*` imports Electron, no deep imports across modules, every bus topic declared and used, renderers never require Node. | P1 | M11 | ☐ |
+| QC-1 | Architecture check as a script in `npm run check`: only `platform/*` imports Electron, no deep imports across modules, every bus topic declared and used, renderers never require Node. *(`scripts/arch-check.js`, in `npm run check`; D-052.)* | P1 | M11 | ☑ |
 | QC-2 | Dead code: find and remove unused files, exports, bus topics, IPC channels, CSS and preload methods (script + review). | P1 | M11 | ☐ |
 | QC-3 | Performance: measure start-up time, idle CPU/RAM (NFR-1), event-loop lag, IPC chatter and timers; fix what slows Tama down; keep a repeatable `npm run perf`. | P1 | M11 | ☐ |
 | QC-4 | Code review of every module against AGENTS rules (file ≤ ~300 lines, function size, error handling, no floating promises, `start()`/`stop()`); split or simplify what fails. | P1 | M11 | ☐ |

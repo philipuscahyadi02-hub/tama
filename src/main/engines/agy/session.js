@@ -2,7 +2,7 @@
 // AgyEngine (ENG-2/3, D-026): drives `agy acp` over the Agent Client Protocol. One process per session.
 // Implements the Engine contract (ARCHITECTURE §5). Every permission request goes through the PermissionGate.
 const { spawn } = require('child_process');
-const { createAcpClient } = require('../acp/client');
+const { createAcpClient } = require('../acp');
 const { mapAcpUpdate, pickOption } = require('./map-update');
 const { findAgyExecutable, ensureTamaAgySettings, ensureWorkspaceGuard, CLI_DIR_NAME } = require('./setup');
 

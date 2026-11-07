@@ -9,7 +9,8 @@
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "check": "tsc -p jsconfig.json && node --test --test-timeout=30000",
+    "check": "tsc -p jsconfig.json && node scripts/arch-check.js && node --test --test-timeout=30000",
+    "arch": "node scripts/arch-check.js --report",
     "test": "node --test --test-timeout=30000",
     "changelog": "node scripts/changelog.js",
     "probe:agy": "node scripts/agy-permission-probe.js",

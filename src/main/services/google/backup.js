@@ -5,7 +5,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { TOPICS } = require('../../bus-topics');
-const { dayOf } = require('../pet/bond');
+const { dayOf } = require('../../day');
 
 const KEEP = 7;
 const LEASE_FRESH_MS = 15 * 60000;

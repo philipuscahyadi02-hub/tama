@@ -81,7 +81,8 @@ past decisions → `docs/DECISIONS.md`.
 
 ```
 npm start          # run the app (dev)
-npm run check      # tsc --checkJs + node --test
+npm run check      # tsc --checkJs + architecture check (scripts/arch-check.js) + node --test
+npm run arch       # architecture report incl. files over ~300 lines
 npm run dist       # portable exe
 ```
 Debug env vars: `TAMA_DEBUG=1`, `TAMA_SHOT=<dir>` (screenshots, `TAMA_SHOT_TIMES=ms,ms`), `TAMA_SHOW_TERM=1`,

@@ -4,7 +4,7 @@
 // Switching the active Tama relaunches the app (simplest way to rebuild every service for the new one).
 const specMod = require('../../../shared/spec');
 const bundle = require('./bundle');
-const { levelOf } = require('../pet/bond');
+const { levelOf } = require('../pet');
 
 /**
  * @param {{
