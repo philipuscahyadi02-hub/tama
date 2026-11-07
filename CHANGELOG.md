@@ -19,10 +19,12 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - **M11 Quality control** (branch `m11-quality`): the architecture rules are now checked automatically in `npm run check` (`npm run arch` for the report); fixed 11 deep imports by giving the engines public entry points and moving the day helpers out of the pet module (QC-1, D-052).
 - **Lighter at idle:** about 1.6 % CPU and 262 MB (was 3.5 % and 297 MB). Her tears, gloom and sleep bubbles now rest between her lively moments, and those moments come a bit less often. New `npm run perf` measures this the same way every time (QC-3, D-053).
 - Removed dead code found by a scan: an unused git helper, page close helper, export, IPC channel and CSS rule. Everything else is reachable and used (QC-2).
+
+## [0.10.0] — 2026-11-07 — M10 Settings & polish
 ### Docs
 - Planned **M11 quality control** (QC-1..6) and **M12 shipping**: installers for Windows and macOS, modular capabilities with a setup wizard, optional components on demand (SHIP-1..7, D-051).
 ### Added
-- **M10 Settings & polish** (branch `m10-settings`, D-048):
+- **M10 Settings & polish** (D-048 … D-050):
   - **Settings window** (tray → Settings…, or `/settings`): her look and motion, talking & voice, quiet hours, phone (Telegram), Google, accounts and the Claude budget, all in one place. The Voice, Google and Usage pages open from it.
   - **Reply language:** she answers in your language (as before), or always in English, Bahasa Indonesia or Japanese. `/lang auto|en|id|ja`.
   - **Quiet hours:** e.g. 23:00–08:00, no voice, pop-up moments or daily phone messages; your reminders still ring. `/quiet 23:00-08:00|on|off`.
@@ -221,10 +223,14 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
+_No commits._
+
+### v0.10.0
 | Commit | Date | Type | Subject |
 |---|---|---|---|
 | `234d429` | 2026-11-07 | chore | remove dead code found by the QC-2 scan |
 | `65476da` | 2026-11-07 | chore(arch) | enforce architecture rules in npm run check; engine public indexes; shared day helpers (D-052) |
+| `6868507` | 2026-11-07 | chore(release) | 0.10.0 |
 | `fe2025c` | 2026-11-07 | feat(app) | window rescue, crash log and renderer reload; plan M11 QC and M12 installers (D-050, D-051) |
 | `e1dcc8a` | 2026-11-07 | feat(voice) | faster Japanese voice: dub rides with the reply, sentence-by-sentence playback, audio cache (D-049) |
 | `ae1fd06` | 2026-11-07 | feat(settings) | Settings window, reply language, quiet hours (D-048) |
