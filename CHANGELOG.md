@@ -207,8 +207,13 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
+_No commits._
+
+### v0.9.0
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `073f17c` | 2026-11-07 | chore(release) | 0.9.0 |
+| `09e94f8` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `e2cd0d1` | 2026-11-07 | feat(ui) | app icon is the Tama's face; tray menu grouped (D-047) |
 | `ebe46b3` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `97c2e52` | 2026-11-07 | feat(voice) | English labels and separate listen/use controls on the Voice page (D-046) |
