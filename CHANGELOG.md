@@ -232,6 +232,9 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `a6548e1` | 2026-11-07 | refactor | desktop channel per-area IPC (pages.js); handle floating promises; log unreadable saves (QC-4) |
+| `c7ab83a` | 2026-11-07 | docs(prd) | plan the M12 provider layer (SHIP-8, D-054) |
+| `8155641` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `800e96b` | 2026-11-07 | refactor | split large files by responsibility; fix terminal /voice (QC-4) |
 | `565b5da` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `0a2c422` | 2026-11-07 | docs(changelog) | regenerate commit table |
