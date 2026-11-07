@@ -229,6 +229,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `800e96b` | 2026-11-07 | refactor | split large files by responsibility; fix terminal /voice (QC-4) |
+| `565b5da` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `0a2c422` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `c0eec77` | 2026-11-07 | perf | npm run perf; mood and sleep effects rest between bursts; shorter alive bursts (D-053) |
 | `234d429` | 2026-11-07 | chore | remove dead code found by the QC-2 scan |
