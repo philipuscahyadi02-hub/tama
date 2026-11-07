@@ -90,6 +90,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-058 | Release v1.0.0 now (M11 + provider layer), before the installer; the rest of M12 ships as 1.x; unsigned builds accepted | Accepted · Refines D-056 (what v1.0.0 contains), D-051 (signing) |
 | D-059 | Installer = NSIS per-user (uninstaller asks about data); setup wizard runs the vendors' official one-line installers visibly and re-detects tools without a restart | Accepted |
 | D-060 | v2 positioning: "the work buddy who grows when you ship"; USP-1..6 (work → bond loop, day plan + stand-up, undo, shareable character, body-doubling, voice input) join the v2 roadmap | Accepted |
+| D-061 | 1.x "Voice & hands": push-to-talk Ctrl+Alt+Space, local Whisper, safe PC actions (play music, media keys, open URL/app); API-key models (AGT-2) deferred for cost | Accepted (plan) |
 
 ---
 
@@ -824,3 +825,16 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Putting USP-1..3 into 1.x (faster story, but the user chose to keep 1.x for shipping work); positioning as a coding tool (crowded, loses the companion edge) or as a pure companion (loses the "does real work" edge).
 - **Consequences:** 1.x stays focused on shipping (installer, modular capabilities, voice on demand, updates, macOS). v2 planning should order USP-1..3 early, since they reuse what exists (bond, events, Google, git watcher, PermissionGate) and AGT work can follow behind the provider layer. README and release notes switch to the new positioning when v2 starts.
 - **Refs:** USP-1..6, AGT-1..6, BOND-1..3, EVT-*, GOOG-*, PROD-2, VOICE-4, D-038, D-054, D-056
+
+### D-061 — 1.x "Voice & hands" planned; API-key models deferred
+- **Date:** 2026-11-08 · **Status:** Accepted (plan; not built yet)
+- **Context:** The user wants to dictate to Tama and have her act, e.g. "open YouTube Music in the browser and play this anime song". They also asked to drop switching to API keys (AGT-2) for now and review it later, because per-token usage costs money.
+- **Decision:**
+  - **Push-to-talk on Ctrl+Alt+Space** (user agreed) or the 🎙️ on her; the transcript goes to the chat brain like a typed message.
+  - **Local Whisper** (whisper.cpp) for speech-to-text: free, offline, multilingual; model downloaded on demand. Chromium's Web Speech API doesn't work in Electron, Windows' recognizer is English-only, and agy's ACP takes no audio (D-042).
+  - **PC actions** as Tama-owned tools served through the existing tool bridge (D-037), with per-action rules: `play_music` (find the track via web search, open its YouTube Music page, announce what was picked), `media_control` (media keys), `open_url` (known sites direct, others ask), `open_app` (allow-list, others ask). The chat brain stays read-only otherwise; no general shell.
+  - The microphone permission is granted to the pet window only, amending D-055's "no browser permissions".
+  - **AGT-2 deferred** ("review later"): no API-key models until the user revisits the cost.
+- **Alternatives:** Letting agy run commands (breaks D-027/D-037); full desktop control (much larger risk surface); cloud speech-to-text (costs money and sends audio off the PC).
+- **Consequences:** Browsers may block autoplay; she then says the page is open and `media_control play` can start it. Song lookup depends on web search accuracy, so she names the track she picked.
+- **Refs:** VH-1..4, VOICE-4, AGT-2, AGT-3, SHIP-5, D-027, D-037, D-042, D-055, D-056

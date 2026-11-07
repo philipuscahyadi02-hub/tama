@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.34 |
+| **Version** | 0.35 |
 | **Status** | **v1.0.0 released** (M0–M11 + provider layer, D-058). Rest of M12 (installers, setup wizard, modular capabilities) ships as 1.x on `m12-shipping` |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-08 |
@@ -256,17 +256,26 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M11 — Quality control.** *(released in 1.0.0)* Architecture checks, dead code, performance, code review, coverage, security (QC-1..6, NFR-1).
 - [ ] **M12 — Shipping** (1.0.0 released early with SHIP-8 in part, D-058; the rest arrives as 1.x). Also closes the two open P0 rows (GOOG-6 replace section, NFR-2 mixed-DPI check) or defers them explicitly. Windows installer and macOS app, a provider layer, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..8, NFR-3).
 - [x] **M9 — Voice & polish.** *(released as 0.9.0; phone → Tama speech-to-text (VOICE-4) deferred)* AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
+- [ ] **1.x — Voice & hands** (planned, D-061): talk to her with push-to-talk (Ctrl+Alt+Space) and let her act on the PC through a few safe actions (VH-1..4).
 - [ ] **v2 (M13+) — Tama's own agentic brain + "the work buddy who grows when you ship"** (planned, not started; D-056, D-060). Tama runs its own agent loop instead of depending on one provider's agent (AGT-1..6), and the product story centres on her growing with your real work (USP-1..6).
 
 ### 5b. v2 roadmap: Tama's own agentic brain (planned)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
 | AGT-1 | **Own agent loop** (`src/main/agent/`): plan → call tools → observe → answer, with streaming, interrupt, sessions and context compaction, built on the provider layer (SHIP-8). | P0 | v2 | ☐ |
-| AGT-2 | **Model adapters over official APIs**, each with the user's own API key or a local model: Anthropic Messages API, Google Gemini API, OpenAI-compatible endpoints, local runtimes. Per-token billing and keys are shown plainly; keys live in `platform/secrets`. Never a subscription login or another app's tokens (D-006). | P0 | v2 | ☐ |
+| AGT-2 | **Model adapters over official APIs**, each with the user's own API key or a local model: Anthropic Messages API, Google Gemini API, OpenAI-compatible endpoints, local runtimes. Per-token billing and keys are shown plainly; keys live in `platform/secrets`. Never a subscription login or another app's tokens (D-006). *(Deferred, review later: per-token API cost, D-061.)* | P0 | v2 | ⏸ |
 | AGT-3 | **Tama's own tools**: files (read, edit, write in an allowed folder), shell, search, web fetch/search, Google, memory, with every call through PermissionGate (SAFE-1) and the same per-tool policies as today. | P0 | v2 | ☐ |
 | AGT-4 | **One brain for every surface**: terminal, chat, moments, Telegram and the designer run on the same loop with different tool sets and personas; the user picks a model per role. | P1 | v2 | ☐ |
 | AGT-5 | **Claude Code and agy stay optional adapters** behind the same interface, for users who prefer their subscriptions. | P1 | v2 | ☐ |
 | AGT-6 | **Evaluation and safety probes** for the own loop (like `npm run probe:agy`): tool gating, prompt injection from mail/web, cost limits. | P1 | v2 | ☐ |
+
+### 5b2. 1.x Voice & hands (planned, D-061)
+| ID | Requirement | Pri | MS | Status |
+|---|---|---|---|---|
+| VH-1 | **Push-to-talk:** hold **Ctrl+Alt+Space** (or click 🎙️ on her); she shows "listening…", the speech becomes a chat message, and she answers in text and voice. The microphone is allowed for the pet window only (amends D-055). | P0 | 1.x | ☐ |
+| VH-2 | **Local speech-to-text:** Whisper (whisper.cpp) on the PC, free and offline (English, Indonesian, Japanese); the model is downloaded on demand from the setup wizard. Also transcribes Telegram voice notes (closes VOICE-4). | P0 | 1.x | ☐ |
+| VH-3 | **PC actions for the chat brain** (Tama-owned tools over the existing tool bridge): `play_music(song, service)` finds the track and opens it on YouTube Music, announced; `media_control(play/pause/next/prev/volume)`; `open_url` (known sites direct, others ask); `open_app` (apps on a user-controlled list; others ask). agy stays read-only otherwise. | P0 | 1.x | ☐ |
+| VH-4 | **Setup wizard:** a "Talk to her" card for the Whisper model and microphone check. | P1 | 1.x | ☐ |
 
 ### 5c. v2 positioning and USP (planned, D-060)
 **Positioning:** *"The work buddy who grows when you ship."* A companion that lives on your desktop, works with the AI plans (or keys) you already have, remembers you, and turns your real progress into her growth. Tama sits where desktop pets (no real work), AI companions (cloud chat, no tools, no access to your day) and work agents (no personality, no memory of you, no reason to come back) don't meet. The hook other products can't copy cheaply: **she rewards finishing things, not clicking.**
@@ -289,6 +298,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.35 — 2026-11-08** — 1.x Voice & hands planned (VH-1..4, Ctrl+Alt+Space); AGT-2 (API keys) deferred (D-061).
 - **0.34 — 2026-11-08** — v2 positioning ("the work buddy who grows when you ship") and USP-1..6 added to the v2 roadmap (D-060).
 - **0.33 — 2026-11-08** — SHIP-1 ☑ (Windows installer), SHIP-4 ☑ (setup wizard), SHIP-3 ◐ (D-059).
 - **0.32 — 2026-11-07** — v1.0.0 released (D-058): M11 plus the provider layer; installers and the setup wizard move to 1.x.

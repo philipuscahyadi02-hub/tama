@@ -16,6 +16,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 
 ## [Unreleased]
 ### Docs
+- Planned **Voice & hands** for 1.x (D-061): push-to-talk with Ctrl+Alt+Space, local Whisper speech-to-text, and safe PC actions (play a song on YouTube Music, media keys, open a site or app). Paying per token for API-key models (AGT-2) is deferred.
 - **v2 roadmap** (D-060): positioning "the work buddy who grows when you ship" and USP-1..6 (shipped-today card and growth from real work, morning plan and stand-up draft, undo for agent work, shareable character, focus body-doubling, voice input) next to Tama's own agentic brain (AGT-1..6).
 ### Added
 - **Windows installer** (SHIP-1, D-059): `Tama-Setup-<version>.exe`. Installs for your user only (no admin), lets you pick the folder, adds Start menu and desktop shortcuts, and starts Tama when done. Uninstalling asks whether to also delete your Tamas and settings (default: keep them). Builds are unsigned, so Windows may say "unknown publisher".
