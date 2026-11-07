@@ -15,7 +15,12 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = first stable release (D-058); the rest of M12 ships as 1.x; 2.0.0 = Tama's own agentic brain.
 
 ## [Unreleased]
-_Nothing yet._
+### Added
+- **Windows installer** (SHIP-1, D-059): `Tama-Setup-<version>.exe`. Installs for your user only (no admin), lets you pick the folder, adds Start menu and desktop shortcuts, and starts Tama when done. Uninstalling asks whether to also delete your Tamas and settings (default: keep them). Builds are unsigned, so Windows may say "unknown publisher".
+- **Start with Windows** switch in Settings (installed app only).
+- **Setup wizard** (SHIP-4, D-059; tray → Setup, Settings → Brains, or `/setup`): shows what's installed (Claude Code, Gemini/agy, anime voice, Google, Telegram), what each unlocks, and the next step. Install buttons run the official installer in a visible window (the command is shown first), then the official sign-in. "Check again" finds a freshly installed tool without restarting Tama. It opens by itself the first time if chat or coding has nothing installed.
+### Fixed
+- A test that waited a fixed 50 ms for an agy crash now waits for the crash event (it failed once under load).
 
 ## [1.0.0] — 2026-11-07 — Stable release (M11 quality control + provider layer)
 ### Added

@@ -88,6 +88,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-056 | M12 shipping = v1.0.0; v2 = Tama's own agentic brain over official model APIs (own keys or local models), not a single provider's SDK | Accepted · Refines D-015 (what 1.0.0 means) |
 | D-057 | Provider layer built: registry + per-engine descriptors; Claude chats as Haiku without tools, only after an opt-in (choosing it counts); Settings → Brains | Accepted · Implements D-054 |
 | D-058 | Release v1.0.0 now (M11 + provider layer), before the installer; the rest of M12 ships as 1.x; unsigned builds accepted | Accepted · Refines D-056 (what v1.0.0 contains), D-051 (signing) |
+| D-059 | Installer = NSIS per-user (uninstaller asks about data); setup wizard runs the vendors' official one-line installers visibly and re-detects tools without a restart | Accepted |
 
 ---
 
@@ -801,3 +802,16 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Wait for the installer before 1.0.0 (the user wanted the stable tag now); call it 1.0.0-rc (the user asked for stable).
 - **Consequences:** Release notes list the known gaps plainly (no installer, run from source; open P0 rows GOOG-6 replace section and NFR-2 mixed-DPI check). D-015's "1.0.0 = all P0 done" no longer holds.
 - **Refs:** SHIP-1..8, NFR-3, GOOG-6, NFR-2, D-015, D-051, D-056, D-057
+
+### D-059 — Windows installer (NSIS, per-user) and a setup wizard with official installers and live re-detection
+- **Date:** 2026-11-08 · **Status:** Accepted
+- **Context:** M12 for 1.1: SHIP-1 (installer, not a bare exe) and SHIP-4 (setup wizard). Users must install Claude Code and/or agy themselves; neither may be bundled (D-051). Claude Code and agy were each looked up once at start, and a tool installed while Tama runs isn't on this process's PATH.
+- **Decision:**
+  - **Installer:** electron-builder NSIS, per-user (no admin), assisted (choose the folder), Start menu and desktop shortcuts, run after install, `Tama-Setup-<version>.exe` (`npm run dist`; the portable exe stays as `npm run dist:portable`). `build/installer.nsh` makes the uninstaller ask "also delete your Tamas and settings?" (default No; never during an update, and a silent uninstall keeps the data). Unsigned (D-058).
+  - **Start with Windows** is a Settings switch (`app.setLoginItemSettings`), only in the installed app: in a dev run it would register a bare electron.exe.
+  - **Setup wizard** (`services/setup` + `renderer/setup`): one card per part (Claude Code, Gemini/agy, anime voice, Google, Telegram) with its state (ready / sign in / not installed / optional), what it unlocks, and the next step. It opens by itself once when chat or coding has nothing installed, and from the tray, Settings → Brains and `/setup`.
+  - **Installing** runs the vendor's official one-line installer in a visible PowerShell window, with the exact command shown on the card first: `irm https://claude.ai/install.ps1 | iex` (Claude Code) and `irm https://antigravity.google/cli/install.ps1 | iex` (agy), followed by the official sign-in. Official pages are linked next to them. (The commands match the vendors' published instructions as found on 2026-11-08; the official pages could not be fetched from here, so the links are shown for the user to check.) Tama never handles their tokens (D-006).
+  - **Re-detection:** `platform/env.refreshPath()` merges the registry's user and machine PATH into the process; `providers.recheck()` looks for each tool again (Claude's executable is now looked up through `claudeExe()`/`recheckClaude()`, agy also in `%LOCALAPPDATA%\Antigravity`) and emits `providers.changed`, so chat and the terminal switch over without a restart. The wizard re-checks when its window gets focus back (after an installer window).
+- **Alternatives:** Bundling the CLIs (licenses, sign-ins, separate updates; D-051); a one-click NSIS installer (no folder choice); running installers hidden (the user should see what runs); per-machine install (needs admin).
+- **Consequences:** The installer test needs a real install on a Windows PC (the unpacked build was tested with a scratch data folder). If a vendor changes its install command, update `services/setup` `INSTALL` and `engines/accounts` `installScript`. macOS still runs from source (SHIP-2).
+- **Refs:** SHIP-1, SHIP-3, SHIP-4, SHIP-8, D-006, D-051, D-054, D-058, build/installer.nsh, src/main/services/setup, src/renderer/setup, src/main/platform/{env,app}.js, src/main/engines/{accounts,claude/find-exe}.js

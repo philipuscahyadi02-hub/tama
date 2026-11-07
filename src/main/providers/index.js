@@ -20,7 +20,7 @@ const DEFAULT_ORDER = /** @type {Record<Capability, string[]>} */ ({
  * @typedef {(emit: (ev: any) => void, persona: string) => any} EngineFactory
  * @typedef {{
  *   id: string, name: string, model?: string,
- *   available: () => boolean,
+ *   available: () => boolean, recheck?: () => boolean,
  *   optIn?: Capability[],
  *   features?: { webSearch?: boolean, googleTools?: boolean },
  *   chat?: EngineFactory, compose?: EngineFactory, code?: (emit: (ev: any) => void) => any,
@@ -31,9 +31,11 @@ const DEFAULT_ORDER = /** @type {Record<Capability, string[]>} */ ({
  */
 
 /**
- * @param {{ bus?: import('../bus').BusInstance, device: { get: () => any, patch: (s: string | null, p: any) => void }, providers: Provider[] }} deps
+ * @param {{ bus?: import('../bus').BusInstance, device: { get: () => any, patch: (s: string | null, p: any) => void }, providers: Provider[],
+ *   refreshEnv?: () => unknown }} deps
+ *   refreshEnv: run before a recheck (the bootstrap passes platform/env refreshPath)
  */
-function createProviders({ bus, device, providers }) {
+function createProviders({ bus, device, providers, refreshEnv }) {
   const byId = new Map(providers.map((p) => [p.id, p]));
   const prefs = () => {
     const p = device.get().providers || {};
@@ -92,13 +94,31 @@ function createProviders({ bus, device, providers }) {
     return st;
   }
 
+  /**
+   * Look for installed tools again (SHIP-4: after the setup wizard installed one). Emits providers.changed when
+   * something appeared or disappeared, so the brain switches over without a restart.
+   * @param {() => unknown} [refreshEnv]  e.g. re-read PATH from the registry first
+   */
+  function recheck(refreshEnv) {
+    const before = JSON.stringify(status().providers.map((p) => p.available));
+    try { if (refreshEnv) refreshEnv(); } catch { /* a stale PATH only means the old lookup */ }
+    for (const p of providers) { try { if (p.recheck) p.recheck(); } catch { /* treated as unavailable by safe() */ } }
+    const st = status();
+    if (bus && JSON.stringify(st.providers.map((p) => p.available)) !== before) bus.emit(TOPICS.PROVIDERS_CHANGED, st);
+    return st;
+  }
+
   function start() {
     if (!bus) return () => {};
-    const offs = [bus.handle(TOPICS.PROVIDERS_GET, () => status()), bus.handle(TOPICS.PROVIDERS_SET, (/** @type {any} */ p) => set(p))];
+    const offs = [
+      bus.handle(TOPICS.PROVIDERS_GET, () => status()),
+      bus.handle(TOPICS.PROVIDERS_SET, (/** @type {any} */ p) => set(p)),
+      bus.handle(TOPICS.PROVIDERS_RECHECK, () => recheck(refreshEnv)),
+    ];
     return () => { for (const off of offs) off(); };
   }
 
-  return { pick, status, set, start, get: (/** @type {string} */ id) => byId.get(id) || null };
+  return { pick, status, set, recheck, start, get: (/** @type {string} */ id) => byId.get(id) || null };
 }
 
 /** A provider's `available` must never throw into the caller (e.g. a CLI lookup failing). @param {() => boolean} f */

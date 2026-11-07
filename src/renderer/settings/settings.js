@@ -120,6 +120,14 @@ $('#logs').addEventListener('click', () => K.openLogs());
 async function renderBrain() { const b = await K.brain.status().catch(() => null); if (b) $('#budget').value = String(b.dailyClaudeUsd ?? ''); }
 $('#budgetSave').addEventListener('click', async () => { saved(await K.brain.set({ dailyClaudeUsd: Number($('#budget').value) })); renderBrain(); });
 
+// ---- start with Windows (SHIP-1) ----
+async function renderAutostart() {
+  const a = await K.autostart.get().catch(() => ({ supported: false, on: false }));
+  $('#autostart').checked = !!a.on; $('#autostart').disabled = !a.supported;
+  $('#autostartNote').textContent = a.supported ? '' : 'Available in the installed app (Tama Setup).';
+}
+$('#autostart').addEventListener('change', async (e) => { saved(await K.autostart.set(e.target.checked)); renderAutostart(); });
+
 // ---- brains (SHIP-8, D-054) ----
 const CAP_LABELS = { chat: 'Chat with her', compose: 'Her moments and diary', json: 'Designing new looks', code: 'Terminal (coding)' };
 const CAP_NONE = {
@@ -176,6 +184,7 @@ async function init() {
   renderGoogle(await K.google.status().catch(() => null));
   renderWeather(); renderBrain();
   renderBrains(await K.providers.get().catch(() => null));
+  renderAutostart();
   K.providers.onChange(renderBrains);
   K.ui.onPrefs(renderUi);
   K.voice.onChanged(() => K.voice.status().then(renderVoice));

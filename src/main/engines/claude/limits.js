@@ -4,7 +4,7 @@
 // app falls back to the rate-limit events that arrive with each turn.
 const path = require('path');
 const { pathToFileURL } = require('url');
-const { CLAUDE_EXE } = require('./session');
+const { claudeExe } = require('./find-exe');
 
 const SDK_URL = pathToFileURL(
   path.join(__dirname, '..', '..', '..', '..', 'node_modules', '@anthropic-ai', 'claude-agent-sdk', 'sdk.mjs')
@@ -39,14 +39,15 @@ function normalizeUsage(r) {
 
 /** @returns {Promise<ReturnType<typeof normalizeUsage>>} */
 async function fetchClaudeLimits() {
-  if (!CLAUDE_EXE) return null;
+  const exe = claudeExe();
+  if (!exe) return null;
   /** @type {any} */ let q = null;
   /** @type {() => void} */ let release = () => {};
   try {
     const { query } = await import(SDK_URL);
     const idle = new Promise((r) => { release = () => r(undefined); });
     async function* noMessages() { await idle; } // the session never gets a prompt
-    q = query({ prompt: noMessages(), options: { model: 'haiku', pathToClaudeCodeExecutable: CLAUDE_EXE, settingSources: [], tools: [], persistSession: false, cwd: require('os').tmpdir() } });
+    q = query({ prompt: noMessages(), options: { model: 'haiku', pathToClaudeCodeExecutable: exe, settingSources: [], tools: [], persistSession: false, cwd: require('os').tmpdir() } });
     (async () => { for await (const _m of q) { /* drain */ } })().catch(() => {});
     const ask = q.usage_EXPERIMENTAL_MAY_CHANGE_DO_NOT_RELY_ON_THIS_API_YET;
     if (typeof ask !== 'function') return null;

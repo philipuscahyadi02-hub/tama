@@ -16,9 +16,10 @@ const { TOPICS } = require('../../bus-topics');
  *   openDashboard: (tab?: string) => unknown,
  *   openVoice: () => unknown,
  *   openSettings: (tab?: string) => unknown,
+ *   openSetup?: () => unknown,
  * }} d
  */
-function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings }) {
+function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings, openSetup = () => null }) {
   /** Settings → Brains (SHIP-8): who serves chat, moments, design and coding. The registry validates the names. */
   function providersIpc() {
     const pair = (/** @type {any} */ x) => ({ cap: String(x?.cap || '').slice(0, 20), id: String(x?.id || '').slice(0, 40) });
@@ -27,6 +28,14 @@ function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster
       prefer: p?.prefer ? pair(p.prefer) : undefined,
       allow: p?.allow ? { ...pair(p.allow), on: !!p.allow.on } : undefined,
     }));
+  }
+
+  /** Setup wizard (SHIP-4): the service checks the item and action against its own list. */
+  function setupIpc() {
+    ipc.handle('setup:status', (recheck) => bus.request(TOPICS.SETUP_STATUS, { recheck: !!recheck }));
+    ipc.handle('setup:action', (item, action) => bus.request(TOPICS.SETUP_ACTION, { item: String(item || '').slice(0, 20), action: String(action || '').slice(0, 20) })
+      .catch((e) => ({ error: String(e.message || e) })));
+    ipc.handle('setup:seen', () => bus.request(TOPICS.SETUP_SEEN));
   }
 
   /** The last .tama file the user picked; import only ever reads this path, never one sent by a page. */
@@ -39,7 +48,7 @@ function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster
     ipc.on('settings:open', (tab) => openSettings(typeof tab === 'string' ? tab.slice(0, 20) : ''));
     ipc.on('page:open', (name) => {
       /** @type {Record<string, () => unknown>} */
-      const PAGES = { voice: () => openVoice(), google: () => openGoogle(), dashboard: () => openDashboard(), limits: () => openDashboard('limits'), settings: () => openSettings() };
+      const PAGES = { voice: () => openVoice(), google: () => openGoogle(), dashboard: () => openDashboard(), limits: () => openDashboard('limits'), settings: () => openSettings(), setup: () => openSetup() };
       const fn = Object.hasOwn(PAGES, String(name)) ? PAGES[String(name)] : null;
       if (fn) fn();
     });
@@ -158,7 +167,7 @@ function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster
     });
   }
 
-  usageIpc(); telegramIpc(); googleIpc(); eventsIpc(); weatherIpc(); onboardingIpc(); rosterIpc(); providersIpc();
+  usageIpc(); telegramIpc(); googleIpc(); eventsIpc(); weatherIpc(); onboardingIpc(); rosterIpc(); providersIpc(); setupIpc();
 }
 
 module.exports = { wirePageIpc };

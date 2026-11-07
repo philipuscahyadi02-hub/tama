@@ -54,6 +54,8 @@ const { agyProvider } = require('./engines/agy');
 const pathMod = require('path');
 // M5 extras (D-035): weather, fullscreen do-not-disturb, "out for a walk" marker.
 const { createWeather } = require('./services/weather');
+const { createSetup } = require('./services/setup');
+const { refreshPath } = require('./platform/env');
 const { createFullscreenDetector } = require('./platform/fullscreen');
 const { createWalkMarker } = require('./platform/windows/walk-marker');
 
@@ -121,7 +123,7 @@ function boot() {
   // Provider layer (SHIP-8, D-054): who serves chat, moments, structured output and coding. agy always runs in
   // read-only plan mode with the workspace guard (D-027, D-037); Claude chats only when the user opted in.
   const providers = createProviders({
-    bus, device, providers: [
+    bus, device, refreshEnv: refreshPath, providers: [
       claudeProvider({ gate, tamaName: active.name, mcp: () => google.mcpServers() }),
       agyProvider({ gate, mcpServers: chatMcp }),
     ],
@@ -155,10 +157,11 @@ function boot() {
   const openVoice = () => openPage('voice/voice.html', { width: 980, height: 760, title: 'Voice', frame: true });
   ipc.on('logs:open', () => { openLogs(log.dir()).catch(() => null); });
   const openSettings = (tab = '') => openPage('settings/settings.html', { width: 900, height: 680, title: 'Settings', frame: true, query: tab ? { tab } : {} });
+  const openSetup = () => openPage('setup/setup.html', { width: 860, height: 720, title: 'Set up Tama', frame: true });
   const openDashboard = (tab = '') => openPage('dashboard/dashboard.html', { width: 1060, height: 780, title: 'Usage & accounts', frame: true, query: tab ? { tab } : {} });
   const openRoster = (/** @type {boolean | undefined} */ importNow) =>
     openPage('roster/roster.html', { width: 900, height: 660, title: 'My Tamas', query: importNow ? { import: '1' } : {} });
-  createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings, pages: openPages }).start();
+  createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings, openSetup, autostart: appShell.autostart, pages: openPages }).start();
   // Voice (M9, D-042/D-043): created before the tray, whose Voice submenu shows its setting; started with the services.
   /** @type {Record<string, ReturnType<typeof createVoiceEngineProcess>>} */ const voiceProcs = {};
   for (const id of /** @type {const} */ (['aivis', 'voicevox'])) {
@@ -199,6 +202,7 @@ function boot() {
         { label: 'Limits left…', click: () => openDashboard('limits') },
         { label: 'Google…', click: () => openGoogle() },
       ] },
+      { label: 'Setup & what\'s installed…', click: () => openSetup() },
       { label: 'Settings…', click: () => openSettings() },
       { type: 'separator' },
       { label: 'Quit', click: appShell.quit },
@@ -240,6 +244,20 @@ function boot() {
     claude: { status: engineAccounts.claudeStatus, switch: () => shell.runConsoleScript('switch-claude', engineAccounts.switchScript('claude')) },
     gemini: { status: () => engineAccounts.geminiStatus(), switch: () => shell.runConsoleScript('switch-agy', engineAccounts.switchScript('gemini')) },
   }).start());
+  // Setup wizard (SHIP-4, D-059): official installers and sign-ins in visible console windows; pages for the rest.
+  stoppers.push(createSetup({
+    bus, device,
+    run: {
+      install: (id) => shell.runConsoleScript(`install-${id}`, engineAccounts.installScript(id)),
+      signIn: (id) => shell.runConsoleScript(`signin-${id}`, engineAccounts.signInScript(id)),
+      open: (id) => { if (id === 'voice') openVoice(); else if (id === 'google') openGoogle(); else if (id === 'telegram') openSettings('phone'); },
+      link: (url) => shell.openExternal(url),
+    },
+  }).start());
+  // First run: open the wizard by itself once when chat or coding has nothing behind it.
+  setTimeout(() => {
+    bus.request(TOPICS.SETUP_STATUS).then((st) => { if (st && st.needsSetup && !st.seenAt) openSetup(); }).catch((e) => log.write('error', 'setup', e));
+  }, 3000);
   // Events & memory (M5, D-033): facts + diary per Tama, event deck from assets/events.
   stoppers.push(createMemory({ bus, store, tamaId: active.id }).start(), createEvents({ bus, store, tamaId: active.id, deck: EVENT_DECK }).start());
   // ---- M5 extras (D-035) ----
@@ -270,7 +288,7 @@ function boot() {
   // Dev-only switches (TAMA_SHOW_TERM, TAMA_*_EVAL, TAMA_OPEN_*, TAMA_VOICE_TEST, TAMA_PERF, TAMA_QUIT_AFTER, …).
   require('./dev/hooks').runDevHooks({
     env: process.env, bus, pet, term, chatWin, summoner, quit: appShell.quit, ipc,
-    open: { page: openPage, roster: openRoster, google: openGoogle, voice: openVoice, settings: openSettings, dashboard: openDashboard, onboarding: openOnboarding },
+    open: { page: openPage, roster: openRoster, google: openGoogle, voice: openVoice, settings: openSettings, dashboard: openDashboard, onboarding: openOnboarding, setup: openSetup },
     perf: { startedAt: STARTED_AT, bootMs: () => bootMs, slowCallbacks, ipcPerf },
   });
 }

@@ -107,6 +107,8 @@ src/main/
                            guard.js (PreToolUse hard lock), mcp-relay.js (stdio MCP → tool bridge) (D-037)
   platform/tool-bridge.js  localhost tool bridge for agent CLIs (random key per run) (D-037)
   brain/chat-tools.js      Google tools for the chat brain with Tama-side confirmations (D-037)
+  services/setup/          setup wizard: what is installed, what it unlocks, next steps (install/sign in/open) (M12, D-059)
+  platform/env.js          refreshPath(): merge the registry PATH after a tool was installed (D-059)
   providers/               provider registry: capability → provider, preference + fallback + opt-in (M12, D-054, D-057)
   channels/desktop/        renderer IPC ↔ bus: index.js (pushes to windows, pet/voice/chat/terminal/productivity IPC),
                            pages.js (usage, Telegram, Google, events, weather, onboarding, My Tamas pages)

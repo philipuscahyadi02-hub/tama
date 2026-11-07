@@ -90,7 +90,9 @@ test('agent crash → error + result, engine recovers on next send', async () =>
   const { engine, events } = setup('lite');
   await engine.send('hello');
   /** @type {any} */ (engine.client).close();
-  await new Promise((r) => setTimeout(r, 50));
+  // Wait for the engine to report the crash (a fixed sleep was flaky under a loaded full test run).
+  for (let i = 0; i < 100 && !events.some((/** @type {any} */ e) => e.t === 'error'); i++) await new Promise((r) => setTimeout(r, 20));
+  assert.ok(events.some((/** @type {any} */ e) => e.t === 'error'), 'the crash is reported');
   await engine.send('again');
   assert.match(resultOf(events).text, /echo: again/);
   engine.stop();

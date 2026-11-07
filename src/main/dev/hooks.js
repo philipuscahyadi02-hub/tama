@@ -8,7 +8,7 @@ const { TOPICS } = require('../bus-topics');
  *   env: NodeJS.ProcessEnv, bus: import('../bus').BusInstance, pet: any, term: any, chatWin: any, summoner: any,
  *   quit: () => void, ipc: { setProbe: (p: (channel: string, ms: number) => void) => void },
  *   open: { page: (f: string, o: any) => any, roster: (b: boolean) => any, google: () => any, voice: () => any,
- *     settings: (tab?: string) => any, dashboard: (tab?: string) => any, onboarding: (mode: string) => any },
+ *     settings: (tab?: string) => any, dashboard: (tab?: string) => any, onboarding: (mode: string) => any, setup: () => any },
  *   perf: { startedAt: number, bootMs: () => number, slowCallbacks: () => any[], ipcPerf: null | { add: (c: string, ms: number) => void, top: () => any[] } },
  * }} ctx
  */
@@ -74,6 +74,7 @@ function runDevHooks({ env, bus, pet, term, chatWin, summoner, quit, ipc, open, 
     }
   }
   if (env.TAMA_OPEN_ROSTER) open.roster(false);
+  if (env.TAMA_OPEN_SETUP) open.setup();
   if (env.TAMA_OPEN_GOOGLE) open.google();
   if (env.TAMA_OPEN_VOICE) open.voice();
   if (env.TAMA_OPEN_SETTINGS) open.settings(env.TAMA_OPEN_SETTINGS === '1' ? '' : env.TAMA_OPEN_SETTINGS);

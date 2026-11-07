@@ -4,7 +4,7 @@
 const path = require('path');
 const { pathToFileURL } = require('url');
 const { InputQueue } = require('./input-queue');
-const { findClaudeExecutable } = require('./find-exe');
+const { claudeExe } = require('./find-exe');
 const { mapSdkMessage } = require('./map-message');
 const { buildMcpServer } = require('./mcp');
 
@@ -19,7 +19,6 @@ const ZOD_URL = pathToFileURL(
   path.join(APP_ROOT, 'node_modules', 'zod', 'index.js').replace(`app.asar${path.sep}`, `app.asar.unpacked${path.sep}`),
 ).href;
 
-const CLAUDE_EXE = findClaudeExecutable();
 
 // Persona rule BRAIN-5: cute in chat, never in code / commits / files. Name comes from the Tama.
 /** @param {string} name */
@@ -117,7 +116,8 @@ class ClaudeCodeEngine {
         systemPrompt: { type: 'preset', preset: 'claude_code', append: persona(this.tamaName) },
         canUseTool: (/** @type {string} */ name, /** @type {any} */ input, /** @type {any} */ o) => this.askPermission(name, input, o),
       };
-    if (CLAUDE_EXE) options.pathToClaudeCodeExecutable = CLAUDE_EXE;
+    const exe = claudeExe();
+    if (exe) options.pathToClaudeCodeExecutable = exe;
     if (this.model && this.role !== 'lite') options.model = this.model;
     if (this.effort && this.role !== 'lite') options.effort = this.effort;
     // Stream summarized thinking so the terminal can show progress instead of a silent minute (2026-11-06 trace).
@@ -236,4 +236,4 @@ class ClaudeCodeEngine {
   emitError(e) { this.emit({ t: 'error', message: String((e && /** @type {any} */ (e).message) || e) }); }
 }
 
-module.exports = { ClaudeCodeEngine, CLAUDE_EXE };
+module.exports = { ClaudeCodeEngine };

@@ -28,4 +28,11 @@ function findClaudeExecutable() {
   return candidates.find(usable);
 }
 
-module.exports = { findClaudeExecutable };
+/** @type {string | undefined | null} null = not looked up yet */
+let cached = null;
+/** The Claude Code executable, looked up once (SHIP-4: `recheckClaude` after an install). */
+const claudeExe = () => (cached === null ? (cached = findClaudeExecutable()) : cached);
+/** Look again (e.g. after the setup wizard installed Claude Code). */
+const recheckClaude = () => (cached = findClaudeExecutable());
+
+module.exports = { findClaudeExecutable, claudeExe, recheckClaude };

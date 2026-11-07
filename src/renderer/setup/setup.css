@@ -1,0 +1,18 @@
+/* Setup wizard (SHIP-4, D-059). Base styles from dashboard.css; colors are --tama-* tokens only. */
+.intro { margin: 10px 0 0; color: var(--tama-dim); font-size: 13px; }
+.summary { font-size: 13.5px; }
+.item { display: grid; grid-template-columns: 34px 1fr auto; gap: 4px 12px; align-items: start; }
+.item .icon { font-size: 22px; line-height: 1.2; }
+.item h3 { margin: 0; font-size: 14.5px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.item .unlocks { margin: 4px 0 0; font-size: 12.5px; }
+.item .detail { margin: 4px 0 0; font-size: 12.5px; }
+.item .acts { display: flex; flex-direction: column; gap: 6px; align-items: stretch; min-width: 150px; }
+.item .cmd { grid-column: 2 / 4; margin: 8px 0 0; font-family: Consolas, monospace; font-size: 12px; padding: 6px 8px;
+  border-radius: 8px; background: var(--tama-bubble); border: 1px dashed var(--tama-line); word-break: break-all; }
+.state { font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--tama-line); }
+.state.ready { border-color: var(--tama-accent); color: var(--tama-accent); }
+.state.missing, .state.signin { background: var(--tama-accent); color: var(--tama-accent-ink); border-color: var(--tama-accent); }
+.state.optional { color: var(--tama-dim); }
+.core-tag { font-size: 11px; color: var(--tama-dim); font-weight: 400; }
+.foot { display: flex; gap: 8px; align-items: center; margin: 14px 0 6px; }
+.spacer { flex: 1; }

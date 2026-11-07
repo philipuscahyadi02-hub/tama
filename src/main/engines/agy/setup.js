@@ -22,7 +22,10 @@ function findAgyExecutable() {
       if (f.trim()) candidates.push(f.trim());
     }
   } catch { /* not on PATH */ }
-  if (win && process.env.LOCALAPPDATA) candidates.push(path.join(process.env.LOCALAPPDATA, 'agy', 'bin', 'agy.exe'));
+  if (win && process.env.LOCALAPPDATA) {
+    candidates.push(path.join(process.env.LOCALAPPDATA, 'agy', 'bin', 'agy.exe'));
+    candidates.push(path.join(process.env.LOCALAPPDATA, 'Antigravity', 'agy.exe')); // where the official CLI install script puts it
+  }
   return candidates.find((c) => (win ? /\.exe$/i.test(c) : true) && fs.existsSync(c));
 }
 

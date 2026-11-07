@@ -6,14 +6,15 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFile } = require('child_process');
-const { CLAUDE_EXE } = require('./claude');
+const { claudeExe } = require('./claude');
 const { findAgyExecutable, CLI_DIR_NAME } = require('./agy');
 
 /** @returns {Promise<{ loggedIn: boolean, email?: string, plan?: string, org?: string, method?: string, expiresAt?: string, error?: string }>} */
 function claudeStatus() {
   return new Promise((resolve) => {
-    if (!CLAUDE_EXE) return resolve({ loggedIn: false, error: 'Claude Code is not installed.' });
-    execFile(CLAUDE_EXE, ['auth', 'status', '--json'], { windowsHide: true, timeout: 20000 }, (err, out) => {
+    const exe = claudeExe();
+    if (!exe) return resolve({ loggedIn: false, error: 'Claude Code is not installed.' });
+    execFile(exe, ['auth', 'status', '--json'], { windowsHide: true, timeout: 20000 }, (err, out) => {
       try {
         const j = JSON.parse(String(out || '{}'));
         resolve({ loggedIn: !!j.loggedIn, email: j.email, plan: j.subscriptionType, org: j.orgName, method: j.authMethod, expiresAt: j.loginExpiresAt });
@@ -48,11 +49,12 @@ function geminiStatus(home = os.homedir()) {
 /** The console scripts that switch accounts with the official tools. @param {'claude'|'gemini'} kind */
 function switchScript(kind) {
   if (kind === 'claude') {
-    if (!CLAUDE_EXE) throw new Error('Claude Code is not installed.');
+    const exe = claudeExe();
+    if (!exe) throw new Error('Claude Code is not installed.');
     return [
       '@echo off', 'title Tama - switch Claude account',
-      'echo Signing out of Claude Code...', `"${CLAUDE_EXE}" auth logout`,
-      'echo.', 'echo Sign in with the account you want (a browser window opens)...', `"${CLAUDE_EXE}" auth login`,
+      'echo Signing out of Claude Code...', `"${exe}" auth logout`,
+      'echo.', 'echo Sign in with the account you want (a browser window opens)...', `"${exe}" auth login`,
       'echo.', 'echo Done! Close this window and press Refresh in Tama.', 'pause',
     ];
   }
@@ -66,4 +68,45 @@ function switchScript(kind) {
   ];
 }
 
-module.exports = { claudeStatus, geminiStatus, switchScript };
+/**
+ * Setup wizard (SHIP-4, D-059): run the vendor's official one-line installer in a visible PowerShell window (the user
+ * sees the exact command first), then the official sign-in. Tama never handles their tokens (D-006).
+ * @param {'claude'|'agy'} kind
+ */
+function installScript(kind) {
+  const ps = (/** @type {string} */ cmd) => `powershell -NoProfile -ExecutionPolicy Bypass -Command "${cmd}"`;
+  if (kind === 'claude') {
+    return [
+      '@echo off', 'title Tama - install Claude Code',
+      'echo Installing Claude Code with Anthropic\'s official installer:', 'echo   irm https://claude.ai/install.ps1 ^| iex', 'echo.',
+      ps('irm https://claude.ai/install.ps1 | iex'),
+      'echo.', 'echo Now sign in (a browser window opens). Skip with Ctrl+C if you are already signed in.',
+      'if exist "%USERPROFILE%\\.local\\bin\\claude.exe" ("%USERPROFILE%\\.local\\bin\\claude.exe" auth login) else (claude auth login)',
+      'echo.', 'echo Done! Go back to Tama and press "Check again".', 'pause',
+    ];
+  }
+  return [
+    '@echo off', 'title Tama - install the Antigravity CLI (agy)',
+    'echo Installing agy with Google\'s official installer:', 'echo   irm https://antigravity.google/cli/install.ps1 ^| iex', 'echo.',
+    ps('irm https://antigravity.google/cli/install.ps1 | iex'),
+    'echo.', 'echo Now agy starts: follow its sign-in with your Google account, then type /exit.',
+    'if exist "%LOCALAPPDATA%\\Antigravity\\agy.exe" ("%LOCALAPPDATA%\\Antigravity\\agy.exe") else if exist "%LOCALAPPDATA%\\agy\\bin\\agy.exe" ("%LOCALAPPDATA%\\agy\\bin\\agy.exe") else (agy)',
+    'echo.', 'echo Done! Go back to Tama and press "Check again".', 'pause',
+  ];
+}
+
+/** First sign-in for an installed CLI (the switch scripts sign out first; this one doesn't). @param {'claude'|'agy'} kind */
+function signInScript(kind) {
+  if (kind === 'claude') {
+    const exe = claudeExe();
+    if (!exe) throw new Error('Claude Code is not installed.');
+    return ['@echo off', 'title Tama - sign in to Claude Code', 'echo A browser window opens to sign in to Claude...', `"${exe}" auth login`,
+      'echo.', 'echo Done! Go back to Tama and press "Check again".', 'pause'];
+  }
+  const agy = findAgyExecutable();
+  if (!agy) throw new Error('agy (Antigravity CLI) is not installed.');
+  return ['@echo off', 'title Tama - sign in to agy', 'echo agy starts below: follow its sign-in with your Google account, then type /exit.', 'echo.', `"${agy}"`,
+    'echo.', 'echo Done! Go back to Tama and press "Check again".', 'pause'];
+}
+
+module.exports = { claudeStatus, geminiStatus, switchScript, installScript, signInScript };

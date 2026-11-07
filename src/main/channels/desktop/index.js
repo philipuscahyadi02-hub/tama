@@ -24,10 +24,12 @@ const USER_ACTIONS = new Set(['feed', 'snack', 'play', 'clean', 'sleep', 'nap', 
  *   openDashboard: (tab?: string) => unknown,
  *   openVoice: () => unknown,
  *   openSettings?: (tab?: string) => unknown,
+ *   openSetup?: () => unknown,
+ *   autostart?: { supported: () => boolean, get: () => boolean, set: (on: boolean) => any },
  *   pages?: () => Array<import('electron').BrowserWindow>,
  * }} deps
  */
-function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings = () => null, pages }) {
+function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings = () => null, openSetup = () => null, autostart = undefined, pages }) {
   const both = () => [pet.win, term.window(), chat.window()];
   /** Framed pages (Google setup) that also want live status. */
   const pageWindows = () => (pages ? pages() : []);
@@ -126,6 +128,9 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.on('term:show', () => term.show());
     ipc.on('chat:show', () => chat.show());
     ipc.handle('ui:prefs', () => bus.request(TOPICS.UI_PREFS_GET));
+    // Start with Windows (SHIP-1): a per-PC OS setting, not a Tama preference.
+    ipc.handle('app:autostart', () => ({ supported: !!(autostart && autostart.supported()), on: !!(autostart && autostart.get()) }));
+    ipc.handle('app:setAutostart', (on) => (autostart ? autostart.set(!!on) : { error: 'Not available.' }));
   }
 
   /** chat window → core (agy, D-029) */
@@ -188,7 +193,7 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     chatIpc();
     productivityIpc();
     terminalIpc();
-    wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings });
+    wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings, openSetup });
   }
 
   return { start };

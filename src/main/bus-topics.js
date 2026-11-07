@@ -184,6 +184,14 @@ const TOPICS = {
   PROVIDERS_SET: 'providers.set',
   /** event: same payload as providers.get, after a change (the brain restarts the affected sessions) */
   PROVIDERS_CHANGED: 'providers.changed',
+  /** void → same as providers.get, after looking for installed tools again (fresh PATH; SHIP-4) */
+  PROVIDERS_RECHECK: 'providers.recheck',
+  /** { recheck? } → { items: SetupItem[], brains, needsSetup, seenAt } — the setup wizard's view (SHIP-4, D-059) */
+  SETUP_STATUS: 'setup.status',
+  /** { item, action } → { ok, message? } | { error } — install / sign in / open a page / open an official link */
+  SETUP_ACTION: 'setup.action',
+  /** void → { ok } — the user saw the wizard (it no longer opens by itself) */
+  SETUP_SEEN: 'setup.seen',
   /** { role: 'user'|'tama'|'note', text } → void — add a line to the chat history (events) */
   CHAT_PUSH: 'chat.push',
   /** { id, choice?: number, dismiss?: boolean } → { ok, reply? } | { error } */

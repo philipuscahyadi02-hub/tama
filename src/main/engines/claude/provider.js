@@ -9,11 +9,13 @@
  * @returns {import('../../providers').Provider}
  */
 function claudeProvider({ gate, tamaName, mcp }) {
-  const { ClaudeCodeEngine, CLAUDE_EXE } = require('./session');
+  const { ClaudeCodeEngine } = require('./session');
+  const { claudeExe, recheckClaude } = require('./find-exe');
   const lite = (/** @type {(ev: any) => void} */ emit, /** @type {string} */ persona) => new ClaudeCodeEngine(emit, { role: 'lite', gate, persona });
   return {
     id: 'claude', name: 'Claude Code', model: 'haiku (chat) · your model (terminal)',
-    available: () => !!CLAUDE_EXE,
+    available: () => !!claudeExe(),
+    recheck: () => !!recheckClaude(),
     optIn: ['chat', 'compose'],
     features: { webSearch: false, googleTools: false },
     chat: lite,

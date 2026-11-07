@@ -85,14 +85,15 @@ npm run check      # tsc --checkJs + architecture check (scripts/arch-check.js) 
 npm run arch       # architecture report incl. files over ~300 lines
 npm run coverage   # line coverage per layer, files under 80 % and files no test loads (node:test, no extra dependency)
 npm run perf       # idle CPU / memory / event-loop / slow callbacks / IPC (shows a pet for ~45 s); -- --seconds 60 --data <dir>
-npm run dist       # portable exe
+npm run dist       # Windows installer: dist/Tama-Setup-<version>.exe (NSIS, per-user; D-059)
+npm run dist:portable  # portable exe
 ```
 Debug env vars: `TAMA_DEBUG=1`, `TAMA_SHOT=<dir>` (screenshots, `TAMA_SHOT_TIMES=ms,ms`), `TAMA_SHOW_TERM=1`,
 `TAMA_DATA_DIR=<dir>` (use a scratch data folder; **always use this when testing** so real saves aren't touched),
 `TAMA_NO_LEGACY=1` (skip kero-pet import), `TAMA_SELFTEST=1` (live summon check, quits when done),
 `TAMA_GALLERY=designs|moods` (rig gallery window), `TAMA_OFFLINE_DESIGNER=1` (keyword designer, no AI),
 `TAMA_OPEN_ONBOARDING=hatch|restyle|rebirth`, `TAMA_ONBOARD_WALK=<dir>` (scripted onboarding run + screenshots),
-`TAMA_OPEN_ROSTER=1`, `TAMA_OPEN_CHAT=1`, `TAMA_OPEN_GOOGLE=1`, `TAMA_OPEN_DASHBOARD=1`, `TAMA_PET_EVAL=<js>` / `TAMA_TERM_EVAL=<js>` / `TAMA_CHAT_EVAL=<js>` (run JS in the pet / terminal / chat window after load;
+`TAMA_OPEN_ROSTER=1`, `TAMA_OPEN_SETUP=1` (setup wizard), `TAMA_OPEN_CHAT=1`, `TAMA_OPEN_GOOGLE=1`, `TAMA_OPEN_DASHBOARD=1`, `TAMA_PET_EVAL=<js>` / `TAMA_TERM_EVAL=<js>` / `TAMA_CHAT_EVAL=<js>` (run JS in the pet / terminal / chat window after load;
 `TAMA_DEBUG=1` also logs terminal engine events).
 `TAMA_HIDE_PET=1` hides the pet shortly after start (as if by Show / Hide), for walk-marker checks.
 `TAMA_VOICE_TEST=<text>` speaks the text once (several lines: `a||b`, each logs `firstMs`), then renders + encodes it as a Telegram voice note and logs the sizes; `TAMA_VOICE_TEST_AT=<ms>` delays it until engines are up.

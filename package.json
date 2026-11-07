@@ -16,7 +16,8 @@
     "test": "node --test --test-timeout=30000",
     "changelog": "node scripts/changelog.js",
     "probe:agy": "node scripts/agy-permission-probe.js",
-    "dist": "electron-builder --win portable"
+    "dist": "electron-builder --win nsis",
+    "dist:portable": "electron-builder --win portable"
   },
   "build": {
     "appId": "dev.tama.app",
@@ -39,11 +40,27 @@
       "src/main/engines/agy/guard.js"
     ],
     "win": {
-      "target": "portable",
+      "target": [
+        "nsis"
+      ],
       "icon": "build/icon.png"
     },
     "portable": {
       "artifactName": "Tama-${version}-portable.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Tama",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "include": "build/installer.nsh",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "artifactName": "Tama-Setup-${version}.exe"
     }
   },
   "dependencies": {

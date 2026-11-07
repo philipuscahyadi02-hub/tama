@@ -8,3 +8,6 @@ secrets.bin
 
 # Agent worktrees (local only)
 .claude/worktrees/
+
+# Office lock files
+~$*

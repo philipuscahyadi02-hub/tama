@@ -33,6 +33,7 @@
           <div class="set"><span>Animations</span><div class="seg" data-pref="motion"><button data-v="auto">Auto</button><button data-v="reduced">Reduced</button><button data-v="full">Full</button></div></div>
           <div class="kv dim">Auto follows Windows' "Animation effects". Reduced stops wandering and bouncing.</div>
           <label class="set"><span>Edge tab while she's hidden</span><input type="checkbox" data-pref="walkMarker" /></label>
+          <label class="set"><span>Start Tama when Windows starts<br><small class="dim" id="autostartNote"></small></span><input type="checkbox" id="autostart" /></label>
           <div class="set"><span>Terminal theme</span><select id="termTheme"></select></div>
         </div>
       </section>
@@ -87,7 +88,8 @@
       <section data-pane="brains" hidden>
         <div class="card"><h3>Who does what</h3>
           <p class="kv dim">Tama uses what you have installed. Pick who you'd like first; if it isn't set up, she uses the next one.</p>
-          <div id="brainRows"></div></div>
+          <div id="brainRows"></div>
+          <div class="btns"><button data-open="setup">Setup &amp; what's installed…</button></div></div>
         <div class="card"><h3>Claude for chat and moments</h3>
           <p class="kv dim">Normally she talks with Gemini (Antigravity), which doesn't use your Claude quota. Turn these on to let Claude Haiku talk when Gemini isn't there, or when you pick Claude above. Claude chat has no web search or Google tools.</p>
           <label class="set"><span>Let Claude chat with you</span><input type="checkbox" id="allowChat" /></label>

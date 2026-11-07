@@ -12,11 +12,12 @@ const MODEL = 'gemini-3.8-flash-low';
 function agyProvider({ gate, mcpServers }) {
   const { AgyEngine } = require('./session');
   const { findAgyExecutable, CHAT_ALLOW, DENY_ALL } = require('./setup');
-  const exe = findAgyExecutable(); // looked up once per run, like before; the setup wizard re-checks (SHIP-4)
+  let exe = findAgyExecutable(); // looked up once per run; the setup wizard re-checks after an install (SHIP-4)
   const base = { role: /** @type {'lite'} */ ('lite'), gate, model: MODEL, thoughtLevel: /** @type {'low'} */ ('low'), mode: /** @type {'plan'} */ ('plan'), lockMode: true };
   return {
     id: 'agy', name: 'Gemini (Antigravity)', model: MODEL,
     available: () => !!exe,
+    recheck: () => !!(exe = findAgyExecutable()),
     features: { webSearch: true, googleTools: true },
     chat: (emit, persona) => new AgyEngine(emit, { ...base, persona, mcpServers, guard: CHAT_ALLOW }),
     compose: (emit, persona) => new AgyEngine(emit, { ...base, persona, guard: DENY_ALL }),

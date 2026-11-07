@@ -51,4 +51,19 @@ function quit() { quitting = true; app.quit(); }
 function relaunch() { app.relaunch(); quit(); }
 const isQuitting = () => quitting;
 
-module.exports = { paths, run, quit, relaunch, isQuitting, version: () => app.getVersion() };
+/**
+ * Start with Windows (SHIP-1): only in the installed app. In a dev run (`npm start`) the login item would point at a bare
+ * electron.exe without Tama, so it is reported as unsupported there.
+ */
+const autostart = {
+  supported: () => app.isPackaged && (process.platform === 'win32' || process.platform === 'darwin'),
+  get: () => autostart.supported() && !!app.getLoginItemSettings().openAtLogin,
+  /** @param {boolean} on */
+  set(on) {
+    if (!autostart.supported()) return { error: 'Starting with Windows works in the installed app (Tama Setup), not in a dev run.' };
+    app.setLoginItemSettings({ openAtLogin: !!on });
+    return { ok: true, on: autostart.get() };
+  },
+};
+
+module.exports = { paths, run, quit, relaunch, isQuitting, autostart, version: () => app.getVersion() };

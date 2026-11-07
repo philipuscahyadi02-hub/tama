@@ -5,10 +5,10 @@
 
 | | |
 |---|---|
-| **Version** | 0.32 |
+| **Version** | 0.33 |
 | **Status** | **v1.0.0 released** (M0–M11 + provider layer, D-058). Rest of M12 (installers, setup wizard, modular capabilities) ships as 1.x on `m12-shipping` |
 | **Owner** | philipuscahyadi02-hub |
-| **Last updated** | 2026-11-07 |
+| **Last updated** | 2026-11-08 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
 
 ---
@@ -120,10 +120,10 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 ### 4.3d Shipping (SHIP), M12
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| SHIP-1 | **Windows installer** (not a bare portable exe): per-user install, Start-menu and optional autostart entries, uninstaller that asks whether to keep her data. | P0 | M12 | ☐ |
+| SHIP-1 | **Windows installer** (not a bare portable exe): per-user install, Start-menu and optional autostart entries, uninstaller that asks whether to keep her data. *(NSIS per-user installer `npm run dist` → `Tama-Setup-<version>.exe`, Start menu + desktop shortcuts, choose folder, run after install; uninstaller asks (never during updates or silent); Settings → Start with Windows. Unsigned (D-058). D-059.)* | P0 | M12 | ☑ |
 | SHIP-2 | **macOS app** (`.dmg`, Apple Silicon + Intel): mac versions of the Windows-only parts (system voice, fullscreen detection, tray/menu-bar icon, hotkeys, engine processes, paths). | P1 | M12 | ☐ |
-| SHIP-3 | **Modular capabilities:** Tama works with whatever the user has. Claude Code only, Antigravity (agy) only, both, or neither; each feature declares the capabilities it needs (SHIP-8) and hides or explains itself when no provider offers them (e.g. agy only = chat, moments, Google and phone, no coding terminal; designer falls back to agy or keywords). | P0 | M12 | ☐ |
-| SHIP-4 | **Setup wizard** on first run (and in Settings): detects Claude Code, agy, AivisSpeech/VOICEVOX, Google and Telegram; shows what each unlocks; guides each install with official links and sign-ins, and re-checks. | P0 | M12 | ☐ |
+| SHIP-3 | **Modular capabilities:** Tama works with whatever the user has. Claude Code only, Antigravity (agy) only, both, or neither; each feature declares the capabilities it needs (SHIP-8) and hides or explains itself when no provider offers them (e.g. agy only = chat, moments, Google and phone, no coding terminal; designer falls back to agy or keywords). *(In part: brains come from what is installed (SHIP-8) and switch over after a re-check; chat and the terminal explain what is missing. Still to do: hide or explain the remaining features per capability, e.g. Google tools for Claude chat.)* | P0 | M12 | ◐ |
+| SHIP-4 | **Setup wizard** on first run (and in Settings): detects Claude Code, agy, AivisSpeech/VOICEVOX, Google and Telegram; shows what each unlocks; guides each install with official links and sign-ins, and re-checks. *(`renderer/setup` + `services/setup`: opens by itself on first run when chat or coding has nothing installed; tray, Settings → Brains and `/setup` open it. Install = the vendor's official one-line installer in a visible PowerShell window, the command shown first; sign-in = the official CLI. Re-check refreshes PATH and the providers without a restart. D-059.)* | P0 | M12 | ☑ |
 | SHIP-5 | **Optional components** downloaded on demand from official releases with checksums (voice engines first), never bundled into the installer. | P1 | M12 | ☐ |
 | SHIP-6 | Updates: check for new versions and update in place (electron-updater or a release check). | P2 | M12 | ☐ |
 | SHIP-8 | **Provider layer** (D-054): features ask for a *capability* (chat, compose, structured JSON, coding, tools, web search) instead of a named engine. Claude Code and agy register what they can do and whether they are installed and signed in; the brain picks the user's preferred provider per capability and falls back to another when one is missing. Defaults keep today's split (terminal = Claude, chat = agy); using Claude for chat is opt-in because it spends Claude quota. Safety rules stay per provider (agy never codes). Usage, limits and accounts list providers from the registry instead of fixed Claude/Gemini slots. Built first in M12, because SHIP-3 and SHIP-4 build on it. *(Done: registry `src/main/providers/`, Claude Code and agy providers, the brain and designer pick through it, persona says what the chat provider can do, Settings → Brains, Claude chat tested live (D-057). Left: usage limits and accounts from the registry, shared provider contract tests.)* | P0 | M12 | ◐ |
@@ -277,6 +277,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.33 — 2026-11-08** — SHIP-1 ☑ (Windows installer), SHIP-4 ☑ (setup wizard), SHIP-3 ◐ (D-059).
 - **0.32 — 2026-11-07** — v1.0.0 released (D-058): M11 plus the provider layer; installers and the setup wizard move to 1.x.
 - **0.31 — 2026-11-07** — SHIP-8 ◐: provider layer in place (D-057).
 - **0.30 — 2026-11-07** — M12 = v1.0.0; v2 roadmap (AGT-1..6) for Tama's own agentic brain (D-056).

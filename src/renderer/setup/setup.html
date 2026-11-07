@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>Set up Tama</title>
+  <link rel="stylesheet" href="../dashboard/dashboard.css" />
+  <link rel="stylesheet" href="setup.css" />
+</head>
+<body>
+  <header><h1>🧰 Set up Tama</h1><span class="spacer"></span><span class="msg" id="msg"></span></header>
+  <p class="intro" id="intro">She works with what you have. Here is what's on this PC, what each part unlocks, and how to add the rest. Installers and sign-ins are the official ones; Tama never sees your passwords or tokens.</p>
+  <div class="summary card" id="summary"></div>
+  <div id="items"></div>
+  <div class="foot">
+    <button id="recheck">🔄 Check again</button>
+    <span class="spacer"></span>
+    <button id="brains">Settings → Brains</button>
+    <button id="done" class="primary">Done</button>
+  </div>
+  <script src="../../shared/palette.js"></script>
+  <script src="../../shared/catalog.js"></script>
+  <script src="../../shared/spec.js"></script>
+  <script src="../../shared/theme.js"></script>
+  <script src="setup.js"></script>
+</body>
+</html>

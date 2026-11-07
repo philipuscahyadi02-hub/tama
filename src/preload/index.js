@@ -187,6 +187,17 @@ contextBridge.exposeInMainWorld('tama', {
     status: () => ipcRenderer.invoke('brain:status'),
     set: (/** @type {any} */ p) => ipcRenderer.invoke('brain:set', p),
   },
+  /** Start with Windows (SHIP-1): only in the installed app. */
+  autostart: {
+    get: () => ipcRenderer.invoke('app:autostart'),
+    set: (/** @type {boolean} */ on) => ipcRenderer.invoke('app:setAutostart', !!on),
+  },
+  /** Setup wizard (SHIP-4): what is installed, what it unlocks, and the next step for each. */
+  setup: {
+    status: (/** @type {boolean} */ recheck) => ipcRenderer.invoke('setup:status', !!recheck),
+    action: (/** @type {string} */ item, /** @type {string} */ action) => ipcRenderer.invoke('setup:action', item, action),
+    seen: () => ipcRenderer.invoke('setup:seen'),
+  },
   /** Settings → Brains (SHIP-8): which provider serves chat, moments, design and coding. */
   providers: {
     get: () => ipcRenderer.invoke('providers:get'),
