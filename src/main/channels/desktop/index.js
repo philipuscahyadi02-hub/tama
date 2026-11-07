@@ -3,6 +3,9 @@
 const { TOPICS } = require('../../bus-topics');
 const { wirePageIpc } = require('./pages');
 
+/** A todo is named by its list number or its text ("/done 2", "/done milk"). @param {unknown} r */
+const todoRef = (r) => (typeof r === 'number' && Number.isFinite(r) ? r : String(r ?? '').slice(0, 200));
+
 /** Care actions a renderer may request. Others (e.g. 'focus-break') are core-only. */
 const USER_ACTIONS = new Set(['feed', 'snack', 'play', 'clean', 'sleep', 'nap', 'pat']);
 
@@ -143,8 +146,8 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     }));
     ipc.handle('prod:get', () => bus.request(TOPICS.PROD_GET));
     ipc.handle('prod:todoAdd', (t) => bus.request(TOPICS.PROD_TODO_ADD, { text: String(t || '') }));
-    ipc.handle('prod:todoDone', (ref) => bus.request(TOPICS.PROD_TODO_DONE, { ref }));
-    ipc.handle('prod:todoRemove', (ref) => bus.request(TOPICS.PROD_TODO_REMOVE, { ref }));
+    ipc.handle('prod:todoDone', (ref) => bus.request(TOPICS.PROD_TODO_DONE, { ref: todoRef(ref) }));
+    ipc.handle('prod:todoRemove', (ref) => bus.request(TOPICS.PROD_TODO_REMOVE, { ref: todoRef(ref) }));
     ipc.handle('prod:noteAdd', (t) => bus.request(TOPICS.PROD_NOTE_ADD, { text: String(t || '') }));
     ipc.handle('prod:remindAdd', (input) => bus.request(TOPICS.PROD_REMIND_ADD, { input: String(input || '') }));
     ipc.handle('prod:focusStart', (m) => bus.request(TOPICS.PROD_FOCUS_START, { minutes: Number(m) || 25 }));
@@ -163,7 +166,7 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
       return dir ? bus.request(TOPICS.ENGINE_SET_CWD, dir) : null;
     });
     ipc.handle('agent:setCwd', (dir) => bus.request(TOPICS.ENGINE_SET_CWD, String(dir)));
-    ipc.handle('agent:resume', (id) => bus.request(TOPICS.ENGINE_RESUME, id || null));
+    ipc.handle('agent:resume', (id) => bus.request(TOPICS.ENGINE_RESUME, id ? String(id).slice(0, 100) : null));
     ipc.on('agent:send', (text) => fire(TOPICS.ENGINE_SEND, String(text)));
     ipc.on('agent:interrupt', () => fire(TOPICS.ENGINE_INTERRUPT));
     ipc.on('agent:clear', () => fire(TOPICS.ENGINE_CLEAR));

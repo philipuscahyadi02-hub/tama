@@ -84,6 +84,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-052 | Architecture rules enforced by `scripts/arch-check.js` in `npm run check`; engines get public index.js files; shared day helpers in `src/main/day.js` | Accepted |
 | D-053 | `npm run perf` measures idle cost the same way every time; mood/sleep effects rest between alive bursts; shorter, rarer bursts | Accepted · Refines D-042 (calm idle) |
 | D-054 | M12 provider layer: features ask for capabilities, providers register what they can do, per-capability preference with fallback; D-029's split stays the default | Accepted · Refines D-029 (routing becomes a default, not a hard-wire) |
+| D-055 | Security pass: no navigation, new windows or browser permissions; every IPC input coerced; more secret patterns redacted; Maps and [google] context marked untrusted | Accepted |
 
 ---
 
@@ -741,3 +742,22 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Keep the hard-wired split and only hide missing features (SHIP-3 alone; a Claude-only user would get no chat); always fall back to Claude for chat (spends Claude quota without asking; the user chose agy-only chat in D-029).
 - **Consequences:** `brain/index.js` and `brain/chat.js` take a provider instead of factories; ARCHITECTURE §5 (Engine contract) gains the provider/capability contract; the setup wizard (SHIP-4) shows what each provider unlocks from the same registry. AGENTS rule 6 ("no `engine === 'agy'` outside engines") extends to providers.
 - **Refs:** SHIP-3, SHIP-4, SHIP-8, D-006, D-027, D-029, D-037, D-052, src/main/brain, src/main/services/{usage,accounts,telegram}
+
+### D-055 — Security pass: windows stay on Tama's pages, no browser permissions, IPC inputs coerced, more redaction
+- **Date:** 2026-11-07 · **Status:** Accepted
+- **Context:** QC-6 (M11). Already in place: CSP on all 12 pages, `sandbox` + `contextIsolation` + no `nodeIntegration` on every window, IPC accepted only from `file://` frames, HTML escaping in every renderer that shows model or user text, `UNTRUSTED …` labels on mail/Drive/calendar tool results, the tool bridge on 127.0.0.1 with a random key. Gaps found:
+  - Nothing stopped a window from navigating to a website or opening a new window (e.g. a link inside a reply). The `file://` check would still block its IPC calls, but the window would be lost.
+  - Browser permissions (camera, microphone, location, …) used Electron's defaults.
+  - A few IPC arguments reached the bus as sent (todo refs, the resume id, the permission answer's choice/feedback); `page:open` looked names up on a plain object, so `constructor` resolved to a function.
+  - The crash log's `redact()` missed Google API keys (`AIza…`, the Maps key) and refresh tokens (`1//0…`) when no "key=" word came before them.
+  - Maps results (place names anyone can write) and the chat's `[google]` line (mail subjects, event titles) reached the model without an "untrusted" note.
+  - The tool bridge compared header lengths in characters before `timingSafeEqual`, which throws when byte lengths differ.
+- **Decision:**
+  - `platform/app.js` `harden()`: every web contents denies `window.open`, cancels navigation and redirects away from `file://`, refuses `<webview>`; the default session grants no permission and answers every permission check with no. No page needs one (checked: voice playback and M4A encoding still work).
+  - The desktop channel coerces every argument (numbers, short strings, booleans) or checks it against a list; page names by own property only. `desktop.test.js` covers it.
+  - `redact()` gains Google API key and refresh-token patterns (tested).
+  - Maps tool results use the same `untrusted()` wrapper (source "Google Maps"); the persona says mail subjects and event titles in `[google]` are other people's data.
+  - Tool bridge: compare byte lengths, then `timingSafeEqual` (tested with a multi-byte header).
+- **Alternatives:** A separate Electron session/partition per window (no benefit with one origin); stripping links from replies (users like links; navigation is blocked anyway).
+- **Consequences:** A future page that needs a browser permission (e.g. a microphone for VOICE-4 speech-to-text) must allow exactly that permission for that page in `harden()`, with a decision entry.
+- **Refs:** QC-6, AGENTS §1.9, §4, D-034, D-037, D-050, src/main/platform/{app,crash-log,tool-bridge}.js, src/main/channels/desktop, src/main/services/google/tools.js, src/main/brain/persona.js

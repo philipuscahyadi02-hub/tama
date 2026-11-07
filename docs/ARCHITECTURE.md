@@ -222,8 +222,12 @@ stop(): void
 - Engines: approval-required by default; PermissionGate is the single authority; per-channel policy (remote/Telegram = stricter).
 - Telegram: one paired chat ID; everything else dropped and logged.
 - Google: minimal scopes; no delete/share tools; edits to existing files need approval.
-- Renderer: `contextIsolation: true`, `nodeIntegration: false`, CSP in every HTML file, preload exposes an allow-list.
-- Logs never contain secrets, tokens, or email bodies.
+- Renderer: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, CSP in every HTML file, preload exposes an allow-list.
+  IPC is only accepted from file:// frames (`platform/ipc`), and the desktop channel coerces or allow-lists every argument (D-055).
+- Windows never navigate away from file://, never open new windows and get no browser permissions (`platform/app` `harden()`, D-055).
+  Links go through `link:open` → `platform/shell` (allow-listed https hosts only).
+- Untrusted content (mail, Drive files, calendar, Maps places, the `[google]` context line) reaches models labeled as data, never as instructions.
+- Logs never contain secrets, tokens, or email bodies (`platform/crash-log` `redact()`: Telegram, Google OAuth/API, Anthropic patterns).
 
 ## 8. Character rig (see D-020)
 - `CharacterSpec` (JSON) → rig composes layers from `assets/rig/<layer>/<part>.svg` and applies palette via CSS variables.

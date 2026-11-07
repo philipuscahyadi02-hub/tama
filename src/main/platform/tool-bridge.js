@@ -12,8 +12,10 @@ const crypto = require('crypto');
 function startToolBridge(handlers) {
   const key = crypto.randomBytes(32).toString('hex');
   const server = http.createServer((req, res) => {
-    const auth = String(req.headers.authorization || '');
-    const ok = auth.length === key.length + 7 && crypto.timingSafeEqual(Buffer.from(auth), Buffer.from(`Bearer ${key}`));
+    const got = Buffer.from(String(req.headers.authorization || ''));
+    const want = Buffer.from(`Bearer ${key}`);
+    // Compare byte lengths first: timingSafeEqual throws on a length mismatch (e.g. a header with non-ASCII characters).
+    const ok = got.length === want.length && crypto.timingSafeEqual(got, want);
     if (!ok || req.method !== 'POST') { res.writeHead(403).end(); return; }
     let body = '';
     req.on('data', (c) => { body += c; if (body.length > 2_000_000) req.destroy(); });

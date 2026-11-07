@@ -8,6 +8,8 @@ const { createCrashLog, redact } = require('./crash-log');
 
 test('crash log: secrets are redacted (SET-6)', () => {
   assert.equal(redact('bot 123456789:AAHxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxy failed'), 'bot <telegram-token> failed');
+  assert.equal(redact('places failed for AIzaSyA1b2C3d4E5f6G7h8I9j0KlMnOpQrStUvW'), 'places failed for <google-api-key>');
+  assert.equal(redact('refresh 1//0gAbCdEfGhIjKlMnOpQrStUvWxYz rejected'), 'refresh <google-refresh-token> rejected');
   assert.equal(redact('Authorization: Bearer abcdefghijklmnop123'), 'Authorization: Bearer <redacted>');
   assert.equal(redact('refresh_token=1//0gAbCdEfGhIjKlMnOp'), 'refresh_token=<redacted>');
   assert.equal(redact('got ya29.a0Abc_def-123 back'), 'got <google-token> back');

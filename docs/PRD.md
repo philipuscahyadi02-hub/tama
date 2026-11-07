@@ -5,8 +5,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.28 |
-| **Status** | v0.10.0 released (M0–M10). M11 quality control in progress on `m11-quality`; M12 shipping (installers) next |
+| **Version** | 0.29 |
+| **Status** | v0.10.0 released (M0–M10). M11 quality control code complete on `m11-quality` (awaiting the user's check); M12 shipping (installers, provider layer) next |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-07 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -115,7 +115,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | QC-3 | Performance: measure start-up time, idle CPU/RAM (NFR-1), event-loop lag, IPC chatter and timers; fix what slows Tama down; keep a repeatable `npm run perf`. *(Idle CPU 3.5 % → 1.6 %, memory 297 → 262 MB, ready in ~0.8 s; D-053.)* | P1 | M11 | ☑ |
 | QC-4 | Code review of every module against AGENTS rules (file ≤ ~300 lines, function size, error handling, no floating promises, `start()`/`stop()`); split or simplify what fails. *(Done: 7 large files split by responsibility (pet.js left at 353 lines); the desktop channel's 235-line `start()` became 13 small functions in two files; unhandled promises fixed (ACP messages, app icon, link opening) and corrupt saves now reach the crash log; all 20 empty `catch` blocks state why. Accepted as is: `googleTools` (a 138-line data table) and five functions of 54–74 lines that are one switch or one prompt. Found the terminal's `/voice` overridden by an old placeholder.)* | P1 | M11 | ☑ |
 | QC-5 | Test coverage report; add tests for services and platform code with gaps (aim ≥ 80 % of service lines). *(`npm run coverage`: services 94 %, brain 96 %, channels 87 % (new), shared 96 %, engines 76 %. New tests: desktop channel, composer, phone /repos·/cd·/stop, git helpers, input queue, terminal formatting. Left untested on purpose: Electron-only platform files and the live Claude SDK session (checked in live runs).)* | P2 | M11 | ☑ |
-| QC-6 | Security pass: IPC input validation, CSP on every page, secrets never in logs or exports, untrusted-data handling. | P1 | M11 | ☐ |
+| QC-6 | Security pass: IPC input validation, CSP on every page, secrets never in logs or exports, untrusted-data handling. *(D-055: windows can't navigate away or open new windows, no browser permissions, every IPC input coerced or allow-listed (tested), Google keys and refresh tokens redacted from logs, Maps results and the chat's [google] line marked untrusted, tool-bridge auth hardened. CSP, sandbox and context isolation were already on every page.)* | P1 | M11 | ☑ |
 
 ### 4.3d Shipping (SHIP), M12
 | ID | Requirement | Pri | MS | Status |
@@ -253,7 +253,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M7 — Telegram.** *(released as 0.7.0; voice notes in M9)* (TG-*, ART-5, SAFE-3).
 - [x] **M8 — Usage & accounts dashboard.** *(released as 0.8.0)* Usage log, dashboard, Limits tab (what's left), account switching (USE-1..7, D-040, D-041).
 - [x] **M10 — Settings & polish.** *(released as 0.10.0)* One Settings window, reply language, quiet hours, faster voice, small reliability fixes (SET-1..6, ONB-8).
-- [ ] **M11 — Quality control.** Architecture checks, dead code, performance, code review, coverage, security (QC-1..6, NFR-1).
+- [x] **M11 — Quality control.** *(code complete)* Architecture checks, dead code, performance, code review, coverage, security (QC-1..6, NFR-1).
 - [ ] **M12 — Shipping.** Windows installer and macOS app, a provider layer, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..8, NFR-3).
 - [x] **M9 — Voice & polish.** *(released as 0.9.0; phone → Tama speech-to-text (VOICE-4) deferred)* AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
 
@@ -266,6 +266,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.29 — 2026-11-07** — QC-6 ☑ (D-055); M11 code complete.
 - **0.28 — 2026-11-07** — QC-5 ☑ (`npm run coverage`).
 - **0.27 — 2026-11-07** — QC-4 ☑.
 - **0.26 — 2026-11-07** — New SHIP-8: provider layer for M12 (D-054).
