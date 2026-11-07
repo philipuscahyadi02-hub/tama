@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.33 |
+| **Version** | 0.34 |
 | **Status** | **v1.0.0 released** (M0–M11 + provider layer, D-058). Rest of M12 (installers, setup wizard, modular capabilities) ships as 1.x on `m12-shipping` |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-08 |
@@ -256,7 +256,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M11 — Quality control.** *(released in 1.0.0)* Architecture checks, dead code, performance, code review, coverage, security (QC-1..6, NFR-1).
 - [ ] **M12 — Shipping** (1.0.0 released early with SHIP-8 in part, D-058; the rest arrives as 1.x). Also closes the two open P0 rows (GOOG-6 replace section, NFR-2 mixed-DPI check) or defers them explicitly. Windows installer and macOS app, a provider layer, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..8, NFR-3).
 - [x] **M9 — Voice & polish.** *(released as 0.9.0; phone → Tama speech-to-text (VOICE-4) deferred)* AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
-- [ ] **v2 (M13+) — Tama's own agentic brain** (planned, not started; D-056). Tama runs its own agent loop instead of depending on one provider's agent (AGT-1..6).
+- [ ] **v2 (M13+) — Tama's own agentic brain + "the work buddy who grows when you ship"** (planned, not started; D-056, D-060). Tama runs its own agent loop instead of depending on one provider's agent (AGT-1..6), and the product story centres on her growing with your real work (USP-1..6).
 
 ### 5b. v2 roadmap: Tama's own agentic brain (planned)
 | ID | Requirement | Pri | MS | Status |
@@ -268,6 +268,18 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | AGT-5 | **Claude Code and agy stay optional adapters** behind the same interface, for users who prefer their subscriptions. | P1 | v2 | ☐ |
 | AGT-6 | **Evaluation and safety probes** for the own loop (like `npm run probe:agy`): tool gating, prompt injection from mail/web, cost limits. | P1 | v2 | ☐ |
 
+### 5c. v2 positioning and USP (planned, D-060)
+**Positioning:** *"The work buddy who grows when you ship."* A companion that lives on your desktop, works with the AI plans (or keys) you already have, remembers you, and turns your real progress into her growth. Tama sits where desktop pets (no real work), AI companions (cloud chat, no tools, no access to your day) and work agents (no personality, no memory of you, no reason to come back) don't meet. The hook other products can't copy cheaply: **she rewards finishing things, not clicking.**
+
+| ID | Requirement | Pri | MS | Status |
+|---|---|---|---|---|
+| USP-1 | **Work → bond loop as the hero:** a daily "what we shipped today" card (commits, finished tasks and todos, focus time, Claude tasks); visible growth tied to real output (new outfits and stage evolutions at bond levels); a weekly report card she presents, shareable as an image. | P0 | v2 | ☐ |
+| USP-2 | **She knows your day:** one morning plan from calendar, todos and yesterday's open work; in the evening she drafts your stand-up or summary (sent only after you confirm the full text, D-038). | P0 | v2 | ☐ |
+| USP-3 | **Trust as a feature:** a git checkpoint before every agent task and one-click "undo what she did"; the permission prompts and the undo are part of the pitch for cautious and non-developer users. | P0 | v2 | ☐ |
+| USP-4 | **Shareable character:** export her as an image card and Telegram stickers; a public gallery of designs (opt-in, no personal data). | P1 | v2 | ☐ |
+| USP-5 | **Focus body-doubling:** during focus sessions she visibly "works" beside you and reacts gently when you drift (fullscreen, app switches, idle), never guilt-tripping. | P1 | v2 | ☐ |
+| USP-6 | **Talk to her:** speech-to-text on the PC and from Telegram voice notes (VOICE-4) for a hands-free conversation loop. | P2 | v2 | ☐ |
+
 ## 6. Open questions
 
 | ID | Question | Default until answered |
@@ -277,6 +289,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.34 — 2026-11-08** — v2 positioning ("the work buddy who grows when you ship") and USP-1..6 added to the v2 roadmap (D-060).
 - **0.33 — 2026-11-08** — SHIP-1 ☑ (Windows installer), SHIP-4 ☑ (setup wizard), SHIP-3 ◐ (D-059).
 - **0.32 — 2026-11-07** — v1.0.0 released (D-058): M11 plus the provider layer; installers and the setup wizard move to 1.x.
 - **0.31 — 2026-11-07** — SHIP-8 ◐: provider layer in place (D-057).

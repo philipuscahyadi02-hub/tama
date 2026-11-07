@@ -89,6 +89,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-057 | Provider layer built: registry + per-engine descriptors; Claude chats as Haiku without tools, only after an opt-in (choosing it counts); Settings → Brains | Accepted · Implements D-054 |
 | D-058 | Release v1.0.0 now (M11 + provider layer), before the installer; the rest of M12 ships as 1.x; unsigned builds accepted | Accepted · Refines D-056 (what v1.0.0 contains), D-051 (signing) |
 | D-059 | Installer = NSIS per-user (uninstaller asks about data); setup wizard runs the vendors' official one-line installers visibly and re-detects tools without a restart | Accepted |
+| D-060 | v2 positioning: "the work buddy who grows when you ship"; USP-1..6 (work → bond loop, day plan + stand-up, undo, shareable character, body-doubling, voice input) join the v2 roadmap | Accepted |
 
 ---
 
@@ -815,3 +816,11 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Bundling the CLIs (licenses, sign-ins, separate updates; D-051); a one-click NSIS installer (no folder choice); running installers hidden (the user should see what runs); per-machine install (needs admin).
 - **Consequences:** The installer test needs a real install on a Windows PC (the unpacked build was tested with a scratch data folder). If a vendor changes its install command, update `services/setup` `INSTALL` and `engines/accounts` `installScript`. macOS still runs from source (SHIP-2).
 - **Refs:** SHIP-1, SHIP-3, SHIP-4, SHIP-8, D-006, D-051, D-054, D-058, build/installer.nsh, src/main/services/setup, src/renderer/setup, src/main/platform/{env,app}.js, src/main/engines/{accounts,claude/find-exe}.js
+
+### D-060 — v2 positioning and USP roadmap: "the work buddy who grows when you ship"
+- **Date:** 2026-11-08 · **Status:** Accepted
+- **Context:** The user asked for a CEO-level review of Tama's USP (run without gstack at their request). Findings: Tama is the only product in the overlap of desktop pets (cute, no real work), AI companions (cloud chat, no tools) and work agents (no personality or memory). The v1 pitch lists features; the setup is heavy before the first delight; and the strongest differentiator, bond XP earned from real work (commits, todos, focus, finished tasks), is already built but hidden in the pitch and only lightly visible in the UI.
+- **Decision:** v2 is positioned as **"the work buddy who grows when you ship"**, and six USP requirements join the v2 roadmap next to AGT-1..6 (user's choice: all of them into v2): USP-1 work → bond loop as the hero (daily shipped card, growth tied to output, weekly report card), USP-2 morning plan and evening stand-up draft, USP-3 checkpoint + one-click undo for agent work, USP-4 shareable character, USP-5 focus body-doubling, USP-6 voice input (VOICE-4).
+- **Alternatives:** Putting USP-1..3 into 1.x (faster story, but the user chose to keep 1.x for shipping work); positioning as a coding tool (crowded, loses the companion edge) or as a pure companion (loses the "does real work" edge).
+- **Consequences:** 1.x stays focused on shipping (installer, modular capabilities, voice on demand, updates, macOS). v2 planning should order USP-1..3 early, since they reuse what exists (bond, events, Google, git watcher, PermissionGate) and AGT work can follow behind the provider layer. README and release notes switch to the new positioning when v2 starts.
+- **Refs:** USP-1..6, AGT-1..6, BOND-1..3, EVT-*, GOOG-*, PROD-2, VOICE-4, D-038, D-054, D-056

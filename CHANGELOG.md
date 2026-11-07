@@ -15,6 +15,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = first stable release (D-058); the rest of M12 ships as 1.x; 2.0.0 = Tama's own agentic brain.
 
 ## [Unreleased]
+### Docs
+- **v2 roadmap** (D-060): positioning "the work buddy who grows when you ship" and USP-1..6 (shipped-today card and growth from real work, morning plan and stand-up draft, undo for agent work, shareable character, focus body-doubling, voice input) next to Tama's own agentic brain (AGT-1..6).
 ### Added
 - **Windows installer** (SHIP-1, D-059): `Tama-Setup-<version>.exe`. Installs for your user only (no admin), lets you pick the folder, adds Start menu and desktop shortcuts, and starts Tama when done. Uninstalling asks whether to also delete your Tamas and settings (default: keep them). Builds are unsigned, so Windows may say "unknown publisher".
 - **Start with Windows** switch in Settings (installed app only).
