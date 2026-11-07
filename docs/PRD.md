@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.25 |
+| **Version** | 0.26 |
 | **Status** | v0.10.0 released (M0–M10). M11 quality control in progress on `m11-quality`; M12 shipping (installers) next |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-07 |
@@ -122,10 +122,11 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 |---|---|---|---|---|
 | SHIP-1 | **Windows installer** (not a bare portable exe): per-user install, Start-menu and optional autostart entries, uninstaller that asks whether to keep her data. | P0 | M12 | ☐ |
 | SHIP-2 | **macOS app** (`.dmg`, Apple Silicon + Intel): mac versions of the Windows-only parts (system voice, fullscreen detection, tray/menu-bar icon, hotkeys, engine processes, paths). | P1 | M12 | ☐ |
-| SHIP-3 | **Modular capabilities:** Tama works with whatever the user has. Claude Code only, Antigravity (agy) only, both, or neither; each feature declares what it needs and hides or explains itself when that is missing (e.g. agy only = chat, moments, Google and phone, no coding terminal; designer falls back to agy or keywords). | P0 | M12 | ☐ |
+| SHIP-3 | **Modular capabilities:** Tama works with whatever the user has. Claude Code only, Antigravity (agy) only, both, or neither; each feature declares the capabilities it needs (SHIP-8) and hides or explains itself when no provider offers them (e.g. agy only = chat, moments, Google and phone, no coding terminal; designer falls back to agy or keywords). | P0 | M12 | ☐ |
 | SHIP-4 | **Setup wizard** on first run (and in Settings): detects Claude Code, agy, AivisSpeech/VOICEVOX, Google and Telegram; shows what each unlocks; guides each install with official links and sign-ins, and re-checks. | P0 | M12 | ☐ |
 | SHIP-5 | **Optional components** downloaded on demand from official releases with checksums (voice engines first), never bundled into the installer. | P1 | M12 | ☐ |
 | SHIP-6 | Updates: check for new versions and update in place (electron-updater or a release check). | P2 | M12 | ☐ |
+| SHIP-8 | **Provider layer** (D-054): features ask for a *capability* (chat, compose, structured JSON, coding, tools, web search) instead of a named engine. Claude Code and agy register what they can do and whether they are installed and signed in; the brain picks the user's preferred provider per capability and falls back to another when one is missing. Defaults keep today's split (terminal = Claude, chat = agy); using Claude for chat is opt-in because it spends Claude quota. Safety rules stay per provider (agy never codes). Usage, limits and accounts list providers from the registry instead of fixed Claude/Gemini slots. Built first in M12, because SHIP-3 and SHIP-4 build on it. | P0 | M12 | ☐ |
 | SHIP-7 | Signing: Windows code signing (SmartScreen) and Apple notarization; both need paid certificates/accounts, so decide before release. | P2 | M12 | ☐ |
 
 ### 4.5 Events & conversations (EVT)
@@ -253,7 +254,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M8 — Usage & accounts dashboard.** *(released as 0.8.0)* Usage log, dashboard, Limits tab (what's left), account switching (USE-1..7, D-040, D-041).
 - [x] **M10 — Settings & polish.** *(released as 0.10.0)* One Settings window, reply language, quiet hours, faster voice, small reliability fixes (SET-1..6, ONB-8).
 - [ ] **M11 — Quality control.** Architecture checks, dead code, performance, code review, coverage, security (QC-1..6, NFR-1).
-- [ ] **M12 — Shipping.** Windows installer and macOS app, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..7, NFR-3).
+- [ ] **M12 — Shipping.** Windows installer and macOS app, a provider layer, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..8, NFR-3).
 - [x] **M9 — Voice & polish.** *(released as 0.9.0; phone → Tama speech-to-text (VOICE-4) deferred)* AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
 
 ## 6. Open questions
@@ -265,6 +266,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.26 — 2026-11-07** — New SHIP-8: provider layer for M12 (D-054).
 - **0.25 — 2026-11-07** — QC-4 ◐ (large files split).
 - **0.24 — 2026-11-07** — v0.10.0 released (M10).
 - **0.23 — 2026-11-07** — M10 code complete (SET-4..6, D-049, D-050). Planned M11 quality control (QC-1..6) and M12 shipping with installers for Windows and macOS and modular capabilities (SHIP-1..7, D-051); NFR-3's portable exe is replaced.

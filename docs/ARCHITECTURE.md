@@ -198,6 +198,7 @@ stop(): void
 // emits on bus 'engine.event' with { engine, sessionId, ev } where ev.t ∈
 // 'status'|'text-delta'|'text'|'tool'|'tool-result'|'permission'|'todo'|'result'|'error'|'session'
 ```
+- **Planned (M12, D-054):** a provider layer on top of this contract. Providers (Claude Code, agy) register capabilities (`chat`, `compose`, `json`, `code`, `tools`, `webSearch`) and status; the brain picks one per capability from the user's preference with fallback. Today the routing is fixed (D-029).
 - **All tool approvals** go out as `ev.t = 'permission'` and come back through `brain/PermissionGate`. An engine must not auto-approve on its own.
 - `agy`: headless default is `always-proceed` — the engine **must** start it in a mode that requires approval (see DECISIONS).
 

@@ -15,6 +15,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
 
 ## [Unreleased]
+### Docs
+- Planned the **provider layer** for M12 (SHIP-8, D-054): features ask for a capability (chat, coding, structured output…) and Tama picks Claude Code or agy from your preference, falling back to whichever is installed.
 ### Fixed
 - `/voice` in the terminal works again: an old "arrives in M8" placeholder had replaced it (QC-4).
 - `/newpc` shows whether Telegram is paired instead of "comes in M7".

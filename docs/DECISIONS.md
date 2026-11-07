@@ -83,6 +83,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-051 | Roadmap: M11 = quality control; M12 = installers (Windows + macOS) with modular capabilities instead of a portable exe | Accepted |
 | D-052 | Architecture rules enforced by `scripts/arch-check.js` in `npm run check`; engines get public index.js files; shared day helpers in `src/main/day.js` | Accepted |
 | D-053 | `npm run perf` measures idle cost the same way every time; mood/sleep effects rest between alive bursts; shorter, rarer bursts | Accepted · Refines D-042 (calm idle) |
+| D-054 | M12 provider layer: features ask for capabilities, providers register what they can do, per-capability preference with fallback; D-029's split stays the default | Accepted · Refines D-029 (routing becomes a default, not a hard-wire) |
 
 ---
 
@@ -720,3 +721,23 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Capping the pet window's frame rate (Electron only supports this for offscreen rendering); stepped CSS animations (choppy); turning wandering off (it costs almost nothing).
 - **Consequences:** She sways a little less often; walking, blinks, talk and expressions are unchanged. Use `npm run perf` before and after any animation or timer change.
 - **Refs:** QC-3, NFR-1, D-042, scripts/perf.js, src/main/platform/perf.js, src/main/platform/ipc.js, src/renderer/pet/{pet.js,pet.css}
+
+### D-054 — M12 provider layer: capabilities instead of named engines
+- **Date:** 2026-11-07 · **Status:** Accepted (plan; built in M12) · Refines D-029 (its split becomes the default routing)
+- **Context:** The user asked whether the service and provider layers depend on Claude. Findings:
+  - **Services don't.** None of the 13 services imports an engine (enforced by `scripts/arch-check.js`, D-052); they use bus requests or injected functions.
+  - **The routing is hard-wired** in `brain/` (D-029: terminal = Claude Code, chat = agy). There is no shared provider interface; the bootstrap passes fixed factories (`claudeWorker`, `agyChat`, `agyCompose`) and `available: { claude, agy }`.
+  - Without agy most of her personality is gone (chat, moments, Japanese dub, Telegram chat). Without Claude only the terminal, `/code` from the phone and the AI designer are lost.
+  - Claude-specific knowledge also sits in `services/usage/limits.js` (Claude windows), `services/accounts` (fixed claude/gemini slots), `services/telegram/remote.js` (`engine === 'claude'`) and `brain/index.js` (imports the Claude rate-limit helper).
+  - The user then asked to put a provider layer in the M12 plan.
+- **Decision (M12, SHIP-8, built before SHIP-3/4):**
+  - **Capabilities:** `chat` (persona conversation, streaming, hidden markers), `compose` (short one-shot lines: events, diary, dubs), `json` (structured output against a schema: designer), `code` (agentic work in a folder, every tool through PermissionGate), `tools` (Tama's MCP tools: Google), `webSearch`, plus optional `limits` and `account` reporting.
+  - **Providers** (`src/main/providers/` or `engines/<name>/provider.js`) register `{ id, name, capabilities, status(): { installed, signedIn, email?, plan? }, create(capability, opts) }`. Claude Code offers chat (opt-in), compose, json, code, tools, limits, account; agy offers chat, compose, tools, webSearch, account, never `code` (D-027, D-037).
+  - **Routing:** the brain asks `providers.pick(capability)`, which takes the user's preference order per capability (Settings; defaults = D-029: chat/compose → agy, json/code → Claude) and falls back to the next provider that is installed and signed in. Using Claude for chat or moments is **opt-in** (it spends Claude quota; D-029's reason), shown with the budget.
+  - **Safety travels with the provider**, not the feature: agy keeps plan mode + the workspace guard; Claude keeps PermissionGate; a provider without a safe mode for a capability simply doesn't declare it.
+  - **Services stay unaware.** Usage, limits and accounts get their rows from the registry (`provider` field already exists in the usage log), so a new provider shows up without service changes. Telegram `/code` asks for `code`.
+  - **Contract tests:** one shared test file that every provider (and a fake one) must pass: streaming, interrupt, stop, persona, permission round-trip.
+  - New providers later (e.g. other coding CLIs) each need their own decision about login (D-006) and safety.
+- **Alternatives:** Keep the hard-wired split and only hide missing features (SHIP-3 alone; a Claude-only user would get no chat); always fall back to Claude for chat (spends Claude quota without asking; the user chose agy-only chat in D-029).
+- **Consequences:** `brain/index.js` and `brain/chat.js` take a provider instead of factories; ARCHITECTURE §5 (Engine contract) gains the provider/capability contract; the setup wizard (SHIP-4) shows what each provider unlocks from the same registry. AGENTS rule 6 ("no `engine === 'agy'` outside engines") extends to providers.
+- **Refs:** SHIP-3, SHIP-4, SHIP-8, D-006, D-027, D-029, D-037, D-052, src/main/brain, src/main/services/{usage,accounts,telegram}
