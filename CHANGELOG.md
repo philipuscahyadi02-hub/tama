@@ -245,7 +245,10 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `5a0582b` | 2026-11-08 | feat(ship) | Windows installer (NSIS, per-user, uninstaller asks about data), setup wizard with official installers and live re-detection, start with Windows (SHIP-1, SHIP-4, D-059) |
+| `7f3da5f` | 2026-11-07 | docs(changelog) | regenerate commit table |
 
 ### v1.0.0
 | Commit | Date | Type | Subject |
