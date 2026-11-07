@@ -24,6 +24,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - **M11 Quality control** (branch `m11-quality`): the architecture rules are now checked automatically in `npm run check` (`npm run arch` for the report); fixed 11 deep imports by giving the engines public entry points and moving the day helpers out of the pet module (QC-1, D-052).
 - **Lighter at idle:** about 1.6 % CPU and 262 MB (was 3.5 % and 297 MB). Her tears, gloom and sleep bubbles now rest between her lively moments, and those moments come a bit less often. New `npm run perf` measures this the same way every time (QC-3, D-053).
 - **Code review, part 1 (QC-4):** the large files are split by responsibility: the terminal (formatting, permission prompt, Claude events, commands), the pet window (care, pointer, reactions), Telegram's phone commands, the voice text helpers, and the bootstrap's dev-only switches (`src/main/dev/hooks.js`). The terminal's formatting is now unit-tested.
+- **Code review, part 2 (QC-4):** the desktop channel is split into small per-area functions (and `pages.js`); messages from agy that fail to process, the app-icon render and opening links no longer leave unhandled promises; a save file that can't be read is now written to the crash log too.
 - Removed dead code found by a scan: an unused git helper, page close helper, export, IPC channel and CSS rule. Everything else is reachable and used (QC-2).
 
 ## [0.10.0] — 2026-11-07 — M10 Settings & polish

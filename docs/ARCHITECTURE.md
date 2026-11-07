@@ -107,7 +107,8 @@ src/main/
                            guard.js (PreToolUse hard lock), mcp-relay.js (stdio MCP → tool bridge) (D-037)
   platform/tool-bridge.js  localhost tool bridge for agent CLIs (random key per run) (D-037)
   brain/chat-tools.js      Google tools for the chat brain with Tama-side confirmations (D-037)
-  channels/desktop/        renderer IPC ↔ bus
+  channels/desktop/        renderer IPC ↔ bus: index.js (pushes to windows, pet/voice/chat/terminal/productivity IPC),
+                           pages.js (usage, Telegram, Google, events, weather, onboarding, My Tamas pages)
   dev/hooks.js             every dev-only TAMA_* switch (open windows, *_EVAL, voice test/trace, perf, quit-after), called once from the bootstrap
   dev/selftest.js          TAMA_SELFTEST live summon check
   dev/onboarding-walk.js   TAMA_ONBOARD_WALK scripted onboarding run with screenshots (M1)

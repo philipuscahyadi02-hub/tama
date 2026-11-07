@@ -84,7 +84,7 @@ function boot() {
   if (process.env.TAMA_DEBUG) {
     bus.on(TOPICS.ENGINE_EVENT, ({ engine, ev }) => { if (ev.t !== 'text-delta') debug(`engine ${engine} ${ev.t} ${ev.t === 'tool-progress' ? ev.chars : ev.state || ev.name || ''}`); });
   }
-  const store = createStore(appShell.paths.data());
+  const store = createStore(appShell.paths.data(), { onError: (rel, e) => log.write('error', `store ${rel}`, e) });
 
   // ---- services ----
   const secrets = createSecrets(appShell.paths.data(), electronCipher());
@@ -216,7 +216,7 @@ function boot() {
   // App icon = her face (D-047): cached one right away, a fresh render shortly after start and on every restyle.
   const appIcon = createAppIcon({ cacheFile: () => pathMod.join(appShell.paths.data(), 'icons', `${active.id}.png`), getTray: () => tray });
   appIcon.loadCached();
-  setTimeout(() => { appIcon.render().then((ok) => debug(`app icon ${ok ? 'rendered' : 'not rendered'}`)); }, 2500);
+  setTimeout(() => { appIcon.render().then((ok) => debug(`app icon ${ok ? 'rendered' : 'not rendered'}`)).catch((e) => log.write('error', 'app-icon', e)); }, 2500);
   bus.on(TOPICS.CHARACTER_CHANGED, () => { appIcon.render().catch(() => null); });
   const failed = shell.registerHotkeys({ [HOTKEYS.summon]: () => summon('hotkey'), [HOTKEYS.terminal]: () => term.toggle(), [HOTKEYS.chat]: () => chatWin.toggle() });
   if (failed.length && !process.env.TAMA_DATA_DIR) shell.notify('Tama', `Hotkey already in use by another app: ${failed.join(', ')}`);

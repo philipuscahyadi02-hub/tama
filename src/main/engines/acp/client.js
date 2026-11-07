@@ -62,7 +62,8 @@ function createAcpClient(child, opts = {}) {
       if (!line) continue;
       let msg;
       try { msg = JSON.parse(line); } catch { continue; } // agents may log non-JSON lines; ignore them
-      dispatch(msg);
+      // A handler that throws (or a write after the agent exited) must not become an unhandled rejection.
+      dispatch(msg).catch((/** @type {Error} */ e) => opts.onStderr && opts.onStderr(`tama: ACP message handling failed: ${e.message}`));
     }
   });
   if (child.stderr && opts.onStderr) child.stderr.on('data', (/** @type {Buffer} */ d) => opts.onStderr && opts.onStderr(d.toString()));

@@ -6,8 +6,9 @@ const { migrate } = require('./migrations');
 
 /**
  * @param {string} rootDir  e.g. %APPDATA%\Tama
+ * @param {{ onError?: (rel: string, e: Error) => void }} [opts]  onError: a save could not be read (logged, QC-4)
  */
-function createStore(rootDir) {
+function createStore(rootDir, opts = {}) {
   /** @type {Map<string, NodeJS.Timeout>} */
   const timers = new Map();
   /** @type {Map<string, () => void>} */
@@ -34,8 +35,9 @@ function createStore(rootDir) {
     try {
       return migrate(kind, JSON.parse(raw));
     } catch (e) {
-      try { fs.renameSync(file, `${file}.corrupt-${Date.now()}`); } catch { /* ignore */ }
+      try { fs.renameSync(file, `${file}.corrupt-${Date.now()}`); } catch { /* keeping the bad file aside is best effort */ }
       console.error(`[store] could not read ${rel}:`, /** @type {Error} */ (e).message);
+      if (opts.onError) opts.onError(rel, /** @type {Error} */ (e));
       return fallback();
     }
   }
