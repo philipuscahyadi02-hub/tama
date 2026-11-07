@@ -223,13 +223,16 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `0a2c422` | 2026-11-07 | docs(changelog) | regenerate commit table |
+| `c0eec77` | 2026-11-07 | perf | npm run perf; mood and sleep effects rest between bursts; shorter alive bursts (D-053) |
+| `234d429` | 2026-11-07 | chore | remove dead code found by the QC-2 scan |
+| `65476da` | 2026-11-07 | chore(arch) | enforce architecture rules in npm run check; engine public indexes; shared day helpers (D-052) |
 
 ### v0.10.0
 | Commit | Date | Type | Subject |
 |---|---|---|---|
-| `234d429` | 2026-11-07 | chore | remove dead code found by the QC-2 scan |
-| `65476da` | 2026-11-07 | chore(arch) | enforce architecture rules in npm run check; engine public indexes; shared day helpers (D-052) |
 | `6868507` | 2026-11-07 | chore(release) | 0.10.0 |
 | `fe2025c` | 2026-11-07 | feat(app) | window rescue, crash log and renderer reload; plan M11 QC and M12 installers (D-050, D-051) |
 | `e1dcc8a` | 2026-11-07 | feat(voice) | faster Japanese voice: dub rides with the reply, sentence-by-sentence playback, audio cache (D-049) |
