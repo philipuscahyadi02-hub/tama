@@ -86,7 +86,8 @@ src/main/
   platform/google-oauth.js loopback + PKCE desktop OAuth (M6)
   services/telegram/       api (long polling, uploads), format (pure), remote (/code bridge), index (pairing, routing, daily) (M7, D-036)
   services/voice/          her voice: language, pick + tuning, quiet rules (index.js); engines.js = start/stop/catalog of the local
-                           engines; emotion.js = mood → style/prosody (pure); vv-engine.js = AivisSpeech/VOICEVOX HTTP (D-042..D-045)
+                           engines; emotion.js = mood → style/prosody (pure); vv-engine.js = AivisSpeech/VOICEVOX HTTP (D-042..D-045);
+                           chunks.js = sentence split + audio cache for a fast first sound (D-049)
   services/usage/          numbers-only usage log (usage/YYYY-MM.jsonl), summaries (M8, D-040); limits.js: what's left,
                            history (usage/limits.jsonl), warnings (D-041)
   engines/claude/limits.js live Claude plan limits without a message + rate-limit event normalizer (D-041)
@@ -168,7 +169,7 @@ bus.on('engine.event', handler)
 
 ### Topics in use (M0)
 Events: `app.error`, `pet.state.changed`, `pet.bond.changed`, `engine.event`, `chat.event`, `brain.notice`, `ui.prefs.changed`, `memory.changed`, `event.shown`, `google.changed`, `google.meeting.soon`, `telegram.changed`, `usage.{record,changed,limit}`, `accounts.changed`, `summon.done`, `tray.action`, `character.changed`, `device.{power,idle}.changed`, `prod.{changed,focus.phase,reminder.due,commit.seen}`.
-Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,delete,export,import}`, `prod.*`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setEffort,setCwd,answerPermission,resume}`, `chat.{send,history,interrupt,clear,push,confirm}`, `ui.prefs.{get,set}`, `memory.{get,add,forget}`, `diary.{write,list,read}`, `events.{answer,trigger}`, `brain.compose`, `google.{status,setClient,login,logout,set,brief,context,backupNow,backups,restore}`, `telegram.{status,setup,newCode,unpair,set}`, `usage.get`, `usage.limits.{get,refresh,set}`, `voice.{say,render,status,set,detect,encode,preview,info}` + `voice.play` / `voice.changed`, `accounts.{get,switch}`, `brain.{status,set}`, `summon`.
+Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,delete,export,import}`, `prod.*`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setEffort,setCwd,answerPermission,resume}`, `chat.{send,history,interrupt,clear,push,confirm}`, `ui.prefs.{get,set}`, `memory.{get,add,forget}`, `diary.{write,list,read}`, `events.{answer,trigger}`, `brain.compose`, `google.{status,setClient,login,logout,set,brief,context,backupNow,backups,restore}`, `telegram.{status,setup,newCode,unpair,set}`, `usage.get`, `usage.limits.{get,refresh,set}`, `voice.{say,render,status,set,detect,encode,preview,info}` + `voice.play` / `voice.changed` / `voice.skipped`, `accounts.{get,switch}`, `brain.{status,set}`, `summon`.
 M5 extras (D-035): requests `weather.{get,set}`, `device.fullscreen.get`.
 Renderer messages arrive on one `ui` IPC channel: `pet.state`, `pet.bond`, `prod`, `focus`, `reminder`, `commit`, `summon`, `tray`, `agent.event`, `term.focus`, `character`.
 

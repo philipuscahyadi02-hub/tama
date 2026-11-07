@@ -28,6 +28,8 @@ test('persona: built from the spec, read-only chat with web search, knows how th
   assert.match(en, /Always reply in English/);
   assert.doesNotMatch(en, /language the user writes in/);
   assert.match(persona.buildPersona(normalizeSpec({ name: 'Mochi' }), { replyLang: 'id' }), /Bahasa Indonesia/);
+  assert.match(persona.buildPersona(normalizeSpec({ name: 'Mochi' }), { dub: true }), /\[\[ja: <feeling>/); // SET-4
+  assert.doesNotMatch(p, /\[\[ja:/);
   const line = persona.statusLine({ state: { hunger: 10, happy: 50, energy: 80, clean: 90, streak: { count: 3 } }, level: { title: 'Buddy' } }, { todos: [{ done: false }], focus: { phase: 'focus' } });
   assert.match(line, /you feel hungry/);
   assert.match(line, /3-day streak/);
@@ -224,6 +226,16 @@ test('chat: a remember marker becomes a memory and is never shown; memories reac
   assert.doesNotMatch(made.chat.sent[2], /\[memory\]/); // unchanged → not repeated
   await bus.request('chat.push', { role: 'tama', text: 'lunch time~' });
   assert.equal((await bus.request('chat.history')).messages.at(-1).text, 'lunch time~');
+});
+
+test('chat: a [[ja: …]] voice dub is hidden and attached to the message (SET-4)', async () => {
+  const { bus, chat } = setupBrain({ chatReply: () => 'Good morning!\n[[ja: happy | おはよう！]]' });
+  await bus.request('chat.send', 'morning');
+  await tick();
+  const tama = chat.find((e) => e.t === 'message' && e.message.role === 'tama');
+  assert.equal(tama.message.text, 'Good morning!');
+  assert.equal(tama.message.ja, 'happy | おはよう！');
+  assert.doesNotMatch(chat.filter((e) => e.t === 'delta').map((e) => e.text).join(''), /ja:/);
 });
 
 test('chat: a [[work: …]] marker is hidden and attached to the message (phone hand-off button)', async () => {

@@ -78,6 +78,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-046 | Voice page readability: English labels from assets/voice/names.json (kana → romaji fallback); separate ▶ listen and ✓ use per style; off-screen test windows | Accepted |
 | D-047 | App icon = the active Tama's face (rendered off-screen, cached per Tama, re-rendered on restyle); tray menu grouped into submenus | Accepted |
 | D-048 | M10 = settings & polish: one Settings window over the existing services, reply language in the persona, quiet hours as scheduled DND | Accepted |
+| D-049 | Faster Japanese voice: the chat reply carries its own dub (`[[ja: …]]` while the Japanese voice is on), sentence-by-sentence synthesis, audio cache | Accepted · Refines D-043 |
 
 ---
 
@@ -653,3 +654,15 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** A separate settings store (two sources of truth); per-Tama reply language in the soul (it is the user's preference, not hers); quiet hours as a timer that flips `/dnd` (would overwrite the user's manual DND).
 - **Consequences:** New preferences get a control in the Settings window as well as a command. The remaining M10 items are SET-4..6.
 - **Refs:** SET-1..3, ONB-8, PET-6, src/renderer/settings, src/main/services/ui, src/main/brain/persona.js
+
+### D-049 — Faster Japanese voice: the reply carries its own dub, sentence-by-sentence synthesis, audio cache
+- **Date:** 2026-11-07 · **Status:** Accepted · Refines D-043 (where the dub comes from for chat replies)
+- **Context:** SET-4. Measured on the user's laptop (AivisSpeech on the GTX 1650): a dubbed chat reply started speaking 7–12 s after its text. About 4.2 s of that was the separate translation call to the composer (agy), about 3 s was synthesizing the whole line, and the composer's agy session was cold on the first line.
+- **Decision:**
+  - **Dub with the reply:** while the voice language is Japanese, the chat persona asks Gemini to end each reply with a hidden `[[ja: <feeling> | <spoken Japanese>]]` marker (short sentences of about 20 characters). The chat strips it like the other markers and attaches it to the message (`ja`); the voice service uses it directly and caches it, so the phone voice note reuses it too. The persona switches with `voice.changed`, so with English or no voice the replies cost nothing extra. Event lines and lines without a marker still use the composer translation (D-043), which is warmed once when the Japanese voice starts.
+  - **Sentence by sentence:** `services/voice/chunks.js` splits the Japanese line into sentences (very short pieces join the next; a long first sentence is cut at its first comma). Each part is sent to the pet as soon as it is synthesized, while the next one is made. The pet keeps every part of a line in order and still drops older lines.
+  - **Audio cache:** the last 40 rendered clips (engine, style, tuning, text; and the Windows voice's) are kept in memory, so repeated lines play at once.
+  - Dev: `TAMA_VOICE_TRACE=1` logs message, reply and each played part with times; `TAMA_VOICE_TEST` takes several lines separated by `||` and `TAMA_VOICE_TEST_AT=<ms>` delays it until the engine is up. `voice.skipped` reports why a chat line was not spoken.
+- **Alternatives:** Translating sentence by sentence (several agy calls on one serialized session; slower); a second agy session just for dubs (another process and login use); keeping the separate translation for chat (the 4 s we wanted gone).
+- **Consequences:** Measured: 2.4–2.6 s from the finished reply to the first sound, then the rest follows without gaps. With the Japanese voice on, each chat reply is a little longer for Gemini to write (the marker), and the Japanese may differ slightly from a separate translation. AivisSpeech needs about 2.5 s even for a short clip on this GPU; VOICEVOX is faster if the user wants less.
+- **Refs:** SET-4, VOICE-1, D-043, D-045, src/main/services/voice/{index,chunks}.js, src/main/brain/{chat,persona,compose}.js, src/renderer/pet/voice.js

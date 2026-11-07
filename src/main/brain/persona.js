@@ -30,7 +30,7 @@ const trait = (v, lo, hi) => (v <= 30 ? lo : v >= 70 ? hi : `a bit of both ${lo}
 
 /**
  * @param {import('../../shared/spec').CharacterSpec} spec
- * @param {{ today?: string, replyLang?: string }} [opts]
+ * @param {{ today?: string, replyLang?: string, dub?: boolean }} [opts]
  */
 function buildPersona(spec, opts = {}) {
   const p = spec.personality;
@@ -45,6 +45,10 @@ function buildPersona(spec, opts = {}) {
     sp.catchphrases.length ? `Catchphrases (use rarely): ${sp.catchphrases.join(' / ')}.` : '',
     sp.emoji.length ? `Favorite emoji: ${sp.emoji.join(' ')} (at most one or two per reply).` : '',
     replyLangLine(opts.replyLang),
+    // SET-4 (D-049): with the Japanese voice on, the dub rides along with the reply instead of costing a second call.
+    opts.dub ? 'Your voice speaks Japanese: after every reply, add a hidden marker on its own last line: '
+      + '[[ja: <feeling> | <your reply as natural spoken Japanese, the way you would say it out loud, casual and in character, no emoji, kana/kanji only; short spoken sentences of about 20 characters each, so the voice can start quickly>]] '
+      + 'where <feeling> is one of normal, happy, excited, sweet, tease, sad, sleepy, calm, angry. Never mention the marker.' : '',
     'You chat in a small chat window and a speech bubble: keep replies short (1-4 sentences) unless the user asks for more.',
     'Each user message may start with a line "[status] …" describing your own pet stats and the user\'s day. Use it naturally; never quote it.',
     'You may use web search (search_web) for current facts, news, prices or anything you are unsure about, and mention the source briefly.',

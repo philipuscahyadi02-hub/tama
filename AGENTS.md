@@ -92,7 +92,8 @@ Debug env vars: `TAMA_DEBUG=1`, `TAMA_SHOT=<dir>` (screenshots, `TAMA_SHOT_TIMES
 `TAMA_OPEN_ROSTER=1`, `TAMA_OPEN_CHAT=1`, `TAMA_OPEN_GOOGLE=1`, `TAMA_OPEN_DASHBOARD=1`, `TAMA_PET_EVAL=<js>` / `TAMA_TERM_EVAL=<js>` / `TAMA_CHAT_EVAL=<js>` (run JS in the pet / terminal / chat window after load;
 `TAMA_DEBUG=1` also logs terminal engine events).
 `TAMA_HIDE_PET=1` hides the pet shortly after start (as if by Show / Hide), for walk-marker checks.
-`TAMA_VOICE_TEST=<text>` speaks the text once, then renders + encodes it as a Telegram voice note and logs the sizes.
+`TAMA_VOICE_TEST=<text>` speaks the text once (several lines: `a||b`, each logs `firstMs`), then renders + encodes it as a Telegram voice note and logs the sizes; `TAMA_VOICE_TEST_AT=<ms>` delays it until engines are up.
+`TAMA_VOICE_TRACE=1` logs chat message → reply → each voice part with times (a reply skipped by quiet rules is spoken via the test path).
 `TAMA_OPEN_DASHBOARD=limits` opens the dashboard on the Limits tab. `TAMA_OPEN_VOICE=1` opens the Voice page. `TAMA_OPEN_SETTINGS=1|her|talk|quiet|phone|google|accounts` opens Settings (on that tab).
 `TAMA_QUIT_AFTER=<ms>` quits cleanly (stoppers run) — use it for live tests instead of killing Electron.
 `TAMA_SHOT_OFFSCREEN=1` opens page windows off-screen (no pop-up over the user's work; screenshots still work).

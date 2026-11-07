@@ -103,7 +103,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | SET-1 | One Settings window (tray "Settings…", `/settings`) with tabs: her (look, motion), talking & voice, quiet & moments, phone, Google, accounts & usage. Other pages open from it. *(D-048.)* | P1 | M10 | ☑ |
 | SET-2 | Reply language: same as the user (default), or always English / Bahasa Indonesia / Japanese, for chat and moments (`/lang`). *(D-048.)* | P1 | M10 | ☑ |
 | SET-3 | Quiet hours (e.g. 23:00–08:00): no voice, no pop-up moments, no daily phone messages; reminders still ring (`/quiet`). *(D-048.)* | P1 | M10 | ☑ |
-| SET-4 | Faster voice: first sound within about 2–3 s (speak sentence by sentence, start the engine when the chat opens, cache frequent lines). | P1 | M10 | ☐ |
+| SET-4 | Faster voice: first sound within about 2–3 s (speak sentence by sentence, start the engine when the chat opens, cache frequent lines). *(Measured 2.6 s from reply to first sound, was 7–12 s; D-049.)* | P1 | M10 | ☑ |
 | SET-5 | "Where is she?": bring her back from a missing monitor; `.tama` backup/restore in Settings. | P2 | M10 | ☐ |
 | SET-6 | Crash safety: a crash log and a "Tama restarted after a problem" note instead of failing silently. | P2 | M10 | ☐ |
 

@@ -5,6 +5,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { createVoice, speakable } = require('./index');
+const { splitSentences, quickStart, createLru } = require('./chunks');
 const { detectMood, styleFor, parseDub, prosodyFor } = require('./emotion');
 const { createVvEngines } = require('./vv-engine');
 const { Bus } = require('../../bus');
@@ -101,9 +102,10 @@ test('voice: Japanese dub picks the style for the translator\'s mood, applies tu
   assert.deepEqual([r.engine, r.lang, r.text, r.mood, r.style], ['AivisSpeech', 'ja', 'おはよう！', 'happy', 'あまあま']);
   assert.ok(s.calls.some((c) => c.includes('/synthesis?speaker=889')));
   assert.equal(s.lastBody().speedScale, 1.04);
-  assert.deepEqual(s.composed, [{ kind: 'translate', seed: 'Good morning!' }]);
+  const asked = () => s.composed.filter((c) => c.seed === 'Good morning!'); // (the translator warm-up line is separate)
+  assert.deepEqual(asked(), [{ kind: 'translate', seed: 'Good morning!' }]);
   await s.voice.say('Good morning!', 'chat'); // cached
-  assert.equal(s.composed.length, 1);
+  assert.equal(asked().length, 1);
   s.voice.set({ tune: { speed: 1.2, pitch: 0.05 } });
   await s.voice.say('Good morning!', 'chat');
   assert.ok(Math.abs(s.lastBody().speedScale - 1.2 * 1.04) < 1e-9 && Math.abs(s.lastBody().pitchScale - 0.07) < 1e-9);
@@ -204,4 +206,55 @@ test('names: English labels for characters and styles; kana names are romanized 
   assert.equal(romaji('ちょっと'), 'Chotto');
   assert.equal(romaji('シャウト'), 'Shauto');
   assert.equal(characterEn('新キャラ'), ''); // kanji: no guess, the page shows the original only
+});
+
+test('faster voice: sentences split naturally; tiny pieces join the next; LRU keeps recent items (SET-4)', () => {
+  assert.deepEqual(splitSentences('えへへ。今日もいっしょにがんばろうね！あとでお茶しよっか？'), ['えへへ。今日もいっしょにがんばろうね！', 'あとでお茶しよっか？']);
+  assert.deepEqual(splitSentences('Hi! I finished the report for you. Want me to send it?'), ['Hi! I finished the report for you.', 'Want me to send it?']);
+  assert.deepEqual(splitSentences('おはよう'), ['おはよう']);
+  assert.deepEqual(splitSentences('長い文章だよ。うん'), ['長い文章だよ。うん']);
+  assert.deepEqual(splitSentences(''), []);
+  assert.deepEqual(quickStart(['カエルはね、口からお水を飲まないで皮膚から直接きゅうしゅうするんだよ！', 'すごいでしょ？']),
+    ['カエルはね、', '口からお水を飲まないで皮膚から直接きゅうしゅうするんだよ！', 'すごいでしょ？']);
+  assert.deepEqual(quickStart(['短いね、うん']), ['短いね、うん']);
+  assert.deepEqual(quickStart(['ちょっと長めの文だけど読点がひとつもないままずっと続くよ']), ['ちょっと長めの文だけど読点がひとつもないままずっと続くよ']);
+  const c = createLru(2);
+  c.set('a', 1); c.set('b', 2); c.get('a'); c.set('c', 3);
+  assert.deepEqual([c.get('a'), c.get('b'), c.get('c')], [1, undefined, 3]);
+});
+
+test('faster voice: a dubbed line plays sentence by sentence as one line; repeats skip synthesis (SET-4)', async () => {
+  const s = setup({}, { translate: 'happy | おはよう、今日もいい天気だね！いっしょに散歩に行こうよ！' });
+  await s.voice.detect();
+  s.voice.set({ lang: 'ja' });
+  const r = await s.voice.say('Good morning! Let us go for a walk!', 'chat');
+  assert.equal(r.ok, true);
+  assert.ok(Number(r.firstMs) >= 0 && Number(r.totalMs) >= Number(r.firstMs));
+  const parts = s.played.filter((p) => p.line === s.played[s.played.length - 1].line);
+  assert.deepEqual(parts.map((p) => [p.part, p.parts, p.text]), [[0, 2, 'おはよう、今日もいい天気だね！'], [1, 2, 'いっしょに散歩に行こうよ！']]);
+  const synths = () => s.calls.filter((c) => c.includes('/synthesis')).length;
+  const before = synths();
+  await s.voice.say('Good morning! Let us go for a walk!', 'chat');
+  assert.equal(synths(), before); // translation and audio both cached
+  const en = setup();
+  await en.voice.detect();
+  await en.voice.say('Hello there', 'chat'); await en.voice.say('Hello there', 'chat');
+  assert.equal(en.sapiCalls.length, 1); // English audio cached too
+  assert.equal(en.played[1].parts, 1);
+});
+
+test('faster voice: a chat reply that carries its own dub is spoken without a translation call (SET-4)', async (t) => {
+  const s = setup();
+  await s.voice.detect();
+  t.after(s.voice.start());
+  s.voice.set({ lang: 'ja' });
+  await new Promise((r) => setTimeout(r, 20));
+  s.composed.length = 0;
+  s.bus.emit('chat.event', { t: 'message', message: { role: 'user', text: 'hi' } });
+  s.bus.emit('chat.event', { t: 'message', message: { role: 'tama', text: 'Hello hello!', ja: 'excited | やっほー、元気だった？' } });
+  await new Promise((r) => setTimeout(r, 50));
+  assert.equal(s.composed.length, 0);
+  const last = s.played.at(-1);
+  assert.equal(last.text, 'やっほー、元気だった？');
+  assert.equal(last.mood, 'excited');
 });

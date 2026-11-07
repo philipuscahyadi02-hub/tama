@@ -21,6 +21,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   - **Reply language:** she answers in your language (as before), or always in English, Bahasa Indonesia or Japanese. `/lang auto|en|id|ja`.
   - **Quiet hours:** e.g. 23:00–08:00, no voice, pop-up moments or daily phone messages; your reminders still ring. `/quiet 23:00-08:00|on|off`.
   - Telegram voice notes can be switched on from the PC too.
+  - **Faster Japanese voice** (D-049): she starts speaking about 2.5 s after her reply appears (was 7–12 s). The reply brings its own Japanese line, the voice plays sentence by sentence, and repeated lines play instantly.
 
 ## [0.9.0] — 2026-11-07 — M9 Voice & polish
 ### Added
@@ -214,6 +215,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `ae1fd06` | 2026-11-07 | feat(settings) | Settings window, reply language, quiet hours (D-048) |
 | `82cf1cb` | 2026-11-07 | docs(changelog) | regenerate commit table |
 
 ### v0.9.0

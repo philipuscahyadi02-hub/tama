@@ -59,8 +59,11 @@
 
   T.voice.onPlay((p) => {
     if (!p || !p.wav) return;
-    if (queue.length > 2) queue.splice(0, queue.length - 2); // don't pile up old lines
+    // Don't pile up old lines, but keep every part of a line that is still arriving (SET-4: sentence by sentence).
+    if (p.line == null) p.line = `one-${Date.now()}-${Math.random()}`; // previews: a line of their own
     queue.push(p);
+    const lines = [...new Set(queue.map((q) => q.line))];
+    if (lines.length > 2) { const keep = new Set(lines.slice(-2)); for (let i = queue.length - 1; i >= 0; i--) if (!keep.has(queue[i].line)) queue.splice(i, 1); }
     playNext();
   });
 

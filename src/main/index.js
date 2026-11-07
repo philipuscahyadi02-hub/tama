@@ -255,12 +255,33 @@ function boot() {
   if (process.env.TAMA_VOICE_TEST) {
     // Dev: speak once on the desktop, then render + encode a Telegram voice note and report sizes (D-042).
     pet.win.webContents.once('did-finish-load', () => setTimeout(async () => {
-      const said = await bus.request(TOPICS.VOICE_SAY, { text: String(process.env.TAMA_VOICE_TEST), purpose: 'test' }).catch((e) => ({ error: String(e) }));
+      // Several lines separated by "||" are spoken one after another; each logs how soon it started (SET-4).
+      let said = /** @type {any} */ (null);
+      for (const line of String(process.env.TAMA_VOICE_TEST).split('||')) {
+        said = await bus.request(TOPICS.VOICE_SAY, { text: line, purpose: 'test' }).catch((e) => ({ error: String(e) }));
+        console.log('[voice-test] said', JSON.stringify({ line: line.slice(0, 40), engine: said.engine, firstMs: said.firstMs, totalMs: said.totalMs, text: said.text }));
+      }
       const r = await bus.request(TOPICS.VOICE_RENDER, { text: String(process.env.TAMA_VOICE_TEST) }).catch(() => null);
       const enc = r ? await bus.request(TOPICS.VOICE_ENCODE, { wav: r.wav }).catch((e) => ({ error: String(e) })) : null;
-      const dubbed = await bus.request(TOPICS.BRAIN_COMPOSE, { kind: 'translate', seed: String(process.env.TAMA_VOICE_TEST) }).catch((e) => String(e));
+      const tDub = Date.now();
+      const dubbed = await bus.request(TOPICS.BRAIN_COMPOSE, { kind: 'translate', seed: `${String(process.env.TAMA_VOICE_TEST).split('||')[0]} (again)` }).catch((e) => String(e));
+      console.log('[voice-test] translate only', Date.now() - tDub, 'ms');
       console.log('[voice-test]', JSON.stringify({ dubbed, said, engine: r && r.engine, wavBytes: r && Buffer.from(r.wav, 'base64').length, m4aBytes: enc && enc.data ? Buffer.from(enc.data, 'base64').length : 0, m4aHead: enc && enc.data ? Buffer.from(enc.data, 'base64').subarray(4, 8).toString() : enc && enc.error }));
-    }, 2000));
+    }, Number(process.env.TAMA_VOICE_TEST_AT) || 2000));
+  }
+  if (process.env.TAMA_VOICE_TRACE) {
+    // Dev (SET-4): log when a chat message is sent, when the reply text is done, and when each voice part plays.
+    const t0 = Date.now();
+    const at = () => `${((Date.now() - t0) / 1000).toFixed(1)}s`;
+    bus.on(TOPICS.CHAT_EVENT, (/** @type {any} */ ev) => { if (ev.t === 'message') console.log('[voice-trace]', at(), ev.message.role, JSON.stringify(ev.message.text).slice(0, 60), ev.message.ja ? `ja=${ev.message.ja.slice(0, 40)}` : ''); });
+    // A skipped reply (e.g. she's asleep at night) is spoken through the test path, which ignores the quiet rules.
+    let lastTama = '';
+    bus.on(TOPICS.CHAT_EVENT, (/** @type {any} */ ev) => { if (ev.t === 'message' && ev.message.role === 'tama') lastTama = ev.message.text; });
+    bus.on(TOPICS.VOICE_SKIPPED, (/** @type {any} */ p) => {
+      console.log('[voice-trace]', at(), 'skipped:', p.reason, '→ speaking it via the test path');
+      bus.request(TOPICS.VOICE_SAY, { text: lastTama, purpose: 'test' }).catch(() => null);
+    });
+    bus.on(TOPICS.VOICE_PLAY, (/** @type {any} */ p) => console.log('[voice-trace]', at(), 'play', p.engine, `${(p.part ?? 0) + 1}/${p.parts ?? 1}`, String(p.text).slice(0, 30)));
   }
   if (process.env.TAMA_PET_EVAL) {
     // Dev: run JS in the pet window after load (e.g. "actions.stats()") for screenshots.
