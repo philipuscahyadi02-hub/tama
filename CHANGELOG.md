@@ -253,6 +253,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `8a1ab1a` | 2026-11-08 | fix(voice) | speak moments once (the chat copy is quiet); plan AI-free voice commands and an optional local brain (D-062) |
+| `efb5f53` | 2026-11-08 | docs(changelog) | regenerate commit table |
 | `46df819` | 2026-11-08 | docs(prd) | plan 1.x Voice & hands (VH-1..4); defer API-key models (D-061) |
 | `2779e6b` | 2026-11-08 | docs(changelog) | regenerate commit table |
 | `341f759` | 2026-11-08 | docs(prd) | v2 positioning and USP-1..6 roadmap (D-060) |
