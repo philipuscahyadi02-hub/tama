@@ -240,8 +240,13 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
+_No commits._
+
+### v1.0.0
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `d590487` | 2026-11-07 | chore(release) | 1.0.0 |
+| `c65ab9d` | 2026-11-07 | docs(changelog) | regenerate commit table |
 | `7ead590` | 2026-11-07 | feat(providers) | provider layer: capabilities, Claude/agy providers, opt-in Claude chat, Settings Brains (SHIP-8, D-057) |
 | `06ac9f5` | 2026-11-07 | docs(prd) | M12 = v1.0.0; plan v2 own agentic brain (AGT-1..6, D-056) |
 | `d4aa7cb` | 2026-11-07 | docs(changelog) | regenerate commit table |
