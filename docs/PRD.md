@@ -5,8 +5,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.23 |
-| **Status** | v0.9.0 released (M0–M9). M10 (settings & polish) code complete on `m10-settings`; M11 quality control next; M12 shipping (installers) |
+| **Version** | 0.24 |
+| **Status** | v0.10.0 released (M0–M10). M11 quality control in progress on `m11-quality`; M12 shipping (installers) next |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-07 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -251,7 +251,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M6 — Google.** *(released as 0.6.0; Tasks sync, Docs replace-section and a hard device lock deferred)* OAuth, MCP tools, Gmail/Calendar/Drive/Docs/Sheets, Drive backup (GOOG-*, PORT-6..8, PROD-3).
 - [x] **M7 — Telegram.** *(released as 0.7.0; voice notes in M9)* (TG-*, ART-5, SAFE-3).
 - [x] **M8 — Usage & accounts dashboard.** *(released as 0.8.0)* Usage log, dashboard, Limits tab (what's left), account switching (USE-1..7, D-040, D-041).
-- [x] **M10 — Settings & polish.** *(code complete)* One Settings window, reply language, quiet hours, faster voice, small reliability fixes (SET-1..6, ONB-8).
+- [x] **M10 — Settings & polish.** *(released as 0.10.0)* One Settings window, reply language, quiet hours, faster voice, small reliability fixes (SET-1..6, ONB-8).
 - [ ] **M11 — Quality control.** Architecture checks, dead code, performance, code review, coverage, security (QC-1..6, NFR-1).
 - [ ] **M12 — Shipping.** Windows installer and macOS app, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..7, NFR-3).
 - [x] **M9 — Voice & polish.** *(released as 0.9.0; phone → Tama speech-to-text (VOICE-4) deferred)* AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
@@ -265,6 +265,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.24 — 2026-11-07** — v0.10.0 released (M10).
 - **0.23 — 2026-11-07** — M10 code complete (SET-4..6, D-049, D-050). Planned M11 quality control (QC-1..6) and M12 shipping with installers for Windows and macOS and modular capabilities (SHIP-1..7, D-051); NFR-3's portable exe is replaced.
 - **0.22 — 2026-11-07** — M10 Settings & polish planned (SET-1..6); SET-1..3 and ONB-8 done (D-048).
 - **0.21 — 2026-11-07** — v0.9.0 released (M9).

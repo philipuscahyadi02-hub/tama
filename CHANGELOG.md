@@ -15,10 +15,13 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
 
 ## [Unreleased]
+_Nothing yet._
+
+## [0.10.0] — 2026-11-07 — M10 Settings & polish
 ### Docs
 - Planned **M11 quality control** (QC-1..6) and **M12 shipping**: installers for Windows and macOS, modular capabilities with a setup wizard, optional components on demand (SHIP-1..7, D-051).
 ### Added
-- **M10 Settings & polish** (branch `m10-settings`, D-048):
+- **M10 Settings & polish** (D-048 … D-050):
   - **Settings window** (tray → Settings…, or `/settings`): her look and motion, talking & voice, quiet hours, phone (Telegram), Google, accounts and the Claude budget, all in one place. The Voice, Google and Usage pages open from it.
   - **Reply language:** she answers in your language (as before), or always in English, Bahasa Indonesia or Japanese. `/lang auto|en|id|ja`.
   - **Quiet hours:** e.g. 23:00–08:00, no voice, pop-up moments or daily phone messages; your reminders still ring. `/quiet 23:00-08:00|on|off`.
