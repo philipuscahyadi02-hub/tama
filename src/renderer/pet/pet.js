@@ -342,16 +342,16 @@ window.addEventListener('mouseup', () => {
 let walkTimer = null;
 let dir = 1;
 function startWalking(ms) {
-  if (S.asleep || isEgg || agentState !== 'idle' || dragging) return;
+  if (S.asleep || isEgg || agentState !== 'idle' || dragging || document.body.classList.contains('reduce-motion')) return;
   dir =Math.random() < 0.5 ? -1 : 1;
   petEl.classList.add('walking');
   petEl.classList.toggle('face-left', dir < 0);
   const end = Date.now() + ms;
   walkTimer = setInterval(async () => {
     if (Date.now() > end) return stopWalking();
-    const r = await T.walk(dir * 2);
+    const r = await T.walk(dir * 3);
     if ((r.atLeft && dir < 0) || (r.atRight && dir > 0)) { dir = -dir; petEl.classList.toggle('face-left', dir < 0); }
-  }, 30);
+  }, 45); // same speed as 2px/30ms with a third fewer window moves (NFR-1)
 }
 function stopWalking() { clearInterval(walkTimer); walkTimer = null; petEl.classList.remove('walking'); }
 
@@ -527,6 +527,36 @@ T.onCharacter((ch) => {
   stopWalking(); hop(); express('sparkle', 2600); particles(['✨', '⭐', '💖', '🌸'], 12, 'burst');
   say(wasEgg ? `hajimemashite! I'm ${petName} ${myEmoji()}\nclick me! (rub my head for pats~)` : `ta-da~ how do I look?${tic()} ${myEmoji()}`, 5000, { force: true });
 });
+
+// ---------------- calm idle (NFR-1) ----------------
+// Idle sway runs in short bursts instead of forever; blinks are one-shots. Keeps idle CPU low (see rig.css .calm).
+function aliveBurst() {
+  petEl.classList.remove('calm');
+  setTimeout(() => petEl.classList.add('calm'), 6000 + Math.random() * 3000);
+  setTimeout(aliveBurst, 18000 + Math.random() * 10000);
+}
+function blinkLoop() {
+  if (petEl.classList.contains('calm')) anim('blink-now', 260);
+  setTimeout(blinkLoop, 2800 + Math.random() * 3500);
+}
+setTimeout(aliveBurst, 4000);
+setTimeout(blinkLoop, 3000);
+
+// ---------------- reduced motion + mute (PET-8) ----------------
+const osReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+let motionPref = 'auto';
+function applyMotion() {
+  document.body.classList.toggle('reduce-motion', motionPref === 'reduced' || (motionPref === 'auto' && osReduced.matches));
+}
+function applyUiPrefs(p) {
+  if (!p) return;
+  motionPref = p.motion || 'auto';
+  applyMotion();
+  if (p.mute && window.TamaVoicePlayer) window.TamaVoicePlayer.stop();
+}
+osReduced.addEventListener('change', applyMotion);
+T.ui.onPrefs(applyUiPrefs);
+T.ui.prefs().then(applyUiPrefs).catch(() => {});
 
 (async function boot() {
   applyCharacter(await T.getCharacter());

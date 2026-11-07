@@ -240,3 +240,9 @@ test('regression: a ✅ tap is handled while the message that asked for it is st
   assert.equal(s.tg.sent().at(-1), 'added! ✨');
   s.stop();
 });
+
+test('wantsVoice: plain requests for a voice note (English, Indonesian, Japanese), not every mention of "voice"', () => {
+  const { wantsVoice } = require('./index');
+  for (const t of ['send it as a voice note please', 'vn dong', 'kirim suara dong', 'pakai suara ya', 'mau dengar suaramu', 'reply with voice', 'say it out loud', '声で言って']) assert.equal(wantsVoice(t), true, t);
+  for (const t of ['I lost my voice lol', "what's the weather", 'hello', 'the voice actor was great']) assert.equal(wantsVoice(t), false, t);
+});

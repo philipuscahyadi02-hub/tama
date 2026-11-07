@@ -24,7 +24,8 @@ function openPage(page, opts = {}) {
     webPreferences: { preload: PRELOAD, contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
   win.loadFile(path.join(RENDERER, page), { query: opts.query || {} });
-  win.once('ready-to-show', () => { win.show(); win.focus(); });
+  // Dev live checks (TAMA_SHOT_OFFSCREEN): show without taking focus; debug.js already moved it off-screen.
+  win.once('ready-to-show', () => { if (process.env.TAMA_SHOT_OFFSCREEN) win.showInactive(); else { win.show(); win.focus(); } });
   win.on('closed', () => open.delete(page));
   attachDebug(win, page.split('/')[0]);
   open.set(page, win);

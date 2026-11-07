@@ -61,6 +61,10 @@ const TOPICS = {
   USAGE_LIMIT: 'usage.limit',
   /** Accounts { claude, gemini, google, telegram } — after an account status changed (D-040) */
   ACCOUNTS_CHANGED: 'accounts.changed',
+  /** { wav: base64, text, engine } — play this line on the desktop (D-042) */
+  VOICE_PLAY: 'voice.play',
+  /** VoiceStatus - the voice setting changed (the tray menu follows it, D-043) */
+  VOICE_CHANGED: 'voice.changed',
   /** { text, kind: 'info'|'warn' } — brain messages worth a pet bubble (budget, missing engines) */
   BRAIN_NOTICE: 'brain.notice',
   /** { reason: string } — pet window was brought back on screen by summon() */
@@ -220,6 +224,22 @@ const TOPICS = {
   ACCOUNTS_GET: 'accounts.get',
   /** { kind: 'claude'|'gemini'|'google'|'google-project'|'telegram' } → { ok, message } | { error } — start switching an account */
   ACCOUNTS_SWITCH: 'accounts.switch',
+  /** { text, purpose?: 'chat'|'test' } → { ok, engine? } | { ok: false, reason } — speak on the desktop if allowed (D-042) */
+  VOICE_SAY: 'voice.say',
+  /** { text, voice?, lang?: 'en'|'ja' } → { wav: base64, engine, text, lang } | null — render only (Telegram voice notes, onboarding preview) */
+  VOICE_RENDER: 'voice.render',
+  /** () → VoiceStatus { lang, chat, events, gpu, moodStyles, tune, pick, engines[], voices[], systemVoices } (D-045) */
+  VOICE_STATUS: 'voice.status',
+  /** { lang?, chat?, events?, gpu?, moodStyles?, pick?: { engine, uuid, style }, tune?: { pitch, speed, intonation }, speaker? } → VoiceStatus */
+  VOICE_SET: 'voice.set',
+  /** { engine, style, tune?, mood?, text? } → { ok, reason? } — Voice page preview, played by the pet (starts that engine for a few minutes) */
+  VOICE_PREVIEW: 'voice.preview',
+  /** { engine, uuid } → { policy, portrait } | null — a character's terms of use and portrait (engine must be running) */
+  VOICE_INFO: 'voice.info',
+  /** () → VoiceStatus — look for AivisSpeech / VOICEVOX again */
+  VOICE_DETECT: 'voice.detect',
+  /** { wav: base64 } → { data: base64, mime } | { error } — WAV → M4A for Telegram voice notes (encoded in the pet window) */
+  VOICE_ENCODE: 'voice.encode',
   /** sessionId|null → { ok } | { error } */
   ENGINE_RESUME: 'engine.resume',
   /** { reason } → void — bring the pet back on screen */

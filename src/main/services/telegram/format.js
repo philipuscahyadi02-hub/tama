@@ -67,6 +67,7 @@ const HELP = [
   '/todo [text] · /done <n> · /todos',
   '/focus [min|stop] · /remind <when> <text>',
   '/brief · today\'s calendar, mail and todos',
+  '/voice on|off · I also answer with a voice note 🔊',
   '',
   'Work on your PC (Claude Code):',
   '/code <task> · do it (I ask before every change)',
@@ -79,7 +80,7 @@ const HELP = [
 const COMMANDS = [
   ['status', 'How your Tama is doing'], ['feed', 'Feed'], ['snack', 'Energy snack'], ['nap', 'Power nap'], ['summon', 'Bring them back on screen'],
   ['todo', 'Add or list todos'], ['done', 'Finish todo <n>'], ['focus', 'Focus timer'], ['remind', 'Reminder: /remind 5pm stretch'],
-  ['brief', 'Calendar, mail and todos'], ['code', 'Ask Claude Code to do something'], ['stop', 'Interrupt Claude'],
+  ['brief', 'Calendar, mail and todos'], ['voice', 'on/off: voice notes from me'], ['code', 'Ask Claude Code to do something'], ['stop', 'Interrupt Claude'],
   ['repos', 'Allowed project folders'], ['cd', 'Switch project'], ['remote', 'on/off: remote coding'], ['help', 'All commands'],
 ].map(([command, description]) => ({ command, description }));
 

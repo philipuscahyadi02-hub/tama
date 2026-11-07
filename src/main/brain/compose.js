@@ -16,6 +16,13 @@ Reply with the line only: no quotes, no stage directions, no tools.`,
 about the day with the user. Use only these facts (don't invent big events):
 ${seed}
 Reply with the entry text only (no title, no date, no tools).`,
+  // Japanese dub for the voice (D-043): her own casual way of speaking, not a stiff translation.
+  translate: (/** @type {string} */ seed) => `[dub] Say this line in natural spoken Japanese, the way you (in character) would say it out loud:
+casual and cute, same meaning and about the same length, keep names as they are, no emoji.
+Japanese only (kana/kanji): no romaji, no English.
+Also tag the feeling you say it with, one of: normal, happy, excited, sweet, tease, sad, sleepy, calm, angry.
+Line: ${seed}
+Reply exactly as: <feeling> | <Japanese line>   (no quotes, no notes, no tools)`,
 };
 
 /**
@@ -49,7 +56,7 @@ function createComposer({ factory, scratchDir, available, persona, onResult = ()
     return engine;
   }
 
-  /** @param {{ kind?: 'line'|'diary', seed: string }} p @returns {Promise<string | null>} */
+  /** @param {{ kind?: 'line'|'diary'|'translate', seed: string }} p @returns {Promise<string | null>} */
   function compose({ kind = 'line', seed }) {
     if (!available()) return Promise.resolve(null);
     const run = () => new Promise((resolve) => {

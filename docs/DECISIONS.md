@@ -71,6 +71,12 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-039 | Event places: resolve pasted Maps links; otherwise look the place up and ask the user to confirm it before creating the event | Accepted |
 | D-040 | M8 = usage & accounts dashboard (voice → M9): numbers-only usage log, plan limits, account switching via official sign-ins | Accepted |
 | D-041 | Limits tab: Claude windows from the SDK (live /usage without a message + per-turn events), Gemini tier + quota-hit only, Google counts vs user cap | Accepted |
+| D-042 | Voice: AivisSpeech/VOICEVOX HTTP for Japanese lines, Windows SAPI (via PowerShell) for English; audio plays in the pet window; Telegram voice notes as M4A; calm-idle animation bursts | Accepted · engine choice superseded by D-043 |
+| D-043 | Voice language setting: English (Windows voice) / Japanese dub (Gemini translates in character, AivisSpeech reads) / off; tray Voice menu + `/voice en\|ja\|off` | Accepted · Supersedes D-042 (engine choice) |
+| D-044 | Headless AivisSpeech Engine (GPU) started by Tama only while Japanese dub is on; stopped on switch/quit; crash leftovers cleaned via a PID file | Accepted |
+| D-045 | Voice page: VOICEVOX added (headless engine, 44 licensed TTS characters), per-Tama voice pick + tuning, mood-matched styles from the dub's feeling tag; no cloning of real people's voices | Accepted |
+| D-046 | Voice page readability: English labels from assets/voice/names.json (kana → romaji fallback); separate ▶ listen and ✓ use per style; off-screen test windows | Accepted |
+| D-047 | App icon = the active Tama's face (rendered off-screen, cached per Tama, re-rendered on restyle); tray menu grouped into submenus | Accepted |
 
 ---
 
@@ -478,3 +484,159 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Scraping agy's interactive UI for quota (brittle); `cloud-platform` scope for Google quotas (too much access for a pet app); polling Claude more often (each check starts a Claude process).
 - **Consequences:** If Anthropic renames the experimental API, live checks quietly stop and the per-turn events keep the numbers current. If agy ever exposes quota over ACP, add it to `USAGE_LIMIT` `provider: 'gemini'`.
 - **Refs:** USE-5..7, D-040, src/main/engines/claude/limits.js, src/main/services/usage/limits.js, src/renderer/dashboard
+
+### D-042 — Voice: AivisSpeech/VOICEVOX HTTP for Japanese lines, Windows SAPI (via PowerShell) for English; audio plays in the pet window; Telegram voice notes as M4A; calm-idle animation bursts
+- **Date:** 2026-11-07 · **Status:** Accepted · Engine choice (`/voice anime auto|always|never`) superseded by D-043
+- **Context:** M9 (VOICE-1, TG-3 voice, PET-8, NFR-1). Probes:
+  - Chromium's `speechSynthesis` has **no voices inside Electron**, so the old onboarding preview (D-004) was silent.
+  - Windows SAPI (`System.Speech`) has David and Zira and renders SSML with pitch/rate to WAV.
+  - AivisSpeech and VOICEVOX are not on winget (VOICEVOX is), and neither was running on this PC.
+  - Electron's MediaRecorder records `audio/mp4` (AAC) but not OGG.
+  - agy's ACP reports `promptCapabilities.audio: false`, so Gemini can't listen to voice notes through it.
+  - The idle pet used about 5.8 % CPU, mostly continuous SVG animations (including an invisible tear loop).
+- **Decision:**
+  - `services/voice` picks the engine for each line:
+    - **AivisSpeech** (`127.0.0.1:10101`) or **VOICEVOX** (`:50021`) via their shared HTTP API, detected every 5 minutes, for lines with Japanese text. With `/voice anime always`, English lines use them too.
+    - Otherwise **Windows SAPI**, run by `platform/tts-sapi.js` (PowerShell with an encoded script) using the VoiceSpec gender, pitch and rate.
+    - Speakers are chosen per Tama (`/voice speakers`, `/voice speaker <id>`).
+  - `speakable()` strips emoji, kaomoji, markdown, links and `[[…]]` markers, and caps lines at about 280 characters.
+  - **What speaks:**
+    - Chat replies and event lines on the desktop. Replies to phone messages are not spoken on the desktop.
+    - Quiet when `/mute`, `/dnd`, in a focus session, or while she sleeps.
+    - `/voice chat|events on|off`.
+  - **Playback:** the WAV goes to the pet window (Web Audio). The mouth opens with the audio loudness (`.talk-open`), and new lines queue (max 3).
+  - **Telegram (`/voice on`):** each reply also comes as a voice note. The pet window converts WAV to M4A with MediaRecorder, and Tama sends it with `sendVoice`. Incoming voice notes get an honest "can't listen yet" reply; speech-to-text stays VOICE-4.
+  - **Onboarding preview** uses the same rendering (`voice.render`).
+  - **PET-8:**
+    - `/motion auto|reduced|full`: auto follows Windows' animation setting; reduced also stops wandering.
+    - `/mute`.
+    - Both are stored in `device.json` `ui`.
+  - **NFR-1:**
+    - The pet sets `.calm` between short "alive" bursts (6–9 s every 18–28 s). Idle sway pauses, and blinks are one-shots.
+    - Tears only animate while sad.
+    - Walking moves the window 3 px every 45 ms (same speed, fewer moves).
+    - Result: about 2.0 % CPU and about 200 MB private memory at idle.
+- **Alternatives:** Web Speech (no voices in Electron); an npm TTS or opus encoder (new dependency, D-005 spirit); ffmpeg (large download); ElevenLabs (paid, D-022).
+- **Consequences:**
+  - Without AivisSpeech/VOICEVOX running, she sounds like the Windows voice with a higher pitch.
+  - The anime engines read English poorly, so they're only used for Japanese lines by default (D-022).
+  - Each SAPI line starts PowerShell (about 1 s).
+  - Phone → Tama voice needs VOICE-4 (local whisper).
+- **Refs:** VOICE-1, VOICE-4, TG-3, PET-8, NFR-1, D-004, D-022, src/main/services/voice, src/main/platform/tts-sapi.js, src/renderer/pet/voice.js
+
+### D-043 — Voice language setting: English (Windows voice) / Japanese dub (Gemini translates in character, AivisSpeech reads) / off
+- **Date:** 2026-11-07 · **Status:** Accepted · Supersedes D-042 (engine choice)
+- **Context:** The user wants AivisSpeech to speak what Tama writes in English as a **Japanese dub**, with a setting to choose English, Japanese or no voice.
+- **Decision:**
+  - The voice has one setting, `lang` (`device.json` `voice.lang`, default `en`):
+    - **`en`**: the Windows voice reads the English text. Kana/kanji are removed first, because the installed voices are English-only.
+    - **`ja`**: the line is dubbed into Japanese by the composer (`brain.compose` kind `translate`). That is agy/Gemini in its own read-only session, so the dub is in character ("えへへ、…しよっか〜") and costs no Claude tokens. AivisSpeech/VOICEVOX then reads the Japanese. Lines that are already Japanese skip translation. Dubs are cached (last 60), so a phone voice note of the same reply doesn't translate again.
+    - **`off`**: no voice on the desktop.
+  - The chat bubble and chat window keep the English text; only the voice is Japanese.
+  - **Fallbacks:** if `ja` is chosen but no engine is running, or agy is unavailable, she speaks English with the Windows voice and says once why. She is never silent by accident.
+  - **Where to set it:** the tray menu **Voice ▸ English / Japanese dub / No voice** (radio items, rebuilt on `voice.changed`) and `/voice en|ja|off`. Telegram voice notes (`/voice on` on the phone) use the same language, with `off` meaning English there.
+  - Older saves (`enabled`, `anime`) map to the new setting (`enabled: false` → off, `anime: always` → ja).
+- **Alternatives:**
+  - Having the chat brain add a hidden `[[ja: …]]` to every reply: no extra call, but it doesn't cover event lines or diary-free paths, and it costs every chat turn even with voice off.
+  - Claude Haiku translation: spends Claude quota.
+  - Reading English with AivisSpeech: it mangles English (D-022).
+- **Consequences:**
+  - A dubbed line starts a few seconds after the text, because of the translation.
+  - Japanese needs AivisSpeech (or VOICEVOX) installed and running.
+  - The meaning comes from Gemini's translation and could drift slightly from the text shown.
+- **Refs:** VOICE-1, TG-3, D-022, D-033, D-042, src/main/services/voice/index.js, src/main/brain/compose.js, src/main/index.js (tray)
+
+### D-044 — Headless AivisSpeech Engine (GPU) started by Tama only while Japanese dub is on
+- **Date:** 2026-11-07 · **Status:** Accepted
+- **Context:** The user asked whether AivisSpeech has to be an app and what it costs. They then asked to have it installed.
+- **Findings (measured on the user's laptop: Ryzen 5 3550H, GTX 1650):**
+  - **Install:** AivisSpeech Engine 1.2.0 is a headless server (`run.exe`, `127.0.0.1:10101`). Its Windows build from the official GitHub release (216 MB 7z) was extracted to `%LOCALAPPDATA%\Programs\AivisSpeech-Engine` (814 MB). `run.exe` is not code-signed. It ships two voices (まお, コハク).
+  - **First start:** about 2.5 minutes, one-time setup. Later starts take 20–40 s.
+  - **CPU mode:** about 1.2–1.5 GB RAM; a 40-character sentence took about 9 s.
+  - **GPU mode (`--use_gpu`, DirectML):** a 40-character sentence took about 3.4 s once warm; it uses about 0.7 GB RAM plus about 1.1 GB of GPU memory.
+  - **Idle CPU:** about 0 % in both modes.
+  - **First synthesis** after a start loads the model (about 15 s).
+- **Decision:**
+  - **Running the engine** (`platform/voice-engine-process.js`):
+    - Finds `run.exe` in the Tama install path, the AivisSpeech app's folder, or `device.json` `voice.enginePath`.
+    - Starts it hidden (`windowsHide`, `--use_gpu` unless `/voice gpu off`) only while `voice.lang === 'ja'`.
+    - Stops its whole process tree on a switch to English or off, and on quit.
+    - An engine Tama didn't start (the user's AivisSpeech app) is used but never stopped.
+  - **Crash safety:** the PID of the engine Tama started is stored in `<data>/voice-engine.pid`. On the next start Tama stops that PID only if it is still a `run.exe`; a reused PID that belongs to another program is left alone (tested).
+  - **Warm-up:** after the engine comes up, one tiny synthesis loads the model, so her first real line isn't 15 s late. While the engine is starting, lines are spoken in English without a warning.
+  - `/voice` shows engine state (not installed / starts with Japanese dub / warming up / started by me, GPU|CPU); `/voice gpu on|off` restarts it.
+- **Alternatives:** Keeping the engine always running (about 1 GB of RAM all the time); running the AivisSpeech app (an extra window, more memory); CPU mode by default (about 3× slower on this PC).
+- **Consequences:**
+  - A dubbed line arrives about 6–9 s after the text (Gemini translation plus synthesis).
+  - The engine is unsigned third-party software from the official repo, installed at the user's request.
+  - On PCs with only an integrated GPU, the README says `--use_gpu` is slower: use `/voice gpu off` there.
+- **Refs:** VOICE-1, D-022, D-043, src/main/platform/voice-engine-process.js, src/main/services/voice/index.js
+
+### D-045 — Voice page: VOICEVOX added, per-Tama voice pick + tuning, mood-matched styles; no cloning of real people's voices
+- **Date:** 2026-11-07 · **Status:** Accepted
+- **Context:**
+  - The user asked for a page to pick her voice, with the voice tuned to the emotion of each chat line.
+  - They also asked to clone a real voice actress's voice (Sora Amamiya) and anime characters' voices. Declined: cloning a real person's voice without consent is impersonation, whatever the use; ElevenLabs' terms also require rights to the voice.
+  - Offered instead: VOICEVOX's TTS characters, whose voice actors and owners allow this use.
+- **Findings:**
+  - **Install:** VOICEVOX Engine 0.26.1 (DirectML, official GitHub release, 1.9 GB download) was extracted to `%LOCALAPPDATA%\Programs\VOICEVOX-Engine\windows-directml` (2.2 GB) at the user's request. Its first start took about 7 s, and it lists 44 characters.
+  - **Style types:** VOICEVOX 0.26 marks styles `streaming_talk`; singing and frame-decode styles must be filtered out.
+  - **Portraits and terms:** both engines serve `/speaker_info` with a portrait and terms text.
+- **Decision:**
+  - **Engines:** `platform/voice-engine-process.js` handles both (`ENGINE_DEFS`: AivisSpeech `:10101`, VOICEVOX `:50021`), each with its own PID file for crash leftovers. `services/voice/engines.js` manages them:
+    - It remembers each engine's voices in `device.json` `voice.catalog`, so the page lists voices while an engine is off.
+    - It runs the chosen voice's engine while Japanese dub is on.
+    - A preview "leases" another engine for 3 minutes, after which it is stopped again.
+    - Engines Tama didn't start are never stopped.
+  - **Pick and tuning per Tama:** `voice.pickByTama[id] = { engine, uuid, style }` and `voice.tuneByTama[id] = { pitch (±0.15), speed, intonation }`. The old `speakerByTama` style IDs map to a pick.
+  - **Emotion** (`services/voice/emotion.js`, pure, table-tested):
+    - The composer's dub prompt now returns `<feeling> | <Japanese line>` with one of normal, happy, excited, sweet, tease, sad, sleepy, calm, angry. A keyword/emoji guess covers English lines and missing tags.
+    - `styleFor()` maps the feeling to the chosen character's best style by name (e.g. sad → なみだめ/せつなめ, tease/angry → ツンツン/からかい, sleepy → ヘロヘロ/ねむたい) and otherwise keeps the user's base style.
+    - `prosodyFor()` nudges speed, pitch and intonation; the English Windows voice gets the same nudges.
+    - `/voice mood on|off` (`moodStyles`) turns it off.
+  - **Voice page** (`renderer/voice/`; tray Voice ▸ Choose her voice…, `/voice pick`):
+    - Language (English / Japanese dub / No voice).
+    - The current voice with portrait, credit line ("VOICEVOX:<name>") and terms.
+    - Pitch, Speed and Expression sliders, and a mood "Try".
+    - The mood → style map, and a GPU switch.
+    - All voices grouped by engine: click a style to hear it (played by the pet, so her mouth moves), "Use" to choose it.
+  - Dev: `TAMA_OPEN_VOICE=1`, and `TAMA_QUIT_AFTER=<ms>` for clean quits in live tests (killing Electron left engines running).
+- **Alternatives:**
+  - Cloning real voices (declined, see Context).
+  - Asking the model for the emotion in a separate call (extra cost); it rides along with the dub instead.
+  - Always running both engines (about 2 GB of RAM).
+- **Consequences:**
+  - VOICEVOX characters each have their own terms; credit is shown on the page, and personal use is free for the shipped ones.
+  - Voice notes and the desktop use the same pick and mood.
+  - Live check: three lines were spoken with ずんだもん in ノーマル/なみだめ/ツンツン from the tags excited/sad/tease, in 4.6–9 s each (translation plus synthesis).
+- **Refs:** VOICE-1, VOICE-3, D-022, D-043, D-044, src/main/services/voice/{index,engines,emotion,vv-engine}.js, src/main/platform/voice-engine-process.js, src/renderer/voice
+
+### D-046 — Voice page readability: English labels, separate listen/use controls, off-screen test windows
+- **Date:** 2026-11-07 · **Status:** Accepted
+- **Context:** The user found the Voice page hard to read (Japanese-only names) and wanted listening and choosing as separate controls instead of one "Use" button.
+- **Decision:**
+  - `assets/voice/names.json` (data, AGENTS rule 12) holds English labels for the 46 shipped characters and 67 style names. `services/voice/names.js` adds them (`en`) to the voice list, the pick and the mood map. Unknown kana-only names are romanized; names with kanji show only the original.
+  - The page shows English first with the Japanese smaller beside it. Each style row has **▶** (listen) and a round **✓** (make it her voice); the chosen style is filled.
+  - The mood matcher knows the extra VOICEVOX style names (うきうき, 不機嫌, 低血圧, けだるげ, びえーん, …).
+  - Dev: `TAMA_SHOT_OFFSCREEN=1` opens page windows off-screen without focus, so live checks don't pop up over the user's work (one did before).
+- **Consequences:** Name readings are best effort; new engine voices without an entry appear romanized or in Japanese.
+- **Refs:** VOICE-5, D-045, assets/voice/names.json, src/main/services/voice/names.js, src/renderer/voice
+
+### D-047 — App icon = the active Tama's face; tray menu grouped
+- **Date:** 2026-11-07 · **Status:** Accepted
+- **Context:**
+  - The tray menu had 17 entries.
+  - Icons were a generic hand-drawn frog bitmap (tray) and Electron's default (windows/taskbar). The user wanted the icon to be the Tama and to update by itself for new Tamas.
+  - The user also asked whether "kero" applies to all Tamas. It does not: `kero~` is only a verbal tic in the Kero-chan preset's speech; designed Tamas get their own tics.
+- **Decision:**
+  - **Icon** (`platform/app-icon.js` + `renderer/icon/`):
+    - An off-screen, transparent 256 px window draws the face with the shared rig (head crop in a round badge, ring and background from the Tama's theme colors; animations off so it never catches a blink) and is captured.
+    - The result is applied to the tray (32 px) and to every window (`setIcon`, also for windows created later), so the taskbar shows her too.
+    - Cached as `<data>/icons/<tamaId>.png` (a device cache, not part of the soul) and used right away at the next start.
+    - Re-rendered 2.5 s after start and on every `character.changed` (restyle, hatch, rebirth). Switching Tama relaunches the app, so it follows too.
+  - **Tray:**
+    - Top level: Summon, Chat, Terminal (with their shortcuts shown), Show / Hide.
+    - Submenus: Take care (Feed, Play, Energy snack, Bedtime), Voice, *<her name>* (My Tamas, Restyle, Rebirth), Accounts & usage (Usage & accounts, Limits left, Google).
+    - Then Quit.
+- **Consequences:** The packaged exe's file icon stays static (set at build time; the exe is postponed). An egg shows the egg.
+- **Refs:** ART-4, SUM-*, src/main/platform/app-icon.js, src/renderer/icon, src/main/index.js (tray)

@@ -17,6 +17,31 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## [Unreleased]
 _Nothing yet._
 
+## [0.9.0] — 2026-11-07 — M9 Voice & polish
+### Added
+- **M9 Voice & polish** (D-042 … D-047):
+  - **Her voice:** chat replies and moments are spoken on the desktop, and her mouth moves with the sound.
+  - **Voice language** (tray → Voice, or `/voice en|ja|off`, D-043):
+    - **English:** the Windows voice with her pitch and speed.
+    - **Japanese dub:** Gemini rewrites each line in her own casual Japanese and AivisSpeech (or VOICEVOX) reads it, while the text stays English.
+    - **No voice.**
+  - Also: `/voice test`, `/voice chat|events on|off`, `/voice gpu on|off`, `/voice speakers`, `/voice speaker <id>`.
+  - **Voice page** (tray → Voice → Choose her voice…, or `/voice pick`; D-045):
+    - Pick from AivisSpeech and **VOICEVOX** characters (44, e.g. ずんだもん, 四国めたん, 春日部つむぎ): click a style to hear it, "Use" to choose it.
+    - Tune pitch, speed and expression per Tama.
+    - Each character's portrait, credit and terms are shown.
+    - Names and styles are shown in English with the Japanese beside them (e.g. Zundamon ずんだもん · Teary なみだめ). Each style has its own ▶ listen and ✓ use buttons.
+  - **Her voice follows her emotion:** each line gets a feeling (happy, sad, teasing, sleepy…), and she speaks it in the matching style (e.g. なみだめ when sad, ツンツン when scolding) with a fitting tone. `/voice mood on|off`.
+  - **AivisSpeech runs only when needed** (D-044): Tama starts the installed AivisSpeech Engine hidden (on the graphics card) when you choose Japanese dub, warms it up, and stops it when you switch away or quit. If Tama crashes, the engine is stopped on the next start.
+  - **Telegram voice notes:** `/voice on` on the phone and she also answers with a voice note. Your own voice notes get a polite "can't listen yet".
+    Asking in plain words ("send it as voice", "vn dong", "kirim suara", "声で") gets that one reply as a voice note. The bot menu now updates on every start, so `/voice` appears without pairing again. She also knows she can send voice notes.
+  - **Mute and reduced motion:** `/mute`, `/motion auto|reduced|full` (auto follows Windows' animation setting).
+  - Onboarding's "hear my voice" works again (it was silent inside Electron).
+### Changed
+- **The app icon is your Tama's face** (tray, taskbar, windows), drawn from her look in her colors and redrawn when you restyle or hatch a new Tama (D-047).
+- **Tray menu grouped:** Summon / Chat / Terminal / Show-Hide on top; Take care, Voice, *her name* (My Tamas, Restyle, Rebirth) and Accounts & usage as submenus.
+- Idle CPU from about 5.8 % to about 2 %: idle animations run in short bursts, blinks are one-shots, an invisible tear animation no longer runs, and wandering moves the window less often.
+
 ## [0.8.0] — 2026-11-06 — M8 Usage & accounts dashboard
 ### Added
 - **M8 Usage & accounts dashboard** (D-040, D-041). Voice moved to M9.
@@ -182,7 +207,22 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `e2cd0d1` | 2026-11-07 | feat(ui) | app icon is the Tama's face; tray menu grouped (D-047) |
+| `ebe46b3` | 2026-11-07 | docs(changelog) | regenerate commit table |
+| `97c2e52` | 2026-11-07 | feat(voice) | English labels and separate listen/use controls on the Voice page (D-046) |
+| `696ef03` | 2026-11-07 | docs(changelog) | regenerate commit table |
+| `e099ef0` | 2026-11-07 | feat(voice) | Voice page, VOICEVOX characters, per-Tama tuning, mood-matched styles (D-045) |
+| `848b074` | 2026-11-07 | docs(changelog) | regenerate commit table |
+| `9decdd3` | 2026-11-07 | fix(telegram) | voice notes on request, bot menu refresh, persona knows her voice |
+| `8bc4fd8` | 2026-11-07 | docs(changelog) | regenerate commit table |
+| `aa3a4b7` | 2026-11-07 | feat(voice) | run the headless AivisSpeech Engine only while Japanese dub is on (D-044) |
+| `ff73fc0` | 2026-11-07 | docs(changelog) | regenerate commit table |
+| `6969a77` | 2026-11-07 | feat(voice) | language setting English / Japanese dub / off (D-043) |
+| `c91f2bc` | 2026-11-07 | docs(changelog) | regenerate commit table |
+| `5e973a4` | 2026-11-07 | feat(voice) | her voice, Telegram voice notes, mute/reduced motion, idle CPU (D-042) |
+| `708681d` | 2026-11-06 | docs(changelog) | regenerate commit table for 0.8.0 |
 
 ### v0.8.0
 | Commit | Date | Type | Subject |

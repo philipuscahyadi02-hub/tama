@@ -29,6 +29,11 @@ const { createAccounts } = require('./services/accounts');
 const engineAccounts = require('./engines/accounts');
 const { createLimits } = require('./services/usage/limits');
 const { fetchClaudeLimits } = require('./engines/claude/limits');
+const { createVoice } = require('./services/voice');
+const { createVvEngines } = require('./services/voice/vv-engine');
+const sapi = require('./platform/tts-sapi');
+const { createVoiceEngineProcess } = require('./platform/voice-engine-process');
+const { createAppIcon } = require('./platform/app-icon');
 const { createChatTools } = require('./brain/chat-tools');
 const { startToolBridge } = require('./platform/tool-bridge');
 const os = require('os');
@@ -135,33 +140,65 @@ function boot() {
     openPage('onboarding/onboarding.html', { width: 940, height: 700, title: 'Hatch your Tama', query: { mode } });
 
   const openGoogle = () => openPage('google/google.html', { width: 780, height: 720, title: 'Connect Google', frame: true });
+  const openVoice = () => openPage('voice/voice.html', { width: 980, height: 760, title: 'Voice', frame: true });
   const openDashboard = (tab = '') => openPage('dashboard/dashboard.html', { width: 1060, height: 780, title: 'Usage & accounts', frame: true, query: tab ? { tab } : {} });
   const openRoster = (/** @type {boolean | undefined} */ importNow) =>
     openPage('roster/roster.html', { width: 900, height: 660, title: 'My Tamas', query: importNow ? { import: '1' } : {} });
-  createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster, openGoogle, openDashboard, pages: openPages }).start();
-  shell.createTray({
-    tooltip: `${active.name} (Tama)`,
-    onClick: () => summon('tray-click'),
-    items: [
-      { label: `Summon ${active.name}  (Ctrl+Alt+P)`, click: () => summon('tray-menu') },
-      { label: `Chat with ${active.name}  (Ctrl+Alt+J)`, click: () => chatWin.show() },
-      { label: 'Open terminal  (Ctrl+Alt+K)', click: () => term.show() },
+  createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, pages: openPages }).start();
+  // Voice (M9, D-042/D-043): created before the tray, whose Voice submenu shows its setting; started with the services.
+  /** @type {Record<string, ReturnType<typeof createVoiceEngineProcess>>} */ const voiceProcs = {};
+  for (const id of /** @type {const} */ (['aivis', 'voicevox'])) {
+    voiceProcs[id] = createVoiceEngineProcess({
+      id, exePath: () => ((device.get().voice || {}).enginePaths || {})[id], gpu: () => (device.get().voice || {}).gpu !== false,
+      pidFile: pathMod.join(appShell.paths.data(), id === 'aivis' ? 'voice-engine.pid' : `voice-engine-${id}.pid`),
+    });
+    if (voiceProcs[id].cleanupStale()) debug(`voice: stopped a ${id} engine left over from a previous run`);
+  }
+  const voice = createVoice({ bus, device, sapi, vv: createVvEngines(), tamaId: active.id, procs: voiceProcs });
+  /** Tray menu, grouped (D-047); the Voice submenu shows the current choice (D-043). @param {string} lang */
+  const trayItems = (lang) => [
+      { label: `Summon ${active.name}`, accelerator: 'Ctrl+Alt+P', registerAccelerator: false, click: () => summon('tray-menu') },
+      { label: `Chat with ${active.name}`, accelerator: 'Ctrl+Alt+J', registerAccelerator: false, click: () => chatWin.show() },
+      { label: 'Terminal (Claude Code)', accelerator: 'Ctrl+Alt+K', registerAccelerator: false, click: () => term.show() },
       { label: 'Show / Hide', click: () => pet.toggleVisible() },
-      { label: 'My Tamas…', click: () => openRoster(false) },
-      { label: 'Google…', click: () => openGoogle() },
-      { label: 'Usage & accounts…', click: () => openDashboard() },
-      { label: 'Limits left…', click: () => openDashboard('limits') },
-      { label: 'Restyle…', click: () => openOnboarding('restyle') },
-      { label: 'Rebirth…', click: () => openOnboarding('rebirth') },
       { type: 'separator' },
-      { label: 'Feed', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'feed' }) },
-      { label: 'Play', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'play' }) },
-      { label: 'Energy snack', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'snack' }) },
-      { label: 'Bedtime (sleep / wake)', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'sleep' }) },
+      { label: 'Take care', submenu: [
+        { label: 'Feed', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'feed' }) },
+        { label: 'Play', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'play' }) },
+        { label: 'Energy snack', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'snack' }) },
+        { label: 'Bedtime (sleep / wake)', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'sleep' }) },
+      ] },
+      { label: 'Voice', submenu: [
+        { label: 'English (Windows voice)', type: 'radio', checked: lang === 'en', click: () => bus.request(TOPICS.VOICE_SET, { lang: 'en' }).catch(() => null) },
+        { label: 'Japanese dub (anime voice)', type: 'radio', checked: lang === 'ja', click: () => bus.request(TOPICS.VOICE_SET, { lang: 'ja' }).catch(() => null) },
+        { label: 'No voice', type: 'radio', checked: lang === 'off', click: () => bus.request(TOPICS.VOICE_SET, { lang: 'off' }).catch(() => null) },
+        { type: 'separator' },
+        { label: 'Choose her voice…', click: () => openVoice() },
+      ] },
+      { label: active.name, submenu: [
+        { label: 'My Tamas…', click: () => openRoster(false) },
+        { label: 'Restyle…', click: () => openOnboarding('restyle') },
+        { label: 'Rebirth…', click: () => openOnboarding('rebirth') },
+      ] },
+      { label: 'Accounts & usage', submenu: [
+        { label: 'Usage & accounts…', click: () => openDashboard() },
+        { label: 'Limits left…', click: () => openDashboard('limits') },
+        { label: 'Google…', click: () => openGoogle() },
+      ] },
       { type: 'separator' },
       { label: 'Quit', click: appShell.quit },
-    ],
+  ];
+  const tray = shell.createTray({
+    tooltip: `${active.name} (Tama)`,
+    onClick: () => summon('tray-click'),
+    items: trayItems(voice.status().lang),
   });
+  bus.on(TOPICS.VOICE_CHANGED, (/** @type {any} */ st) => shell.setTrayItems(tray, trayItems(st.lang)));
+  // App icon = her face (D-047): cached one right away, a fresh render shortly after start and on every restyle.
+  const appIcon = createAppIcon({ cacheFile: () => pathMod.join(appShell.paths.data(), 'icons', `${active.id}.png`), getTray: () => tray });
+  appIcon.loadCached();
+  setTimeout(() => { appIcon.render().then((ok) => debug(`app icon ${ok ? 'rendered' : 'not rendered'}`)); }, 2500);
+  bus.on(TOPICS.CHARACTER_CHANGED, () => { appIcon.render().catch(() => null); });
   const failed = shell.registerHotkeys({ [HOTKEYS.summon]: () => summon('hotkey'), [HOTKEYS.terminal]: () => term.toggle(), [HOTKEYS.chat]: () => chatWin.toggle() });
   if (failed.length && !process.env.TAMA_DATA_DIR) shell.notify('Tama', `Hotkey already in use by another app: ${failed.join(', ')}`);
 
@@ -180,6 +217,8 @@ function boot() {
   const desk = pathMod.join(appShell.paths.data(), 'desk');
   require('fs').mkdirSync(desk, { recursive: true });
   stoppers.push(createTelegram({ bus, secrets, device, git, snapshot: () => pet.snapshot(), keepAwake, tama: active, desk }).start());
+  // Voice (M9, D-042): AivisSpeech / VOICEVOX when running, Windows' built-in voice otherwise.
+  stoppers.push(voice.start());
   // Accounts (M8, D-040): sign-ins stay in the official tools; switching opens their sign-in in a console window.
   stoppers.push(createAccounts({
     bus,
@@ -211,6 +250,16 @@ function boot() {
   if (process.env.TAMA_GALLERY) {
     openPage('dev/gallery.html', { width: 1000, height: 760, frame: true, query: { set: process.env.TAMA_GALLERY } });
   }
+  if (process.env.TAMA_VOICE_TEST) {
+    // Dev: speak once on the desktop, then render + encode a Telegram voice note and report sizes (D-042).
+    pet.win.webContents.once('did-finish-load', () => setTimeout(async () => {
+      const said = await bus.request(TOPICS.VOICE_SAY, { text: String(process.env.TAMA_VOICE_TEST), purpose: 'test' }).catch((e) => ({ error: String(e) }));
+      const r = await bus.request(TOPICS.VOICE_RENDER, { text: String(process.env.TAMA_VOICE_TEST) }).catch(() => null);
+      const enc = r ? await bus.request(TOPICS.VOICE_ENCODE, { wav: r.wav }).catch((e) => ({ error: String(e) })) : null;
+      const dubbed = await bus.request(TOPICS.BRAIN_COMPOSE, { kind: 'translate', seed: String(process.env.TAMA_VOICE_TEST) }).catch((e) => String(e));
+      console.log('[voice-test]', JSON.stringify({ dubbed, said, engine: r && r.engine, wavBytes: r && Buffer.from(r.wav, 'base64').length, m4aBytes: enc && enc.data ? Buffer.from(enc.data, 'base64').length : 0, m4aHead: enc && enc.data ? Buffer.from(enc.data, 'base64').subarray(4, 8).toString() : enc && enc.error }));
+    }, 2000));
+  }
   if (process.env.TAMA_PET_EVAL) {
     // Dev: run JS in the pet window after load (e.g. "actions.stats()") for screenshots.
     pet.win.webContents.once('did-finish-load', () => setTimeout(() => pet.win.webContents.executeJavaScript(String(process.env.TAMA_PET_EVAL)).catch(console.error), 1500));
@@ -230,6 +279,7 @@ function boot() {
   }
   if (process.env.TAMA_OPEN_ROSTER) openRoster(false);
   if (process.env.TAMA_OPEN_GOOGLE) openGoogle();
+  if (process.env.TAMA_OPEN_VOICE) openVoice();
   if (process.env.TAMA_OPEN_DASHBOARD) openDashboard(process.env.TAMA_OPEN_DASHBOARD === 'limits' ? 'limits' : undefined);
   if (process.env.TAMA_OPEN_ONBOARDING) openOnboarding(process.env.TAMA_OPEN_ONBOARDING);
   if (process.env.TAMA_ONBOARD_WALK) {
@@ -238,6 +288,8 @@ function boot() {
       prompt: process.env.TAMA_WALK_PROMPT || 'a sleepy cat boy with headphones who loves coffee',
     });
   }
+  // Dev: quit cleanly after N ms (stoppers run, so voice engines Tama started are stopped too).
+  if (process.env.TAMA_QUIT_AFTER) setTimeout(() => appShell.quit(), Number(process.env.TAMA_QUIT_AFTER) || 60000);
   if (process.env.TAMA_SELFTEST) {
     require('./dev/selftest').runSelfTest({ pet, summoner, workAreas: require('./platform/displays').workAreas, quit: appShell.quit });
   }

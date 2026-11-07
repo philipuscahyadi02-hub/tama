@@ -142,7 +142,8 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
       return;
     }
     if (msg.text) await onText(String(msg.text));
-    else await send('I can only read text for now~ (voice notes come later!)');
+    else if (msg.voice || msg.audio) await send("I can't listen to voice notes yet, gomen~ 🙉 Type it for me? (I can send you voice notes though: /voice on)");
+    else await send('I can only read text for now~');
   }
 
   /** @param {string} text */
@@ -181,6 +182,14 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
       }
       case 'remind': { const t = await r(TOPICS.PROD_REMIND_ADD, { input: a }); return send(t.error ? `✗ ${t.error}` : `⏰ ok! ${new Date(t.reminder.at).toLocaleString()}: ${t.reminder.text}`); }
       case 'brief': return send(await briefText());
+      case 'voice': {
+        // TG-3 voice (D-042): her replies also come as a voice note.
+        if (!/^(on|off)$/i.test(a)) return send(`voice notes are ${cfg().voiceNotes ? 'on 🔊' : 'off'} · /voice on|off`);
+        device.patch('telegram', { voiceNotes: /^on$/i.test(a) });
+        changed();
+        if (/^on$/i.test(a)) { await send("🔊 okay! I'll talk to you too~"); return voiceNote('Yay! Now you can hear me on your phone too.'); }
+        return send('🔇 voice notes off');
+      }
       case 'code': return remote.start(a);
       case 'stop': return remote.stop();
       case 'repos': return remote.repos();
@@ -233,7 +242,24 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
       for (const k of [...offered.keys()]) if (k <= id - 20) offered.delete(k);
       return send(body, { reply_markup: { inline_keyboard: [[{ text: '💻 Let Claude do it', callback_data: `work:${id}` }]] } });
     }
-    return send(body);
+    const sent = await send(body);
+    if (cfg().voiceNotes || wantsVoice(text)) {
+      voiceNote(body).catch((e) => {
+        bus.emit(TOPICS.APP_ERROR, { topic: 'telegram.voice', message: String(e.message || e) });
+        send(`(my voice note didn't work: ${String(e.message || e).slice(0, 120)})`).catch(() => null);
+      });
+    }
+    return sent;
+  }
+
+  /** Render a line with her voice, encode it to M4A in the pet window and send it as a Telegram voice note. @param {string} text */
+  async function voiceNote(text) {
+    await api.call('sendChatAction', { chat_id: chatId(), action: 'record_voice' }).catch(() => null);
+    const r = await bus.request(TOPICS.VOICE_RENDER, { text }).catch(() => null);
+    if (!r || !r.wav) return;
+    const enc = await bus.request(TOPICS.VOICE_ENCODE, { wav: r.wav }).catch((e) => ({ error: String(e.message || e) }));
+    if (!enc || !enc.data) throw new Error(`voice note: ${(enc && enc.error) || 'encode failed'}`);
+    await api.upload('sendVoice', { chat_id: chatId() }, 'voice', Buffer.from(enc.data, 'base64'), 'tama.m4a', 'audio/mp4');
   }
 
   async function briefText() {
@@ -267,6 +293,7 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
     if (!cfg().enabled || !secrets.get('telegram.token')) { changed(); return; }
     stopPoll = api.poll(dispatch, { onError: (e) => bus.emit(TOPICS.APP_ERROR, { topic: 'telegram', message: e.message }) });
     api.call('setMyShortDescription', { short_description: `✨ ${tama.name} is awake on your PC` }).catch(() => null);
+    if (chatId()) api.call('setMyCommands', { commands: fmt.COMMANDS }).catch(() => null); // new commands show up without re-pairing
     changed();
   }
 
@@ -315,4 +342,9 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
   return { start, status, setup, onUpdate, dispatch, set, daily, remote };
 }
 
-module.exports = { createTelegram };
+/** "send it as a voice note", "vn dong", "kirim suara", "pakai suara"… → this reply also comes as a voice note. Pure. @param {string} t */
+function wantsVoice(t) {
+  return /\b(voice ?(note|message|msg|chat)|vn|(as|in|by|with|via) (a )?voice|(send|say|speak|tell)( it| me| that)? (out loud|aloud)|(kirim|pakai|pake|lewat|pakek|dengan|via) (suara|voice|vn)|(rekam|rekaman) suara|suaramu|suara kamu)\b|声で|ボイス/i.test(String(t || ''));
+}
+
+module.exports = { wantsVoice, createTelegram };

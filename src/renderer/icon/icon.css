@@ -1,0 +1,11 @@
+/* App icon (D-047): the Tama's face in a round badge, rendered off-screen at 256 px and captured as the tray,
+   taskbar and window icon. Colors are --tama-* tokens from the CharacterSpec. */
+:root { --tama-head: #ffd9ea; --tama-accent: #ff8fbf; }
+html, body { margin: 0; width: 256px; height: 256px; overflow: hidden; background: transparent; }
+#badge { box-sizing: border-box; width: 256px; height: 256px; border-radius: 50%; overflow: hidden;
+  background: var(--tama-head); border: 14px solid var(--tama-accent); }
+#face { width: 228px; height: 228px; }
+/* Head and face only (eyes at y≈115 of the 200x240 rig). */
+#face svg { width: 300px; height: 360px; margin: -62px 0 0 -50px; }
+#face.egg svg { width: 230px; height: 276px; margin: -30px 0 0 -15px; }
+#face, #face * { animation: none !important; } /* never capture mid-blink */

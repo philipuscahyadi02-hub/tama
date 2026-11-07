@@ -8,7 +8,7 @@ const theme = require('../../../shared/theme');
  * @param {{ bus: import('../../bus').BusInstance, device: import('../../platform/store/device').DeviceSettings }} deps
  */
 function createUiPrefs({ bus, device }) {
-  const prefs = () => ({ termTheme: 'night', tourDone: false, dnd: false, nudges: true, walkMarker: true, ...(device.get().ui || {}) });
+  const prefs = () => ({ termTheme: 'night', tourDone: false, dnd: false, nudges: true, walkMarker: true, mute: false, motion: 'auto', ...(device.get().ui || {}) });
 
   async function levelIndex() {
     const pet = await bus.request(TOPICS.PET_GET).catch(() => null);
@@ -22,12 +22,12 @@ function createUiPrefs({ bus, device }) {
     // A theme chosen earlier stays usable; an unknown id falls back to night.
     const termTheme = theme.VARIANTS.some((v) => v.id === p.termTheme) ? p.termTheme : 'night';
     return {
-      termTheme, tourDone: !!p.tourDone, unlocked, dnd: !!p.dnd, nudges: p.nudges !== false, walkMarker: p.walkMarker !== false,
+      termTheme, tourDone: !!p.tourDone, unlocked, dnd: !!p.dnd, nudges: p.nudges !== false, walkMarker: p.walkMarker !== false, mute: !!p.mute, motion: p.motion || 'auto',
       variants: theme.VARIANTS.map((v) => ({ ...v, unlocked: unlocked.includes(v.id) })),
     };
   }
 
-  /** @param {{ termTheme?: string, tourDone?: boolean, dnd?: boolean, nudges?: boolean, walkMarker?: boolean }} p */
+  /** @param {{ termTheme?: string, tourDone?: boolean, dnd?: boolean, nudges?: boolean, walkMarker?: boolean, mute?: boolean, motion?: string }} p */
   async function set(p) {
     /** @type {Record<string, any>} */
     const patch = {};
@@ -40,6 +40,8 @@ function createUiPrefs({ bus, device }) {
     if (p.tourDone !== undefined) patch.tourDone = !!p.tourDone;
     if (p.dnd !== undefined) patch.dnd = !!p.dnd;           // PET-6: no events or babble
     if (p.nudges !== undefined) patch.nudges = !!p.nudges;  // PET-7: water/stretch reminders
+    if (p.mute !== undefined) patch.mute = !!p.mute;        // PET-8: no voice at all
+    if (['auto', 'reduced', 'full'].includes(String(p.motion))) patch.motion = p.motion; // PET-8: auto = follow Windows
     if (p.walkMarker !== undefined) patch.walkMarker = !!p.walkMarker; // SUM-5: edge marker while hidden (D-035)
     device.patch('ui', patch);
     const out = await get();

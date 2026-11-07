@@ -85,6 +85,8 @@ src/main/
                            maps (pasted Maps links, Google Places lookup, D-039)
   platform/google-oauth.js loopback + PKCE desktop OAuth (M6)
   services/telegram/       api (long polling, uploads), format (pure), remote (/code bridge), index (pairing, routing, daily) (M7, D-036)
+  services/voice/          her voice: language, pick + tuning, quiet rules (index.js); engines.js = start/stop/catalog of the local
+                           engines; emotion.js = mood → style/prosody (pure); vv-engine.js = AivisSpeech/VOICEVOX HTTP (D-042..D-045)
   services/usage/          numbers-only usage log (usage/YYYY-MM.jsonl), summaries (M8, D-040); limits.js: what's left,
                            history (usage/limits.jsonl), warnings (D-041)
   engines/claude/limits.js live Claude plan limits without a message + rate-limit event normalizer (D-041)
@@ -123,6 +125,9 @@ M5 extras (D-035):
 ```
 src/main/services/weather/        logic.js (pure: WMO code → kind, hot/cold, parsers) + index.js (/weather city in device.json,
                                   Open-Meteo fetch at most every 30 min, quiet failures)
+src/main/platform/app-icon.js     app icon = the Tama's face: renders renderer/icon off-screen, applies to tray + windows, caches per Tama (D-047)
+src/main/platform/tts-sapi.js     Windows built-in speech (System.Speech via PowerShell) → WAV (D-042)
+src/main/platform/voice-engine-process.js  starts/stops the headless AivisSpeech / VOICEVOX engines when a voice needs them; PID files for crash leftovers (D-044, D-045)
 src/main/platform/fullscreen.js   fullscreen-foreground check via one hidden long-lived PowerShell + user32 helper (Windows only)
 src/main/platform/windows/walk-marker.js  44x44 "out for a walk" edge tab while the pet is hidden (SUM-5)
 src/renderer/marker/              the walk tab view (Tama's face; click = summon)
@@ -162,7 +167,7 @@ bus.on('engine.event', handler)
 
 ### Topics in use (M0)
 Events: `app.error`, `pet.state.changed`, `pet.bond.changed`, `engine.event`, `chat.event`, `brain.notice`, `ui.prefs.changed`, `memory.changed`, `event.shown`, `google.changed`, `google.meeting.soon`, `telegram.changed`, `usage.{record,changed,limit}`, `accounts.changed`, `summon.done`, `tray.action`, `character.changed`, `device.{power,idle}.changed`, `prod.{changed,focus.phase,reminder.due,commit.seen}`.
-Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,delete,export,import}`, `prod.*`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setEffort,setCwd,answerPermission,resume}`, `chat.{send,history,interrupt,clear,push,confirm}`, `ui.prefs.{get,set}`, `memory.{get,add,forget}`, `diary.{write,list,read}`, `events.{answer,trigger}`, `brain.compose`, `google.{status,setClient,login,logout,set,brief,context,backupNow,backups,restore}`, `telegram.{status,setup,newCode,unpair,set}`, `usage.get`, `usage.limits.{get,refresh,set}`, `accounts.{get,switch}`, `brain.{status,set}`, `summon`.
+Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,delete,export,import}`, `prod.*`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setEffort,setCwd,answerPermission,resume}`, `chat.{send,history,interrupt,clear,push,confirm}`, `ui.prefs.{get,set}`, `memory.{get,add,forget}`, `diary.{write,list,read}`, `events.{answer,trigger}`, `brain.compose`, `google.{status,setClient,login,logout,set,brief,context,backupNow,backups,restore}`, `telegram.{status,setup,newCode,unpair,set}`, `usage.get`, `usage.limits.{get,refresh,set}`, `voice.{say,render,status,set,detect,encode,preview,info}` + `voice.play` / `voice.changed`, `accounts.{get,switch}`, `brain.{status,set}`, `summon`.
 M5 extras (D-035): requests `weather.{get,set}`, `device.fullscreen.get`.
 Renderer messages arrive on one `ui` IPC channel: `pet.state`, `pet.bond`, `prod`, `focus`, `reminder`, `commit`, `summon`, `tray`, `agent.event`, `term.focus`, `character`.
 

@@ -64,7 +64,7 @@ function trayIcon() {
 
 /**
  * @param {{ tooltip: string, onClick: () => void,
- *   items: Array<{label: string, click: () => void} | {type: 'separator'}> }} opts
+ *   items: any[] }} opts  Electron menu template (labels, clicks, separators, submenus)
  */
 function createTray({ tooltip, onClick, items }) {
   const tray = new Tray(trayIcon());
@@ -72,6 +72,11 @@ function createTray({ tooltip, onClick, items }) {
   tray.setContextMenu(Menu.buildFromTemplate(/** @type {any} */ (items)));
   tray.on('click', onClick);
   return tray;
+}
+
+/** Replace the tray menu (e.g. when a radio setting changes). @param {any} tray @param {any[]} items */
+function setTrayItems(tray, items) {
+  tray.setContextMenu(Menu.buildFromTemplate(/** @type {any} */ (items)));
 }
 
 /** Hosts Tama may open in the user's browser (Google sign-in, setup help, links Tama created). */
@@ -100,4 +105,4 @@ function runConsoleScript(name, lines) {
   return file;
 }
 
-module.exports = { notify, pickFolder, pickSaveTama, pickOpenTama, registerHotkeys, unregisterHotkeys, createTray, openExternal, runConsoleScript, EXTERNAL_HOSTS };
+module.exports = { notify, pickFolder, pickSaveTama, pickOpenTama, registerHotkeys, unregisterHotkeys, createTray, setTrayItems, openExternal, runConsoleScript, EXTERNAL_HOSTS };

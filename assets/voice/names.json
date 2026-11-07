@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "_note": "English labels for AivisSpeech / VOICEVOX character and style names (D-046). Unknown kana names are romanized automatically.",
+  "characters": {
+    "まお": "Mao", "コハク": "Kohaku",
+    "四国めたん": "Shikoku Metan", "ずんだもん": "Zundamon", "春日部つむぎ": "Kasukabe Tsumugi", "雨晴はう": "Amehare Hau",
+    "波音リツ": "Namine Ritsu", "玄野武宏": "Kurono Takehiro", "白上虎太郎": "Shirakami Kotaro", "青山龍星": "Aoyama Ryusei",
+    "冥鳴ひまり": "Meimei Himari", "九州そら": "Kyushu Sora", "もち子さん": "Mochiko-san", "剣崎雌雄": "Kenzaki Mesuo",
+    "WhiteCUL": "WhiteCUL", "後鬼": "Goki", "No.7": "No.7", "ちび式じい": "Chibishiki Jii", "櫻歌ミコ": "Ouka Miko",
+    "小夜/SAYO": "Sayo", "ナースロボ＿タイプＴ": "Nurse Robo Type T", "†聖騎士 紅桜†": "Holy Knight Benizakura",
+    "雀松朱司": "Wakamatsu Akashi", "麒ヶ島宗麟": "Kigashima Sorin", "春歌ナナ": "Haruka Nana", "猫使アル": "Nekotsuka Aru",
+    "猫使ビィ": "Nekotsuka Bi", "中国うさぎ": "Chugoku Usagi", "栗田まろん": "Kurita Maron", "あいえるたん": "Aierutan",
+    "満別花丸": "Manbetsu Hanamaru", "琴詠ニア": "Kotoyomi Nia", "Voidoll": "Voidoll", "ぞん子": "Zonko",
+    "中部つるぎ": "Chubu Tsurugi", "離途": "Rito", "黒沢冴白": "Kurosawa Kohaku", "ユーレイちゃん": "Yurei-chan",
+    "東北ずん子": "Tohoku Zunko", "東北きりたん": "Tohoku Kiritan", "東北イタコ": "Tohoku Itako", "あんこもん": "Ankomon",
+    "夜語トバリ": "Yogatari Tobari", "暁記ミタマ": "Akatsuki Mitama", "里石ユカ": "Satoishi Yuka", "ブイブイ・コバコ": "Buibui Kobako"
+  },
+  "styles": {
+    "ノーマル": "Normal", "ふつう": "Normal", "ふつー": "Casual", "あまあま": "Sweet", "甘々": "Sweet", "うきうき": "Cheerful",
+    "おこ": "Annoyed", "おちつき": "Calm", "おどおど": "Nervous", "おどろき": "Surprised", "かなしい": "Sad", "かなしみ": "Sad",
+    "からかい": "Teasing", "けだるげ": "Languid", "こわがり": "Scared", "ささやき": "Whisper", "囁き": "Whisper", "しっとり": "Gentle",
+    "せつなめ": "Wistful", "たのしい": "Fun", "つぼみ": "Bud (young)", "つよつよ": "Strong", "なみだめ": "Teary",
+    "ぬいぐるみver.": "Plushie ver.", "ねむたい": "Sleepy", "のんびり": "Relaxed", "びえーん": "Crying", "びくびく": "Timid",
+    "ぶりっ子": "Cutesy", "へろへろ": "Exhausted", "ヘロヘロ": "Exhausted", "よわよわ": "Weak", "わーい": "Yay!",
+    "アナウンス": "Announcer", "クイーン": "Queen", "シリアス": "Serious", "セクシー": "Sexy", "セクシー／あん子": "Sexy / Anko",
+    "ツクモちゃん": "Tsukumo-chan", "ツンギレ": "Tsun-angry", "ツンツン": "Tsun-tsun (prickly)", "ヒソヒソ": "Hushed",
+    "ボーイ": "Boy", "ロリ": "Childlike", "不機嫌": "Grumpy", "人見知り": "Shy", "人間ver.": "Human ver.",
+    "人間（怒り）ver.": "Human (angry) ver.", "低血圧": "Low-energy", "元気": "Energetic", "内緒話": "Secret talk",
+    "呆れ": "Exasperated", "哀しみ": "Sorrow", "喜び": "Joy", "実況風": "Commentator", "怒り": "Angry", "恐怖": "Fear",
+    "悲しみ": "Sadness", "明るい": "Bright", "楽々": "Easygoing", "泣き": "Crying", "熱血": "Passionate", "第二形態": "Second form",
+    "絶望と敗北": "Despair & defeat", "覚醒": "Awakened", "読み聞かせ": "Storytelling", "鬼ver.": "Oni ver."
+  }
+}
