@@ -12,10 +12,11 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   `git log` and the `v*` tags. Don't edit it by hand. Run it before each commit; it lists every
   commit up to the previous one (a commit can't contain its own hash).
 - **Versioning (D-015):** each finished milestone is a minor version (M0 → 0.1.0, M1 → 0.2.0, …).
-  Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
+  Fixes between milestones are patch versions. 1.0.0 = M12 shipping (D-056, refines "all P0 done"); 2.0.0 = Tama's own agentic brain.
 
 ## [Unreleased]
 ### Docs
+- **Version plan (D-056):** M12 shipping becomes **v1.0.0**. **v2** is planned: Tama's own agentic brain on official model APIs with your own keys or local models, so she no longer depends on one provider (AGT-1..6).
 - Planned the **provider layer** for M12 (SHIP-8, D-054): features ask for a capability (chat, coding, structured output…) and Tama picks Claude Code or agy from your preference, falling back to whichever is installed.
 ### Fixed
 - `/voice` in the terminal works again: an old "arrives in M8" placeholder had replaced it (QC-4).

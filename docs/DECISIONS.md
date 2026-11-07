@@ -85,6 +85,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-053 | `npm run perf` measures idle cost the same way every time; mood/sleep effects rest between alive bursts; shorter, rarer bursts | Accepted · Refines D-042 (calm idle) |
 | D-054 | M12 provider layer: features ask for capabilities, providers register what they can do, per-capability preference with fallback; D-029's split stays the default | Accepted · Refines D-029 (routing becomes a default, not a hard-wire) |
 | D-055 | Security pass: no navigation, new windows or browser permissions; every IPC input coerced; more secret patterns redacted; Maps and [google] context marked untrusted | Accepted |
+| D-056 | M12 shipping = v1.0.0; v2 = Tama's own agentic brain over official model APIs (own keys or local models), not a single provider's SDK | Accepted · Refines D-015 (what 1.0.0 means) |
 
 ---
 
@@ -761,3 +762,15 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** A separate Electron session/partition per window (no benefit with one origin); stripping links from replies (users like links; navigation is blocked anyway).
 - **Consequences:** A future page that needs a browser permission (e.g. a microphone for VOICE-4 speech-to-text) must allow exactly that permission for that page in `harden()`, with a decision entry.
 - **Refs:** QC-6, AGENTS §1.9, §4, D-034, D-037, D-050, src/main/platform/{app,crash-log,tool-bridge}.js, src/main/channels/desktop, src/main/services/google/tools.js, src/main/brain/persona.js
+
+### D-056 — v1.0.0 = M12 shipping; v2 = Tama's own agentic brain
+- **Date:** 2026-11-07 · **Status:** Accepted · Refines D-015 ("1.0.0 = all P0 requirements done")
+- **Context:** The user asked to ship M12 as version 1, and to continue later with v2: set up Tama's own agentic brain, cut the dependency on a single provider, and build Tama's own SDK instead of using Claude's.
+- **Decision:**
+  - **v1.0.0** is the M12 release (installers, provider layer, modular capabilities, setup wizard). M12 also closes the two open P0 rows (GOOG-6 replace section, NFR-2 mixed-DPI check) or lists them as known gaps in the release notes.
+  - **v2 (2.0.0)** is Tama's own agent loop (AGT-1..6): planning, tool calls, streaming, sessions and compaction in `src/main/agent/`, with Tama's own tools behind PermissionGate, running on the SHIP-8 provider layer.
+  - **How v2 reaches models:** through official model APIs with the user's **own API keys** (Anthropic Messages API, Gemini API, OpenAI-compatible endpoints) or **local models**. A Claude.ai or Antigravity **subscription can't be used directly**: subscriptions are only for their own apps (Claude Code / agy), and reusing their logins or tokens is ruled out (D-006). Claude Code and agy stay available as optional adapters (AGT-5) for users who want to use their subscriptions.
+  - The provider layer built in M12 (D-054) is the seam: v2 adds "Tama agent" providers next to the Claude Code and agy ones, so features don't change.
+- **Alternatives:** Keep depending on the Claude Agent SDK for coding (the user wants independence); use subscription tokens from the CLIs in Tama's own loop (violates D-006 and the providers' terms).
+- **Consequences:** v2 costs the user per-token API usage (or local compute) instead of a flat subscription; the dashboard (USE-*) must show that clearly. Local models (D-003 had declined Ollama for v1) get a fresh decision in v2. The safety work done for agy (guard hooks, probes) is redone for Tama's own loop (AGT-6).
+- **Refs:** SHIP-8, AGT-1..6, D-003, D-006, D-015, D-029, D-054

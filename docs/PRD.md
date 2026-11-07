@@ -5,8 +5,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.29 |
-| **Status** | v0.10.0 released (M0–M10). M11 quality control code complete on `m11-quality` (awaiting the user's check); M12 shipping (installers, provider layer) next |
+| **Version** | 0.30 |
+| **Status** | v0.10.0 released (M0–M10). M11 code complete on `m11-quality` (awaiting the user's check); M12 shipping = v1.0.0 in progress on `m12-shipping` |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-07 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
@@ -254,8 +254,19 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M8 — Usage & accounts dashboard.** *(released as 0.8.0)* Usage log, dashboard, Limits tab (what's left), account switching (USE-1..7, D-040, D-041).
 - [x] **M10 — Settings & polish.** *(released as 0.10.0)* One Settings window, reply language, quiet hours, faster voice, small reliability fixes (SET-1..6, ONB-8).
 - [x] **M11 — Quality control.** *(code complete)* Architecture checks, dead code, performance, code review, coverage, security (QC-1..6, NFR-1).
-- [ ] **M12 — Shipping.** Windows installer and macOS app, a provider layer, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..8, NFR-3).
+- [ ] **M12 — Shipping = v1.0.0** (D-056). Also closes the two open P0 rows (GOOG-6 replace section, NFR-2 mixed-DPI check) or defers them explicitly. Windows installer and macOS app, a provider layer, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..8, NFR-3).
 - [x] **M9 — Voice & polish.** *(released as 0.9.0; phone → Tama speech-to-text (VOICE-4) deferred)* AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
+- [ ] **v2 (M13+) — Tama's own agentic brain** (planned, not started; D-056). Tama runs its own agent loop instead of depending on one provider's agent (AGT-1..6).
+
+### 5b. v2 roadmap: Tama's own agentic brain (planned)
+| ID | Requirement | Pri | MS | Status |
+|---|---|---|---|---|
+| AGT-1 | **Own agent loop** (`src/main/agent/`): plan → call tools → observe → answer, with streaming, interrupt, sessions and context compaction, built on the provider layer (SHIP-8). | P0 | v2 | ☐ |
+| AGT-2 | **Model adapters over official APIs**, each with the user's own API key or a local model: Anthropic Messages API, Google Gemini API, OpenAI-compatible endpoints, local runtimes. Per-token billing and keys are shown plainly; keys live in `platform/secrets`. Never a subscription login or another app's tokens (D-006). | P0 | v2 | ☐ |
+| AGT-3 | **Tama's own tools**: files (read, edit, write in an allowed folder), shell, search, web fetch/search, Google, memory, with every call through PermissionGate (SAFE-1) and the same per-tool policies as today. | P0 | v2 | ☐ |
+| AGT-4 | **One brain for every surface**: terminal, chat, moments, Telegram and the designer run on the same loop with different tool sets and personas; the user picks a model per role. | P1 | v2 | ☐ |
+| AGT-5 | **Claude Code and agy stay optional adapters** behind the same interface, for users who prefer their subscriptions. | P1 | v2 | ☐ |
+| AGT-6 | **Evaluation and safety probes** for the own loop (like `npm run probe:agy`): tool gating, prompt injection from mail/web, cost limits. | P1 | v2 | ☐ |
 
 ## 6. Open questions
 
@@ -266,6 +277,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.30 — 2026-11-07** — M12 = v1.0.0; v2 roadmap (AGT-1..6) for Tama's own agentic brain (D-056).
 - **0.29 — 2026-11-07** — QC-6 ☑ (D-055); M11 code complete.
 - **0.28 — 2026-11-07** — QC-5 ☑ (`npm run coverage`).
 - **0.27 — 2026-11-07** — QC-4 ☑.
