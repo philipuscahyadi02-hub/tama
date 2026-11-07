@@ -45,7 +45,7 @@ for (const f of files) {
   // 1. electron only in platform/ and preload
   if (reqs.includes('electron') && !r.startsWith('src/main/platform/') && !r.startsWith('src/preload/')) errors.push(`${r}: requires 'electron' outside src/main/platform (AGENTS §1.2)`);
   // 3. renderers never require
-  if (r.startsWith('src/renderer/') && reqs.length) errors.push(`${r}: renderer uses require(${reqs.join(', ')}) (AGENTS §1.3)`);
+  if (r.startsWith('src/renderer/') && !isTest(r) && reqs.length) errors.push(`${r}: renderer uses require(${reqs.join(', ')}) (AGENTS §1.3)`);
   // 2. deep imports
   if (r.startsWith('src/main/') && r !== 'src/main/index.js' && !isTest(f) && !r.startsWith('src/main/dev/')) {
     const mine = moduleOf(f);

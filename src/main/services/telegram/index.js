@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const { TOPICS } = require('../../bus-topics');
 const { createBotApi } = require('./api');
 const { createRemote } = require('./remote');
+const { createCommands } = require('./commands');
 const fmt = require('./format');
 const { dayOf } = require('../../day');
 
@@ -43,6 +44,11 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
     bus.emit(TOPICS.BRAIN_NOTICE, { text, kind: 'info' });
   };
   const remote = createRemote({ bus, send, edit, sendDocument, git, announce, now, desk, settings: () => ({ repos: cfg().repos, remote: cfg().remote }) });
+  const upload = (/** @type {string} */ method, /** @type {any} */ fields, /** @type {string} */ field, /** @type {Buffer} */ data, /** @type {string} */ name, /** @type {string} */ type) => api.upload(method, { chat_id: chatId(), ...fields }, field, data, name, type);
+  const { onText, briefText } = createCommands({
+    bus, device, send, upload, snapshot, announce, remote, cfg,
+    changed: () => changed(), chat: (t) => chat(t), voiceNote: (t) => voiceNote(t),
+  });
   /** Tasks the chat brain offered to hand to Claude Code ("💻 Let Claude do it" buttons). */
   const offered = new Map();
   let offerSeq = 0;
@@ -146,65 +152,6 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
     else await send('I can only read text for now~');
   }
 
-  /** @param {string} text */
-  async function onText(text) {
-    const m = /^\/(\w+)(?:@\w+)?\s*([\s\S]*)$/.exec(text.trim());
-    if (!m) return chat(text);
-    const [, cmd, arg] = m;
-    const a = arg.trim();
-    const r = (/** @type {string} */ topic, /** @type {any} */ p = undefined) => bus.request(topic, p).catch((e) => ({ error: String(e.message || e) }));
-    switch (cmd.toLowerCase()) {
-      case 'start': case 'help': return send(fmt.HELP);
-      case 'status': {
-        const pet = await r(TOPICS.PET_GET);
-        const png = await snapshot().catch(() => null);
-        if (png) return api.upload('sendPhoto', { chat_id: chatId(), caption: fmt.statusText(pet) }, 'photo', png, 'tama.png', 'image/png');
-        return send(fmt.statusText(pet));
-      }
-      case 'feed': case 'snack': case 'nap': {
-        const res = await r(TOPICS.PET_ACT, { action: cmd.toLowerCase() });
-        announce(`📱 ${cmd} from your phone`);
-        const ok = { feed: 'itadakimasu~! 🍙', snack: 'power up! ⚡', nap: 'zzz… power nap 💤' }[cmd.toLowerCase()];
-        return send(res && res.ok ? ok : `hmm, not now (${(res && res.reason) || 'busy'})${res && res.retryInMs ? ` · try again in ${Math.ceil(res.retryInMs / 60000)} min` : ''}`);
-      }
-      case 'summon': await r(TOPICS.SUMMON, { reason: 'telegram' }); announce('📱 summoned from your phone'); return send('✨ I\'m back on your screen!');
-      case 'todo': case 'todos': {
-        if (a && cmd === 'todo') { const t = await r(TOPICS.PROD_TODO_ADD, { text: a }); return send(t.error ? `✗ ${t.error}` : `☐ added: ${t.todo.text}`); }
-        const s = await r(TOPICS.PROD_GET);
-        const open = ((s && s.todos) || []).filter((/** @type {any} */ x) => !x.done);
-        return send(open.length ? open.map((/** @type {any} */ x, /** @type {number} */ i) => `${i + 1}. ☐ ${x.text}`).join('\n') + '\n\n/done <n> to finish' : 'No open todos~ ✨');
-      }
-      case 'done': { const t = await r(TOPICS.PROD_TODO_DONE, { ref: a }); return send(t.error ? `✗ ${t.error}` : `☑ done: ${t.todo ? t.todo.text : a} ✨`); }
-      case 'focus': {
-        if (a === 'stop') { await r(TOPICS.PROD_FOCUS_STOP); return send('focus stopped. otsukare~'); }
-        const t = await r(TOPICS.PROD_FOCUS_START, { minutes: Number(a) || 25 });
-        return send(t.error ? `✗ ${t.error}` : `⏱️ focus ${Number(a) || 25} min! ganbatte~`);
-      }
-      case 'remind': { const t = await r(TOPICS.PROD_REMIND_ADD, { input: a }); return send(t.error ? `✗ ${t.error}` : `⏰ ok! ${new Date(t.reminder.at).toLocaleString()}: ${t.reminder.text}`); }
-      case 'brief': return send(await briefText());
-      case 'voice': {
-        // TG-3 voice (D-042): her replies also come as a voice note.
-        if (!/^(on|off)$/i.test(a)) return send(`voice notes are ${cfg().voiceNotes ? 'on 🔊' : 'off'} · /voice on|off`);
-        device.patch('telegram', { voiceNotes: /^on$/i.test(a) });
-        changed();
-        if (/^on$/i.test(a)) { await send("🔊 okay! I'll talk to you too~"); return voiceNote('Yay! Now you can hear me on your phone too.'); }
-        return send('🔇 voice notes off');
-      }
-      case 'code': return remote.start(a);
-      case 'stop': return remote.stop();
-      case 'repos': return remote.repos();
-      case 'cd': return remote.cd(a);
-      case 'remote': {
-        if (!/^(on|off)$/i.test(a)) return send(`remote coding is ${cfg().remote ? 'on' : 'off'} · /remote on|off`);
-        device.patch('telegram', { remote: /^on$/i.test(a) });
-        announce(`📱 remote coding switched ${a.toLowerCase()} from your phone`);
-        changed();
-        return send(`remote coding ${a.toLowerCase()} ${/^on$/i.test(a) ? '💻' : '🔒'}`);
-      }
-      default: return send(`I don't know /${cmd} yet~ /help`);
-    }
-  }
-
   /** Google create/edit questions from the chat brain → buttons on the phone (D-037). @param {any} ev */
   async function onChatConfirm(ev) {
     if (!chatId()) return;
@@ -260,14 +207,6 @@ function createTelegram({ bus, secrets, device, git, snapshot, keepAwake, tama, 
     const enc = await bus.request(TOPICS.VOICE_ENCODE, { wav: r.wav }).catch((e) => ({ error: String(e.message || e) }));
     if (!enc || !enc.data) throw new Error(`voice note: ${(enc && enc.error) || 'encode failed'}`);
     await api.upload('sendVoice', { chat_id: chatId() }, 'voice', Buffer.from(enc.data, 'base64'), 'tama.m4a', 'audio/mp4');
-  }
-
-  async function briefText() {
-    const b = await bus.request(TOPICS.GOOGLE_BRIEF).catch(() => null);
-    if (b && b.text) return `☀️ ${b.text}`;
-    const s = await bus.request(TOPICS.PROD_GET).catch(() => null);
-    const open = ((s && s.todos) || []).filter((/** @type {any} */ x) => !x.done);
-    return `☀️ ${open.length ? `${open.length} open todo${open.length > 1 ? 's' : ''}: ${open.slice(0, 5).map((/** @type {any} */ x) => x.text).join(' · ')}` : 'no open todos'}\n(connect Google on the PC for calendar + mail)`;
   }
 
   /** Morning brief + evening recap (TG-4), once a day each. */

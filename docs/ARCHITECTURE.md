@@ -84,10 +84,11 @@ src/main/
                            drive (+ Docs/Sheets, appData), markdown, tools (+ gate policy), backup (appData + lease) (M6, D-034),
                            maps (pasted Maps links, Google Places lookup, D-039)
   platform/google-oauth.js loopback + PKCE desktop OAuth (M6)
-  services/telegram/       api (long polling, uploads), format (pure), remote (/code bridge), index (pairing, routing, daily) (M7, D-036)
+  services/telegram/       api (long polling, uploads), format (pure), remote (/code bridge), commands (the phone's /commands),
+                           index (pairing, routing, daily) (M7, D-036)
   services/voice/          her voice: language, pick + tuning, quiet rules (index.js); engines.js = start/stop/catalog of the local
                            engines; emotion.js = mood → style/prosody (pure); vv-engine.js = AivisSpeech/VOICEVOX HTTP (D-042..D-045);
-                           chunks.js = sentence split + audio cache for a fast first sound (D-049)
+                           chunks.js = sentence split + audio cache for a fast first sound (D-049); text.js = speakable() + the dub cache
   services/usage/          numbers-only usage log (usage/YYYY-MM.jsonl), summaries (M8, D-040); limits.js: what's left,
                            history (usage/limits.jsonl), warnings (D-041)
   engines/claude/limits.js live Claude plan limits without a message + rate-limit event normalizer (D-041)
@@ -107,6 +108,7 @@ src/main/
   platform/tool-bridge.js  localhost tool bridge for agent CLIs (random key per run) (D-037)
   brain/chat-tools.js      Google tools for the chat brain with Tama-side confirmations (D-037)
   channels/desktop/        renderer IPC ↔ bus
+  dev/hooks.js             every dev-only TAMA_* switch (open windows, *_EVAL, voice test/trace, perf, quit-after), called once from the bootstrap
   dev/selftest.js          TAMA_SELFTEST live summon check
   dev/onboarding-walk.js   TAMA_ONBOARD_WALK scripted onboarding run with screenshots (M1)
   services/designer/       prompt.js (schemas) + fallback.js (keyword designer) + index.js (M1)
@@ -116,10 +118,13 @@ src/shared/                pure modules for main AND renderer (D-020): palette, 
                            rig/{kit,face,hair,headwear,outfit,accessories,compose}
 src/preload/index.js       window.tama allow-list
 src/renderer/shared/       rig.css (animations + expressions), rig-view.js (renderRig/renderEgg)
-src/renderer/pet|terminal  pet drawn by the rig from the CharacterSpec; terminal still kero-styled (M4)
 src/renderer/onboarding/   hatch / restyle / rebirth flow (M1)
 src/renderer/roster/       My Tamas: switch, hatch, graduate, restore, delete, export, import (M2)
-src/renderer/terminal/tama-commands.js  /todo /focus /remind /note /watch /feed /snack /nap /tama (M2)
+src/renderer/pet/          pet.js (state, mood, wandering, boot) + care.js (buttons, panels) + pointer.js (click, drag, pats)
+                           + reactions.js (Claude/chat reactions) + voice.js; plain scripts sharing one global scope, loaded in order
+src/renderer/terminal/     terminal.js (state, status, input, boot) + format.js (pure: markdown, diffs, tool lines; unit-tested)
+                           + permission.js + agent-events.js + local-commands.js (/help /cd /model …) + tama-commands.js
+                           (/todo /focus /remind /note /watch /tama …) + connect-commands.js (/phone /google /usage /newpc)
 src/renderer/dev/          rig gallery (TAMA_GALLERY=designs|moods)
 src/renderer/settings/     Settings window (M10, D-048): one view over ui/voice/telegram/google/weather/brain requests; opens other pages via page:open
 ```

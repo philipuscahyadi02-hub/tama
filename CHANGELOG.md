@@ -15,9 +15,13 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = all P0 requirements done.
 
 ## [Unreleased]
+### Fixed
+- `/voice` in the terminal works again: an old "arrives in M8" placeholder had replaced it (QC-4).
+- `/newpc` shows whether Telegram is paired instead of "comes in M7".
 ### Changed
 - **M11 Quality control** (branch `m11-quality`): the architecture rules are now checked automatically in `npm run check` (`npm run arch` for the report); fixed 11 deep imports by giving the engines public entry points and moving the day helpers out of the pet module (QC-1, D-052).
 - **Lighter at idle:** about 1.6 % CPU and 262 MB (was 3.5 % and 297 MB). Her tears, gloom and sleep bubbles now rest between her lively moments, and those moments come a bit less often. New `npm run perf` measures this the same way every time (QC-3, D-053).
+- **Code review, part 1 (QC-4):** the large files are split by responsibility: the terminal (formatting, permission prompt, Claude events, commands), the pet window (care, pointer, reactions), Telegram's phone commands, the voice text helpers, and the bootstrap's dev-only switches (`src/main/dev/hooks.js`). The terminal's formatting is now unit-tested.
 - Removed dead code found by a scan: an unused git helper, page close helper, export, IPC channel and CSS rule. Everything else is reachable and used (QC-2).
 
 ## [0.10.0] — 2026-11-07 — M10 Settings & polish

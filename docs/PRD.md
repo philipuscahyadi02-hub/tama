@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.24 |
+| **Version** | 0.25 |
 | **Status** | v0.10.0 released (M0–M10). M11 quality control in progress on `m11-quality`; M12 shipping (installers) next |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-07 |
@@ -113,7 +113,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | QC-1 | Architecture check as a script in `npm run check`: only `platform/*` imports Electron, no deep imports across modules, every bus topic declared and used, renderers never require Node. *(`scripts/arch-check.js`, in `npm run check`; D-052.)* | P1 | M11 | ☑ |
 | QC-2 | Dead code: find and remove unused files, exports, bus topics, IPC channels, CSS and preload methods (script + review). *(Scan 2026-11-07: every file reachable, all bus topics and IPC channels used (now enforced by QC-1), both dependencies used. Removed `git.changedFiles`, `closePage`, the `MARKER_SIZE` export, the unused `prod:remindCancel` IPC and preload method, and one CSS rule.)* | P1 | M11 | ☑ |
 | QC-3 | Performance: measure start-up time, idle CPU/RAM (NFR-1), event-loop lag, IPC chatter and timers; fix what slows Tama down; keep a repeatable `npm run perf`. *(Idle CPU 3.5 % → 1.6 %, memory 297 → 262 MB, ready in ~0.8 s; D-053.)* | P1 | M11 | ☑ |
-| QC-4 | Code review of every module against AGENTS rules (file ≤ ~300 lines, function size, error handling, no floating promises, `start()`/`stop()`); split or simplify what fails. | P1 | M11 | ☐ |
+| QC-4 | Code review of every module against AGENTS rules (file ≤ ~300 lines, function size, error handling, no floating promises, `start()`/`stop()`); split or simplify what fails. *(File sizes done: 6 files over 300 lines split by responsibility, pet.js left at 353; found the terminal's `/voice` overridden by an old placeholder. Function size, error handling and floating promises still to review.)* | P1 | M11 | ◐ |
 | QC-5 | Test coverage report; add tests for services and platform code with gaps (aim ≥ 80 % of service lines). | P2 | M11 | ☐ |
 | QC-6 | Security pass: IPC input validation, CSP on every page, secrets never in logs or exports, untrusted-data handling. | P1 | M11 | ☐ |
 
@@ -265,6 +265,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.25 — 2026-11-07** — QC-4 ◐ (large files split).
 - **0.24 — 2026-11-07** — v0.10.0 released (M10).
 - **0.23 — 2026-11-07** — M10 code complete (SET-4..6, D-049, D-050). Planned M11 quality control (QC-1..6) and M12 shipping with installers for Windows and macOS and modular capabilities (SHIP-1..7, D-051); NFR-3's portable exe is replaced.
 - **0.22 — 2026-11-07** — M10 Settings & polish planned (SET-1..6); SET-1..3 and ONB-8 done (D-048).
