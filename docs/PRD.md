@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.30 |
+| **Version** | 0.31 |
 | **Status** | v0.10.0 released (M0–M10). M11 code complete on `m11-quality` (awaiting the user's check); M12 shipping = v1.0.0 in progress on `m12-shipping` |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-07 |
@@ -126,7 +126,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | SHIP-4 | **Setup wizard** on first run (and in Settings): detects Claude Code, agy, AivisSpeech/VOICEVOX, Google and Telegram; shows what each unlocks; guides each install with official links and sign-ins, and re-checks. | P0 | M12 | ☐ |
 | SHIP-5 | **Optional components** downloaded on demand from official releases with checksums (voice engines first), never bundled into the installer. | P1 | M12 | ☐ |
 | SHIP-6 | Updates: check for new versions and update in place (electron-updater or a release check). | P2 | M12 | ☐ |
-| SHIP-8 | **Provider layer** (D-054): features ask for a *capability* (chat, compose, structured JSON, coding, tools, web search) instead of a named engine. Claude Code and agy register what they can do and whether they are installed and signed in; the brain picks the user's preferred provider per capability and falls back to another when one is missing. Defaults keep today's split (terminal = Claude, chat = agy); using Claude for chat is opt-in because it spends Claude quota. Safety rules stay per provider (agy never codes). Usage, limits and accounts list providers from the registry instead of fixed Claude/Gemini slots. Built first in M12, because SHIP-3 and SHIP-4 build on it. | P0 | M12 | ☐ |
+| SHIP-8 | **Provider layer** (D-054): features ask for a *capability* (chat, compose, structured JSON, coding, tools, web search) instead of a named engine. Claude Code and agy register what they can do and whether they are installed and signed in; the brain picks the user's preferred provider per capability and falls back to another when one is missing. Defaults keep today's split (terminal = Claude, chat = agy); using Claude for chat is opt-in because it spends Claude quota. Safety rules stay per provider (agy never codes). Usage, limits and accounts list providers from the registry instead of fixed Claude/Gemini slots. Built first in M12, because SHIP-3 and SHIP-4 build on it. *(Done: registry `src/main/providers/`, Claude Code and agy providers, the brain and designer pick through it, persona says what the chat provider can do, Settings → Brains, Claude chat tested live (D-057). Left: usage limits and accounts from the registry, shared provider contract tests.)* | P0 | M12 | ◐ |
 | SHIP-7 | Signing: Windows code signing (SmartScreen) and Apple notarization; both need paid certificates/accounts, so decide before release. | P2 | M12 | ☐ |
 
 ### 4.5 Events & conversations (EVT)
@@ -277,6 +277,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.31 — 2026-11-07** — SHIP-8 ◐: provider layer in place (D-057).
 - **0.30 — 2026-11-07** — M12 = v1.0.0; v2 roadmap (AGT-1..6) for Tama's own agentic brain (D-056).
 - **0.29 — 2026-11-07** — QC-6 ☑ (D-055); M11 code complete.
 - **0.28 — 2026-11-07** — QC-5 ☑ (`npm run coverage`).

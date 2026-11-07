@@ -6,4 +6,5 @@ module.exports = {
   get askJson() { return require('./oneshot').askJson; },
   get fetchClaudeLimits() { return require('./limits').fetchClaudeLimits; },
   get fromRateLimitEvent() { return require('./limits').fromRateLimitEvent; },
+  get claudeProvider() { return require('./provider').claudeProvider; },
 };

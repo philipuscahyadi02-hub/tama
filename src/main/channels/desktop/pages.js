@@ -19,6 +19,16 @@ const { TOPICS } = require('../../bus-topics');
  * }} d
  */
 function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings }) {
+  /** Settings → Brains (SHIP-8): who serves chat, moments, design and coding. The registry validates the names. */
+  function providersIpc() {
+    const pair = (/** @type {any} */ x) => ({ cap: String(x?.cap || '').slice(0, 20), id: String(x?.id || '').slice(0, 40) });
+    ipc.handle('providers:get', () => bus.request(TOPICS.PROVIDERS_GET));
+    ipc.handle('providers:set', (p) => bus.request(TOPICS.PROVIDERS_SET, {
+      prefer: p?.prefer ? pair(p.prefer) : undefined,
+      allow: p?.allow ? { ...pair(p.allow), on: !!p.allow.on } : undefined,
+    }));
+  }
+
   /** The last .tama file the user picked; import only ever reads this path, never one sent by a page. */
   let pickedImport = /** @type {string | null} */ (null);
 
@@ -148,7 +158,7 @@ function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster
     });
   }
 
-  usageIpc(); telegramIpc(); googleIpc(); eventsIpc(); weatherIpc(); onboardingIpc(); rosterIpc();
+  usageIpc(); telegramIpc(); googleIpc(); eventsIpc(); weatherIpc(); onboardingIpc(); rosterIpc(); providersIpc();
 }
 
 module.exports = { wirePageIpc };

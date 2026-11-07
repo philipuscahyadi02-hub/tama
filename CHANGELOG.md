@@ -15,6 +15,9 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = M12 shipping (D-056, refines "all P0 done"); 2.0.0 = Tama's own agentic brain.
 
 ## [Unreleased]
+### Added
+- **M12 Shipping → v1.0.0** (branch `m12-shipping`):
+  - **Provider layer** (SHIP-8, D-054, D-057): chat, her moments, designing looks and the terminal each use whichever brain you have. New **Settings → 🧠 Brains** shows who does what and lets you pick. If Gemini (Antigravity) isn't installed, you can let **Claude** chat with you instead (Claude Haiku, uses your Claude quota, no web search or Google tools); she then knows and says what she can do.
 ### Docs
 - **Version plan (D-056):** M12 shipping becomes **v1.0.0**. **v2** is planned: Tama's own agentic brain on official model APIs with your own keys or local models, so she no longer depends on one provider (AGT-1..6).
 - Planned the **provider layer** for M12 (SHIP-8, D-054): features ask for a capability (chat, coding, structured output…) and Tama picks Claude Code or agy from your preference, falling back to whichever is installed.

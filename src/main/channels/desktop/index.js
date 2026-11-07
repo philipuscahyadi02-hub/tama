@@ -54,6 +54,7 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     bus.on(TOPICS.UI_PREFS_CHANGED, (p) => toAll('ui.prefs', p));
     bus.on(TOPICS.GOOGLE_CHANGED, (p) => { toAll('google', p); for (const w of pageWindows()) ipc.sendUi(w, 'google', p); });
     bus.on(TOPICS.TELEGRAM_CHANGED, (p) => toAll('telegram', p));
+    bus.on(TOPICS.PROVIDERS_CHANGED, (p) => { for (const w of pageWindows()) ipc.sendUi(w, 'providers', p); });
     bus.on(TOPICS.USAGE_CHANGED, (p) => { for (const w of pageWindows()) ipc.sendUi(w, 'usage', p); });
   }
 

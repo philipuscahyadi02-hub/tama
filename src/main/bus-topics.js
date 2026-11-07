@@ -178,6 +178,12 @@ const TOPICS = {
   DIARY_READ: 'diary.read',
   /** { kind: 'line'|'diary', seed } → string | null — in-character text from the chat brain (EVT-3) */
   BRAIN_COMPOSE: 'brain.compose',
+  /** void → { providers, caps: { chat|compose|json|code: { using, options } }, allow } — who serves what (SHIP-8, D-054) */
+  PROVIDERS_GET: 'providers.get',
+  /** { prefer?: { cap, id }, allow?: { cap, id, on } } → same as providers.get */
+  PROVIDERS_SET: 'providers.set',
+  /** event: same payload as providers.get, after a change (the brain restarts the affected sessions) */
+  PROVIDERS_CHANGED: 'providers.changed',
   /** { role: 'user'|'tama'|'note', text } → void — add a line to the chat history (events) */
   CHAT_PUSH: 'chat.push',
   /** { id, choice?: number, dismiss?: boolean } → { ok, reply? } | { error } */

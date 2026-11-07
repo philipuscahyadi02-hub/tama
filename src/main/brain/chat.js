@@ -1,6 +1,7 @@
 // @ts-check
 // Chat with your Tama (CHAT-1, D-029): the chat window, the pet bubble and (M7) Telegram talk to this.
-// agy only: Gemini Flash in read-only plan mode (D-027), with web search. No Claude tokens, no fallback.
+// The `chat` provider (SHIP-8): agy by default (Gemini Flash, read-only plan mode, D-027, with web search); Claude Haiku
+// without tools only when the user opted in. The brain passes the factory; this module doesn't know which one it is.
 const fs = require('fs');
 const { TOPICS } = require('../bus-topics');
 const persona = require('./persona');
@@ -131,7 +132,7 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
     if (!text) return { ok: false };
     push({ role: 'user', text, at: now() });
     if (!available()) {
-      push({ role: 'note', text: 'Chat needs the Antigravity CLI (agy). Install it and log in once, then restart Tama. Coding work still works in the terminal (Ctrl+Alt+K).', at: now() });
+      push({ role: 'note', text: 'Chat needs Gemini (the Antigravity CLI, agy): install it and log in once, then restart Tama. Or let Claude chat instead: Settings → Brains (uses your Claude quota). Coding work still works in the terminal (Ctrl+Alt+K).', at: now() });
       out({ t: 'done', isError: true });
       return { ok: false, error: 'agy-missing' };
     }

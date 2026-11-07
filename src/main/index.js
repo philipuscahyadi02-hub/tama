@@ -28,7 +28,8 @@ const { createUsageLog } = require('./services/usage');
 const { createAccounts } = require('./services/accounts');
 const engineAccounts = require('./engines/accounts');
 const { createLimits } = require('./services/usage/limits');
-const { fetchClaudeLimits, askJson, ClaudeCodeEngine, CLAUDE_EXE } = require('./engines/claude');
+const { fetchClaudeLimits, claudeProvider } = require('./engines/claude');
+const { createProviders } = require('./providers');
 const { createVoice } = require('./services/voice');
 const { createVvEngines } = require('./services/voice/vv-engine');
 const sapi = require('./platform/tts-sapi');
@@ -49,7 +50,7 @@ const { openPage, openPages } = require('./platform/windows/page-window');
 const { createPetService } = require('./services/pet');
 const { createBrain } = require('./brain');
 const { createPermissionGate } = require('./brain/permission-gate');
-const { AgyEngine, CHAT_ALLOW, DENY_ALL, findAgyExecutable } = require('./engines/agy');
+const { agyProvider } = require('./engines/agy');
 const pathMod = require('path');
 // M5 extras (D-035): weather, fullscreen do-not-disturb, "out for a walk" marker.
 const { createWeather } = require('./services/weather');
@@ -117,22 +118,16 @@ function boot() {
     name: 'tama', command: process.execPath, args: [relay],
     env: [{ name: 'ELECTRON_RUN_AS_NODE', value: '1' }, { name: 'TAMA_BRIDGE_URL', value: bridge.url }, { name: 'TAMA_BRIDGE_KEY', value: bridge.key }],
   }] : []);
-  const brain = createBrain({
-    bus, device, gate, git, scratchDir: pathMod.join(appShell.paths.data(), 'agy-workspace'),
-    available: { claude: !!CLAUDE_EXE, agy: !!findAgyExecutable() },
-    factories: {
-      claudeWorker: (emit) => new ClaudeCodeEngine(emit, { role: 'worker', gate, tamaName: active.name, mcp: () => google.mcpServers() }),
-      // agy always runs in read-only PLAN mode (verified: no commands, no file writes; npm run probe:agy, D-027).
-      // Hard lock (D-037): a PreToolUse hook in the session folder denies every tool except Tama's own + web search.
-      agyChat: (emit, persona) => new AgyEngine(emit, {
-        role: 'lite', gate, persona, model: 'gemini-3.8-flash-low', thoughtLevel: 'low', mode: 'plan', lockMode: true, mcpServers: chatMcp, guard: CHAT_ALLOW,
-      }),
-      // Events + diary text: no tools at all.
-      agyCompose: (emit, persona) => new AgyEngine(emit, {
-        role: 'lite', gate, persona, model: 'gemini-3.8-flash-low', thoughtLevel: 'low', mode: 'plan', lockMode: true, guard: DENY_ALL,
-      }),
-    },
+  // Provider layer (SHIP-8, D-054): who serves chat, moments, structured output and coding. agy always runs in
+  // read-only plan mode with the workspace guard (D-027, D-037); Claude chats only when the user opted in.
+  const providers = createProviders({
+    bus, device, providers: [
+      claudeProvider({ gate, tamaName: active.name, mcp: () => google.mcpServers() }),
+      agyProvider({ gate, mcpServers: chatMcp }),
+    ],
   });
+  stoppers.push(providers.start());
+  const brain = createBrain({ bus, device, gate, git, providers, scratchDir: pathMod.join(appShell.paths.data(), 'agy-workspace') });
 
   // ---- windows ----
   const win = device.get().windows || {};
@@ -150,7 +145,8 @@ function boot() {
   bus.handle(TOPICS.SUMMON, (/** @type {{reason?: string}} */ p) => summon((p && p.reason) || 'bus'));
 
   // ---- channels ----
-  // Designer: Claude Haiku with tools disabled, keyword fallback (D-021). Moves to the M3 lite brain.
+  // Designer: the `json` provider (Claude Haiku, tools disabled, D-021), keyword fallback when there is none.
+  const askJson = (/** @type {any} */ req) => { const p = providers.pick('json'); return p && p.json ? p.json(req) : Promise.reject(new Error('no provider for structured output')); };
   stoppers.push(createDesigner({ bus, askJson: process.env.TAMA_OFFLINE_DESIGNER ? null : askJson, log: debug }).start());
   const openOnboarding = (/** @type {string} */ mode) =>
     openPage('onboarding/onboarding.html', { width: 940, height: 700, title: 'Hatch your Tama', query: { mode } });

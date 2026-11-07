@@ -32,7 +32,7 @@ past decisions → `docs/DECISIONS.md`.
 3. **Renderers are dumb views.** No business logic, no Node, no direct storage. They render state they receive and send intents.
 4. **Everything crosses modules via the bus** or a module's public `index.js`. No deep imports into another module's internals.
 5. **New bus topic → declare it in `src/main/bus-topics.js` first** (name + JSDoc payload).
-6. **Engines implement the Engine contract** (ARCHITECTURE §5). No engine-specific `if (engine === 'agy')` outside `engines/`.
+6. **Engines implement the Engine contract** (ARCHITECTURE §5). No engine-specific `if (engine === 'agy')` outside `engines/`. Features ask the provider layer for a capability (`providers.pick('chat')`), never for a named engine (D-054).
 7. **Every tool approval goes through `brain/PermissionGate`.** No engine, channel or tool may auto-approve. Bond level never affects permissions.
 8. **Persistence only via `platform/store`**: atomic writes, `schemaVersion` on every file, and a migration for any shape change. Never break an existing user's save.
 9. **Secrets only via `platform/secrets`**: never in JSON, logs, errors, exports (unless password-encrypted), or commit history.

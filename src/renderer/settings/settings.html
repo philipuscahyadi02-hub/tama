@@ -16,6 +16,7 @@
       <button data-tab="quiet">🌙 Quiet &amp; moments</button>
       <button data-tab="phone">📱 Phone</button>
       <button data-tab="google">🔗 Google</button>
+      <button data-tab="brains">🧠 Brains</button>
       <button data-tab="accounts">📊 Accounts &amp; usage</button>
     </nav>
     <main>
@@ -83,6 +84,15 @@
       </section>
 
       <!-- Accounts & usage -->
+      <section data-pane="brains" hidden>
+        <div class="card"><h3>Who does what</h3>
+          <p class="kv dim">Tama uses what you have installed. Pick who you'd like first; if it isn't set up, she uses the next one.</p>
+          <div id="brainRows"></div></div>
+        <div class="card"><h3>Claude for chat and moments</h3>
+          <p class="kv dim">Normally she talks with Gemini (Antigravity), which doesn't use your Claude quota. Turn these on to let Claude Haiku talk when Gemini isn't there, or when you pick Claude above. Claude chat has no web search or Google tools.</p>
+          <label class="set"><span>Let Claude chat with you</span><input type="checkbox" id="allowChat" /></label>
+          <label class="set"><span>Let Claude write her moments and diary</span><input type="checkbox" id="allowCompose" /></label></div>
+      </section>
       <section data-pane="accounts" hidden>
         <div class="card"><h3>Claude daily budget</h3>
           <div class="set"><span>Warn at $<input id="budget" type="number" min="0" max="1000" step="1" class="num" /> a day (API-price estimate)</span><button id="budgetSave">Save</button></div></div>

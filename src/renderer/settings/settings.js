@@ -120,6 +120,38 @@ $('#logs').addEventListener('click', () => K.openLogs());
 async function renderBrain() { const b = await K.brain.status().catch(() => null); if (b) $('#budget').value = String(b.dailyClaudeUsd ?? ''); }
 $('#budgetSave').addEventListener('click', async () => { saved(await K.brain.set({ dailyClaudeUsd: Number($('#budget').value) })); renderBrain(); });
 
+// ---- brains (SHIP-8, D-054) ----
+const CAP_LABELS = { chat: 'Chat with her', compose: 'Her moments and diary', json: 'Designing new looks', code: 'Terminal (coding)' };
+const CAP_NONE = {
+  chat: 'nothing set up: install Antigravity (agy), or let Claude chat below',
+  compose: 'nothing set up: she uses her built-in lines',
+  json: 'nothing set up: designs come from keywords',
+  code: 'nothing set up: install Claude Code',
+};
+function renderBrains(st) {
+  if (!st) return;
+  const rows = Object.entries(CAP_LABELS).map(([cap, label]) => {
+    const c = st.caps[cap];
+    const opts = c.options.map((o) => `<option value="${esc(o.id)}"${o.id === (c.options[0] && c.options[0].id) ? ' selected' : ''}>${esc(o.name)}${o.available ? '' : ' (not installed)'}${o.optIn && !o.allowed ? ' (off below)' : ''}</option>`).join('');
+    const using = c.using ? `using ${esc((c.options.find((o) => o.id === c.using) || {}).name || c.using)}` : esc(CAP_NONE[cap]);
+    return `<div class="set"><span>${esc(label)}<br><small class="dim">${using}</small></span>`
+      + `${c.options.length > 1 ? `<select data-cap="${cap}">${opts}</select>` : `<span class="dim">${esc(c.options[0] ? c.options[0].name : '-')} only</span>`}</div>`;
+  });
+  $('#brainRows').innerHTML = rows.join('');
+  $$('#brainRows select').forEach((s) => s.addEventListener('change', async () => {
+    const cap = s.dataset.cap; const id = s.value;
+    const o = st.caps[cap].options.find((x) => x.id === id);
+    // Choosing Claude for chat or moments is the opt-in (it spends Claude quota).
+    if (o && o.optIn && !o.allowed) await K.providers.set({ allow: { cap, id, on: true } });
+    renderBrains(await K.providers.set({ prefer: { cap, id } }));
+    say('saved~ she will use it from her next message');
+  }));
+  $('#allowChat').checked = st.allow.includes('claude:chat');
+  $('#allowCompose').checked = st.allow.includes('claude:compose');
+}
+$('#allowChat').addEventListener('change', async (e) => { renderBrains(await K.providers.set({ allow: { cap: 'chat', id: 'claude', on: e.target.checked } })); saved({ ok: true }); });
+$('#allowCompose').addEventListener('change', async (e) => { renderBrains(await K.providers.set({ allow: { cap: 'compose', id: 'claude', on: e.target.checked } })); saved({ ok: true }); });
+
 // ---- her ----
 async function renderHer() {
   const ch = await K.getCharacter().catch(() => null);
@@ -143,6 +175,8 @@ async function init() {
   renderTg(await K.telegram.status().catch(() => null));
   renderGoogle(await K.google.status().catch(() => null));
   renderWeather(); renderBrain();
+  renderBrains(await K.providers.get().catch(() => null));
+  K.providers.onChange(renderBrains);
   K.ui.onPrefs(renderUi);
   K.voice.onChanged(() => K.voice.status().then(renderVoice));
   K.telegram.onChange(renderTg);

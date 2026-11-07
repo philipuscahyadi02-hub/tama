@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** Main → renderer messages arrive on one 'ui' channel as (name, payload). */
-const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram', 'usage', 'accounts', 'voice', 'encode', 'voice.changed']);
+const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram', 'usage', 'accounts', 'voice', 'encode', 'voice.changed', 'providers']);
 /** @type {Map<string, Set<(p: any) => void>>} */
 const subs = new Map();
 ipcRenderer.on('ui', (_e, name, payload) => {
@@ -186,6 +186,12 @@ contextBridge.exposeInMainWorld('tama', {
   brain: {
     status: () => ipcRenderer.invoke('brain:status'),
     set: (/** @type {any} */ p) => ipcRenderer.invoke('brain:set', p),
+  },
+  /** Settings → Brains (SHIP-8): which provider serves chat, moments, design and coding. */
+  providers: {
+    get: () => ipcRenderer.invoke('providers:get'),
+    set: (/** @type {any} */ p) => ipcRenderer.invoke('providers:set', p),
+    onChange: on('providers'),
   },
   prod: {
     get: () => ipcRenderer.invoke('prod:get'),

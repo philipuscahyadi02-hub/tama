@@ -107,6 +107,7 @@ src/main/
                            guard.js (PreToolUse hard lock), mcp-relay.js (stdio MCP → tool bridge) (D-037)
   platform/tool-bridge.js  localhost tool bridge for agent CLIs (random key per run) (D-037)
   brain/chat-tools.js      Google tools for the chat brain with Tama-side confirmations (D-037)
+  providers/               provider registry: capability → provider, preference + fallback + opt-in (M12, D-054, D-057)
   channels/desktop/        renderer IPC ↔ bus: index.js (pushes to windows, pet/voice/chat/terminal/productivity IPC),
                            pages.js (usage, Telegram, Google, events, weather, onboarding, My Tamas pages)
   dev/hooks.js             every dev-only TAMA_* switch (open windows, *_EVAL, voice test/trace, perf, quit-after), called once from the bootstrap
@@ -159,6 +160,7 @@ renderer  ──IPC──►  channels/desktop  ──►  bus  ◄──  servi
 - `services/*` may import: other services' **public `index.js`**, `bus`, `platform/store`. **Never** `electron`, never `engines/*` directly (they ask the brain via the bus).
 - `engines/*` may import: `platform/*`, `bus`, `brain/permission-gate` (type only). Never services, never channels.
 - `brain/*` may import `engines/*`, `platform/*`, `bus`. Services and channels reach the brain only via bus topics.
+- `providers/` imports only `bus-topics`; provider descriptors are built in `engines/<name>/provider.js` and handed in by the bootstrap.
 - `channels/*` translate between the outside world and bus messages. No business rules in channels.
 - `renderer/*` never imports Node; only `window.tama.*` from preload.
 - Only `platform/*` imports `electron`, `fs`, `child_process` for app data. (Engines may spawn their CLI.)
@@ -199,7 +201,12 @@ stop(): void
 // emits on bus 'engine.event' with { engine, sessionId, ev } where ev.t ∈
 // 'status'|'text-delta'|'text'|'tool'|'tool-result'|'permission'|'todo'|'result'|'error'|'session'
 ```
-- **Planned (M12, D-054):** a provider layer on top of this contract. Providers (Claude Code, agy) register capabilities (`chat`, `compose`, `json`, `code`, `tools`, `webSearch`) and status; the brain picks one per capability from the user's preference with fallback. Today the routing is fixed (D-029).
+- **Provider layer (M12, D-054, D-057):** `src/main/providers/` keeps a registry of providers, each declaring capabilities
+  (`chat`, `compose`, `json`, `code`), features (`webSearch`, `googleTools`), `available()` and engine factories. `pick(cap)`
+  walks the user's order (device.json `providers.order`, default = D-029: chat/compose → agy, json/code → Claude) and skips
+  providers that are missing or need an opt-in (`providers.allow`, e.g. `claude:chat`). Providers live next to their engine
+  (`engines/claude/provider.js`, `engines/agy/provider.js`) and are wired in the bootstrap; the brain and the designer only see
+  the registry. Bus: `providers.get`, `providers.set`, `providers.changed` (the brain rebuilds the persona and restarts chat).
 - **All tool approvals** go out as `ev.t = 'permission'` and come back through `brain/PermissionGate`. An engine must not auto-approve on its own.
 - `agy`: headless default is `always-proceed` — the engine **must** start it in a mode that requires approval (see DECISIONS).
 

@@ -7,6 +7,7 @@ const path = require('path');
 const persona = require('./persona');
 const budget = require('./budget');
 const { createBrain } = require('.');
+const { createProviders } = require('../providers');
 const { createPermissionGate } = require('./permission-gate');
 const { Bus } = require('../bus');
 const { createStore } = require('../platform/store');
@@ -81,8 +82,8 @@ function fakeEngine(emit, reply = (/** @type {string} */ t) => `ok: ${t}`, /** @
   };
 }
 
-/** @param {{ chatReply?: (t: string) => string, tool?: any, agy?: boolean }} [o] */
-function setupBrain({ chatReply = (t) => `hi! (${t.length})`, tool = null, agy = true } = {}) {
+/** @param {{ chatReply?: (t: string) => string, tool?: any, agy?: boolean, claude?: boolean, claudeChat?: boolean }} [o] */
+function setupBrain({ chatReply = (t) => `hi! (${t.length})`, tool = null, agy = true, claude = true, claudeChat = false } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tama-brain-'));
   const repo = path.join(dir, 'repo');
   fs.mkdirSync(path.join(repo, '.git'), { recursive: true });
@@ -95,18 +96,33 @@ function setupBrain({ chatReply = (t) => `hi! (${t.length})`, tool = null, agy =
   bus.on('engine.event', (e) => term.push(e));
   bus.on('chat.event', (e) => chat.push(e));
   bus.handle('character.get', () => ({ spec: normalizeSpec({ name: 'Mochi' }) }));
+  // SHIP-8: real provider registry with fake engines behind it.
+  const providers = createProviders({
+    bus, device, providers: [
+      {
+        id: 'claude', name: 'Claude Code', available: () => claude, optIn: ['chat', 'compose'], features: { webSearch: false, googleTools: false },
+        code: (emit) => (made.claude = fakeEngine(emit)),
+        chat: (emit, p) => { made.chat = fakeEngine(emit, chatReply, tool); made.chat.persona = p; made.chatBy = 'claude'; return made.chat; },
+        compose: (emit) => fakeEngine(emit),
+        json: async () => ({}),
+      },
+      {
+        id: 'agy', name: 'Gemini (Antigravity)', available: () => agy, features: { webSearch: true, googleTools: true },
+        chat: (emit, p) => { made.chat = fakeEngine(emit, chatReply, tool); made.chat.persona = p; made.chatBy = 'agy'; return made.chat; },
+        compose: (emit) => fakeEngine(emit),
+      },
+    ],
+  });
+  stoppers.push(providers.start());
+  if (claudeChat) providers.set({ allow: { cap: 'chat', id: 'claude', on: true } });
   const brain = createBrain({
     bus, device, gate, scratchDir: path.join(dir, 'scratch'),
     git: { isRepo: (d) => fs.existsSync(path.join(d, '.git')) },
-    available: { claude: true, agy },
-    factories: {
-      claudeWorker: (emit) => (made.claude = fakeEngine(emit)),
-      agyChat: (emit, p) => { made.chat = fakeEngine(emit, chatReply, tool); made.chat.persona = p; return made.chat; },
-    },
+    providers,
   });
   const stop = brain.start();
   stoppers.push(stop);
-  return { bus, brain, made, term, chat, repo, device };
+  return { bus, brain, made, term, chat, repo, device, providers };
 }
 /** @type {Array<() => void>} */
 const stoppers = [];
@@ -245,4 +261,43 @@ test('chat: a [[work: …]] marker is hidden and attached to the message (phone 
   const tama = chat.find((e) => e.t === 'message' && e.message.role === 'tama');
   assert.equal(tama.message.text, 'Sure, Claude can make that!');
   assert.equal(tama.message.work, 'Create a Google Doc titled Plan');
+});
+
+test('SHIP-8: with agy missing and "Claude for chat" on, chat runs on Claude and the persona says what it can do', async () => {
+  const { bus, made } = setupBrain({ agy: false, claudeChat: true });
+  await tick();
+  const r = await bus.request('chat.send', 'hello');
+  assert.equal(r.ok, true);
+  assert.equal(made.chatBy, 'claude');
+  assert.match(made.chat.persona, /powered by Claude Code \(Claude Haiku\)/);
+  assert.match(made.chat.persona, /cannot search the web/);
+  assert.match(made.chat.persona, /no Google tools in this setup/);
+  assert.doesNotMatch(made.chat.persona, /search_web/);
+  const st = await bus.request('brain.status');
+  assert.equal(st.chat, 'claude');
+  assert.equal(st.terminal, 'claude');
+});
+
+test('SHIP-8: switching the chat provider restarts the chat on the new one with a matching persona', async () => {
+  const { bus, made, providers } = setupBrain({ claudeChat: true });
+  await tick();
+  await bus.request('chat.send', 'one');
+  assert.equal(made.chatBy, 'agy');
+  assert.match(made.chat.persona, /Gemini via the Antigravity CLI/);
+  const first = made.chat;
+  await tick();
+  providers.set({ prefer: { cap: 'chat', id: 'claude' } });
+  await tick();
+  await bus.request('chat.send', 'two');
+  assert.notEqual(made.chat, first);
+  assert.equal(made.chatBy, 'claude');
+  assert.match(made.chat.persona, /Claude Haiku/);
+});
+
+test('SHIP-8: without any coding provider the terminal explains instead of failing', async () => {
+  const { bus, term, repo } = setupBrain({ claude: false });
+  await bus.request('engine.setCwd', repo);
+  await bus.request('engine.send', 'fix it');
+  assert.ok(term.some((e) => e.ev.t === 'info' && /Claude Code isn't available/.test(e.ev.text)));
+  assert.equal((await bus.request('brain.status')).terminal, null);
 });

@@ -86,6 +86,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-054 | M12 provider layer: features ask for capabilities, providers register what they can do, per-capability preference with fallback; D-029's split stays the default | Accepted · Refines D-029 (routing becomes a default, not a hard-wire) |
 | D-055 | Security pass: no navigation, new windows or browser permissions; every IPC input coerced; more secret patterns redacted; Maps and [google] context marked untrusted | Accepted |
 | D-056 | M12 shipping = v1.0.0; v2 = Tama's own agentic brain over official model APIs (own keys or local models), not a single provider's SDK | Accepted · Refines D-015 (what 1.0.0 means) |
+| D-057 | Provider layer built: registry + per-engine descriptors; Claude chats as Haiku without tools, only after an opt-in (choosing it counts); Settings → Brains | Accepted · Implements D-054 |
 
 ---
 
@@ -774,3 +775,17 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Keep depending on the Claude Agent SDK for coding (the user wants independence); use subscription tokens from the CLIs in Tama's own loop (violates D-006 and the providers' terms).
 - **Consequences:** v2 costs the user per-token API usage (or local compute) instead of a flat subscription; the dashboard (USE-*) must show that clearly. Local models (D-003 had declined Ollama for v1) get a fresh decision in v2. The safety work done for agy (guard hooks, probes) is redone for Tama's own loop (AGT-6).
 - **Refs:** SHIP-8, AGT-1..6, D-003, D-006, D-015, D-029, D-054
+
+### D-057 — Provider layer built: registry, descriptors, Claude chat opt-in, Settings → Brains
+- **Date:** 2026-11-07 · **Status:** Accepted · Implements D-054 (first part of SHIP-8)
+- **Context:** M12 starts with the provider layer (D-054, D-056). Choices made while building it.
+- **Decision:**
+  - `src/main/providers/index.js`: capabilities `chat`, `compose`, `json`, `code`; `pick(cap)` = first provider in the user's order (then the D-029 default, then any other) that offers the capability, is available, and, for an opt-in capability, was allowed. A throwing `available()` counts as unavailable. Preferences in device.json `providers` (`order`, `allow`); `providers.changed` makes the brain rebuild the persona and restart the chat and composer sessions.
+  - Descriptors live next to their engines: `claudeProvider` (code = the worker session with Google MCP tools; json = `askJson`; chat/compose = the existing `lite` profile: Haiku, `tools: []`, no user settings, not saved, and PermissionGate denies every tool to non-worker roles) and `agyProvider` (chat with web search and the Google MCP relay, compose with no tools; always plan mode + guard, D-027/D-037). agy is looked up once per run, as before.
+  - **Claude for chat/moments is opt-in per capability** (`claude:chat`, `claude:compose`). Picking Claude in Settings → Brains counts as the opt-in; the checkboxes there turn it on or off. Claude chat has no web search or Google tools, and the persona says so (`buildPersona` `provider` option: who powers her, web search yes/no, Google tools yes/no).
+  - The terminal still always shows Claude's state: without a `code` provider it explains how to add Claude Code instead of failing.
+  - Usage records name the provider that actually served the turn, so a Claude chat counts toward the daily Claude budget.
+- **Verified live (2026-11-07):** default chat answered via agy ("powered by Google's Gemini models via the Antigravity CLI"); with `claude:chat` allowed and preferred it answered via Claude Haiku ("powered by Claude Code running Claude Haiku") and logged a Claude turn.
+- **Alternatives:** A global "Claude fallback" switch (less control; moments and chat have different costs); giving Claude chat Tama's Google tools now (needs the chat-tools confirmations wired into the Claude lite profile; later in SHIP-8 or v2).
+- **Consequences:** New providers (v2's own agent, D-056) are one descriptor each. Still to do for SHIP-8: usage limits and the accounts page driven by the registry, and a shared contract test every provider must pass.
+- **Refs:** SHIP-8, D-027, D-029, D-037, D-054, D-056, src/main/providers, src/main/engines/{claude,agy}/provider.js, src/main/brain/{index,persona,chat}.js, src/renderer/settings
