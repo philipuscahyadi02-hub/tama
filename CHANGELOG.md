@@ -220,8 +220,13 @@ _Nothing yet._
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
+_No commits._
+
+### v0.10.0
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `6868507` | 2026-11-07 | chore(release) | 0.10.0 |
+| `fe2025c` | 2026-11-07 | feat(app) | window rescue, crash log and renderer reload; plan M11 QC and M12 installers (D-050, D-051) |
 | `e1dcc8a` | 2026-11-07 | feat(voice) | faster Japanese voice: dub rides with the reply, sentence-by-sentence playback, audio cache (D-049) |
 | `ae1fd06` | 2026-11-07 | feat(settings) | Settings window, reply language, quiet hours (D-048) |
 | `82cf1cb` | 2026-11-07 | docs(changelog) | regenerate commit table |
