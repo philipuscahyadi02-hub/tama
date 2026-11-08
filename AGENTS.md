@@ -80,7 +80,10 @@ past decisions → `docs/DECISIONS.md`.
 ## 6. Commands
 
 ```
-npm start          # run the app (dev)
+npm run setup      # first time: npm install + Electron download + npm run doctor
+npm run doctor     # check Node, Electron, Claude Code, agy, voice engines; prints next steps
+npm run dev        # run the app with the scratch data folder .dev-data/ (-- --fresh wipes it, -- --data <dir>)
+npm start          # run the app with the real data folder (%APPDATA%\Tama)
 npm run check      # tsc --checkJs + architecture check (scripts/arch-check.js) + node --test
 npm run arch       # architecture report incl. files over ~300 lines
 npm run coverage   # line coverage per layer, files under 80 % and files no test loads (node:test, no extra dependency)

@@ -28,9 +28,11 @@ Gmail, Calendar and Drive, and talks to you on Telegram. No server: everything r
 Tama uses each tool's own official sign-in; it never reads or reuses their tokens (D-006).
 
 ## Run
+Download the installer (`Tama-Setup-<version>.exe`) from [Releases](https://github.com/philipuscahyadi02-hub/tama/releases),
+or run from source:
 ```
-npm install          # if Electron didn't download: node node_modules/electron/install.js
-npm start
+npm run setup        # npm install + Electron download + a check of what's installed (npm run doctor)
+npm start            # your real Tama (data in %APPDATA%\Tama)
 ```
 Hotkeys: **Ctrl+Alt+P** bring her here · **Ctrl+Alt+J** chat · **Ctrl+Alt+K** terminal. Tray icon → Settings.
 Data: `%APPDATA%\Tama` (a kero-pet save is imported on first run).
@@ -39,7 +41,10 @@ macOS: run from source with `npm start`. A signed installer for Windows and a ma
 (see [PRD §4.3d](docs/PRD.md)). Builds are unsigned, so Windows shows "unknown publisher".
 
 ## Develop
+New here? Start with **[CONTRIBUTING.md](CONTRIBUTING.md)**: first run, project tour, workflow and releases.
 ```
+npm run dev          # a dev run with a scratch data folder (.dev-data/); -- --fresh for a brand-new first run
+npm run doctor       # what's installed and what to do next
 npm run check        # types + architecture rules + tests
 npm run coverage     # line coverage per layer
 npm run perf         # idle CPU / memory

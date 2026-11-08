@@ -11,3 +11,6 @@ secrets.bin
 
 # Office lock files
 ~$*
+
+# Dev runs (npm run dev)
+.dev-data/
