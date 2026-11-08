@@ -92,6 +92,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-060 | v2 positioning: "the work buddy who grows when you ship"; USP-1..6 (work → bond loop, day plan + stand-up, undo, shareable character, body-doubling, voice input) join the v2 roadmap | Accepted |
 | D-061 | 1.x "Voice & hands": push-to-talk Ctrl+Alt+Space, local Whisper, safe PC actions (play music, media keys, open URL/app); API-key models (AGT-2) deferred for cost | Accepted (plan) |
 | D-062 | No-subscription Tama: AI-free voice commands (VH-5), optional local brain via Ollama (VH-6), optional Gemini free-tier key off by default (VH-7) | Accepted (plan) · Revisits D-003 (Ollama) for the no-subscription case |
+| D-063 | Mute for 5 minutes stops the Japanese voice engine; unmute starts and warms it again; starting muted doesn't start it | Accepted · Refines D-044 |
 
 ---
 
@@ -850,3 +851,11 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** No free mode (Tama without subscriptions stays a pet only); a cloud free tier as the default (privacy note, rate limits, and API keys were just deferred in D-061).
 - **Consequences:** The provider layer gains a third provider; the local model must pass the same safety probes as the others before it may use the VH-3 actions (AGT-6). Model downloads follow SHIP-5 (on demand, with checksums).
 - **Refs:** VH-1..7, SHIP-4, SHIP-5, SHIP-8, AGT-6, D-003, D-054, D-061
+
+### D-063 — Muted for 5 minutes stops the Japanese voice engine
+- **Date:** 2026-11-08 · **Status:** Accepted · Refines D-044 (the engine ran whenever Japanese dub was on)
+- **Context:** The user asked whether the voice engine is always running and whether mute makes it inactive. It did not: mute only silenced her, and AivisSpeech/VOICEVOX kept about 0.7 GB RAM + 1.1 GB GPU memory while Japanese dub was selected. The user chose to stop it after 5 minutes muted.
+- **Decision:** `services/voice` follows `ui.prefs.changed` `mute`. After 5 minutes muted, the engine Tama started is stopped (as if the language were English); a shorter mute keeps it ready. Unmuting starts it and warms it again; lines in the meantime use the English voice (as during any engine start). Starting the app already muted doesn't start the engine. Engines Tama didn't start and preview leases are unchanged. DND, quiet hours, focus and sleep don't stop it (they are usually short).
+- **Alternatives:** Stop at once on mute (a quick mute/unmute would cost a 30–40 s restart); keep it running (the memory cost the user asked about).
+- **Consequences:** After a long mute, her first Japanese line comes back about 30–40 s after unmuting.
+- **Refs:** VOICE-1, PET-8, D-044, src/main/services/voice/index.js

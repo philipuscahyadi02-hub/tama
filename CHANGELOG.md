@@ -15,6 +15,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = first stable release (D-058); the rest of M12 ships as 1.x; 2.0.0 = Tama's own agentic brain.
 
 ## [Unreleased]
+### Changed
+- **Mute frees the Japanese voice engine:** after 5 minutes muted, AivisSpeech/VOICEVOX is stopped (about 0.7 GB RAM + 1.1 GB GPU memory back); unmuting starts it again. Starting Tama muted doesn't start it (D-063).
 ### Fixed
 - **Her voice played moments twice:** a moment line (and her reply when you answer one) was spoken once when shown and again when it was copied into the chat. Now it is spoken once.
 ### Docs
@@ -253,6 +255,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `066a798` | 2026-11-08 | docs(changelog) | regenerate commit table |
 | `8a1ab1a` | 2026-11-08 | fix(voice) | speak moments once (the chat copy is quiet); plan AI-free voice commands and an optional local brain (D-062) |
 | `efb5f53` | 2026-11-08 | docs(changelog) | regenerate commit table |
 | `46df819` | 2026-11-08 | docs(prd) | plan 1.x Voice & hands (VH-1..4); defer API-key models (D-061) |

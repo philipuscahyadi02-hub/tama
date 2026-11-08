@@ -60,8 +60,8 @@ function fakeFetch(calls, up = { aivis: true, voicevox: false }) {
   });
 }
 
-/** @param {any} [ui] @param {{ up?: any, translate?: string | null, procs?: any }} [o] */
-function setup(ui = {}, { up = { aivis: true, voicevox: false }, translate = 'happy | おはよう！', procs = {} } = {}) {
+/** @param {any} [ui] @param {{ up?: any, translate?: string | null, procs?: any, now?: () => number }} [o] */
+function setup(ui = {}, { up = { aivis: true, voicevox: false }, translate = 'happy | おはよう！', procs = {}, now = undefined } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tama-voice-'));
   const bus = new Bus();
   const device = createDeviceSettings(createStore(dir));
@@ -78,7 +78,7 @@ function setup(ui = {}, { up = { aivis: true, voicevox: false }, translate = 'ha
   bus.handle('brain.compose', (p) => { composed.push(p); return translate; });
   /** @type {string[]} */ const notices = [];
   bus.on('brain.notice', (n) => notices.push(n.text));
-  const voice = createVoice({ bus, device, sapi, vv: createVvEngines({ fetch: fakeFetch(calls, up) }), tamaId: 't1', procs, wait: () => new Promise((r) => setTimeout(r, 5)) });
+  const voice = createVoice({ bus, device, sapi, vv: createVvEngines({ fetch: fakeFetch(calls, up) }), tamaId: 't1', procs, now, wait: () => new Promise((r) => setTimeout(r, 5)) });
   const lastBody = () => JSON.parse(String([...calls].reverse().find((c) => c.startsWith('{'))));
   return { bus, voice, calls, sapiCalls, played, device, composed, notices, up, lastBody };
 }
@@ -205,6 +205,41 @@ test('voice engines: Japanese dub starts the chosen voice\'s engine; others run 
   assert.ok(!log.includes('stop voicevox')); // still leased
   stop();
   assert.ok(log.includes('stop voicevox')); // quitting stops everything Tama started
+});
+
+test('voice engines: muted for 5 minutes stops the Japanese engine; unmuting starts it again; starting muted waits', async () => {
+  /** @type {string[]} */ const log = [];
+  /** @type {Record<string, boolean>} */ const up = { aivis: false, voicevox: false };
+  let mine = false;
+  const aivis = { start: () => { log.push('start'); mine = true; setTimeout(() => { up.aivis = true; }, 5); return { ok: true }; },
+    stop: () => { if (mine) { log.push('stop'); mine = false; up.aivis = false; } }, find: () => 'run.exe', owned: () => mine };
+  let t = 1_000_000;
+  const s = setup({}, { up, procs: { aivis }, now: () => t });
+  s.device.patch('voice', { lang: 'ja' });
+  const stop = s.voice.start();
+  await new Promise((r) => setTimeout(r, 60));
+  assert.deepEqual(log, ['start']);
+  s.bus.emit('ui.prefs.changed', { mute: true });
+  t += 4 * 60000;
+  await s.voice.syncEngines();
+  assert.deepEqual(log, ['start']); // a short mute keeps it ready
+  t += 60000;
+  await s.voice.syncEngines();
+  assert.deepEqual(log, ['start', 'stop']);
+  s.bus.emit('ui.prefs.changed', { mute: false });
+  await new Promise((r) => setTimeout(r, 60));
+  assert.deepEqual(log, ['start', 'stop', 'start']);
+  stop();
+
+  const log2 = /** @type {string[]} */ ([]);
+  let mine2 = false;
+  const aivis2 = { start: () => { log2.push('start'); mine2 = true; return { ok: true }; }, stop: () => { if (mine2) { log2.push('stop'); mine2 = false; } }, find: () => 'run.exe', owned: () => mine2 };
+  const s2 = setup({ mute: true }, { up: { aivis: false, voicevox: false }, procs: { aivis: aivis2 } });
+  s2.device.patch('voice', { lang: 'ja' });
+  const stop2 = s2.voice.start();
+  await new Promise((r) => setTimeout(r, 40));
+  assert.deepEqual(log2, []); // started muted: the engine waits
+  stop2();
 });
 
 test('names: English labels for characters and styles; kana names are romanized when unknown', () => {

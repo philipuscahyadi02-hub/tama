@@ -6,7 +6,7 @@
 //   'off' - no voice on the desktop.
 // Each Tama has her own voice pick (engine + character + base style) and tuning (pitch, speed, intonation).
 // Speaks chat replies and event lines on the desktop (not chats from the phone), stays quiet when muted, in /dnd,
-// in a focus session or while she sleeps.
+// in a focus session or while she sleeps. Muted for 5 minutes, the Japanese engine is stopped until unmute.
 const { TOPICS } = require('../../bus-topics');
 const { MOODS, detectMood, styleFor, prosodyFor } = require('./emotion');
 const { createEngineManager } = require('./engines');
@@ -15,6 +15,8 @@ const { speakable, JAPANESE, createDubs } = require('./text');
 
 const DETECT_MS = 5 * 60000;
 const SYNC_MS = 60000;
+// Muted this long: stop the Japanese engine (about 0.7 GB RAM + 1.1 GB GPU); unmuting starts and warms it again.
+const MUTE_STOP_MS = 5 * 60000;
 const LANGS = ['en', 'ja', 'off'];
 const SAMPLE = 'こんにちは！今日もいっしょにがんばろうね。';
 
@@ -26,10 +28,10 @@ const num = (v, lo, hi, d) => (typeof v === 'number' && Number.isFinite(v) ? Mat
  *   bus: import('../../bus').BusInstance, device: import('../../platform/store/device').DeviceSettings,
  *   sapi: { synthesize: (text: string, o: any) => Promise<Buffer>, listVoices: () => Promise<any[]> },
  *   vv: ReturnType<typeof import('./vv-engine').createVvEngines>, tamaId: string,
- *   procs?: Record<string, import('./engines').EngineProc>, wait?: (ms: number) => Promise<void>,
+ *   procs?: Record<string, import('./engines').EngineProc>, wait?: (ms: number) => Promise<void>, now?: () => number,
  * }} deps
  */
-function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
+function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait, now = Date.now }) {
   const mgr = createEngineManager({ vv, procs, device, wait, onChange: () => bus.emit(TOPICS.VOICE_CHANGED, status()) });
   const prefs = () => {
     const p = { chat: true, events: true, gpu: true, moodStyles: true, pickByTama: /** @type {Record<string, any>} */ ({}),
@@ -219,11 +221,24 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
     };
   }
 
-  const needed = () => (prefs().lang === 'ja' ? (pick() || { engine: Object.keys(procs)[0] || null }).engine : null);
+  /** When mute was turned on (0 = muted since start), or null while not muted. @type {number | null} */
+  let mutedAt = null;
+  /** @type {NodeJS.Timeout | null} */ let muteTimer = null;
+  const mutedLong = () => mutedAt !== null && now() - mutedAt >= MUTE_STOP_MS;
+  /** @param {boolean} mute @param {boolean} [atStart] */
+  function onMute(mute, atStart) {
+    if (mute === (mutedAt !== null)) return;
+    if (muteTimer) { clearTimeout(muteTimer); muteTimer = null; }
+    mutedAt = mute ? (atStart ? 0 : now()) : null;
+    if (mute && !atStart) { muteTimer = setTimeout(() => { muteTimer = null; syncEngines().catch(() => null); }, MUTE_STOP_MS); muteTimer.unref?.(); }
+    if (!mute) syncEngines().catch(() => null); // unmuted: start and warm the engine again
+  }
+  const needed = () => (prefs().lang === 'ja' && !mutedLong() ? (pick() || { engine: Object.keys(procs)[0] || null }).engine : null);
   /** Start/stop engines for the current choice; warm the voice up so her first line isn't late. */
   async function syncEngines() {
     const id = needed();
     await mgr.sync(id);
+    if (!id) warmed.clear(); // stopped: warm it again when it comes back
     const who = pick();
     const engine = who && mgr.get(who.engine);
     if (engine && who && id === who.engine && !warmed.has(who.engine)) {
@@ -269,7 +284,9 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
   }
 
   function start() {
-    detect().then(() => syncEngines()).catch(() => null);
+    // Started while muted: the Japanese engine waits until she's unmuted.
+    bus.request(TOPICS.UI_PREFS_GET).catch(() => null).then((ui) => { if (ui && ui.mute) onMute(true, true); })
+      .then(() => detect()).then(() => syncEngines()).catch(() => null);
     const t1 = setInterval(() => { detect().catch(() => null); }, DETECT_MS);
     const t2 = setInterval(() => { syncEngines().catch(() => null); }, SYNC_MS); // ends preview leases
     const offs = [
@@ -280,6 +297,7 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
         if (ev.message.ja) remember(ev.message.text, ev.message.ja); // SET-4: no translation call (also reused for the phone copy)
         if (!fromPhone) say(ev.message.text, 'chat').then((r) => { if (!r.ok) bus.emit(TOPICS.VOICE_SKIPPED, { reason: r.reason }); }).catch(() => null);
       }),
+      bus.on(TOPICS.UI_PREFS_CHANGED, (/** @type {any} */ u) => { if (u && typeof u.mute === 'boolean') onMute(u.mute); }),
       bus.on(TOPICS.EVENT_SHOWN, (/** @type {any} */ e) => { if (e && e.text) say(e.text, 'event').catch(() => null); }),
       bus.handle(TOPICS.VOICE_SAY, (/** @type {any} */ p) => say(String((p && p.text) || ''), p && p.purpose === 'test' ? 'test' : 'chat')),
       bus.handle(TOPICS.VOICE_RENDER, async (/** @type {any} */ p) => {
@@ -292,7 +310,7 @@ function createVoice({ bus, device, sapi, vv, tamaId, procs = {}, wait }) {
       bus.handle(TOPICS.VOICE_PREVIEW, (/** @type {any} */ p) => preview(p || {})),
       bus.handle(TOPICS.VOICE_INFO, (/** @type {any} */ p) => info(p || {})),
     ];
-    return () => { clearInterval(t1); clearInterval(t2); for (const off of offs) off(); mgr.stopAll(); };
+    return () => { clearInterval(t1); clearInterval(t2); if (muteTimer) clearTimeout(muteTimer); for (const off of offs) off(); mgr.stopAll(); };
   }
 
   return { start, say, render, detect, status, set, preview, info, syncEngines };
