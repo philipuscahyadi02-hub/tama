@@ -96,6 +96,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-064 | Every open roadmap item parked (🅿): the to-do list starts from zero; M12 closed | Accepted · Parks D-051 (rest of M12), D-056, D-060, D-061, D-062 plans |
 | D-065 | M13 Music & DJ (1.1.0): Windows media session reader, Spotify Web API with the user's own app + PKCE, YouTube Music via the YouTube Data API + browser playback, widget, DJ Tama with loopback beat sync | Accepted (plan) · Partly superseded by D-066 (Spotify dropped, extension added) · Replaces VH-3/VH-5 music actions; amends D-055 when built |
 | D-066 | YouTube Music only; a Tama Companion browser extension (MV3, music.youtube.com only, paired over a 127.0.0.1 WebSocket) controls the player; the media session is the fallback | Accepted (plan) · Supersedes D-065 in part (Spotify, MUS-1 as the core) |
+| D-067 | YouTube Music inside a Tama window tested and rejected: Google blocks sign-in ("This browser or app may not be secure"); the extension stays | Accepted · Confirms D-066 |
 
 ---
 
@@ -912,3 +913,11 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
   - The WebSocket server is a new local listener and needs the same care as the tool bridge (D-037, D-055).
   - Beat sync (MUS-4) is unchanged.
 - **Refs:** MUS-1, MUS-2, MUS-5, MUS-6, MUS-10, D-006, D-036, D-037, D-055, D-065
+
+### D-067 — YouTube Music inside a Tama window: tested, Google blocks the sign-in
+- **Date:** 2026-11-26 · **Status:** Accepted · Confirms D-066
+- **Context:** While debugging the extension, the user asked whether Tama could run YouTube Music itself instead of reading it from Chrome. We ran a sign-in test: a Tama window on music.youtube.com in its own cookie partition, limited to YouTube Music and Google sign-in pages, identifying as the Chrome version it is built on.
+- **Decision:** Google refused the sign-in with "This browser or app may not be secure. Try using a different browser." Tama does not try to get around this check (that would mean disguising Tama to evade Google's security). The test code and its D-055 exception were removed, along with the test sign-in data. The Tama Companion extension in the user's own Chrome stays the way Tama reaches YouTube Music. For a player-like feel, Tama may later open YouTube Music as a Chrome app window (`--app=`), which uses the user's normal Chrome sign-in and works with the extension.
+- **Alternatives:** Disguising the window further to pass Google's check (evading a security control; not done); playing without signing in (no Premium, no library).
+- **Consequences:** No embedded YouTube Music player. Don't retry without a new decision.
+- **Refs:** MUS-10, D-055, D-066

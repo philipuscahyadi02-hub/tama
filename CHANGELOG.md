@@ -20,10 +20,15 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   - **Tama Companion browser extension** (`extension/`, Chrome and Edge): it reads the YouTube Music player (song, cover, position, volume, repeat, like, the Up next queue, lyrics) and runs Tama's controls. It pairs once with a code (`/music pair`), talks only to Tama on 127.0.0.1, and only runs on music.youtube.com (MUS-10).
   - **Without the extension,** Tama reads what plays from Windows' media controls: song, cover, play/pause, next, previous and seek (MUS-1).
   - **`/music`** in the terminal shows what's playing, controls it (`play`, `pause`, `next`, `prev`, `like`, `vol`, `seek`, `lyrics`, `open`), and shows how to install the extension (`/music install`, `/music folder`).
+- **YouTube Music, step 2: the music widget (MUS-2):**
+  - **Compact card:** a small card next to her while a song plays, in her colors: cover, title, artist, a progress bar you can click to jump, ⏮ ⏯ ⏭, 👍/👎, repeat, shuffle and volume.
+  - **Expanded card:** **Up next** (click a song to play it) and **Lyrics**.
+  - **Moving and hiding:** it walks with her. Drag it elsewhere and it stays there; 📌 brings it back beside her. ✕ hides it for this song. `/music widget` opens it by hand, and `/music widget off` stops it from popping up.
 ### Decisions
 - D-064 — Every open roadmap item parked (🅿): the to-do list starts from zero; M12 closed.
 - D-065 — M13 Music & DJ planned (1.1.0): now-playing for any player, Spotify (Premium, your own Spotify app) and YouTube Music (YouTube API + your browser), a music widget, DJ Tama on the real beat (MUS-1..9).
 - D-066 — YouTube Music only (Spotify dropped): a Tama Companion browser extension gives the widget the live Up next queue, shuffle/repeat, likes and lyrics; Windows media controls are the fallback (MUS-10).
+- D-067 — YouTube Music inside a Tama window was tested and rejected: Google blocks sign-in there. The browser extension stays.
 ### Added
 - **Easier onboarding for developers:** `CONTRIBUTING.md` (first run, project tour, workflow, build and release, troubleshooting); `npm run setup` (install + Electron download + checks); `npm run doctor` (Node, Electron, git, Claude Code, agy and voice engines, with the next step for each); `npm run dev` (runs with a scratch `.dev-data/` folder, never the real saves; `--fresh` for a first run); `.nvmrc` and `engines` pin Node 22+.
 ### Changed
@@ -266,6 +271,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `a8b9ee2` | 2026-11-26 | feat(music) | Tama Companion extension and media-session fallback (MUS-1, MUS-10) |
 | `22a6cb7` | 2026-11-26 | docs(prd) | park all open items; plan M13 YouTube Music & DJ (D-064..D-066) |
 | `47e1f8a` | 2026-11-08 | docs(onboarding) | add CONTRIBUTING.md and setup, doctor and dev scripts |
 | `64a6541` | 2026-11-08 | feat(voice) | stop the Japanese engine after 5 minutes muted, restart on unmute (D-063) |

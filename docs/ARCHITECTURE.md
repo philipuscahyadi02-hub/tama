@@ -148,6 +148,11 @@ src/renderer/marker/              the walk tab view (Tama's face; click = summon
 src/main/services/music/          M13 YouTube Music (D-065, D-066): logic.js (pure: control validation, untrusted extension state rebuilt
                                   field by field, change detection) + index.js (extension pairing + link, media-session fallback poll,
                                   controls routed to whichever source has the song)
+src/main/music-wiring.js          wires the music service, the media-session helper and the widget (keeps index.js short)
+src/main/platform/windows/music-window.js  MUS-2 widget window: beside the pet (geometry.widgetPosition), follows her unless
+                                  dragged ("pinned"), auto-shows while playing (ui pref musicWidget auto|off), compact/expanded
+src/main/platform/windows/music-rules.js   pure show/hide rules for the widget (unit-tested)
+src/renderer/music/               the widget view: cover, progress/seek, controls, Up next, Lyrics (text only via textContent)
 src/main/platform/ws-server.js    minimal RFC 6455 WebSocket server on 127.0.0.1:47821–47825 for the extension (origin check first)
 src/main/platform/media-session.js Windows media session (SMTC) via a tiny C# helper compiled once with the built-in csc.exe
                                   (cached in <data>/bin), line protocol: now / art / cmd (D-066)

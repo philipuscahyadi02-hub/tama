@@ -89,6 +89,7 @@ function createMusic({ bus, secrets, media, startWs, openExternal = () => null, 
         if (!m || m.t !== 'hello') { c.close(1008); return; }
         clearTimeout(helloTimer);
         const r = hello(c, m);
+        log(`[music] hello from the extension (${m.key ? 'key' : m.code ? 'code' : 'nothing'}) → ${r.t}`);
         c.send(r);
         if (r.t === 'welcome' || r.t === 'paired') {
           authed = true;
@@ -102,6 +103,7 @@ function createMusic({ bus, secrets, media, startWs, openExternal = () => null, 
       if (m.t === 'state') {
         extTabs = Math.max(0, Math.min(99, Number(m.tabs) || 0));
         extState = L.cleanExtState(m.state, now());
+        if (!extState) log(`[music] extension: ${extTabs} YouTube Music tab(s), no song${m.state ? ' (could not read the page)' : ''}`);
         emitIfChanged();
         schedulePoll(0);
       } else if (m.t === 'result') {
@@ -208,7 +210,7 @@ function createMusic({ bus, secrets, media, startWs, openExternal = () => null, 
 
   function start() {
     /** @type {{ close: () => void } | null} */ let server = null;
-    startWs({ ports: PORTS, verifyOrigin: (o) => EXT_ORIGIN.test(o), onConnection, onError: (m) => err('music.ws', m) })
+    startWs({ ports: PORTS, verifyOrigin: (o) => { const ok = EXT_ORIGIN.test(o); if (!ok) log(`[music] refused a connection from ${o.slice(0, 60) || 'no origin'}`); return ok; }, onConnection, onError: (m) => err('music.ws', m) })
       .then((s) => { if (stopped) s.close(); else { server = s; port = s.port; log(`[music] listening on 127.0.0.1:${s.port}`); } })
       .catch((e) => err('music.ws', e));
     schedulePoll(1500);

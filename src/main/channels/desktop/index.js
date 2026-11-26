@@ -27,10 +27,11 @@ const USER_ACTIONS = new Set(['feed', 'snack', 'play', 'clean', 'sleep', 'nap', 
  *   openSetup?: () => unknown,
  *   autostart?: { supported: () => boolean, get: () => boolean, set: (on: boolean) => any },
  *   pages?: () => Array<import('electron').BrowserWindow>,
+ *   music?: import('../../platform/windows/music-window').MusicWindow,
  * }} deps
  */
-function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings = () => null, openSetup = () => null, autostart = undefined, pages }) {
-  const both = () => [pet.win, term.window(), chat.window()];
+function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings = () => null, openSetup = () => null, autostart = undefined, pages, music }) {
+  const both = () => [pet.win, term.window(), chat.window(), ...(music && music.window() ? [/** @type {import('electron').BrowserWindow} */ (music.window())] : [])];
   /** Framed pages (Google setup) that also want live status. */
   const pageWindows = () => (pages ? pages() : []);
   /** Fire-and-forget request; failures surface on app.error instead of becoming unhandled rejections. @param {string} topic @param {any} [payload] */
@@ -141,6 +142,14 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.on('chat:clear', () => fire(TOPICS.CHAT_CLEAR));
     ipc.handle('chat:confirm', (id, yes) => bus.request(TOPICS.CHAT_CONFIRM, { id: Number(id), yes: !!yes }));
     ipc.on('summon', () => summon('ui'));
+    // Music widget (MUS-2): window-only intents; the actions are an allow-list.
+    ipc.on('music:widget', (/** @type {unknown} */ a) => {
+      if (!music) return;
+      if (a === 'expand' || a === 'collapse') music.setExpanded(a === 'expand');
+      else if (a === 'unpin') music.unpin();
+      else if (a === 'dismiss') music.dismiss();
+      else if (a === 'open') music.open();
+    });
     ipc.handle('character:get', () => bus.request(TOPICS.CHARACTER_GET));
   }
 

@@ -37,6 +37,17 @@ function sendState() {
   send({ t: 'state', tabs: tabs.size, state: c ? c.t.state : null });
 }
 
+/** Tama went away (restart, quit): look again after 2 s, 5 s, 10 s, then every 30 s (the alarm). */
+let retryStep = 0;
+let retryTimer = 0;
+function retrySoon() {
+  clearTimeout(retryTimer);
+  const delay = [2000, 5000, 10000][retryStep];
+  if (delay === undefined) return;
+  retryStep += 1;
+  retryTimer = setTimeout(async () => { await connect(); if (status !== 'connected') retrySoon(); }, delay);
+}
+
 /** Try each port until a Tama answers hello. */
 async function connect() {
   if (connecting || (ws && ws.readyState <= WebSocket.OPEN)) return;
@@ -61,7 +72,7 @@ function tryPort(port, key, code) {
     sock.onerror = () => { clearTimeout(timer); done(false); };
     sock.onclose = () => {
       clearTimeout(timer);
-      if (ws === sock) { ws = null; clearInterval(pingTimer); if (status === 'connected') status = 'searching'; }
+      if (ws === sock) { ws = null; clearInterval(pingTimer); if (status === 'connected') { status = 'searching'; retrySoon(); } }
       done(false);
     };
     sock.onmessage = (ev) => {
@@ -69,7 +80,7 @@ function tryPort(port, key, code) {
       if (!settled) {
         clearTimeout(timer);
         if (m.t === 'welcome' || m.t === 'paired') {
-          ws = sock; status = 'connected';
+          ws = sock; status = 'connected'; retryStep = 0; clearTimeout(retryTimer);
           if (m.t === 'paired') store.set({ key: m.key, port });
           else store.set({ port });
           clearInterval(pingTimer);
@@ -119,7 +130,7 @@ chrome.runtime.onConnect.addListener((port) => {
   port.onMessage.addListener((m) => {
     const t = tabs.get(id);
     if (!t) return;
-    if (m.t === 'state') { t.state = m.state; t.seen = Date.now(); sendState(); }
+    if (m.t === 'state') { t.state = m.state; t.seen = Date.now(); if (status === 'searching') connect(); else sendState(); }
     else if (m.t === 'result') {
       if (waitingCmd.get(m.id) === id) { waitingCmd.delete(m.id); const { t: _t, ...rest } = m; send({ t: 'result', ...rest }); }
     }

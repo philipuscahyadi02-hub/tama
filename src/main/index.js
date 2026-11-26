@@ -58,10 +58,8 @@ const { createSetup } = require('./services/setup');
 const { refreshPath } = require('./platform/env');
 const { createFullscreenDetector } = require('./platform/fullscreen');
 const { createWalkMarker } = require('./platform/windows/walk-marker');
-// M13 YouTube Music & DJ (D-065, D-066): Companion extension link + Windows media session fallback.
-const { createMusic } = require('./services/music');
-const { createMediaSession } = require('./platform/media-session');
-const { startWsServer } = require('./platform/ws-server');
+// M13 YouTube Music & DJ (D-065, D-066): music service + widget beside the pet.
+const { createMusicWiring } = require('./music-wiring');
 
 const { createDesktopChannel } = require('./channels/desktop');
 
@@ -137,7 +135,9 @@ function boot() {
 
   // ---- windows ----
   const win = device.get().windows || {};
-  const pet = createPetWindow({ savedPosition: win.pet, onMoved: (pos) => device.patch('windows', { pet: pos }) });
+  const music = createMusicWiring({ bus, ipc, shell, secrets, dataDir: appShell.paths.data(), log: debug });
+  const pet = createPetWindow({ savedPosition: win.pet, onMoved: (pos) => { device.patch('windows', { pet: pos }); music.onPetMoved(); } });
+  const musicWidget = music.attach(pet);
   const term = createTerminalWindow({
     savedBounds: win.terminal, onBoundsChanged: (b) => device.patch('windows', { terminal: b }), isQuitting: appShell.isQuitting,
   });
@@ -165,7 +165,7 @@ function boot() {
   const openDashboard = (tab = '') => openPage('dashboard/dashboard.html', { width: 1060, height: 780, title: 'Usage & accounts', frame: true, query: tab ? { tab } : {} });
   const openRoster = (/** @type {boolean | undefined} */ importNow) =>
     openPage('roster/roster.html', { width: 900, height: 660, title: 'My Tamas', query: importNow ? { import: '1' } : {} });
-  createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings, openSetup, autostart: appShell.autostart, pages: openPages }).start();
+  createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings, openSetup, autostart: appShell.autostart, pages: openPages, music: musicWidget }).start();
   // Voice (M9, D-042/D-043): created before the tray, whose Voice submenu shows its setting; started with the services.
   /** @type {Record<string, ReturnType<typeof createVoiceEngineProcess>>} */ const voiceProcs = {};
   for (const id of /** @type {const} */ (['aivis', 'voicevox'])) {
@@ -269,10 +269,7 @@ function boot() {
   const fullscreen = createFullscreenDetector({ onError: (message) => bus.emit(TOPICS.APP_ERROR, { topic: 'fullscreen', message }) });
   const offFullscreen = bus.handle(TOPICS.DEVICE_FULLSCREEN_GET, () => fullscreen.isFullscreen());
   stoppers.push(createWeather({ bus, device }).start(), offFullscreen, () => fullscreen.stop());
-  // YouTube Music (MUS-1, MUS-10): the extension folder ships unpacked next to app.asar so browsers can load it.
-  const extensionDir = pathMod.join(__dirname, '..', '..', 'extension').replace(`app.asar${pathMod.sep}`, `app.asar.unpacked${pathMod.sep}`);
-  const media = createMediaSession({ dir: pathMod.join(appShell.paths.data(), 'bin'), onError: (message) => bus.emit(TOPICS.APP_ERROR, { topic: 'media-session', message }) });
-  stoppers.push(createMusic({ bus, secrets, media, startWs: startWsServer, openExternal: shell.openExternal, extensionDir, log: debug }).start());
+  stoppers.push(music.start()); // YouTube Music (MUS-1, MUS-2, MUS-10)
   // "Out for a walk" (SUM-5): a small edge tab while the user has hidden the pet; clicking it summons her.
   const walkMarker = createWalkMarker();
   const syncMarker = () => bus.request(TOPICS.UI_PREFS_GET).catch(() => null).then((ui) => {

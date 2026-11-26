@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** Main → renderer messages arrive on one 'ui' channel as (name, payload). */
-const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram', 'usage', 'accounts', 'voice', 'encode', 'voice.changed', 'providers']);
+const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram', 'usage', 'accounts', 'voice', 'encode', 'voice.changed', 'providers', 'music']);
 /** @type {Map<string, Set<(p: any) => void>>} */
 const subs = new Map();
 ipcRenderer.on('ui', (_e, name, payload) => {
@@ -187,6 +187,9 @@ contextBridge.exposeInMainWorld('tama', {
     pair: () => ipcRenderer.invoke('music:pair'),
     unpair: () => ipcRenderer.invoke('music:unpair'),
     openFolder: () => ipcRenderer.invoke('music:openFolder'),
+    /** Widget window: 'expand' | 'collapse' | 'unpin' | 'dismiss' | 'open' */
+    widget: (/** @type {string} */ action) => ipcRenderer.send('music:widget', action),
+    onWidget: on('music'),
   },
 
   // ---- both ----

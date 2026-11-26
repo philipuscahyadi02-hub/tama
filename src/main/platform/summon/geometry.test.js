@@ -69,3 +69,14 @@ test('rescue: windows left on an unplugged monitor come back centered on the cur
   assert.deepEqual(big, { x: 0, y: 0, width: 1920, height: 1040 }); // shrunk to fit
   assert.equal(geo.rescueRect({ x: 2500, y: 100, width: 900, height: 600 }, [MAIN, RIGHT], cur), null); // the other monitor is still there
 });
+
+test('widgetPosition: left of her body when there is room, else right, never off the work area (MUS-2)', () => {
+  const area = { x: 0, y: 0, width: 1920, height: 1040 };
+  const size = { width: 300, height: 120 };
+  const mid = geo.widgetPosition({ x: 900, y: 700, width: 170, height: 204 }, size, [area]);
+  assert.deepEqual(mid, { x: 592, y: 784 });
+  const atLeftEdge = geo.widgetPosition({ x: 20, y: 700, width: 170, height: 204 }, size, [area]);
+  assert.equal(atLeftEdge.x, 198);
+  const tall = geo.widgetPosition({ x: 900, y: 900, width: 170, height: 204 }, { width: 300, height: 400 }, [area]);
+  assert.equal(tall.y, 640, 'bottom stays inside the work area');
+});

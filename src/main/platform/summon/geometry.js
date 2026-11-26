@@ -119,4 +119,21 @@ function rescueRect(win, areas, cursor) {
   return { x: Math.round(area.x + (area.width - width) / 2), y: Math.round(area.y + (area.height - height) / 2), width, height };
 }
 
-module.exports = { BODY, bodyRect, overlapArea, bestArea, clampToScreen, isVisibleEnough, homePosition, summonPosition, markerPosition, rescueRect };
+/**
+ * Where the music widget sits (MUS-2): beside the pet's body, on the side with room (left first, so it never covers her
+ * speech bubble or menu), bottom-aligned with her feet, always fully inside the work area that holds most of her body.
+ * @param {Rect} body  the pet's body on screen @param {{width:number,height:number}} size @param {Rect[]} areas
+ */
+function widgetPosition(body, size, areas) {
+  if (!areas.length) throw new Error('geometry: no displays');
+  const area = areas.slice().sort((a, b) => overlapArea(body, b) - overlapArea(body, a))[0];
+  const gap = 8;
+  const left = body.x - gap - size.width;
+  const right = body.x + body.width + gap;
+  let x = left >= area.x ? left : right + size.width <= area.x + area.width ? right : area.x + area.width - size.width;
+  x = Math.max(area.x, Math.min(x, area.x + area.width - size.width));
+  const y = Math.max(area.y, Math.min(body.y + body.height - size.height, area.y + area.height - size.height));
+  return { x: Math.round(x), y: Math.round(y) };
+}
+
+module.exports = { BODY, bodyRect, widgetPosition, overlapArea, bestArea, clampToScreen, isVisibleEnough, homePosition, summonPosition, markerPosition, rescueRect };

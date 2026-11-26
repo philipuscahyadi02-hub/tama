@@ -21,9 +21,9 @@ function attachDebug(win, tag) {
     const times = (process.env.TAMA_SHOT_TIMES || '2500,7000').split(',').map(Number);
     win.webContents.once('did-finish-load', () => {
       times.forEach((ms, i) => setTimeout(async () => {
-        if (win.isDestroyed()) return;
-        const img = await win.webContents.capturePage();
-        fs.writeFileSync(path.join(dir, `${tag}${i + 1}.png`), img.toPNG());
+        if (win.isDestroyed() || !win.isVisible()) return; // a hidden window can't be captured (UnknownVizError)
+        const img = await win.webContents.capturePage().catch(() => null);
+        if (img) fs.writeFileSync(path.join(dir, `${tag}${i + 1}.png`), img.toPNG());
       }, ms));
     });
   }

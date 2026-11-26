@@ -27,7 +27,7 @@ window.makeMusicCommands = function makeMusicCommands(K, { info, error }) {
   }
 
   return {
-    music: ['YouTube Music: now playing, controls, extension (pair|unpair|folder|lyrics|vol <0-100>|seek <m:ss>|open <link>)', async (arg) => {
+    music: ['YouTube Music: now playing, controls, extension (widget|pair|unpair|folder|lyrics|vol <0-100>|seek <m:ss>|open <link>)', async (arg) => {
       const [cmd = '', ...rest] = String(arg || '').trim().split(/\s+/);
       const c = cmd.toLowerCase();
       const v = rest.join(' ');
@@ -40,6 +40,16 @@ window.makeMusicCommands = function makeMusicCommands(K, { info, error }) {
           const r = await K.music.pair();
           if (!r.port) return error('✗ The music link isn\'t running (another app may be using ports 47821–47825).');
           return info(`⎿  🔗 Pairing code: ${r.code}  (valid 10 minutes)\n   Click the Tama Companion icon in your browser and enter it.\n   Not installed yet? /music install`);
+        }
+        case 'widget': {
+          const m = (rest[0] || '').toLowerCase();
+          if (m === 'off' || m === 'auto') {
+            const r = await K.ui.setPrefs({ musicWidget: m });
+            if (r && r.error) return error(`✗ ${r.error}`);
+            return info(m === 'off' ? '⎿  The music card will not pop up by itself (/music widget opens it).' : '⎿  The music card shows beside me while a song plays.');
+          }
+          K.music.widget('open');
+          return info('⎿  🎵 Music card open (✕ closes it · /music widget off|auto)');
         }
         case 'unpair': await K.music.unpair(); return info('⎿  Forgot the paired browser. /music pair to pair again.');
         case 'folder': { const r = await K.music.openFolder(); return r.ok ? info('⎿  Opened the extension folder.') : error('✗ No extension folder found.'); }
@@ -69,7 +79,7 @@ window.makeMusicCommands = function makeMusicCommands(K, { info, error }) {
           const link = e.connected ? `🧩 Companion connected${e.tabs ? '' : ' (no YouTube Music tab open)'}` : e.paired ? '🧩 Companion paired, not connected (is the browser open?)' : '🧩 Companion not paired: /music install, then /music pair';
           return info(`${nowLine(st.state)}\n   ${link}${st.media.available ? '' : ' · Windows media controls unavailable'}`);
         }
-        default: return error('✗ /music [now|play|pause|next|prev|like|dislike|shuffle|repeat|vol <n>|seek <m:ss>|lyrics|open <link>|pair|unpair|install|folder]');
+        default: return error('✗ /music [now|play|pause|next|prev|like|dislike|shuffle|repeat|vol <n>|seek <m:ss>|lyrics|open <link>|widget [off|auto]|pair|unpair|install|folder]');
       }
     }],
   };

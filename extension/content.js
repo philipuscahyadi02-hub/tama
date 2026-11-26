@@ -53,6 +53,18 @@
     return (src ? `${t}\n\n${src}` : t).slice(0, 20000);
   }
 
+  // Lyrics belong to a song: right after a song change the page can still show the previous song's lyrics, so text
+  // equal to the last song's is not trusted for the new one.
+  let lyr = { videoId: '', text: '' };
+  function currentLyrics(videoId) {
+    const raw = readLyrics();
+    if (!raw) return lyr.videoId === videoId && lyr.text ? lyr.text : null;
+    if (raw === lyr.text && lyr.videoId !== videoId) return null;
+    lyr = { videoId, text: raw };
+    return raw;
+  }
+  const currentVideoId = async () => ((await page('read')) || {}).videoId || new URLSearchParams(location.search).get('v') || '';
+
   async function read() {
     const bar = q('playerBar');
     const title = text(q('title'));
@@ -71,7 +83,7 @@
     if (!title) missing.push('title');
     if (!q('next')) missing.push('next');
     if (!pw) missing.push('player');
-    const lyrics = readLyrics();
+    const lyrics = currentLyrics(videoId);
     return {
       videoId,
       url: videoId ? `https://music.youtube.com/watch?v=${encodeURIComponent(videoId)}` : '',
@@ -124,13 +136,14 @@
         return { ok: true };
       }
       case 'lyrics': {
-        let l = readLyrics();
+        const vid = await currentVideoId();
+        let l = currentLyrics(vid);
         if (l) return { ok: true, lyrics: l };
         const tab = qa('pageTabs').find((t) => /lyric/i.test(text(t)));
         if (!tab) return { ok: false, error: 'no lyrics tab' };
         if (tab.hasAttribute('disabled') || tab.getAttribute('aria-disabled') === 'true') return { ok: true, lyrics: null };
         tab.click();
-        for (let i = 0; i < 15 && !(l = readLyrics()); i++) await sleep(200);
+        for (let i = 0; i < 20 && !(l = currentLyrics(vid)); i++) await sleep(200);
         return { ok: true, lyrics: l };
       }
       default: return { ok: false, error: 'unknown action' };
@@ -161,8 +174,8 @@
     if (!port) return;
     const s = await read();
     const now = Date.now();
-    // Re-send at least every 30 s so a restarted background (or Tama) catches up.
-    if (!Y.significant(last, s, now) && now - lastSent < 30000) return;
+    // Re-send at least every 15 s: a restarted background (or Tama) catches up, and Chrome keeps the background awake.
+    if (!Y.significant(last, s, now) && now - lastSent < 15000) return;
     last = s; lastSent = now;
     try { port.postMessage({ t: 'state', state: s }); } catch (e) { /* disconnected */ }
   }

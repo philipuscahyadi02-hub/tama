@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data: https://*.googleusercontent.com https://*.ytimg.com https://*.ggpht.com" />
+  <title>Tama · Music</title>
+  <link rel="stylesheet" href="music.css" />
+</head>
+<body>
+  <main id="card" class="compact">
+    <section id="now">
+      <div id="cover"><img id="art" alt="" hidden /><span id="noart">♪</span></div>
+      <div id="info">
+        <div id="title">Nothing playing</div>
+        <div id="sub"></div>
+        <div id="bar" title="Click to jump"><div id="fill"></div><div id="knob"></div></div>
+        <div id="times"><span id="pos">0:00</span><span id="dur">0:00</span></div>
+      </div>
+      <div id="corner">
+        <button id="expand" class="tiny" title="Up next and lyrics">⌄</button>
+        <button id="unpin" class="tiny" title="Back beside her" hidden>📌</button>
+        <button id="close" class="tiny" title="Hide for this song">✕</button>
+      </div>
+    </section>
+    <section id="controls">
+      <button id="prev" title="Previous">⏮</button>
+      <button id="toggle" class="main" title="Play / pause">▶</button>
+      <button id="next" title="Next">⏭</button>
+      <span class="sep"></span>
+      <button id="like" title="Like">👍</button>
+      <button id="dislike" title="Dislike">👎</button>
+      <button id="repeat" title="Repeat">🔁</button>
+      <button id="shuffle" title="Shuffle the queue">🔀</button>
+      <input id="volume" type="range" min="0" max="100" step="1" title="Volume" />
+    </section>
+    <section id="more" hidden>
+      <nav id="tabs">
+        <button data-tab="queue" class="on">Up next</button>
+        <button data-tab="lyrics">Lyrics</button>
+      </nav>
+      <ol id="queue"></ol>
+      <div id="lyrics" hidden></div>
+      <footer id="source"></footer>
+    </section>
+  </main>
+  <script src="../../shared/palette.js"></script>
+  <script src="../../shared/catalog.js"></script>
+  <script src="../../shared/spec.js"></script>
+  <script src="../../shared/theme.js"></script>
+  <script src="music.js"></script>
+</body>
+</html>
