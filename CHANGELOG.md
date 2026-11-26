@@ -27,7 +27,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   - **Look (💧):** *Solid* or *Glass* (Windows 11 frosted glass), opacity from 40 to 100 % (fully visible while your mouse is over it), and "Put it next to her".
   - **Easier:** pair with one click (**Connect to Tama** in the extension, then click Allow on Kero's bubble; the code still works). The card is now a desktop widget without a taskbar button: open it from Kero's menu 🎵, the tray ("Music card") or `/music widget`. A drag grip at the top makes it easy to move (D-070).
   - **Self-repair:** after the extension is reloaded or updated, open YouTube Music tabs reconnect by themselves (before, they showed only the basic controls until refreshed). The extension now has the `scripting` permission, still only for music.youtube.com.
-  - **Docked panel:** Up next / Lyrics now open in their own panel docked right next to her. It stays in place and moves with her, while the small card stays wherever you put it (D-071).
+  - **Up next / Lyrics panel:** it opens right below the card (or above it near the screen's bottom) and moves with the card. Kero and the card are separate; **Pin → To her** in the 💧 panel makes the card move together with her (D-072).
 - **YouTube Music, step 3: DJ Tama (MUS-3, MUS-4):**
   - **The look:** while music plays she puts on DJ headphones and stands at a DJ booth with a record and a mixer, in her own colors. Every Tama gets them.
   - **On the beat:** she bobs on the beat and turns the record. A note floats up, she scratches every few beats, and now and then there's a "drop" with sparkles.
@@ -44,6 +44,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - D-069 — DJ Tama: DJ rig parts for every Tama; the real beat comes from your PC's sound (only the pet window may listen); animations step on the beat so DJ mode costs about 2 % CPU.
 - D-070 — Pair the extension with one click (Allow on Kero's bubble); the music card has no taskbar button.
 - D-071 — Up next / Lyrics open in a panel docked beside her; the card stays small where you put it.
+- D-072 — The Up next / Lyrics panel belongs to the music card instead; card and Kero are separate unless you pin them together (replaces D-071).
 ### Added
 - **Easier onboarding for developers:** `CONTRIBUTING.md` (first run, project tour, workflow, build and release, troubleshooting); `npm run setup` (install + Electron download + checks); `npm run doctor` (Node, Electron, git, Claude Code, agy and voice engines, with the next step for each); `npm run dev` (runs with a scratch `.dev-data/` folder, never the real saves; `--fresh` for a first run); `.nvmrc` and `engines` pin Node 22+.
 ### Changed
@@ -286,6 +287,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `ac76637` | 2026-11-27 | feat(music) | Up next / Lyrics in a panel docked beside the pet (D-071) |
 | `a4a1411` | 2026-11-27 | fix(extension) | reconnect open YouTube Music tabs after an extension reload (1.1.0) |
 | `a7b649c` | 2026-11-27 | feat(music) | one-click pairing, card as a desktop widget, drag grip (D-070) |
 | `44e6ae1` | 2026-11-27 | feat(music) | DJ Tama with real beat sync from PC audio (MUS-3, MUS-4; D-069) |

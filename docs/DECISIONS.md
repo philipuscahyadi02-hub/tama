@@ -100,7 +100,8 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-068 | Music widget is a normal, movable window (not on top, not following her, position remembered) with a solid or Windows 11 glass look and 40–100 % opacity (full on hover) | Accepted · Refines MUS-2 |
 | D-069 | DJ Tama: DJ rig parts for every design; real beat from PC-audio loopback granted to the pet window only (amends D-055); beat-stepped half-time animations to stay within ~+2 % CPU | Accepted · Amends D-055 |
 | D-070 | One-click pairing (the extension asks, the user clicks Allow on the pet's bubble; codes stay as a backup); the music card has no taskbar button | Accepted · Refines D-066, D-068 |
-| D-071 | Up next / Lyrics open in their own panel docked next to the pet (fixed, moves with her); the card stays compact wherever the user put it | Accepted · Refines D-068 |
+| D-071 | Up next / Lyrics open in their own panel docked next to the pet (fixed, moves with her); the card stays compact wherever the user put it | Superseded by D-072 |
+| D-072 | The Up next / Lyrics panel is attached to the music card (below or above it, moves with it); the card and the pet are separate unless the user pins the card to her | Accepted · Supersedes D-071 |
 
 ---
 
@@ -975,7 +976,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Refs:** MUS-2, MUS-9, MUS-10, D-036, D-066, D-068
 
 ### D-071 — Up next / Lyrics in a panel docked beside the pet
-- **Date:** 2026-11-27 · **Status:** Accepted · Refines D-068
+- **Date:** 2026-11-27 · **Status:** Superseded by D-072 · Refines D-068
 - **Context:** Expanding the card made it grow and jump. The user wanted the Up next / Lyrics dropdown at a fixed place beside Tama, not relocatable, while the small card stays wherever they put it.
 - **Decision:**
   - The card is always compact. Its ⌄ button opens a separate panel window: the same page with `?panel=1`, showing only the tabs. The panel is docked beside the pet's body with `geometry.widgetPosition` on the side with room, and is not movable.
@@ -984,3 +985,14 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** A list that opens below the card (the user picked the docked panel); docking the whole card (they want the card where they put it).
 - **Consequences:** Two music windows while the panel is open; the panel follows her walks (she doesn't walk while DJing).
 - **Refs:** MUS-2, D-068
+
+### D-072 — The Up next / Lyrics panel belongs to the music card; card and pet are separate unless pinned
+- **Date:** 2026-11-27 · **Status:** Accepted · Supersedes D-071
+- **Context:** D-071 docked the panel beside the pet; the user found that confusing. The dropdown belongs to the player. Tama and the player should be fully separate, except when the user pins them together.
+- **Decision:**
+  - **The panel:** it sits right below the card, or above it when there's no room (`geometry.panelPosition`, centered on the card, inside its screen). It follows the card on every `move`, also during a drag, and is no longer always on top.
+  - **Pin to Tama** (💧 panel → Pin: Free / To her; `device.json windows.musicPin { on, dx, dy }`): the card keeps its offset from her body and moves with her in the same step. Dragging the card while pinned sets a new offset.
+  - **Separate by default:** her hiding or walking doesn't move or hide an unpinned card.
+- **Alternatives:** A panel docked to the pet (D-071; confusing); always following her (the laggy, in-the-way behavior of the first version).
+- **Consequences:** A pinned card can land on another monitor edge as she walks; it is clamped inside the screen she's on.
+- **Refs:** MUS-2, D-068, D-071

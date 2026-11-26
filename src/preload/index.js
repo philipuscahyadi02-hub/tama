@@ -187,7 +187,7 @@ contextBridge.exposeInMainWorld('tama', {
     pair: () => ipcRenderer.invoke('music:pair'),
     unpair: () => ipcRenderer.invoke('music:unpair'),
     openFolder: () => ipcRenderer.invoke('music:openFolder'),
-    /** Widget window: 'expand' | 'collapse' | 'beside' | 'hover' | 'unhover' | 'dismiss' | 'open' */
+    /** Widget window: 'expand' | 'collapse' | 'beside' | 'pin' | 'unpin' | 'hover' | 'unhover' | 'dismiss' | 'open' */
     widget: (/** @type {string} */ action) => ipcRenderer.send('music:widget', action),
     onWidget: on('music'),
     /** One-click pairing (D-070): the extension asks to connect; answer(true) allows it. */

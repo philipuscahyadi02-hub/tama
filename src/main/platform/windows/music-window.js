@@ -4,8 +4,9 @@
 // (setting `musicWidget: 'auto'`, without taking focus) and hides a while after the music stops.
 // Looks (D-068): 'solid' (transparent window, card with a soft shadow) or 'glass' (Windows 11 acrylic behind a
 // see-through card), plus an opacity (40–100 %) that goes back to 100 % while the mouse is over the card.
-// Up next / Lyrics (D-071) open in their own panel docked right next to the pet: fixed (not draggable), it moves with
-// her, and closes with ⌃ or when the card hides.
+// Up next / Lyrics (D-072) open in a panel attached to the card (below it, or above when there's no room) that moves
+// with the card. The card and the pet are separate, unless the user pins the card to her (it then keeps its spot
+// relative to her as she moves).
 const path = require('path');
 const { BrowserWindow } = require('electron');
 const geo = require('../summon/geometry');
@@ -20,7 +21,7 @@ const SIZES = {
   solid: { compact: { width: 352, height: 172 } },
   glass: { compact: { width: 332, height: 152 } },
 };
-/** The Up next / Lyrics panel beside the pet (10 px shadow margin on every side). */
+/** The Up next / Lyrics panel under the card (10 px shadow margin on every side). */
 const PANEL = { width: 332, height: 410 };
 const HIDE_PAUSED_MS = 20000;
 const HIDE_NONE_MS = 4000;
@@ -32,10 +33,11 @@ const HIDE_NONE_MS = 4000;
  *   send: (win: BrowserWindow, name: string, payload: any) => void,
  *   savedPosition?: { x: number, y: number } | null,
  *   onMoved?: (pos: { x: number, y: number }) => void,
- *   petHidden?: () => boolean,
+ *   pin?: { on: boolean, dx: number, dy: number } | null,
+ *   onPin?: (pin: { on: boolean, dx: number, dy: number }) => void,
  * }} deps
  */
-function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () => {}, petHidden = () => false }) {
+function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () => {}, pin: savedPin = null, onPin = () => {} }) {
   /** @type {BrowserWindow | null} */ let win = null;
   /** @type {BrowserWindow | null} */ let panel = null;
   /** @type {any} */ let state = null;
@@ -47,6 +49,8 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
   let hovered = false;
   let movingUntil = 0;
   /** @type {{ x: number, y: number } | null} */ let pos = savedPosition;
+  /** Pinned to the pet: the card's offset from her body (D-072). */
+  let pin = savedPin && savedPin.on ? { on: true, dx: Number(savedPin.dx) || 0, dy: Number(savedPin.dy) || 0 } : { on: false, dx: 0, dy: 0 };
   /** @type {ReturnType<typeof setTimeout> | null} */ let hideTimer = null;
 
   const alive = () => (win && !win.isDestroyed() ? win : null);
@@ -56,11 +60,10 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
   function createPanel() {
     const p = new BrowserWindow({
       ...PANEL, show: false, frame: false, transparent: true, hasShadow: false, resizable: false, movable: false,
-      maximizable: false, minimizable: false, fullscreenable: false, skipTaskbar: true, alwaysOnTop: true,
+      maximizable: false, minimizable: false, fullscreenable: false, skipTaskbar: true,
       title: 'Tama · Up next', backgroundColor: '#00000000',
       webPreferences: { preload: PRELOAD, contextIsolation: true, nodeIntegration: false, sandbox: true },
     });
-    p.setAlwaysOnTop(true, 'floating'); // opened on purpose, next to the pet (who floats too)
     p.loadFile(path.join(RENDERER, 'music', 'music.html'), { query: { panel: '1' } });
     attachDebug(p, 'musicpanel');
     if (process.env.TAMA_MUSIC_EVAL) p.webContents.once('did-finish-load', () => p.webContents.executeJavaScript(String(process.env.TAMA_MUSIC_EVAL)).catch(() => null));
@@ -69,12 +72,13 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
     return p;
   }
 
-  /** Docked beside the pet's body (the side with room), always fully on screen. */
+  /** Attached to the card: below it, or above when there's no room. */
   function placePanel() {
     const p = alivePanel();
-    if (!p) return;
+    const w = alive();
+    if (!p || !w) return;
     if (process.env.TAMA_SHOT_OFFSCREEN) { p.setBounds({ x: -4000, y: 600, ...PANEL }); return; } // dev: off-screen
-    const at = geo.widgetPosition(petBody(), PANEL, workAreas());
+    const at = geo.panelPosition(w.getBounds(), PANEL, workAreas());
     p.setBounds({ x: at.x, y: at.y, ...PANEL });
   }
 
@@ -95,12 +99,15 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
     const w = new BrowserWindow(opts);
     w.loadFile(path.join(RENDERER, 'music', 'music.html'));
     attachDebug(w, 'music');
-    // The user dragged it: remember where.
+    // The panel moves with the card, also while it's being dragged.
+    w.on('move', () => { if (expanded) placePanel(); });
+    // The user dragged it: remember where (and, when pinned, the new spot relative to her).
     w.on('moved', () => {
       if (Date.now() < movingUntil || w.isDestroyed()) return;
       const b = w.getBounds();
-      pos = { x: b.x, y: b.y + b.height }; // bottom-left anchor: expanding grows upward from where they put it
+      pos = { x: b.x, y: b.y + b.height };
       onMoved(pos);
+      if (pin.on) { const body = petBody(); pin = { on: true, dx: b.x - body.x, dy: b.y - body.y }; onPin(pin); }
     });
     w.webContents.on('did-finish-load', pushState);
     // Dev: TAMA_MUSIC_EVAL=<js> runs in the widget after load (e.g. open the Lyrics tab for a screenshot).
@@ -125,7 +132,16 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
       const a = areas.slice().sort((q, r) => geo.overlapArea(want, r) - geo.overlapArea(want, q))[0];
       p = { x: Math.max(a.x, Math.min(want.x, a.x + a.width - s.width)), y: Math.max(a.y, Math.min(want.y, a.y + a.height - s.height)) };
     } else p = geo.widgetPosition(petBody(), s, areas); // first time, or its monitor is gone
+    if (pin.on) { const body = petBody(); p = clampTo({ x: body.x + pin.dx, y: body.y + pin.dy }, s); }
     w.setBounds({ x: p.x, y: p.y, width: s.width, height: s.height });
+  }
+
+  /** Keep a window of `s` fully inside the screen it's mostly on. @param {{x:number,y:number}} p @param {{width:number,height:number}} s */
+  function clampTo(p, s) {
+    const areas = workAreas();
+    const r = { x: p.x, y: p.y, width: s.width, height: s.height };
+    const a = areas.slice().sort((q, t) => geo.overlapArea(r, t) - geo.overlapArea(r, q))[0];
+    return { x: Math.max(a.x, Math.min(p.x, a.x + a.width - s.width)), y: Math.max(a.y, Math.min(p.y, a.y + a.height - s.height)) };
   }
 
   function applyOpacity() {
@@ -134,7 +150,7 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
   }
 
   function pushState() {
-    const payload = { state, expanded, manual, look };
+    const payload = { state, expanded, manual, look, pinned: pin.on };
     const w = alive(); if (w) send(w, 'music', payload);
     const p = alivePanel(); if (p) send(p, 'music', payload);
   }
@@ -179,9 +195,9 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
     },
     /** The mouse is over the card: fully visible while hovering. @param {boolean} on */
     setHover(on) { hovered = !!on; applyOpacity(); },
-    /** Up next / Lyrics: open or close the panel beside the pet. @param {boolean} on */
+    /** Up next / Lyrics: open or close the panel under the card. @param {boolean} on */
     setExpanded(on) {
-      if (on && !petHidden()) {
+      if (on && alive()) {
         expanded = true;
         const p = alivePanel() || createPanel();
         placePanel();
@@ -189,13 +205,23 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
       } else closePanel();
       pushState();
     },
-    /** The pet moved, hid or came back: the docked panel goes with her. */
+    /** The pet moved: a pinned card moves with her (and its panel with the card). */
     follow() {
-      const p = alivePanel();
-      if (!p || !expanded) return;
-      if (petHidden()) { if (p.isVisible()) p.hide(); return; }
-      placePanel();
-      if (!p.isVisible()) p.showInactive();
+      const w = alive();
+      if (!pin.on || !w || !w.isVisible() || process.env.TAMA_SHOT_OFFSCREEN) return;
+      const body = petBody();
+      const s = size();
+      const p = clampTo({ x: body.x + pin.dx, y: body.y + pin.dy }, s);
+      movingUntil = Date.now() + 400;
+      w.setBounds({ x: p.x, y: p.y, width: s.width, height: s.height });
+    },
+    /** Pin the card to the pet (keeps today's offset) or set it free. @param {boolean} on */
+    setPinned(on) {
+      const w = alive();
+      if (on && w) { const b = w.getBounds(); const body = petBody(); pin = { on: true, dx: b.x - body.x, dy: b.y - body.y }; }
+      else pin = { ...pin, on: false };
+      onPin(pin);
+      pushState();
     },
     /** Put it next to the pet again (and remember that). */
     besideHer() {

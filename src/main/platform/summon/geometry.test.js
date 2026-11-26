@@ -80,3 +80,11 @@ test('widgetPosition: left of her body when there is room, else right, never off
   const tall = geo.widgetPosition({ x: 900, y: 900, width: 170, height: 204 }, { width: 300, height: 400 }, [area]);
   assert.equal(tall.y, 640, 'bottom stays inside the work area');
 });
+
+test('panelPosition: below the music card, above it when there is no room, centered and on screen (D-072)', () => {
+  const area = { x: 0, y: 0, width: 1920, height: 1040 };
+  const size = { width: 332, height: 410 };
+  assert.deepEqual(geo.panelPosition({ x: 100, y: 100, width: 352, height: 172 }, size, [area]), { x: 110, y: 260 });
+  assert.equal(geo.panelPosition({ x: 100, y: 800, width: 352, height: 172 }, size, [area]).y, 800 - 410 + 12);
+  assert.equal(geo.panelPosition({ x: 1700, y: 100, width: 352, height: 172 }, size, [area]).x, 1920 - 332);
+});

@@ -38,7 +38,7 @@ function createMusicWiring({ bus, ipc, shell, secrets, device, dataDir, log = ()
   let lastSong = '';
 
   return {
-    /** The pet moved: the docked Up next / Lyrics panel moves in the same step. */
+    /** The pet moved: a card pinned to her moves in the same step (D-072). */
     onPetMoved() { if (widget) widget.follow(); },
 
     /** Create the widget (D-068: a normal window; opens next to the pet the first time, then where the user left it). @param {import('./platform/windows/pet-window').PetWindow} pet */
@@ -48,11 +48,9 @@ function createMusicWiring({ bus, ipc, shell, secrets, device, dataDir, log = ()
         send: ipc.sendUi,
         savedPosition: (device.get().windows || {}).music || null,
         onMoved: (pos) => device.patch('windows', { music: pos }),
-        petHidden: () => !pet.win.isVisible() || pet.isHiddenByUser(),
+        pin: (device.get().windows || {}).musicPin || null,
+        onPin: (pin) => device.patch('windows', { musicPin: pin }),
       });
-      // The Up next / Lyrics panel is docked to her (D-071): it moves, hides and comes back with her.
-      pet.win.on('hide', () => w.follow());
-      pet.win.on('show', () => w.follow());
       widget = w;
       petWin = pet;
       // DJ Tama's beat sync (MUS-4, D-069): only the pet window may capture the PC's audio output.

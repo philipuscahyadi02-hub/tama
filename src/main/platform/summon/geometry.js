@@ -136,4 +136,20 @@ function widgetPosition(body, size, areas) {
   return { x: Math.round(x), y: Math.round(y) };
 }
 
-module.exports = { BODY, bodyRect, widgetPosition, overlapArea, bestArea, clampToScreen, isVisibleEnough, homePosition, summonPosition, markerPosition, rescueRect };
+/**
+ * Where the Up next / Lyrics panel goes (D-072): right below the music card, or above it when there's no room below,
+ * centered on the card and kept inside the card's work area. Both windows have a transparent shadow margin, so they
+ * overlap by `overlap` px to look `gap`-close. @param {Rect} card @param {{width:number,height:number}} size
+ * @param {Rect[]} areas @param {number} [overlap]
+ */
+function panelPosition(card, size, areas, overlap = 12) {
+  if (!areas.length) throw new Error('geometry: no displays');
+  const area = areas.slice().sort((a, b) => overlapArea(card, b) - overlapArea(card, a))[0];
+  const below = card.y + card.height - overlap;
+  const above = card.y - size.height + overlap;
+  const y = below + size.height <= area.y + area.height ? below : above >= area.y ? above : Math.max(area.y, area.y + area.height - size.height);
+  const x = Math.max(area.x, Math.min(Math.round(card.x + (card.width - size.width) / 2), area.x + area.width - size.width));
+  return { x: Math.round(x), y: Math.round(y) };
+}
+
+module.exports = { BODY, bodyRect, widgetPosition, panelPosition, overlapArea, bestArea, clampToScreen, isVisibleEnough, homePosition, summonPosition, markerPosition, rescueRect };

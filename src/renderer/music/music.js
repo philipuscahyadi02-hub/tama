@@ -52,7 +52,8 @@ function render() {
   $('kickerText').textContent = !s ? 'Music' : s.playing ? 'Now playing' : 'Paused';
   const lk = view.look || { look: 'solid', opacity: 100 };
   document.body.classList.toggle('glass', !PANEL && lk.look === 'glass');
-  for (const b of document.querySelectorAll('.seg button')) b.classList.toggle('on', b.dataset.look === lk.look);
+  for (const b of document.querySelectorAll('.seg button[data-look]')) b.classList.toggle('on', b.dataset.look === lk.look);
+  for (const b of document.querySelectorAll('#pinSeg button')) b.classList.toggle('on', (b.dataset.pin === 'on') === !!view.pinned);
   if (document.activeElement !== $('opacity')) $('opacity').value = String(lk.opacity);
   $('opacity').style.setProperty('--v', `${((Number($('opacity').value) - 40) / 60) * 100}%`);
   $('opacityVal').textContent = `${$('opacity').value}%`;
@@ -166,7 +167,8 @@ $('expand').addEventListener('click', () => K.music.widget(view.expanded ? 'coll
 // Look panel (D-068): solid or glass, opacity, back next to her.
 $('lookBtn').addEventListener('click', (e) => { e.stopPropagation(); $('lookPanel').hidden = !$('lookPanel').hidden; });
 document.addEventListener('click', (e) => { if (!$('lookPanel').hidden && !$('lookPanel').contains(e.target)) $('lookPanel').hidden = true; });
-for (const b of document.querySelectorAll('.seg button')) b.addEventListener('click', () => K.ui.setPrefs({ musicLook: b.dataset.look }));
+for (const b of document.querySelectorAll('.seg button[data-look]')) b.addEventListener('click', () => K.ui.setPrefs({ musicLook: b.dataset.look }));
+for (const b of document.querySelectorAll('#pinSeg button')) b.addEventListener('click', () => K.music.widget(b.dataset.pin === 'on' ? 'pin' : 'unpin'));
 let opTimer = 0;
 $('opacity').addEventListener('input', () => {
   $('opacity').style.setProperty('--v', `${((Number($('opacity').value) - 40) / 60) * 100}%`);
