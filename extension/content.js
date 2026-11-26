@@ -2,6 +2,9 @@
 // the extension's background (which forwards it to Tama), and runs Tama's commands on this tab.
 // Reads only what the player shows (song, queue, lyrics); never cookies, sign-in or other pages.
 (function () {
+  // Injected twice (manifest + self-repair after an extension reload)? Run once per page, but only while that copy is
+  // still connected: a copy orphaned by an extension reload has lost its port and must not block the new one.
+  if (typeof globalThis.__tamaCompanionAlive === 'function' && globalThis.__tamaCompanionAlive()) return;
   const SEL = globalThis.TAMA_SEL;
   const Y = globalThis.TamaYtm;
   const TAG = 'tama-companion';
@@ -153,6 +156,7 @@
   // ---- connection to the background ----
   let port = null;
   let last = null;
+  globalThis.__tamaCompanionAlive = () => !!port;
   let lastSent = 0;
 
   function connect() {

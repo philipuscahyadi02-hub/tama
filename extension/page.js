@@ -2,6 +2,8 @@
 // page's JavaScript, so this small script reads it and runs player commands for the content script.
 // It only answers messages tagged for Tama Companion and only exposes player state, never page data or cookies.
 (function () {
+  if (window.__tamaCompanionPage) return; // already listening in this page
+  window.__tamaCompanionPage = true;
   const TAG = 'tama-companion';
   const player = () => document.getElementById('movie_player');
 

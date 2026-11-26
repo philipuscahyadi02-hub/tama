@@ -26,6 +26,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   - **Moving and hiding:** it stays behind the window you're working in and remembers where you put it (D-068). ✕ hides it for this song. `/music widget` opens it by hand, and `/music widget off` stops it from popping up.
   - **Look (💧):** *Solid* or *Glass* (Windows 11 frosted glass), opacity from 40 to 100 % (fully visible while your mouse is over it), and "Put it next to her".
   - **Easier:** pair with one click (**Connect to Tama** in the extension, then click Allow on Kero's bubble; the code still works). The card is now a desktop widget without a taskbar button: open it from Kero's menu 🎵, the tray ("Music card") or `/music widget`. A drag grip at the top makes it easy to move (D-070).
+  - **Self-repair:** after the extension is reloaded or updated, open YouTube Music tabs reconnect by themselves (before, they showed only the basic controls until refreshed). The extension now has the `scripting` permission, still only for music.youtube.com.
 - **YouTube Music, step 3: DJ Tama (MUS-3, MUS-4):**
   - **The look:** while music plays she puts on DJ headphones and stands at a DJ booth with a record and a mixer, in her own colors. Every Tama gets them.
   - **On the beat:** she bobs on the beat and turns the record. A note floats up, she scratches every few beats, and now and then there's a "drop" with sparkles.
@@ -283,6 +284,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `a7b649c` | 2026-11-27 | feat(music) | one-click pairing, card as a desktop widget, drag grip (D-070) |
 | `44e6ae1` | 2026-11-27 | feat(music) | DJ Tama with real beat sync from PC audio (MUS-3, MUS-4; D-069) |
 | `21d03ab` | 2026-11-27 | feat(music) | widget as a normal movable window with glass and opacity (D-068) |
 | `e02655c` | 2026-11-27 | feat(music) | widget redesign with its own icon set; follows the pet without lag (MUS-2) |

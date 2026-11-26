@@ -93,6 +93,7 @@ function tryPort(port, key, code, ask) {
           clearInterval(pingTimer);
           pingTimer = setInterval(() => send({ t: 'ping' }), PING_MS);
           for (const t of tabs.values()) { try { t.port.postMessage({ t: 'resend' }); } catch (e) { /* gone */ } }
+          setTimeout(() => { if (status === 'connected') repairTabs(); }, 2500); // tabs that never reported in
           if (pairReply) { pairReply({ ok: true }); pairReply = null; }
           done(true);
         } else if (m.t === 'need-code' || m.t === 'denied') {
@@ -185,8 +186,23 @@ chrome.runtime.onMessage.addListener((m, _sender, reply) => {
   return undefined;
 });
 
+/**
+ * Self-repair: YouTube Music tabs that were open before the extension was (re)loaded keep a dead copy of the content
+ * script until they are refreshed. Load the scripts into every open YouTube Music tab that isn't reporting.
+ */
+async function repairTabs() {
+  try {
+    const open = await chrome.tabs.query({ url: 'https://music.youtube.com/*' });
+    for (const t of open) {
+      if (tabs.has(t.id)) continue;
+      await chrome.scripting.executeScript({ target: { tabId: t.id }, files: ['page.js'], world: 'MAIN' });
+      await chrome.scripting.executeScript({ target: { tabId: t.id }, files: ['shared.js', 'selectors.js', 'content.js'] });
+    }
+  } catch (e) { /* a tab closed meanwhile, or it isn't a YouTube Music page any more */ }
+}
+
 chrome.alarms.create('tama-reconnect', { periodInMinutes: 0.5 });
 chrome.alarms.onAlarm.addListener((a) => { if (a.name === 'tama-reconnect' && status !== 'needs-code') connect(); });
-chrome.runtime.onStartup.addListener(connect);
-chrome.runtime.onInstalled.addListener(connect);
+chrome.runtime.onStartup.addListener(() => { connect(); repairTabs(); });
+chrome.runtime.onInstalled.addListener(() => { connect(); repairTabs(); });
 connect();
