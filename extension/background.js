@@ -61,14 +61,15 @@ async function connect() {
   connecting = false;
 }
 
-function tryPort(port, key, code) {
+/** @param {number} port @param {string|null} key @param {string|null} [code] @param {boolean} [ask] one-click pairing (D-070) */
+function tryPort(port, key, code, ask) {
   return new Promise((resolve) => {
     let sock;
     try { sock = new WebSocket(`ws://127.0.0.1:${port}/`); } catch (e) { resolve(false); return; }
     let settled = false;
     const done = (v) => { if (!settled) { settled = true; resolve(v); } };
     const timer = setTimeout(() => { try { sock.close(); } catch (e) { /* closed */ } done(false); }, 3000);
-    sock.onopen = () => sock.send(JSON.stringify({ t: 'hello', v: 1, app: 'tama-companion', ext: chrome.runtime.getManifest().version, key: key || undefined, code: code || undefined }));
+    sock.onopen = () => sock.send(JSON.stringify({ t: 'hello', v: 1, app: 'tama-companion', ext: chrome.runtime.getManifest().version, key: key || undefined, code: code || undefined, ask: ask || undefined }));
     sock.onerror = () => { clearTimeout(timer); done(false); };
     sock.onclose = () => {
       clearTimeout(timer);
@@ -79,6 +80,12 @@ function tryPort(port, key, code) {
       let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
       if (!settled) {
         clearTimeout(timer);
+        if (m.t === 'waiting') {
+          // Tama asks the user on the desktop: keep the line open until they answer (or 70 s).
+          status = 'waiting';
+          setTimeout(() => { if (!settled) { try { sock.close(); } catch (e) { /* closed */ } } }, 70000);
+          return;
+        }
         if (m.t === 'welcome' || m.t === 'paired') {
           ws = sock; status = 'connected'; retryStep = 0; clearTimeout(retryTimer);
           if (m.t === 'paired') store.set({ key: m.key, port });
@@ -152,6 +159,19 @@ chrome.runtime.onMessage.addListener((m, _sender, reply) => {
       const saved = await store.get();
       const order = saved.port ? [saved.port, ...PORTS.filter((p) => p !== saved.port)] : PORTS;
       for (const port of order) if (await tryPort(port, null, code)) break;
+      if (pairReply) { pairReply({ ok: false, error: 'Tama is not running on this PC.' }); pairReply = null; }
+    })();
+    return true; // async reply
+  }
+  if (m.t === 'connect') {
+    (async () => {
+      try { ws && ws.close(); } catch (e) { /* closed */ }
+      ws = null;
+      pairReply = reply;
+      const saved = await store.get();
+      const order = saved.port ? [saved.port, ...PORTS.filter((p) => p !== saved.port)] : PORTS;
+      for (const port of order) if (await tryPort(port, null, null, true)) break;
+      if (status === 'waiting') status = 'needs-code';
       if (pairReply) { pairReply({ ok: false, error: 'Tama is not running on this PC.' }); pairReply = null; }
     })();
     return true; // async reply

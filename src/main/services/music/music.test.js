@@ -189,3 +189,35 @@ test('unpair forgets the key and tells the extension', async () => {
   assert.equal(c.closed, true);
   t.stop();
 });
+
+test('one-click pairing: the extension asks, the desktop answer decides (D-070)', async () => {
+  const t = setup();
+  /** @type {any[]} */ const asks = [];
+  t.bus.on(TOPICS.MUSIC_PAIR_ASK, (/** @type {any} */ p) => asks.push(p));
+
+  const a = fakeConn(); t.connect(a.conn); a.msg({ t: 'hello', ask: true });
+  assert.equal(a.sent[0].t, 'waiting');
+  assert.equal(a.closed, false, 'the line stays open while the user decides');
+  assert.ok(asks[0].until > 0);
+
+  const b = fakeConn(); t.connect(b.conn); b.msg({ t: 'hello', ask: true });
+  assert.equal(b.sent[0].t, 'denied', 'one question at a time');
+
+  assert.deepEqual(await t.bus.request(TOPICS.MUSIC_PAIR_ANSWER, { allow: true }), { ok: true, allowed: true });
+  assert.equal(a.sent[1].t, 'paired');
+  assert.match(a.sent[1].key, /^[0-9a-f]{64}$/);
+  assert.equal(asks.at(-1).until, 0, 'the pet drops the question');
+  assert.equal((await t.bus.request(TOPICS.MUSIC_GET)).extension.connected, true);
+  t.stop();
+});
+
+test('one-click pairing: no answer or "no" pairs nothing; an answer without a question does nothing', async () => {
+  const t = setup();
+  assert.equal((await t.bus.request(TOPICS.MUSIC_PAIR_ANSWER, { allow: true })).ok, false);
+  const a = fakeConn(); t.connect(a.conn); a.msg({ t: 'hello', ask: true });
+  await t.bus.request(TOPICS.MUSIC_PAIR_ANSWER, { allow: false });
+  assert.equal(a.sent[1].t, 'denied');
+  assert.equal(a.closed, true);
+  assert.equal(t.store['music.extension'], undefined);
+  t.stop();
+});

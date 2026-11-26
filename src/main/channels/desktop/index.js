@@ -142,6 +142,9 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.on('chat:clear', () => fire(TOPICS.CHAT_CLEAR));
     ipc.handle('chat:confirm', (id, yes) => bus.request(TOPICS.CHAT_CONFIRM, { id: Number(id), yes: !!yes }));
     ipc.on('summon', () => summon('ui'));
+    // One-click pairing (D-070): the pet asks, the user's click answers.
+    bus.on(TOPICS.MUSIC_PAIR_ASK, (p) => ipc.sendUi(pet.win, 'music.ask', { until: Number(p && p.until) || 0 }));
+    ipc.on('music:answer', (/** @type {unknown} */ a) => fire(TOPICS.MUSIC_PAIR_ANSWER, { allow: a === true }));
     // Music widget (MUS-2): window-only intents; the actions are an allow-list.
     ipc.on('music:widget', (/** @type {unknown} */ a) => {
       if (!music) return;

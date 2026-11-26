@@ -61,6 +61,7 @@ const actions = {
   },
   wardrobe() { T.openOnboarding('restyle'); say(`ooh, new clothes?${tic()}`, 2000, { force: true }); },
   code() { T.showTerminal(); say('let\'s code! 💻✨', 2000, { force: true }); },
+  music() { T.music.widget('open'); say(pick(['🎵 music card~', 'what are we listening to? 🎧']), 2000, { force: true }); },
   chat() { T.showChat(); say(pick(['let\'s talk~ 💬', 'hm? what is it~?', 'I\'m all ears! 👂✨']), 2000, { force: true }); },
 };
 

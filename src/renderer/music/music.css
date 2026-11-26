@@ -147,3 +147,9 @@ body.glass #card {
 body.glass #more { background: color-mix(in srgb, var(--tama-bg) 35%, transparent); border-top-color: color-mix(in srgb, var(--tama-line) 60%, transparent); }
 body.glass #queue li.current { background: color-mix(in srgb, var(--tama-panel) 60%, transparent); }
 body.glass #source { border-top-color: color-mix(in srgb, var(--tama-line) 60%, transparent); }
+
+/* Drag grip (the whole card drags too; the grip just shows where to grab). */
+#grip { position: absolute; z-index: 4; top: 4px; left: 50%; width: 38px; height: 4px; margin-left: -19px; border-radius: 2px;
+  background: var(--tama-line); -webkit-app-region: drag; cursor: grab; }
+#card:hover #grip { background: var(--tama-menu-hover); }
+#now, #disc, #info, #kicker, #title, #sub, #progress { -webkit-app-region: drag; }

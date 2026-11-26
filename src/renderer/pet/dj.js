@@ -93,3 +93,14 @@ T.ui.prefs().then(applyDjPrefs).catch(() => {});
 T.ui.onPrefs(applyDjPrefs);
 // Falling asleep or a restyle ends the set; the next music update starts it again.
 T.onPetState(() => setTimeout(() => { if (djOn && S.asleep) setDj(false); }, 0));
+
+// One-click pairing (D-070): the Tama Companion extension asks to connect; a click on her bubble allows it.
+let askTimer = null;
+T.music.onAsk((p) => {
+  clearTimeout(askTimer);
+  if (!p || !p.until) { bubbleEl.classList.add('hidden'); return; } // answered or timed out
+  const ms = Math.max(3000, p.until - Date.now());
+  stopWalking(); hop(); emote('🔗', 2000);
+  say('🎧 Tama Companion in your browser wants to connect for YouTube Music.\nClick here to allow~', ms, { force: true, onClick: () => T.music.answer(true) });
+  askTimer = setTimeout(() => bubbleEl.classList.add('hidden'), ms);
+});

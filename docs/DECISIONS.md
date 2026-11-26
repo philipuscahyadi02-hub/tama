@@ -99,6 +99,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-067 | YouTube Music inside a Tama window tested and rejected: Google blocks sign-in ("This browser or app may not be secure"); the extension stays | Accepted · Confirms D-066 |
 | D-068 | Music widget is a normal, movable window (not on top, not following her, position remembered) with a solid or Windows 11 glass look and 40–100 % opacity (full on hover) | Accepted · Refines MUS-2 |
 | D-069 | DJ Tama: DJ rig parts for every design; real beat from PC-audio loopback granted to the pet window only (amends D-055); beat-stepped half-time animations to stay within ~+2 % CPU | Accepted · Amends D-055 |
+| D-070 | One-click pairing (the extension asks, the user clicks Allow on the pet's bubble; codes stay as a backup); the music card has no taskbar button | Accepted · Refines D-066, D-068 |
 
 ---
 
@@ -956,3 +957,18 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** A fake tempo only (the user chose real sync); continuous CSS spin and float (7.9 % CPU); capturing only the YouTube Music tab's audio (needs the extension to stream audio; heavier and more permissions).
 - **Consequences:** Beat sync hears all PC sound while on (also calls or games), so it runs only while music plays and DJ mode is on. DJ mode costs about 95 MB of extra memory, mostly the audio pipeline.
 - **Refs:** MUS-3, MUS-4, D-055, D-066, NFR-1, PET-8
+
+### D-070 — One-click pairing; the music card is a desktop widget without a taskbar button
+- **Date:** 2026-11-27 · **Status:** Accepted · Refines D-066 (pairing) and D-068 (taskbar)
+- **Context:** The user found typing a pairing code (and the developer-mode install) hard for onboarding, and wanted the card to be a widget rather than a taskbar window. Tama can't reach YouTube Music's queue or lyrics without the extension (D-066, D-067); the media session and the YouTube API (MUS-6) cover the rest.
+- **Decision:**
+  - **One-click pairing:**
+    - The popup's **Connect to Tama** sends `hello {ask: true}`. Tama answers `waiting` and keeps the line open.
+    - The pet hops and shows a bubble: "Tama Companion wants to connect… click here to allow". Clicking it (`music.pair.answer {allow: true}`) creates the per-pairing key bound to the extension origin, exactly like a code pairing.
+    - No click within 60 s, or a denial, pairs nothing. There is only one question at a time, and at most one new question every 5 s.
+    - Only `chrome-extension://` origins can ask (D-066), and the yes always comes from the user's own desktop. Codes (`/music pair`) remain as a backup.
+  - **Taskbar:** the card has no taskbar button (`skipTaskbar`). It still sits behind active windows (not on top), and is reachable from the pet's menu 🎵, the tray ("Music card") and `/music widget`.
+  - **Dragging:** a visible drag grip, and the cover, title and progress row drag too.
+- **Alternatives:** Auto-accepting any extension (any installed extension could connect); desktop-pinned via the Windows desktop window trick (fragile across updates; the user chose the simple widget); publishing to the Chrome Web Store (removes developer mode; needs a paid developer account and review; parked).
+- **Consequences:** Chrome closes the popup when the user clicks the pet; the pairing still completes in the extension's background. The setup guide card (MUS-9) is still to do.
+- **Refs:** MUS-2, MUS-9, MUS-10, D-036, D-066, D-068

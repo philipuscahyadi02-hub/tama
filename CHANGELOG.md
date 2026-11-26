@@ -23,8 +23,9 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - **YouTube Music, step 2: the music widget (MUS-2):**
   - **Compact card:** a small card next to her while a song plays, in her colors: cover, title, artist, a progress bar you can click to jump, ⏮ ⏯ ⏭, 👍/👎, repeat, shuffle and volume.
   - **Expanded card:** **Up next** (click a song to play it) and **Lyrics**.
-  - **Moving and hiding:** a normal window that stays behind the window you're working in, shows in the taskbar, and remembers where you put it (D-068). ✕ hides it for this song. `/music widget` opens it by hand, and `/music widget off` stops it from popping up.
+  - **Moving and hiding:** it stays behind the window you're working in and remembers where you put it (D-068). ✕ hides it for this song. `/music widget` opens it by hand, and `/music widget off` stops it from popping up.
   - **Look (💧):** *Solid* or *Glass* (Windows 11 frosted glass), opacity from 40 to 100 % (fully visible while your mouse is over it), and "Put it next to her".
+  - **Easier:** pair with one click (**Connect to Tama** in the extension, then click Allow on Kero's bubble; the code still works). The card is now a desktop widget without a taskbar button: open it from Kero's menu 🎵, the tray ("Music card") or `/music widget`. A drag grip at the top makes it easy to move (D-070).
 - **YouTube Music, step 3: DJ Tama (MUS-3, MUS-4):**
   - **The look:** while music plays she puts on DJ headphones and stands at a DJ booth with a record and a mixer, in her own colors. Every Tama gets them.
   - **On the beat:** she bobs on the beat and turns the record. A note floats up, she scratches every few beats, and now and then there's a "drop" with sparkles.
@@ -39,6 +40,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - D-067 — YouTube Music inside a Tama window was tested and rejected: Google blocks sign-in there. The browser extension stays.
 - D-068 — The music widget is a normal, movable window with a solid or glass look and adjustable opacity.
 - D-069 — DJ Tama: DJ rig parts for every Tama; the real beat comes from your PC's sound (only the pet window may listen); animations step on the beat so DJ mode costs about 2 % CPU.
+- D-070 — Pair the extension with one click (Allow on Kero's bubble); the music card has no taskbar button.
 ### Added
 - **Easier onboarding for developers:** `CONTRIBUTING.md` (first run, project tour, workflow, build and release, troubleshooting); `npm run setup` (install + Electron download + checks); `npm run doctor` (Node, Electron, git, Claude Code, agy and voice engines, with the next step for each); `npm run dev` (runs with a scratch `.dev-data/` folder, never the real saves; `--fresh` for a first run); `.nvmrc` and `engines` pin Node 22+.
 ### Changed
@@ -281,6 +283,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `44e6ae1` | 2026-11-27 | feat(music) | DJ Tama with real beat sync from PC audio (MUS-3, MUS-4; D-069) |
 | `21d03ab` | 2026-11-27 | feat(music) | widget as a normal movable window with glass and opacity (D-068) |
 | `e02655c` | 2026-11-27 | feat(music) | widget redesign with its own icon set; follows the pet without lag (MUS-2) |
 | `f16b6b8` | 2026-11-27 | feat(music) | YouTube Music widget beside the pet (MUS-2); embedded player rejected (D-067) |

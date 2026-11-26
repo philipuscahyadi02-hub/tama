@@ -15,6 +15,7 @@ const CMD_MS = 6000;
 const POLL_MS = 2000;
 const POLL_IDLE_MS = 8000;
 const SECRET = 'music.extension';
+const ASK_MS = 60000; // how long a one-click pairing request waits for the user's Allow
 const EXT_ORIGIN = /^chrome-extension:\/\/[a-p]{32}$/;
 
 /**
@@ -88,16 +89,18 @@ function createMusic({ bus, secrets, media, startWs, openExternal = () => null, 
       if (!authed) {
         if (!m || m.t !== 'hello') { c.close(1008); return; }
         clearTimeout(helloTimer);
-        const r = hello(c, m);
-        log(`[music] hello from the extension (${m.key ? 'key' : m.code ? 'code' : 'nothing'}) → ${r.t}`);
-        c.send(r);
-        if (r.t === 'welcome' || r.t === 'paired') {
+        const promote = () => {
           authed = true;
           if (ext && ext !== c) ext.close(1000); // one browser at a time: the newest wins
           ext = c; extState = null; extTabs = 0;
           log('[music] extension connected');
           emitIfChanged();
-        } else c.close(1000);
+        };
+        const r = m.ask === true && !m.key && !m.code ? ask(c, promote) : hello(c, m);
+        log(`[music] hello from the extension (${m.key ? 'key' : m.code ? 'code' : m.ask ? 'asks to connect' : 'nothing'}) → ${r.t}`);
+        c.send(r);
+        if (r.t === 'welcome' || r.t === 'paired') promote();
+        else if (r.t !== 'waiting') c.close(1000);
         return;
       }
       if (m.t === 'state') {
@@ -114,6 +117,7 @@ function createMusic({ bus, secrets, media, startWs, openExternal = () => null, 
     });
     c.onClose(() => {
       clearTimeout(helloTimer);
+      if (asking && asking.conn === c) endAsk(false, true);
       if (ext !== c) return;
       ext = null; extState = null; extTabs = 0;
       for (const f of waiting.values()) f({ ok: false, error: 'the browser extension disconnected' });
@@ -122,6 +126,37 @@ function createMusic({ bus, secrets, media, startWs, openExternal = () => null, 
       emitIfChanged();
       schedulePoll(0);
     });
+  }
+
+  // ---- one-click pairing (D-070): the extension asks, the user allows it on their desktop ----
+  /** @type {{ conn: WsConnection, promote: () => void, timer: ReturnType<typeof setTimeout> } | null} */ let asking = null;
+  let lastAskAt = 0;
+
+  /** @param {WsConnection} c @param {() => void} promote @returns {{ t: string, reason?: string, until?: number }} */
+  function ask(c, promote) {
+    if (asking) return { t: 'denied', reason: 'Another connection request is already waiting on Tama.' };
+    if (now() - lastAskAt < 5000) return { t: 'denied', reason: 'Please wait a moment and try again.' };
+    lastAskAt = now();
+    const until = now() + ASK_MS;
+    asking = { conn: c, promote, timer: setTimeout(() => endAsk(false), ASK_MS) };
+    bus.emit(TOPICS.MUSIC_PAIR_ASK, { until });
+    return { t: 'waiting', until };
+  }
+
+  /** @param {boolean} allow @param {boolean} [gone] the extension hung up first */
+  function endAsk(allow, gone = false) {
+    const a = asking;
+    if (!a) return { ok: false, error: 'No connection request is waiting.' };
+    asking = null;
+    clearTimeout(a.timer);
+    bus.emit(TOPICS.MUSIC_PAIR_ASK, { until: 0 }); // tells the pet to drop the question
+    if (gone) return { ok: false, error: 'The browser stopped waiting.' };
+    if (!allow) { a.conn.send({ t: 'denied', reason: 'Not allowed on Tama.' }); a.conn.close(1000); return { ok: true, allowed: false }; }
+    const key = crypto.randomBytes(32).toString('hex');
+    secrets.set(SECRET, JSON.stringify({ key, origin: a.conn.origin, at: now() }));
+    a.conn.send({ t: 'paired', key });
+    a.promote();
+    return { ok: true, allowed: true };
   }
 
   /** @param {WsConnection} c @param {any} m @returns {{ t: string, key?: string, reason?: string }} */
@@ -218,6 +253,7 @@ function createMusic({ bus, secrets, media, startWs, openExternal = () => null, 
       bus.handle(TOPICS.MUSIC_GET, () => status()),
       bus.handle(TOPICS.MUSIC_CONTROL, (/** @type {any} */ p) => control(p || {})),
       bus.handle(TOPICS.MUSIC_PAIR, () => newCode()),
+      bus.handle(TOPICS.MUSIC_PAIR_ANSWER, (/** @type {any} */ p) => endAsk(!!(p && p.allow === true))),
       bus.handle(TOPICS.MUSIC_UNPAIR, () => {
         secrets.delete(SECRET);
         if (ext) { ext.send({ t: 'unpaired' }); ext.close(1000); }

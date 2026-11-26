@@ -13,3 +13,5 @@ button { padding: 6px 12px; border: 0; border-radius: 6px; background: var(--acc
 button.link { background: none; color: var(--dim); padding: 0; text-decoration: underline; font-weight: 400; }
 .err { color: #d33; min-height: 1em; margin: 6px 0 0; }
 code { font-size: 12px; }
+button.big { width: 100%; padding: 9px; font-size: 14px; border-radius: 9px; }
+#connectBox .hint { margin: 6px 0 8px; }

@@ -182,6 +182,7 @@ function boot() {
       { label: `Chat with ${active.name}`, accelerator: 'Ctrl+Alt+J', registerAccelerator: false, click: () => chatWin.show() },
       { label: 'Terminal (Claude Code)', accelerator: 'Ctrl+Alt+K', registerAccelerator: false, click: () => term.show() },
       { label: 'Show / Hide', click: () => pet.toggleVisible() },
+      { label: 'Music card', click: () => musicWidget.open() },
       { type: 'separator' },
       { label: 'Take care', submenu: [
         { label: 'Feed', click: () => bus.emit(TOPICS.TRAY_ACTION, { action: 'feed' }) },

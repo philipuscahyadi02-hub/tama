@@ -280,6 +280,10 @@ const TOPICS = {
   MUSIC_PAIR: 'music.pair',
   /** () → { ok } — forget the paired extension */
   MUSIC_UNPAIR: 'music.unpair',
+  /** { until } — the Companion extension asks to connect (one-click pairing, D-070); until 0 = the question is over */
+  MUSIC_PAIR_ASK: 'music.pair.ask',
+  /** { allow } → { ok, allowed? } — the user's answer to MUSIC_PAIR_ASK (from the pet's bubble) */
+  MUSIC_PAIR_ANSWER: 'music.pair.answer',
 };
 
 module.exports = { TOPICS };

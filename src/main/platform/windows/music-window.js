@@ -1,5 +1,5 @@
 // @ts-check
-// Music widget window (MUS-2, D-066, D-068): a normal window (not always on top, in the taskbar) that the user can move
+// Music widget window (MUS-2, D-066, D-068): a desktop widget (not always on top, no taskbar button) that the user can move
 // anywhere; its position is remembered. The first time it opens next to the pet. It shows by itself while a song plays
 // (setting `musicWidget: 'auto'`, without taking focus) and hides a while after the music stops.
 // Looks (D-068): 'solid' (transparent window, card with a soft shadow) or 'glass' (Windows 11 acrylic behind a
@@ -51,7 +51,7 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
     /** @type {import('electron').BrowserWindowConstructorOptions} */
     const opts = {
       ...size(), show: false, frame: false, resizable: false, maximizable: false, fullscreenable: false,
-      skipTaskbar: false, title: 'Tama · Music', backgroundColor: '#00000000',
+      skipTaskbar: true, title: 'Tama · Music', backgroundColor: '#00000000', // a desktop widget: no taskbar button
       webPreferences: { preload: PRELOAD, contextIsolation: true, nodeIntegration: false, sandbox: true },
       ...(glass ? { backgroundMaterial: 'acrylic', roundedCorners: true } : { transparent: true, hasShadow: false }),
     };

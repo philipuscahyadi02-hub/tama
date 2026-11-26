@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** Main → renderer messages arrive on one 'ui' channel as (name, payload). */
-const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram', 'usage', 'accounts', 'voice', 'encode', 'voice.changed', 'providers', 'music']);
+const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram', 'usage', 'accounts', 'voice', 'encode', 'voice.changed', 'providers', 'music', 'music.ask']);
 /** @type {Map<string, Set<(p: any) => void>>} */
 const subs = new Map();
 ipcRenderer.on('ui', (_e, name, payload) => {
@@ -190,6 +190,9 @@ contextBridge.exposeInMainWorld('tama', {
     /** Widget window: 'expand' | 'collapse' | 'beside' | 'hover' | 'unhover' | 'dismiss' | 'open' */
     widget: (/** @type {string} */ action) => ipcRenderer.send('music:widget', action),
     onWidget: on('music'),
+    /** One-click pairing (D-070): the extension asks to connect; answer(true) allows it. */
+    onAsk: on('music.ask'),
+    answer: (/** @type {boolean} */ allow) => ipcRenderer.send('music:answer', allow === true),
   },
 
   // ---- both ----
