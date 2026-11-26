@@ -58,6 +58,10 @@ const { createSetup } = require('./services/setup');
 const { refreshPath } = require('./platform/env');
 const { createFullscreenDetector } = require('./platform/fullscreen');
 const { createWalkMarker } = require('./platform/windows/walk-marker');
+// M13 YouTube Music & DJ (D-065, D-066): Companion extension link + Windows media session fallback.
+const { createMusic } = require('./services/music');
+const { createMediaSession } = require('./platform/media-session');
+const { startWsServer } = require('./platform/ws-server');
 
 const { createDesktopChannel } = require('./channels/desktop');
 
@@ -265,6 +269,10 @@ function boot() {
   const fullscreen = createFullscreenDetector({ onError: (message) => bus.emit(TOPICS.APP_ERROR, { topic: 'fullscreen', message }) });
   const offFullscreen = bus.handle(TOPICS.DEVICE_FULLSCREEN_GET, () => fullscreen.isFullscreen());
   stoppers.push(createWeather({ bus, device }).start(), offFullscreen, () => fullscreen.stop());
+  // YouTube Music (MUS-1, MUS-10): the extension folder ships unpacked next to app.asar so browsers can load it.
+  const extensionDir = pathMod.join(__dirname, '..', '..', 'extension').replace(`app.asar${pathMod.sep}`, `app.asar.unpacked${pathMod.sep}`);
+  const media = createMediaSession({ dir: pathMod.join(appShell.paths.data(), 'bin'), onError: (message) => bus.emit(TOPICS.APP_ERROR, { topic: 'media-session', message }) });
+  stoppers.push(createMusic({ bus, secrets, media, startWs: startWsServer, openExternal: shell.openExternal, extensionDir, log: debug }).start());
   // "Out for a walk" (SUM-5): a small edge tab while the user has hidden the pet; clicking it summons her.
   const walkMarker = createWalkMarker();
   const syncMarker = () => bus.request(TOPICS.UI_PREFS_GET).catch(() => null).then((ui) => {

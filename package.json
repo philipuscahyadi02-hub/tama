@@ -35,11 +35,14 @@
     "files": [
       "src/**",
       "assets/**",
+      "extension/**",
+      "!extension/*.test.js",
       "package.json",
       "!src/**/*.test.js",
       "!node_modules/@anthropic-ai/claude-agent-sdk-*/**"
     ],
     "asarUnpack": [
+      "extension/**",
       "node_modules/@anthropic-ai/claude-agent-sdk/**",
       "node_modules/zod/**",
       "src/main/engines/agy/mcp-relay.js",

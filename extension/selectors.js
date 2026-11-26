@@ -1,0 +1,27 @@
+// Tama Companion: every YouTube Music page selector in one place (MUS-10, D-066). When YouTube Music changes its page,
+// fix it here; the content script reports selectors that stop matching to Tama as `health.missing`.
+// Several candidates per entry: the first that matches wins.
+globalThis.TAMA_SEL = {
+  playerBar: ['ytmusic-player-bar'],
+  title: ['ytmusic-player-bar .content-info-wrapper .title', 'ytmusic-player-bar .title'],
+  byline: ['ytmusic-player-bar .content-info-wrapper .byline', 'ytmusic-player-bar .byline'],
+  art: ['ytmusic-player-bar .thumbnail-image-wrapper img', 'ytmusic-player-bar img.image', '#song-image img'],
+  playPause: ['ytmusic-player-bar #play-pause-button'],
+  next: ['ytmusic-player-bar .next-button'],
+  prev: ['ytmusic-player-bar .previous-button'],
+  shuffle: ['ytmusic-player-bar .shuffle'],
+  repeat: ['ytmusic-player-bar .repeat'],
+  likeRenderer: ['ytmusic-player-bar ytmusic-like-button-renderer#like-button-renderer', 'ytmusic-player-bar ytmusic-like-button-renderer'],
+  likeButton: ['#button-shape-like button', '.like button', 'button.like'],
+  dislikeButton: ['#button-shape-dislike button', '.dislike button', 'button.dislike'],
+  video: ['video'],
+  queueItems: ['ytmusic-player-queue ytmusic-player-queue-item', '#side-panel ytmusic-player-queue-item'],
+  queueTitle: ['.song-title'],
+  queueByline: ['.byline'],
+  queueDuration: ['.duration'],
+  queueArt: ['img'],
+  queuePlay: ['ytmusic-play-button-renderer', '.song-info'],
+  pageTabs: ['ytmusic-player-page tp-yt-paper-tab', '#tabs tp-yt-paper-tab'],
+  lyrics: ['ytmusic-player-page ytmusic-description-shelf-renderer .description', 'ytmusic-description-shelf-renderer .description'],
+  lyricsSource: ['ytmusic-player-page ytmusic-description-shelf-renderer .footer', 'ytmusic-description-shelf-renderer .footer'],
+};

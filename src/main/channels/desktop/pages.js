@@ -124,6 +124,22 @@ function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster
     ipc.handle('weather:set', (p) => bus.request(TOPICS.WEATHER_SET, p?.off ? { off: true } : { city: String(p?.city || '').slice(0, 80) }));
   }
 
+  /** M13 YouTube Music (D-066): status, controls (validated again by the music service), pairing, folder */
+  function musicIpc() {
+    ipc.handle('music:get', () => bus.request(TOPICS.MUSIC_GET));
+    ipc.handle('music:control', (p) => bus.request(TOPICS.MUSIC_CONTROL, {
+      action: String(p?.action || '').slice(0, 20),
+      value: typeof p?.value === 'number' && Number.isFinite(p.value) ? p.value : typeof p?.value === 'string' ? p.value.slice(0, 500) : undefined,
+    }));
+    ipc.handle('music:pair', () => bus.request(TOPICS.MUSIC_PAIR));
+    ipc.handle('music:unpair', () => bus.request(TOPICS.MUSIC_UNPAIR));
+    ipc.handle('music:openFolder', async () => {
+      const st = await bus.request(TOPICS.MUSIC_GET);
+      if (st?.extension?.dir) await shell.openFolder(st.extension.dir);
+      return { ok: !!st?.extension?.dir };
+    });
+  }
+
   /** onboarding window → core */
   function onboardingIpc() {
     ipc.handle('designer:generate', (req) => bus.request(TOPICS.DESIGNER_GENERATE, {
@@ -167,7 +183,7 @@ function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster
     });
   }
 
-  usageIpc(); telegramIpc(); googleIpc(); eventsIpc(); weatherIpc(); onboardingIpc(); rosterIpc(); providersIpc(); setupIpc();
+  usageIpc(); telegramIpc(); googleIpc(); eventsIpc(); weatherIpc(); musicIpc(); onboardingIpc(); rosterIpc(); providersIpc(); setupIpc();
 }
 
 module.exports = { wirePageIpc };

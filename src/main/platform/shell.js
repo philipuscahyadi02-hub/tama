@@ -80,13 +80,16 @@ function setTrayItems(tray, items) {
 }
 
 /** Hosts Tama may open in the user's browser (Google sign-in, setup help, links Tama created). */
-const EXTERNAL_HOSTS = ['docs.claude.com', 'antigravity.google', 'aivis-project.com', 'voicevox.hiroshiba.jp', 'accounts.google.com', 'console.cloud.google.com', 'myaccount.google.com', 'docs.google.com', 'drive.google.com', 'mail.google.com', 'calendar.google.com', 'support.google.com', 'developers.google.com', 't.me'];
+const EXTERNAL_HOSTS = ['docs.claude.com', 'antigravity.google', 'aivis-project.com', 'voicevox.hiroshiba.jp', 'accounts.google.com', 'console.cloud.google.com', 'myaccount.google.com', 'docs.google.com', 'drive.google.com', 'mail.google.com', 'calendar.google.com', 'support.google.com', 'developers.google.com', 't.me', 'music.youtube.com'];
 /** @param {string} url */
 function openExternal(url) {
   const u = new URL(url);
   if (u.protocol !== 'https:' || !EXTERNAL_HOSTS.includes(u.hostname)) throw new Error(`Not opening ${u.hostname}: not an allowed site.`);
   return require('electron').shell.openExternal(u.toString());
 }
+
+/** Open a folder of Tama's in Explorer (e.g. the Companion extension folder for "Load unpacked"). @param {string} dir */
+function openFolder(dir) { return require('electron').shell.openPath(dir); }
 
 /**
  * Run a short batch script in a new, visible console window (official CLI sign-ins, D-040). Windows only.
@@ -105,4 +108,4 @@ function runConsoleScript(name, lines) {
   return file;
 }
 
-module.exports = { notify, pickFolder, pickSaveTama, pickOpenTama, registerHotkeys, unregisterHotkeys, createTray, setTrayItems, openExternal, runConsoleScript, EXTERNAL_HOSTS };
+module.exports = { notify, pickFolder, pickSaveTama, pickOpenTama, registerHotkeys, unregisterHotkeys, createTray, setTrayItems, openExternal, openFolder, runConsoleScript, EXTERNAL_HOSTS };

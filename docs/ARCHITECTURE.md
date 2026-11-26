@@ -145,6 +145,16 @@ src/main/platform/voice-engine-process.js  starts/stops the headless AivisSpeech
 src/main/platform/fullscreen.js   fullscreen-foreground check via one hidden long-lived PowerShell + user32 helper (Windows only)
 src/main/platform/windows/walk-marker.js  44x44 "out for a walk" edge tab while the pet is hidden (SUM-5)
 src/renderer/marker/              the walk tab view (Tama's face; click = summon)
+src/main/services/music/          M13 YouTube Music (D-065, D-066): logic.js (pure: control validation, untrusted extension state rebuilt
+                                  field by field, change detection) + index.js (extension pairing + link, media-session fallback poll,
+                                  controls routed to whichever source has the song)
+src/main/platform/ws-server.js    minimal RFC 6455 WebSocket server on 127.0.0.1:47821–47825 for the extension (origin check first)
+src/main/platform/media-session.js Windows media session (SMTC) via a tiny C# helper compiled once with the built-in csc.exe
+                                  (cached in <data>/bin), line protocol: now / art / cmd (D-066)
+extension/                        Tama Companion browser extension (Chrome/Edge, MV3): background.js (WebSocket to Tama, pairing,
+                                  controlled tab), content.js (reads YouTube Music, runs commands), page.js (page-world player API),
+                                  selectors.js (every YouTube Music selector), shared.js (pure helpers), popup.* (pairing UI).
+                                  Shipped unpacked (asarUnpack) so browsers can "Load unpacked" it from the install folder.
 ```
 
 ### 2.2 Shared code rule
@@ -184,6 +194,7 @@ bus.on('engine.event', handler)
 Events: `app.error`, `pet.state.changed`, `pet.bond.changed`, `engine.event`, `chat.event`, `brain.notice`, `ui.prefs.changed`, `memory.changed`, `event.shown`, `google.changed`, `google.meeting.soon`, `telegram.changed`, `usage.{record,changed,limit}`, `accounts.changed`, `summon.done`, `tray.action`, `character.changed`, `device.{power,idle}.changed`, `prod.{changed,focus.phase,reminder.due,commit.seen}`.
 Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,delete,export,import}`, `prod.*`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setEffort,setCwd,answerPermission,resume}`, `chat.{send,history,interrupt,clear,push,confirm}`, `ui.prefs.{get,set}`, `memory.{get,add,forget}`, `diary.{write,list,read}`, `events.{answer,trigger}`, `brain.compose`, `google.{status,setClient,login,logout,set,brief,context,backupNow,backups,restore}`, `telegram.{status,setup,newCode,unpair,set}`, `usage.get`, `usage.limits.{get,refresh,set}`, `voice.{say,render,status,set,detect,encode,preview,info}` + `voice.play` / `voice.changed` / `voice.skipped`, `accounts.{get,switch}`, `brain.{status,set}`, `summon`.
 M5 extras (D-035): requests `weather.{get,set}`, `device.fullscreen.get`.
+M13 (D-066): event `music.changed`; requests `music.{get,control,pair,unpair}`.
 Renderer messages arrive on one `ui` IPC channel: `pet.state`, `pet.bond`, `prod`, `focus`, `reminder`, `commit`, `summon`, `tray`, `agent.event`, `term.focus`, `character`.
 
 ## 5. Engine contract
@@ -219,9 +230,10 @@ stop(): void
   tamas\<tamaId>\ character.json state.json events.json memory\facts.json memory\diary\*.md
   user/productivity.json  todos, notes, reminders, focus (the user's, not a Tama's; D-024)
   device.json      engines, routing, hotkeys, window positions, watched git repos, weather city (this PC only)
-  secrets.bin      safeStorage-encrypted (Telegram token, Google tokens)
+  secrets.bin      safeStorage-encrypted (Telegram token, Google tokens, Companion extension pairing key)
   active.json      { activeTamaId }
   logs\
+  bin\             tama-media-<hash>.exe (compiled media-session helper, rebuilt when its source changes)
 ```
 - Read/write only through `platform/store` (atomic write: tmp file + rename; debounced saves).
 - Every file has `schemaVersion`; migrations live in `platform/store/migrations/<file>/<n>.js` and are forward-only.
@@ -230,6 +242,9 @@ stop(): void
 ## 7. Security model
 - Engines: approval-required by default; PermissionGate is the single authority; per-channel policy (remote/Telegram = stricter).
 - Telegram: one paired chat ID; everything else dropped and logged.
+- Tama Companion extension (D-066): the WebSocket listener accepts only `chrome-extension://<32 a-p>` origins (any web page can
+  reach localhost), then a one-time pairing code, then a per-pairing key that only works from the origin that paired. Its state
+  is untrusted page data, rebuilt with types and caps (`services/music/logic`); only music.youtube.com links can be opened.
 - Google: minimal scopes; no delete/share tools; edits to existing files need approval.
 - Renderer: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, CSP in every HTML file, preload exposes an allow-list.
   IPC is only accepted from file:// frames (`platform/ipc`), and the desktop channel coerces or allow-lists every argument (D-055).

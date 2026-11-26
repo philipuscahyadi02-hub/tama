@@ -268,6 +268,18 @@ const TOPICS = {
   WEATHER_SET: 'weather.set',
   /** () → boolean — is the foreground window fullscreen (game, video, slides)? false on errors / non-Windows */
   DEVICE_FULLSCREEN_GET: 'device.fullscreen.get',
+
+  // ---- M13 YouTube Music & DJ (D-065, D-066) ----
+  /** { state: MusicState|null } — the song, play state, queue or controls changed (not on every position tick; extrapolate from `at`) */
+  MUSIC_CHANGED: 'music.changed',
+  /** () → { state: MusicState|null, extension: { paired, connected, tabs, port, dir }, media: { available }, pairing: {code, until}|null } */
+  MUSIC_GET: 'music.get',
+  /** { action, value? } → { ok, error?, lyrics? } — play|pause|toggle|next|prev|seek(ms)|volume(0-100)|shuffle|repeat|like|dislike|jump(index)|open(url)|lyrics */
+  MUSIC_CONTROL: 'music.control',
+  /** () → { code, until, port, dir } — a new one-time code for pairing the Tama Companion extension (10 minutes) */
+  MUSIC_PAIR: 'music.pair',
+  /** () → { ok } — forget the paired extension */
+  MUSIC_UNPAIR: 'music.unpair',
 };
 
 module.exports = { TOPICS };

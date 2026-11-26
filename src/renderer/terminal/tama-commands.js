@@ -38,6 +38,7 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
     '  /brief           morning brief (calendar, important mail, todos) · /newpc  checklist for a new PC',
     '  /usage [here]    Usage & accounts dashboard: Claude, Gemini, Google, Telegram usage + switch accounts',
     '  /weather <city>  set your city for weather moments (no arg = now · /weather off) · /marker [on|off] walk tab',
+    '  /music  YouTube Music: now playing, play/pause/next/prev/like, vol, seek, lyrics · /music install, /music pair (Companion extension)',
     '  /phone [setup <token>|code|status|on|off|unpair|allow here|disallow here|remote on|off|awake on|off]   Telegram on your phone',
     '  coming soon: /voice (M8)',
     '',
@@ -246,6 +247,7 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
         info(on ? '⎿  🚶 walk tab on: when you hide your Tama, a little tab on the right edge calls them back' : '⎿  walk tab off');
       }],
       ...window.makeConnectCommands(K, { info, error, getCwd }),
+      ...window.makeMusicCommands(K, { info, error }),
       feed: ['Feed your Tama', async () => show(await K.act('feed'), (r) => (r.ok ? '⎿  🍙 itadakimasu!' : `⎿  (${r.reason})`))],
       snack: ['Energy snack (+25)', async () => show(await K.act('snack'), (r) => (r.ok ? '⎿  ⚡ energy +25' : r.reason === 'cooldown' ? `⎿  snack again in ${Math.ceil(r.retryInMs / 60000)} min` : `⎿  (${r.reason})`))],
       nap: ['10-minute power nap', async () => show(await K.act('nap'), (r) => (r.ok ? '⎿  💤 power nap, 10 min' : `⎿  (${r.reason})`))],

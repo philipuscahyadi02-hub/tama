@@ -180,6 +180,15 @@ contextBridge.exposeInMainWorld('tama', {
     off: () => ipcRenderer.invoke('weather:set', { off: true }),
   },
 
+  // ---- M13 YouTube Music & DJ (D-066) ----
+  music: {
+    get: () => ipcRenderer.invoke('music:get'),
+    control: (/** @type {string} */ action, /** @type {number|string|undefined} */ value) => ipcRenderer.invoke('music:control', { action, value }),
+    pair: () => ipcRenderer.invoke('music:pair'),
+    unpair: () => ipcRenderer.invoke('music:unpair'),
+    openFolder: () => ipcRenderer.invoke('music:openFolder'),
+  },
+
   // ---- both ----
   onAgent: on('agent.event'),
   onBrainNotice: on('brain.notice'),

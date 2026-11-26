@@ -15,6 +15,11 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = first stable release (D-058); the rest of M12 ships as 1.x; 2.0.0 = Tama's own agentic brain.
 
 ## [Unreleased]
+### Added
+- **YouTube Music, step 1 (M13, D-066):**
+  - **Tama Companion browser extension** (`extension/`, Chrome and Edge): it reads the YouTube Music player (song, cover, position, volume, repeat, like, the Up next queue, lyrics) and runs Tama's controls. It pairs once with a code (`/music pair`), talks only to Tama on 127.0.0.1, and only runs on music.youtube.com (MUS-10).
+  - **Without the extension,** Tama reads what plays from Windows' media controls: song, cover, play/pause, next, previous and seek (MUS-1).
+  - **`/music`** in the terminal shows what's playing, controls it (`play`, `pause`, `next`, `prev`, `like`, `vol`, `seek`, `lyrics`, `open`), and shows how to install the extension (`/music install`, `/music folder`).
 ### Decisions
 - D-064 — Every open roadmap item parked (🅿): the to-do list starts from zero; M12 closed.
 - D-065 — M13 Music & DJ planned (1.1.0): now-playing for any player, Spotify (Premium, your own Spotify app) and YouTube Music (YouTube API + your browser), a music widget, DJ Tama on the real beat (MUS-1..9).
@@ -261,6 +266,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `22a6cb7` | 2026-11-26 | docs(prd) | park all open items; plan M13 YouTube Music & DJ (D-064..D-066) |
 | `47e1f8a` | 2026-11-08 | docs(onboarding) | add CONTRIBUTING.md and setup, doctor and dev scripts |
 | `64a6541` | 2026-11-08 | feat(voice) | stop the Japanese engine after 5 minutes muted, restart on unmute (D-063) |
 | `066a798` | 2026-11-08 | docs(changelog) | regenerate commit table |

@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.38 |
+| **Version** | 0.39 |
 | **Status** | **v1.0.0 released** (D-058); installer + setup wizard done (unreleased). Every other open item is parked (D-064). **Next: M13 YouTube Music & DJ = 1.1.0** (MUS-*, D-065, D-066) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-26 |
@@ -243,7 +243,7 @@ Status: ☐ todo · ◐ in progress · ☑ done · 🅿 parked (not planned; kep
 Plan in D-065, YouTube Music only with a companion extension (D-066). Build order: MUS-10 + MUS-1 → MUS-2 → MUS-3/4 → MUS-6 → MUS-7..9.
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| MUS-1 | **Fallback now-playing reader:** Windows' media session (the same source as the volume pop-up) through one hidden PowerShell helper, like the fullscreen helper (D-035): title, artist, album, cover art, position, playing/paused, play/pause, next, previous and seek, for YouTube Music in any browser (and any other player) when the extension isn't installed or connected. Bus: `music.now` (state), `music.control`; the extension (MUS-10) feeds the same topics. | P0 | M13 | ☐ |
+| MUS-1 | **Fallback now-playing reader:** Windows' media session (the same source as the volume pop-up) through one hidden PowerShell helper, like the fullscreen helper (D-035): title, artist, album, cover art, position, playing/paused, play/pause, next, previous and seek, for YouTube Music in any browser (and any other player) when the extension isn't installed or connected. Bus: `music.now` (state), `music.control`; the extension (MUS-10) feeds the same topics. | P0 | M13 | ☑ |
 | MUS-2 | **YouTube Music widget:** a small card beside her while music plays: cover art, title and artist, a progress bar with seek, ⏮ ⏯ ⏭, volume, shuffle, repeat and 👍/👎, plus tabs for **Up next** (the live queue; click to jump), **Lyrics** (when YouTube Music has them) and **Playlists** (yours, with their songs, and search). Without the extension it shows what MUS-1 and MUS-6 allow and says what the extension adds. Colors from her theme (`--tama-*`); can be dragged or pinned; hides a few seconds after the music stops; auto-show can be turned off. Desktop-only. | P0 | M13 | ☐ |
 | MUS-3 | **DJ Tama:** while music plays she wears headphones, nods along, scratches a small turntable and sometimes strikes a "drop" pose with sparkles; on a new song she says a short DJ line (composer, fallback lines in the deck; respects quiet rules and mute). New rig parts in `src/shared/rig` (headphones, deck) so every Tama gets the look. Off when the music pauses; `/music dj on\|off`. Reduced motion = headphones only. | P0 | M13 | ☐ |
 | MUS-4 | **Real beat sync:** the pet window analyses the PC's audio output (Windows loopback) in memory to find the tempo and beat, so the nod and scratches land on the beat. Nothing is recorded, saved or sent. Runs only while music plays and DJ mode is on; the permission is granted to the pet window only (amends D-055). Falls back to a steady groove when unavailable. Budget: at most about +2 % CPU while playing (`npm run perf`), unchanged idle. | P1 | M13 | ☐ |
@@ -252,7 +252,7 @@ Plan in D-065, YouTube Music only with a companion extension (D-066). Build orde
 | MUS-7 | **Ask her:** Tama-owned tools for the chat brain and Claude Code (`music_now`, `music_control`, `music_play` (song, playlist or search), `music_queue`, `music_playlists`): reads and controls run without a tap and are announced; song titles and lyrics are untrusted data for the model. The persona knows them. | P1 | M13 | ☐ |
 | MUS-8 | **Phone:** Telegram `/np` (with cover art), `/play [song\|playlist]`, `/pause`, `/skip`, `/playlists`. | P1 | M13 | ☐ |
 | MUS-9 | **Setup & settings:** a YouTube Music card in the setup wizard (install the extension, pair it, the YouTube switch, what works without each), a Settings → Music tab (connection, DJ mode, beat sync, widget auto-show), and `/music`. | P1 | M13 | ☐ |
-| MUS-10 | **Tama Companion browser extension** (Chrome and Edge, Manifest V3, source in `extension/`, shipped with the app and loaded with \"Load unpacked\" until it is published): a content script on music.youtube.com reads the player (song, position, playing, volume, shuffle, repeat, like state, the Up next queue, lyrics) and runs controls (play/pause, next, previous, seek, jump to a queue item, shuffle, repeat, like/dislike, volume, open a song or playlist). It talks to Tama over a 127.0.0.1 WebSocket, paired once with a one-time code (like Telegram, D-036), and Tama accepts only the paired extension's origin and key. Permissions: music.youtube.com only; no cookies, history or other sites; it never reads or sends sign-in data. One tab is the controlled tab. If YouTube Music changes its page, the widget falls back to MUS-1 and says so. | P0 | M13 | ☐ |
+| MUS-10 | **Tama Companion browser extension** (Chrome and Edge, Manifest V3, source in `extension/`, shipped with the app and loaded with \"Load unpacked\" until it is published): a content script on music.youtube.com reads the player (song, position, playing, volume, shuffle, repeat, like state, the Up next queue, lyrics) and runs controls (play/pause, next, previous, seek, jump to a queue item, shuffle, repeat, like/dislike, volume, open a song or playlist). It talks to Tama over a 127.0.0.1 WebSocket, paired once with a one-time code (like Telegram, D-036), and Tama accepts only the paired extension's origin and key. Permissions: music.youtube.com only; no cookies, history or other sites; it never reads or sends sign-in data. One tab is the controlled tab. If YouTube Music changes its page, the widget falls back to MUS-1 and says so. | P0 | M13 | ☑ |
 
 ## 5. Milestones
 
@@ -317,6 +317,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.39 — 2026-11-26** — MUS-1 ☑ (media-session fallback), MUS-10 ☑ (Companion extension; checked live in Chrome: song, cover, queue, lyrics, pause/play/seek, reconnect).
 - **0.38 — 2026-11-26** — YouTube Music only: Spotify (MUS-5) dropped, new MUS-10 Tama Companion browser extension; MUS-1 becomes the fallback (D-066).
 - **0.37 — 2026-11-26** — Every open item parked (🅿, D-064); M12 closed. New M13 Music & DJ for 1.1.0 (MUS-1..9, D-065).
 - **0.36 — 2026-11-08** — VH-5 (voice commands without AI), VH-6 (optional local brain), VH-7 (optional Gemini free key) (D-062).
