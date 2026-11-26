@@ -100,6 +100,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-068 | Music widget is a normal, movable window (not on top, not following her, position remembered) with a solid or Windows 11 glass look and 40–100 % opacity (full on hover) | Accepted · Refines MUS-2 |
 | D-069 | DJ Tama: DJ rig parts for every design; real beat from PC-audio loopback granted to the pet window only (amends D-055); beat-stepped half-time animations to stay within ~+2 % CPU | Accepted · Amends D-055 |
 | D-070 | One-click pairing (the extension asks, the user clicks Allow on the pet's bubble; codes stay as a backup); the music card has no taskbar button | Accepted · Refines D-066, D-068 |
+| D-071 | Up next / Lyrics open in their own panel docked next to the pet (fixed, moves with her); the card stays compact wherever the user put it | Accepted · Refines D-068 |
 
 ---
 
@@ -972,3 +973,14 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Auto-accepting any extension (any installed extension could connect); desktop-pinned via the Windows desktop window trick (fragile across updates; the user chose the simple widget); publishing to the Chrome Web Store (removes developer mode; needs a paid developer account and review; parked).
 - **Consequences:** Chrome closes the popup when the user clicks the pet; the pairing still completes in the extension's background. The setup guide card (MUS-9) is still to do.
 - **Refs:** MUS-2, MUS-9, MUS-10, D-036, D-066, D-068
+
+### D-071 — Up next / Lyrics in a panel docked beside the pet
+- **Date:** 2026-11-27 · **Status:** Accepted · Refines D-068
+- **Context:** Expanding the card made it grow and jump. The user wanted the Up next / Lyrics dropdown at a fixed place beside Tama, not relocatable, while the small card stays wherever they put it.
+- **Decision:**
+  - The card is always compact. Its ⌄ button opens a separate panel window: the same page with `?panel=1`, showing only the tabs. The panel is docked beside the pet's body with `geometry.widgetPosition` on the side with room, and is not movable.
+  - It moves with her in the same step and hides with her. It closes with ⌃, its ✕, or when the card hides.
+  - It floats (opened on purpose, next to the floating pet), unlike the card, which stays behind active windows.
+- **Alternatives:** A list that opens below the card (the user picked the docked panel); docking the whole card (they want the card where they put it).
+- **Consequences:** Two music windows while the panel is open; the panel follows her walks (she doesn't walk while DJing).
+- **Refs:** MUS-2, D-068

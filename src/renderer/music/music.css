@@ -153,3 +153,12 @@ body.glass #source { border-top-color: color-mix(in srgb, var(--tama-line) 60%, 
   background: var(--tama-line); -webkit-app-region: drag; cursor: grab; }
 #card:hover #grip { background: var(--tama-menu-hover); }
 #now, #disc, #info, #kicker, #title, #sub, #progress { -webkit-app-region: drag; }
+
+/* ---- the docked Up next / Lyrics panel beside the pet (D-071): fixed, not draggable ---- */
+#panelClose { display: none; }
+body.panel #now, body.panel #progress, body.panel #controls, body.panel #grip, body.panel #lookPanel { display: none !important; }
+body.panel #card { -webkit-app-region: no-drag; background: var(--tama-panel); }
+body.panel #more { border-top: 0; }
+body.panel #tabs { align-items: center; padding-top: 10px; }
+body.panel #panelClose { display: inline-grid; margin-left: auto; }
+body.panel #tabs #panelClose { padding: 0; width: 22px; height: 22px; border-radius: 7px; }

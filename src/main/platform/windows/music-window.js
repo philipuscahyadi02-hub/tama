@@ -4,6 +4,8 @@
 // (setting `musicWidget: 'auto'`, without taking focus) and hides a while after the music stops.
 // Looks (D-068): 'solid' (transparent window, card with a soft shadow) or 'glass' (Windows 11 acrylic behind a
 // see-through card), plus an opacity (40–100 %) that goes back to 100 % while the mouse is over the card.
+// Up next / Lyrics (D-071) open in their own panel docked right next to the pet: fixed (not draggable), it moves with
+// her, and closes with ⌃ or when the card hides.
 const path = require('path');
 const { BrowserWindow } = require('electron');
 const geo = require('../summon/geometry');
@@ -15,9 +17,11 @@ const RENDERER = path.join(__dirname, '..', '..', '..', 'renderer');
 const PRELOAD = path.join(__dirname, '..', '..', '..', 'preload', 'index.js');
 /** Solid: 10 px of transparent margin on every side for the card's shadow. Glass: the window is the card. */
 const SIZES = {
-  solid: { compact: { width: 352, height: 172 }, expanded: { width: 352, height: 486 } },
-  glass: { compact: { width: 332, height: 152 }, expanded: { width: 332, height: 466 } },
+  solid: { compact: { width: 352, height: 172 } },
+  glass: { compact: { width: 332, height: 152 } },
 };
+/** The Up next / Lyrics panel beside the pet (10 px shadow margin on every side). */
+const PANEL = { width: 332, height: 410 };
 const HIDE_PAUSED_MS = 20000;
 const HIDE_NONE_MS = 4000;
 
@@ -28,10 +32,12 @@ const HIDE_NONE_MS = 4000;
  *   send: (win: BrowserWindow, name: string, payload: any) => void,
  *   savedPosition?: { x: number, y: number } | null,
  *   onMoved?: (pos: { x: number, y: number }) => void,
+ *   petHidden?: () => boolean,
  * }} deps
  */
-function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () => {} }) {
+function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () => {}, petHidden = () => false }) {
   /** @type {BrowserWindow | null} */ let win = null;
+  /** @type {BrowserWindow | null} */ let panel = null;
   /** @type {any} */ let state = null;
   /** @type {'auto'|'off'} */ let mode = 'auto';
   /** @type {Look} */ let look = { look: 'solid', opacity: 100 };
@@ -44,7 +50,38 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
   /** @type {ReturnType<typeof setTimeout> | null} */ let hideTimer = null;
 
   const alive = () => (win && !win.isDestroyed() ? win : null);
-  const size = () => SIZES[look.look][expanded ? 'expanded' : 'compact'];
+  const size = () => SIZES[look.look].compact;
+  const alivePanel = () => (panel && !panel.isDestroyed() ? panel : null);
+
+  function createPanel() {
+    const p = new BrowserWindow({
+      ...PANEL, show: false, frame: false, transparent: true, hasShadow: false, resizable: false, movable: false,
+      maximizable: false, minimizable: false, fullscreenable: false, skipTaskbar: true, alwaysOnTop: true,
+      title: 'Tama · Up next', backgroundColor: '#00000000',
+      webPreferences: { preload: PRELOAD, contextIsolation: true, nodeIntegration: false, sandbox: true },
+    });
+    p.setAlwaysOnTop(true, 'floating'); // opened on purpose, next to the pet (who floats too)
+    p.loadFile(path.join(RENDERER, 'music', 'music.html'), { query: { panel: '1' } });
+    attachDebug(p, 'musicpanel');
+    if (process.env.TAMA_MUSIC_EVAL) p.webContents.once('did-finish-load', () => p.webContents.executeJavaScript(String(process.env.TAMA_MUSIC_EVAL)).catch(() => null));
+    p.webContents.on('did-finish-load', pushState);
+    panel = p;
+    return p;
+  }
+
+  /** Docked beside the pet's body (the side with room), always fully on screen. */
+  function placePanel() {
+    const p = alivePanel();
+    if (!p) return;
+    if (process.env.TAMA_SHOT_OFFSCREEN) { p.setBounds({ x: -4000, y: 600, ...PANEL }); return; } // dev: off-screen
+    const at = geo.widgetPosition(petBody(), PANEL, workAreas());
+    p.setBounds({ x: at.x, y: at.y, ...PANEL });
+  }
+
+  function closePanel() {
+    expanded = false;
+    const p = alivePanel(); if (p && p.isVisible()) p.hide();
+  }
 
   function create() {
     const glass = look.look === 'glass';
@@ -97,8 +134,9 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
   }
 
   function pushState() {
-    const w = alive();
-    if (w) send(w, 'music', { state, expanded, manual, look });
+    const payload = { state, expanded, manual, look };
+    const w = alive(); if (w) send(w, 'music', payload);
+    const p = alivePanel(); if (p) send(p, 'music', payload);
   }
 
   function apply() {
@@ -110,8 +148,9 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
     } else if (v === 'hide') {
       if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
       const w = alive(); if (w && w.isVisible()) w.hide();
+      closePanel();
     } else if (!hideTimer && alive()?.isVisible()) {
-      hideTimer = setTimeout(() => { hideTimer = null; const w = alive(); if (w && visibility({ state, mode, manual, dismissed }) !== 'show') w.hide(); }, state ? HIDE_PAUSED_MS : HIDE_NONE_MS);
+      hideTimer = setTimeout(() => { hideTimer = null; const w = alive(); if (w && visibility({ state, mode, manual, dismissed }) !== 'show') { w.hide(); closePanel(); } }, state ? HIDE_PAUSED_MS : HIDE_NONE_MS);
     }
     pushState();
   }
@@ -140,8 +179,24 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
     },
     /** The mouse is over the card: fully visible while hovering. @param {boolean} on */
     setHover(on) { hovered = !!on; applyOpacity(); },
-    /** @param {boolean} on */
-    setExpanded(on) { expanded = !!on; place(); pushState(); },
+    /** Up next / Lyrics: open or close the panel beside the pet. @param {boolean} on */
+    setExpanded(on) {
+      if (on && !petHidden()) {
+        expanded = true;
+        const p = alivePanel() || createPanel();
+        placePanel();
+        p.showInactive();
+      } else closePanel();
+      pushState();
+    },
+    /** The pet moved, hid or came back: the docked panel goes with her. */
+    follow() {
+      const p = alivePanel();
+      if (!p || !expanded) return;
+      if (petHidden()) { if (p.isVisible()) p.hide(); return; }
+      placePanel();
+      if (!p.isVisible()) p.showInactive();
+    },
     /** Put it next to the pet again (and remember that). */
     besideHer() {
       pos = null; place();
@@ -152,7 +207,11 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
     /** /music widget: show it even when nothing plays. */
     open() { manual = true; dismissed = ''; apply(); const w = alive(); if (w) w.show(); },
     window: alive,
-    destroy() { if (hideTimer) clearTimeout(hideTimer); const w = alive(); if (w) w.destroy(); win = null; },
+    destroy() {
+      if (hideTimer) clearTimeout(hideTimer);
+      const w = alive(); if (w) w.destroy(); win = null;
+      const p = alivePanel(); if (p) p.destroy(); panel = null;
+    },
   };
 }
 
