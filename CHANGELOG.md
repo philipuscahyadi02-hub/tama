@@ -24,6 +24,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   - **Compact card:** a small card next to her while a song plays, in her colors: cover, title, artist, a progress bar you can click to jump, ⏮ ⏯ ⏭, 👍/👎, repeat, shuffle and volume.
   - **Expanded card:** **Up next** (click a song to play it) and **Lyrics**.
   - **Moving and hiding:** it walks with her. Drag it elsewhere and it stays there; 📌 brings it back beside her. ✕ hides it for this song. `/music widget` opens it by hand, and `/music widget off` stops it from popping up.
+  - **Redesign:** its own matching icon set instead of emoji, a vinyl record behind the cover that spins while music plays, a small "Now playing" equalizer, styled progress and volume sliders, and a soft shadow. It moves together with her in every step, with no trailing. The vinyl and equalizer stand still with reduced motion.
 ### Decisions
 - D-064 — Every open roadmap item parked (🅿): the to-do list starts from zero; M12 closed.
 - D-065 — M13 Music & DJ planned (1.1.0): now-playing for any player, Spotify (Premium, your own Spotify app) and YouTube Music (YouTube API + your browser), a music widget, DJ Tama on the real beat (MUS-1..9).
@@ -271,6 +272,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `f16b6b8` | 2026-11-27 | feat(music) | YouTube Music widget beside the pet (MUS-2); embedded player rejected (D-067) |
 | `a8b9ee2` | 2026-11-26 | feat(music) | Tama Companion extension and media-session fallback (MUS-1, MUS-10) |
 | `22a6cb7` | 2026-11-26 | docs(prd) | park all open items; plan M13 YouTube Music & DJ (D-064..D-066) |
 | `47e1f8a` | 2026-11-08 | docs(onboarding) | add CONTRIBUTING.md and setup, doctor and dev scripts |

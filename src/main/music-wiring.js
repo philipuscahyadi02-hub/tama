@@ -21,11 +21,10 @@ const geometry = require('./platform/summon/geometry');
  */
 function createMusicWiring({ bus, ipc, shell, secrets, dataDir, log = () => {} }) {
   /** @type {import('./platform/windows/music-window').MusicWindow | null} */ let widget = null;
-  let followAt = 0;
 
   return {
-    /** The pet moved: the widget walks with her (at most every 60 ms; walking moves her every 45 ms). */
-    onPetMoved() { if (widget && Date.now() - followAt > 60) { followAt = Date.now(); widget.follow(); } },
+    /** The pet moved: the widget moves in the same step, so they walk together without trailing. */
+    onPetMoved() { if (widget) widget.follow(); },
 
     /** Create the widget for this pet window. @param {import('./platform/windows/pet-window').PetWindow} pet */
     attach(pet) {

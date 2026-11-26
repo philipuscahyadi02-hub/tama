@@ -9,34 +9,41 @@
 <body>
   <main id="card" class="compact">
     <section id="now">
-      <div id="cover"><img id="art" alt="" hidden /><span id="noart">♪</span></div>
+      <div id="disc" aria-hidden="true">
+        <div id="vinyl"><span class="label"></span></div>
+        <div id="cover"><img id="art" alt="" hidden /><span id="noart" class="ico" data-i="note"></span></div>
+      </div>
       <div id="info">
+        <div id="kicker"><span id="eq" aria-hidden="true"><i></i><i></i><i></i></span><span id="kickerText">Now playing</span></div>
         <div id="title">Nothing playing</div>
         <div id="sub"></div>
-        <div id="bar" title="Click to jump"><div id="fill"></div><div id="knob"></div></div>
-        <div id="times"><span id="pos">0:00</span><span id="dur">0:00</span></div>
       </div>
       <div id="corner">
-        <button id="expand" class="tiny" title="Up next and lyrics">⌄</button>
-        <button id="unpin" class="tiny" title="Back beside her" hidden>📌</button>
-        <button id="close" class="tiny" title="Hide for this song">✕</button>
+        <button id="expand" class="tiny ico" data-i="down" title="Up next and lyrics"></button>
+        <button id="unpin" class="tiny ico" data-i="pin" title="Back beside her" hidden></button>
+        <button id="close" class="tiny ico" data-i="close" title="Hide for this song"></button>
       </div>
     </section>
+    <section id="progress">
+      <span id="pos">0:00</span>
+      <div id="bar" title="Click to jump"><div id="fill"></div><div id="knob"></div></div>
+      <span id="dur">0:00</span>
+    </section>
     <section id="controls">
-      <button id="prev" title="Previous">⏮</button>
-      <button id="toggle" class="main" title="Play / pause">▶</button>
-      <button id="next" title="Next">⏭</button>
-      <span class="sep"></span>
-      <button id="like" title="Like">👍</button>
-      <button id="dislike" title="Dislike">👎</button>
-      <button id="repeat" title="Repeat">🔁</button>
-      <button id="shuffle" title="Shuffle the queue">🔀</button>
-      <input id="volume" type="range" min="0" max="100" step="1" title="Volume" />
+      <button id="like" class="ico side" data-i="like" title="Like"></button>
+      <button id="prev" class="ico" data-i="prev" title="Previous"></button>
+      <button id="toggle" class="ico main" data-i="play" title="Play / pause"></button>
+      <button id="next" class="ico" data-i="next" title="Next"></button>
+      <button id="dislike" class="ico side" data-i="dislike" title="Dislike"></button>
+      <span class="grow"></span>
+      <button id="repeat" class="ico small" data-i="repeat" title="Repeat"></button>
+      <button id="shuffle" class="ico small" data-i="shuffle" title="Shuffle the queue"></button>
+      <div id="vol"><span id="volIcon" class="ico" data-i="volume"></span><input id="volume" type="range" min="0" max="100" step="1" title="Volume" /></div>
     </section>
     <section id="more" hidden>
       <nav id="tabs">
-        <button data-tab="queue" class="on">Up next</button>
-        <button data-tab="lyrics">Lyrics</button>
+        <button data-tab="queue" class="on"><span class="ico" data-i="queue"></span>Up next</button>
+        <button data-tab="lyrics"><span class="ico" data-i="lyrics"></span>Lyrics</button>
       </nav>
       <ol id="queue"></ol>
       <div id="lyrics" hidden></div>
@@ -47,6 +54,7 @@
   <script src="../../shared/catalog.js"></script>
   <script src="../../shared/spec.js"></script>
   <script src="../../shared/theme.js"></script>
+  <script src="icons.js"></script>
   <script src="music.js"></script>
 </body>
 </html>

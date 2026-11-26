@@ -13,6 +13,9 @@ const lyricsCache = new Map();
 
 const clock = (ms) => { const s = Math.max(0, Math.round((ms || 0) / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 const songKey = (s) => (s ? String(s.videoId || `${s.title}|${s.artist}`) : '');
+/** Put a named icon into an element (static icon names only). */
+const setIcon = (el, name) => { if (el.dataset.i !== name || !el.firstChild) { el.dataset.i = name; el.innerHTML = window.TamaIcon(name); } };
+for (const el of document.querySelectorAll('.ico[data-i]')) el.insertAdjacentHTML('afterbegin', window.TamaIcon(el.dataset.i));
 
 async function theme() {
   const ch = await K.getCharacter().catch(() => null);
@@ -40,28 +43,30 @@ function drawBar() {
 function render() {
   const s = view.state;
   const c = (s && s.controls) || {};
-  $('card').className = view.expanded ? 'expanded' : 'compact';
+  $('card').className = `${view.expanded ? 'expanded' : 'compact'}${s && s.playing ? ' playing' : ''}`;
   $('more').hidden = !view.expanded;
-  $('expand').textContent = view.expanded ? '⌃' : '⌄';
+  setIcon($('expand'), view.expanded ? 'up' : 'down');
+  $('kickerText').textContent = !s ? 'Music' : s.playing ? 'Now playing' : 'Paused';
   $('unpin').hidden = !view.pinned;
   $('title').textContent = s ? s.title : 'Nothing playing';
   $('title').title = s ? s.title : '';
   $('sub').textContent = s ? [s.artist, s.album].filter(Boolean).join(' · ') : 'Play something on YouTube Music~';
   if (s && s.art) { $('art').src = s.art; $('art').hidden = false; $('noart').hidden = true; } else { $('art').hidden = true; $('noart').hidden = false; }
-  $('toggle').textContent = s && s.playing ? '⏸' : '▶';
+  setIcon($('toggle'), s && s.playing ? 'pause' : 'play');
   $('toggle').disabled = !s;
   $('prev').disabled = !s || !c.prev;
   $('next').disabled = !s || !c.next;
   $('bar').classList.toggle('off', !s || !c.seek);
   for (const id of ['like', 'dislike', 'repeat', 'shuffle']) $(id).hidden = !c[id === 'dislike' ? 'like' : id];
-  document.querySelector('#controls .sep').hidden = !(c.like || c.repeat || c.shuffle);
   $('like').classList.toggle('active', !!s && s.like === 'like');
   $('dislike').classList.toggle('active', !!s && s.like === 'dislike');
   $('repeat').classList.toggle('active', !!s && !!s.repeat && s.repeat !== 'off');
-  $('repeat').textContent = s && s.repeat === 'one' ? '🔂' : '🔁';
+  setIcon($('repeat'), s && s.repeat === 'one' ? 'repeatOne' : 'repeat');
   $('repeat').title = `Repeat: ${(s && s.repeat) || 'off'}`;
-  $('volume').hidden = !c.volume;
+  $('vol').hidden = !c.volume;
   if (s && s.volume != null && document.activeElement !== $('volume')) $('volume').value = String(s.volume);
+  $('volume').style.setProperty('--v', `${$('volume').value}%`);
+  setIcon($('volIcon'), s && (s.muted || s.volume === 0) ? 'mute' : 'volume');
   $('volume').title = s && s.volume != null ? `Volume ${s.volume}%` : 'Volume';
   drawBar();
   renderSource();
@@ -97,7 +102,7 @@ function renderQueue() {
   for (const q of s.queue) {
     const li = document.createElement('li');
     if (q.current) { li.className = 'current'; cur = li; }
-    if (q.art) { const img = document.createElement('img'); img.src = q.art; img.alt = ''; li.append(img); } else { const ph = document.createElement('span'); ph.className = 'ph'; li.append(ph); }
+    if (q.art) { const img = document.createElement('img'); img.src = q.art; img.alt = ''; li.append(img); } else { const ph = document.createElement('span'); ph.className = 'ph'; ph.innerHTML = window.TamaIcon('note'); li.append(ph); }
     const t = document.createElement('div'); t.className = 't';
     const a = document.createElement('div'); a.textContent = q.title;
     const b = document.createElement('div'); b.className = 'a'; b.textContent = q.artist;
@@ -148,7 +153,7 @@ $('dislike').addEventListener('click', () => act('dislike'));
 $('repeat').addEventListener('click', () => act('repeat'));
 $('shuffle').addEventListener('click', () => act('shuffle'));
 let volTimer = 0;
-$('volume').addEventListener('input', () => { clearTimeout(volTimer); volTimer = setTimeout(() => act('volume', Number($('volume').value)), 150); });
+$('volume').addEventListener('input', () => { $('volume').style.setProperty('--v', `${$('volume').value}%`); clearTimeout(volTimer); volTimer = setTimeout(() => act('volume', Number($('volume').value)), 150); });
 $('expand').addEventListener('click', () => K.music.widget(view.expanded ? 'collapse' : 'expand'));
 $('unpin').addEventListener('click', () => K.music.widget('unpin'));
 $('close').addEventListener('click', () => K.music.widget('dismiss'));
@@ -179,5 +184,9 @@ K.music.onWidget((v) => {
 setInterval(() => { if (view.state && view.state.playing && !seeking) drawBar(); }, 500);
 K.onCharacter && K.onCharacter(theme);
 theme();
+// Reduced motion (PET-8): the vinyl and the equalizer stand still.
+const motion = (p) => document.body.classList.toggle('reduced', !!p && p.motion === 'reduced');
+K.ui.prefs().then(motion).catch(() => null);
+K.ui.onPrefs(motion);
 K.music.get().then((st) => { if (!view.state && st && st.state) { view = { ...view, state: st.state }; receivedAt = Date.now(); render(); } });
 render();

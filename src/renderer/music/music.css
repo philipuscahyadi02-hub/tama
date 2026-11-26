@@ -1,61 +1,115 @@
-/* Music widget (MUS-2): colors only from --tama-* tokens (AGENTS §3); the fallbacks match the chat window. */
+/* Music widget (MUS-2): colors only from --tama-* tokens (AGENTS §3); the fallbacks match the chat window.
+   The window is transparent and 10 px larger than the card on every side, so the soft shadow is never cut off. */
 :root {
   --tama-ink: #2b2340; --tama-dim: #8d84a8; --tama-warn: #b54a1d;
   --tama-bg: #fff4fa; --tama-panel: #ffffff; --tama-head: #f6dbe9; --tama-accent: #d9468f; --tama-accent-ink: #ffffff;
   --tama-line: #f0d8e6; --tama-bubble: #fde8f2; --tama-menu-hover: #f7c9df;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; user-select: none; }
-body { font: 12px/1.35 "Segoe UI", system-ui, sans-serif; color: var(--tama-ink); padding: 4px; }
-button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; border-radius: 8px; -webkit-app-region: no-drag; }
-button:disabled { opacity: .3; cursor: default; }
-button:not(:disabled):hover { background: var(--tama-menu-hover); }
+body { font: 12px/1.35 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; color: var(--tama-ink); padding: 10px; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; -webkit-app-region: no-drag; }
+button:disabled { opacity: .28; cursor: default; }
+.i { width: 18px; height: 18px; display: block; }
+.ico { display: inline-grid; place-items: center; }
 
 #card {
-  height: 100%; display: flex; flex-direction: column; background: var(--tama-panel); border: 1.5px solid var(--tama-line);
-  border-radius: 16px; box-shadow: 0 3px 12px rgba(80, 40, 70, .18); overflow: hidden; -webkit-app-region: drag;
+  height: 100%; display: flex; flex-direction: column; overflow: hidden; -webkit-app-region: drag;
+  background: linear-gradient(180deg, var(--tama-bubble) 0%, var(--tama-panel) 62px);
+  border: 1.5px solid var(--tama-line); border-radius: 20px;
+  box-shadow: 0 6px 16px -6px rgba(70, 30, 60, .28), 0 1px 3px rgba(70, 30, 60, .12);
 }
-#now { display: flex; gap: 10px; padding: 9px 9px 2px; position: relative; }
-#cover { width: 64px; height: 64px; flex: none; border-radius: 10px; overflow: hidden; background: var(--tama-head); display: grid; place-items: center; }
+
+/* ---- now playing ---- */
+#now { display: flex; gap: 12px; padding: 12px 12px 4px 12px; position: relative; }
+#disc { position: relative; width: 82px; height: 64px; flex: none; }
+#vinyl {
+  position: absolute; left: 22px; top: 2px; width: 60px; height: 60px; border-radius: 50%;
+  background: repeating-radial-gradient(circle, #241d2c 0 1.5px, #2f2738 1.5px 3px);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 2px 5px rgba(0,0,0,.25);
+  animation: spin 3.2s linear infinite; animation-play-state: paused;
+}
+#vinyl .label { position: absolute; inset: 21px; border-radius: 50%; background: var(--tama-accent); box-shadow: 0 0 0 2px var(--tama-head); }
+#vinyl .label::after { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: #241d2c; }
+#cover {
+  position: absolute; left: 0; top: 0; width: 64px; height: 64px; border-radius: 12px; overflow: hidden;
+  background: var(--tama-head); display: grid; place-items: center; color: var(--tama-accent);
+  box-shadow: 0 3px 8px rgba(70, 30, 60, .25);
+}
 #art { width: 100%; height: 100%; object-fit: cover; }
-#noart { font-size: 26px; color: var(--tama-accent); }
-#info { flex: 1; min-width: 0; padding-right: 46px; }
-#title { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#sub { color: var(--tama-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 7px; }
-#bar { height: 14px; position: relative; cursor: pointer; -webkit-app-region: no-drag; }
-#bar::before { content: ""; position: absolute; left: 0; right: 0; top: 6px; height: 3px; border-radius: 2px; background: var(--tama-line); }
-#fill { position: absolute; left: 0; top: 6px; height: 3px; border-radius: 2px; background: var(--tama-accent); width: 0; }
-#knob { position: absolute; top: 3px; width: 9px; height: 9px; margin-left: -4px; border-radius: 50%; background: var(--tama-accent); left: 0; opacity: 0; transition: opacity .15s; }
-#bar:hover #knob { opacity: 1; }
+#noart .i { width: 28px; height: 28px; }
+.playing #vinyl { animation-play-state: running; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#info { flex: 1; min-width: 0; padding-right: 50px; padding-top: 1px; }
+#kicker { display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--tama-accent); margin-bottom: 2px; }
+#eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 10px; }
+#eq i { width: 2.5px; height: 3px; border-radius: 1px; background: var(--tama-accent); }
+.playing #eq i { animation: eq 0.9s ease-in-out infinite alternate; }
+.playing #eq i:nth-child(2) { animation-delay: -.35s; } .playing #eq i:nth-child(3) { animation-delay: -.65s; }
+@keyframes eq { from { height: 3px; } to { height: 10px; } }
+#title { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#sub { color: var(--tama-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#corner { position: absolute; right: 8px; top: 8px; display: flex; gap: 2px; }
+.tiny { width: 22px; height: 22px; border-radius: 7px; color: var(--tama-dim); }
+.tiny .i { width: 14px; height: 14px; }
+.tiny:hover { background: var(--tama-menu-hover); color: var(--tama-ink); }
+
+/* ---- progress ---- */
+#progress { display: flex; align-items: center; gap: 8px; padding: 6px 14px 0; color: var(--tama-dim); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+#bar { flex: 1; height: 16px; position: relative; cursor: pointer; -webkit-app-region: no-drag; }
+#bar::before { content: ""; position: absolute; left: 0; right: 0; top: 6.5px; height: 4px; border-radius: 2px; background: var(--tama-line); }
+#fill { position: absolute; left: 0; top: 6.5px; height: 4px; border-radius: 2px; background: var(--tama-accent); width: 0; }
+#knob { position: absolute; top: 3.5px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--tama-panel); border: 2.5px solid var(--tama-accent); left: 0; transform: scale(.0); transition: transform .12s; }
+#bar:hover #knob { transform: scale(1); }
 #bar.off { cursor: default; } #bar.off #knob { display: none; }
-#times { display: flex; justify-content: space-between; color: var(--tama-dim); font-size: 10.5px; font-variant-numeric: tabular-nums; }
-#corner { position: absolute; right: 6px; top: 6px; display: flex; gap: 1px; }
-.tiny { width: 20px; height: 20px; font-size: 11px; line-height: 20px; padding: 0; color: var(--tama-dim); }
 
-#controls { display: flex; align-items: center; gap: 1px; padding: 2px 8px 8px; }
-#controls button { width: 26px; height: 26px; font-size: 13px; padding: 0; }
-#controls button.main { width: 32px; height: 32px; border-radius: 50%; background: var(--tama-accent); color: var(--tama-accent-ink); font-size: 14px; }
-#controls button.main:hover { filter: brightness(1.08); background: var(--tama-accent); }
-#controls button.active { background: var(--tama-bubble); }
-.sep { width: 1px; height: 16px; background: var(--tama-line); margin: 0 4px; }
-#volume { flex: 1; min-width: 40px; margin-left: 6px; accent-color: var(--tama-accent); -webkit-app-region: no-drag; }
+/* ---- controls ---- */
+#controls { display: flex; align-items: center; gap: 2px; padding: 4px 10px 10px; }
+#controls button { width: 30px; height: 30px; border-radius: 50%; color: var(--tama-ink); transition: background .12s, transform .08s; }
+#controls button:not(:disabled):hover { background: var(--tama-menu-hover); }
+#controls button:not(:disabled):active { transform: scale(.92); }
+#controls button.main { width: 38px; height: 38px; margin: 0 2px; background: var(--tama-accent); color: var(--tama-accent-ink); box-shadow: 0 3px 8px -2px var(--tama-accent); }
+#controls button.main:hover { background: var(--tama-accent); filter: brightness(1.07); }
+#controls button.main .i { width: 20px; height: 20px; }
+#controls button.side { color: var(--tama-dim); }
+#controls button.side .i, #controls button.small .i { width: 16px; height: 16px; }
+#controls button.small { width: 26px; height: 26px; color: var(--tama-dim); }
+#controls button.active { color: var(--tama-accent); background: var(--tama-bubble); }
+.grow { flex: 1; }
+#vol { display: flex; align-items: center; gap: 3px; width: 82px; color: var(--tama-dim); -webkit-app-region: no-drag; }
+#vol .i { width: 15px; height: 15px; flex: none; }
+#volume { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 16px; background: transparent; cursor: pointer; }
+#volume::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--tama-accent) var(--v, 50%), var(--tama-line) var(--v, 50%)); }
+#volume::-webkit-slider-thumb { -webkit-appearance: none; width: 11px; height: 11px; margin-top: -3.5px; border-radius: 50%; background: var(--tama-panel); border: 2.5px solid var(--tama-accent); }
 
+/* ---- Up next / Lyrics ---- */
 #more { flex: 1; min-height: 0; display: flex; flex-direction: column; border-top: 1px solid var(--tama-line); background: var(--tama-bg); }
-#tabs { display: flex; gap: 4px; padding: 6px 8px 4px; }
-#tabs button { padding: 3px 10px; border-radius: 10px; font-weight: 600; color: var(--tama-dim); }
+#tabs { display: flex; gap: 4px; padding: 8px 10px 6px; }
+#tabs button { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px 4px 8px; border-radius: 11px; font-weight: 600; color: var(--tama-dim); }
+#tabs button .i { width: 14px; height: 14px; }
+#tabs button:hover { background: var(--tama-menu-hover); color: var(--tama-ink); }
 #tabs button.on { background: var(--tama-accent); color: var(--tama-accent-ink); }
-#queue, #lyrics { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding: 0 6px 6px; -webkit-app-region: no-drag; user-select: text; }
+#queue, #lyrics { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding: 0 6px 8px; -webkit-app-region: no-drag; user-select: text; }
 #queue { list-style: none; }
-#queue li { display: flex; align-items: center; gap: 8px; padding: 4px; border-radius: 8px; cursor: pointer; }
+#queue li { display: flex; align-items: center; gap: 9px; padding: 5px 6px; border-radius: 10px; cursor: pointer; }
 #queue li:hover { background: var(--tama-menu-hover); }
-#queue li.current { background: var(--tama-bubble); font-weight: 700; }
-#queue img, #queue .ph { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; flex: none; background: var(--tama-head); }
+#queue li.current { background: var(--tama-panel); box-shadow: inset 3px 0 0 var(--tama-accent); }
+#queue li.current .t div:first-child { color: var(--tama-accent); font-weight: 700; }
+#queue img, #queue .ph { width: 34px; height: 34px; border-radius: 7px; object-fit: cover; flex: none; background: var(--tama-head); color: var(--tama-accent); display: grid; place-items: center; }
+#queue .ph .i { width: 16px; height: 16px; opacity: .7; }
 #queue .t { flex: 1; min-width: 0; }
 #queue .t div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#queue .a { color: var(--tama-dim); font-weight: 400; }
+#queue .a { color: var(--tama-dim); font-size: 11px; }
 #queue .d { color: var(--tama-dim); font-size: 10.5px; font-variant-numeric: tabular-nums; }
-#lyrics { white-space: pre-wrap; padding: 4px 12px 10px; line-height: 1.55; }
-.empty { color: var(--tama-dim); padding: 16px 10px; text-align: center; white-space: normal; }
-#source { color: var(--tama-dim); font-size: 10.5px; padding: 4px 10px 7px; border-top: 1px solid var(--tama-line); }
+#lyrics { white-space: pre-wrap; padding: 4px 14px 12px; line-height: 1.65; font-size: 12.5px; }
+.empty { color: var(--tama-dim); padding: 18px 12px; text-align: center; white-space: normal; }
+#source { color: var(--tama-dim); font-size: 10.5px; padding: 5px 12px 8px; border-top: 1px solid var(--tama-line); }
 #source.warn { color: var(--tama-warn); }
 ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: var(--tama-line); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--tama-menu-hover); }
+
+/* Reduced motion (Windows setting or /motion reduced): nothing spins or bounces. */
+.reduced #vinyl, .reduced #eq i { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { #vinyl, #eq i { animation: none !important; } }

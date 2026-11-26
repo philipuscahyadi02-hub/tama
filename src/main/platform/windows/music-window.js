@@ -12,7 +12,8 @@ const { visibility, songKey } = require('./music-rules');
 
 const RENDERER = path.join(__dirname, '..', '..', '..', 'renderer');
 const PRELOAD = path.join(__dirname, '..', '..', '..', 'preload', 'index.js');
-const SIZES = { compact: { width: 312, height: 124 }, expanded: { width: 312, height: 430 } };
+/** Window sizes include 10 px of transparent margin on every side for the card's shadow. */
+const SIZES = { compact: { width: 352, height: 172 }, expanded: { width: 352, height: 486 } };
 const HIDE_PAUSED_MS = 20000;
 const HIDE_NONE_MS = 4000;
 
@@ -104,7 +105,11 @@ function createMusicWindow({ petBody, petHidden, send }) {
     /** @param {'auto'|'off'} m */
     setMode(m) { mode = m === 'off' ? 'off' : 'auto'; apply(); },
     /** The pet moved, was hidden or shown. */
-    follow() { const w = alive(); if (petHidden()) apply(); else if (w && w.isVisible() && !pinned) place(); else apply(); },
+    follow() {
+      const w = alive();
+      if (w && w.isVisible() && !pinned && !petHidden()) { place(); return; } // the common case while she walks: just move
+      if (petHidden() || (w && !w.isVisible())) apply();
+    },
     /** @param {boolean} on */
     setExpanded(on) { expanded = !!on; place(); pushState(); },
     /** Back beside her. */
