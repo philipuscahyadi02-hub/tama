@@ -5,10 +5,10 @@
 
 | | |
 |---|---|
-| **Version** | 0.36 |
-| **Status** | **v1.0.0 released** (M0–M11 + provider layer, D-058). Rest of M12 (installers, setup wizard, modular capabilities) ships as 1.x on `m12-shipping` |
+| **Version** | 0.38 |
+| **Status** | **v1.0.0 released** (D-058); installer + setup wizard done (unreleased). Every other open item is parked (D-064). **Next: M13 YouTube Music & DJ = 1.1.0** (MUS-*, D-065, D-066) |
 | **Owner** | philipuscahyadi02-hub |
-| **Last updated** | 2026-11-08 |
+| **Last updated** | 2026-11-26 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
 
 ---
@@ -49,7 +49,7 @@ account, and uses Telegram on their phone. Wants fun + productivity, comfortable
 ## 4. Requirements
 
 Priority: **P0** must-have for the milestone · **P1** should · **P2** nice-to-have.
-Status: ☐ todo · ◐ in progress · ☑ done.
+Status: ☐ todo · ◐ in progress · ☑ done · 🅿 parked (not planned; kept so it can be revived, D-064).
 
 ### 4.1 Onboarding — "Hatching" (ONB)
 | ID | Requirement | Pri | MS | Status |
@@ -72,7 +72,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | ART-3 | Full expression set works for every design: happy, sparkle, blush, pout, teary, shock, dizzy, smug, sleep, focus (glasses), sad. | P0 | M1 | ☑ |
 | ART-4 | Character palette/motif drives UI theme tokens (terminal, menus, bubbles). | P0 | M4 | ☑ |
 | ART-5 | Render current expression to PNG (for Telegram status/stickers). | P1 | M7 | ☑ |
-| ART-6 | Optional model-generated accessory SVG, sanitized and bounded. | P2 | later | ☐ |
+| ART-6 | Optional model-generated accessory SVG, sanitized and bounded. | P2 | later | 🅿 |
 
 ### 4.3 Pet loop (PET)
 | ID | Requirement | Pri | MS | Status |
@@ -91,11 +91,11 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 |---|---|---|---|---|
 | BOND-1 | Bond XP from productivity: agent task done +2, git commit in watched repo +1 (cap 10/day), focus session +3, todo done +1, daily streak +1 (bonus at 7/30), finished calendar focus block +2, pats/play small & capped. | P0 | M2 | ☑ |
 | BOND-2 | Diminishing returns after a daily cap (anti-farming). | P0 | M2 | ☑ |
-| BOND-3 | Levels: Stranger → Acquaintance → Buddy → Partner → Soulmate. Unlock outfits, themes, events, voice lines, proactive behaviors. *(Terminal themes done in M4, D-032.)* | P1 | M2 | ◐ |
+| BOND-3 | Levels: Stranger → Acquaintance → Buddy → Partner → Soulmate. Unlock outfits, themes, events, voice lines, proactive behaviors. *(Terminal themes done in M4, D-032.)* | P1 | M2 | 🅿 |
 | BOND-4 | **Bond never unlocks permissions** or weakens safety. | P0 | M2 | ☑ |
 | PROD-1 | Todos (`/todo`), focus timer (`/focus 25`), reminders (`/remind`), notes (`/note`). Shared across desktop & Telegram. | P0 | M2 | ☑ |
 | PROD-2 | Git commit watcher for user-chosen repos. | P1 | M2 | ☑ |
-| PROD-3 | Google Tasks sync for todos. | P2 | M6 | ☐ |
+| PROD-3 | Google Tasks sync for todos. | P2 | M6 | 🅿 |
 
 ### 4.3b Settings & quality of life (SET), M10
 | ID | Requirement | Pri | MS | Status |
@@ -121,13 +121,13 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
 | SHIP-1 | **Windows installer** (not a bare portable exe): per-user install, Start-menu and optional autostart entries, uninstaller that asks whether to keep her data. *(NSIS per-user installer `npm run dist` → `Tama-Setup-<version>.exe`, Start menu + desktop shortcuts, choose folder, run after install; uninstaller asks (never during updates or silent); Settings → Start with Windows. Unsigned (D-058). D-059.)* | P0 | M12 | ☑ |
-| SHIP-2 | **macOS app** (`.dmg`, Apple Silicon + Intel): mac versions of the Windows-only parts (system voice, fullscreen detection, tray/menu-bar icon, hotkeys, engine processes, paths). | P1 | M12 | ☐ |
-| SHIP-3 | **Modular capabilities:** Tama works with whatever the user has. Claude Code only, Antigravity (agy) only, both, or neither; each feature declares the capabilities it needs (SHIP-8) and hides or explains itself when no provider offers them (e.g. agy only = chat, moments, Google and phone, no coding terminal; designer falls back to agy or keywords). *(In part: brains come from what is installed (SHIP-8) and switch over after a re-check; chat and the terminal explain what is missing. Still to do: hide or explain the remaining features per capability, e.g. Google tools for Claude chat.)* | P0 | M12 | ◐ |
+| SHIP-2 | **macOS app** (`.dmg`, Apple Silicon + Intel): mac versions of the Windows-only parts (system voice, fullscreen detection, tray/menu-bar icon, hotkeys, engine processes, paths). | P1 | M12 | 🅿 |
+| SHIP-3 | **Modular capabilities:** Tama works with whatever the user has. Claude Code only, Antigravity (agy) only, both, or neither; each feature declares the capabilities it needs (SHIP-8) and hides or explains itself when no provider offers them (e.g. agy only = chat, moments, Google and phone, no coding terminal; designer falls back to agy or keywords). *(In part: brains come from what is installed (SHIP-8) and switch over after a re-check; chat and the terminal explain what is missing. Still to do: hide or explain the remaining features per capability, e.g. Google tools for Claude chat.)* | P0 | M12 | 🅿 |
 | SHIP-4 | **Setup wizard** on first run (and in Settings): detects Claude Code, agy, AivisSpeech/VOICEVOX, Google and Telegram; shows what each unlocks; guides each install with official links and sign-ins, and re-checks. *(`renderer/setup` + `services/setup`: opens by itself on first run when chat or coding has nothing installed; tray, Settings → Brains and `/setup` open it. Install = the vendor's official one-line installer in a visible PowerShell window, the command shown first; sign-in = the official CLI. Re-check refreshes PATH and the providers without a restart. D-059.)* | P0 | M12 | ☑ |
-| SHIP-5 | **Optional components** downloaded on demand from official releases with checksums (voice engines first), never bundled into the installer. | P1 | M12 | ☐ |
-| SHIP-6 | Updates: check for new versions and update in place (electron-updater or a release check). | P2 | M12 | ☐ |
-| SHIP-8 | **Provider layer** (D-054): features ask for a *capability* (chat, compose, structured JSON, coding, tools, web search) instead of a named engine. Claude Code and agy register what they can do and whether they are installed and signed in; the brain picks the user's preferred provider per capability and falls back to another when one is missing. Defaults keep today's split (terminal = Claude, chat = agy); using Claude for chat is opt-in because it spends Claude quota. Safety rules stay per provider (agy never codes). Usage, limits and accounts list providers from the registry instead of fixed Claude/Gemini slots. Built first in M12, because SHIP-3 and SHIP-4 build on it. *(Done: registry `src/main/providers/`, Claude Code and agy providers, the brain and designer pick through it, persona says what the chat provider can do, Settings → Brains, Claude chat tested live (D-057). Left: usage limits and accounts from the registry, shared provider contract tests.)* | P0 | M12 | ◐ |
-| SHIP-7 | Signing: Windows code signing (SmartScreen) and Apple notarization; both need paid certificates/accounts, so decide before release. | P2 | M12 | ☐ |
+| SHIP-5 | **Optional components** downloaded on demand from official releases with checksums (voice engines first), never bundled into the installer. | P1 | M12 | 🅿 |
+| SHIP-6 | Updates: check for new versions and update in place (electron-updater or a release check). | P2 | M12 | 🅿 |
+| SHIP-8 | **Provider layer** (D-054): features ask for a *capability* (chat, compose, structured JSON, coding, tools, web search) instead of a named engine. Claude Code and agy register what they can do and whether they are installed and signed in; the brain picks the user's preferred provider per capability and falls back to another when one is missing. Defaults keep today's split (terminal = Claude, chat = agy); using Claude for chat is opt-in because it spends Claude quota. Safety rules stay per provider (agy never codes). Usage, limits and accounts list providers from the registry instead of fixed Claude/Gemini slots. Built first in M12, because SHIP-3 and SHIP-4 build on it. *(Done: registry `src/main/providers/`, Claude Code and agy providers, the brain and designer pick through it, persona says what the chat provider can do, Settings → Brains, Claude chat tested live (D-057). Left: usage limits and accounts from the registry, shared provider contract tests.)* | P0 | M12 | 🅿 |
+| SHIP-7 | Signing: Windows code signing (SmartScreen) and Apple notarization; both need paid certificates/accounts, so decide before release. | P2 | M12 | 🅿 |
 
 ### 4.5 Events & conversations (EVT)
 | ID | Requirement | Pri | MS | Status |
@@ -151,7 +151,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | CHAT-1 | Chat window with the Tama (pet menu 💬, tray, Ctrl+Alt+J): streaming replies, web-search lines, themed from the CharacterSpec, replies also in the pet bubble; she can explain how to use Tama. | P0 | M3 | ☑ |
 | ENG-4 | Uniform engine event contract (`text-delta`, `tool`, `tool-result`, `permission`, `todo`, `result`, `status`, `error`). | P0 | M3 | ☑ |
 | ENG-5 | Never extract or reuse another app's OAuth tokens; each engine uses its own CLI login. | P0 | M3 | ☑ |
-| ENG-6 | Additional engines (Codex, Gemini CLI) via the same interface. | P2 | later | ☐ |
+| ENG-6 | Additional engines (Codex, Gemini CLI) via the same interface. | P2 | later | 🅿 |
 
 ### 4.7 Terminal (TERM)
 | ID | Requirement | Pri | MS | Status |
@@ -175,7 +175,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 |---|---|---|---|---|
 | TG-1 | Bot API **long polling** from the PC; no webhook, no server. | P0 | M7 | ☑ |
 | TG-2 | Pairing: paste BotFather token → QR / deep link with one-time code → bind to one chat ID; ignore all others. | P0 | M7 | ☑ |
-| TG-3 | Chat with the Tama in character; voice notes both ways. *(Text chat M7. Tama → phone voice notes M9 (`/voice on`, D-042). Phone → Tama needs speech-to-text: VOICE-4.)* | P0 / P1 | M7/M9 | ◐ |
+| TG-3 | Chat with the Tama in character; voice notes both ways. *(Text chat M7. Tama → phone voice notes M9 (`/voice on`, D-042). Phone → Tama needs speech-to-text: VOICE-4.)* | P0 / P1 | M7/M9 | 🅿 |
 | TG-4 | Productivity: `/todo /focus /remind`, morning brief, evening recap. | P0 | M7 | ☑ |
 | TG-5 | Pet: `/feed /nap /status` (status replies with expression PNG). `/summon`. | P1 | M7 | ☑ |
 | TG-6 | Remote control: `/code <task>` in allow-listed repos; progress updates; **permission prompts as inline buttons** (Yes / Always / No); diffs as file attachments; `/stop`. | P0 | M7 | ☑ |
@@ -190,7 +190,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | GOOG-3 | Calendar: read, create/edit events (places checked against Google Maps / pasted Maps links, D-039); meeting reminders (sleeve-tug 5 min before) and DND during meetings. | P0 | M6 | ☑ |
 | GOOG-4 | Gmail: read/search, summarize, create drafts; **send only after the user confirms the full draft** (D-038, was drafts-only D-014). | P0 | M6 | ☑ |
 | GOOG-5 | Drive: `drive.file` by default (create/edit own files); optional `drive.readonly` toggle for search/read across Drive. | P0 | M6 | ☑ |
-| GOOG-6 | Docs: create from Markdown, append, replace section. Sheets: create with tabs/headers/formulas, write range, append rows. *(All but "replace section".)* | P0 | M6 | ◐ |
+| GOOG-6 | Docs: create from Markdown, append, replace section. Sheets: create with tabs/headers/formulas, write range, append rows. *(All but "replace section".)* | P0 | M6 | 🅿 |
 | GOOG-7 | All created files go to a "Tama Drafts" folder; creation announced (chat brain: confirmed); edits and anything that sends (email, invitations) require approval; **no delete/share tools exist** (D-038). | P0 | M6 | ☑ |
 | GOOG-8 | Morning brief: today's events, important unread mail, todos (desktop + Telegram). | P1 | M6 | ☑ |
 
@@ -210,9 +210,9 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 |---|---|---|---|---|
 | VOICE-1 | Voice with a language setting (D-043): **English** (Windows built-in voice, pitch/rate from `VoiceSpec`), **Japanese dub** (Gemini translates each line in character, **AivisSpeech**/VOICEVOX reads it, D-022), or **off**. Tray ▸ Voice and `/voice en\|ja\|off`. Speaks chat replies and moments on the desktop with a talking mouth (D-042). | P0 | M9 | ☑ |
 | VOICE-2 | Speaking style (tics, catchphrase frequency) from the same voice prompt. | P0 | M1 | ☑ |
-| VOICE-3 | Other providers pluggable later (e.g. ElevenLabs Voice Design, paid; Kokoro for English). | P2 | later | ☐ |
+| VOICE-3 | Other providers pluggable later (e.g. ElevenLabs Voice Design, paid; Kokoro for English). | P2 | later | 🅿 |
 | VOICE-5 | Voice page: pick her voice from AivisSpeech + VOICEVOX characters (previews, portrait, credit, terms), tune pitch/speed/expression per Tama; the voice style and tone follow the feeling of each line (D-045). | P1 | M9 | ☑ |
-| VOICE-4 | STT for Telegram voice notes (local whisper.cpp, optional download). | P2 | later | ☐ |
+| VOICE-4 | STT for Telegram voice notes (local whisper.cpp, optional download). | P2 | later | 🅿 |
 
 ### 4.12 Portability & lifecycle (PORT)
 | ID | Requirement | Pri | MS | Status |
@@ -223,7 +223,7 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | PORT-4 | Restyle (keep all), Rebirth (redesign; choose keep/clear memory & bond), Hatch another, Graduate (album; restorable), Delete (typed confirm). | P1 | M2 | ☑ |
 | PORT-5 | `.tama` export/import: single bundle file (D-025), password-encrypted by default; optional "include connections" (Telegram token). | P0 | M2 | ☑ |
 | PORT-6 | Daily Drive backup to `appDataFolder` (`drive.appdata`); restore offer on new PC. | P1 | M6 | ☑ |
-| PORT-7 | Single active device lock (lease file in Drive); "move her here?" takeover. *(Lease + warning, not a hard lock, D-034.)* | P1 | M6 | ◐ |
+| PORT-7 | Single active device lock (lease file in Drive); "move her here?" takeover. *(Lease + warning, not a hard lock, D-034.)* | P1 | M6 | 🅿 |
 | PORT-8 | New-PC checklist: log in `claude`/`agy`, Google sign-in, Telegram re-pair if needed. | P1 | M6 | ☑ |
 
 ### 4.13 Safety, privacy & non-functional (SAFE / NFR)
@@ -235,9 +235,24 @@ Status: ☐ todo · ◐ in progress · ☑ done.
 | SAFE-4 | Warn before accept-edits mode outside a git repo. | P1 | M4 | ☑ |
 | SAFE-5 | Daily cost/token budget shown in `/stats`; Tama warns near the limit. | P1 | M3 | ☑ |
 | NFR-1 | Idle CPU < 2%, RAM < 300 MB (excluding engine processes). *(`npm run perf`, all Tama processes, % of one core: 1.6 % CPU and about 262 MB on 2026-11-07, D-053. Was 3.5 % / 297 MB with the same method.)* | P1 | M11 | ☑ |
-| NFR-2 | Multi-monitor & mixed-DPI safe. | P0 | M0 | ◐ |
-| NFR-3 | Ships as a portable `.exe` (electron-builder), uses installed `claude`/`agy`. *(Replaced by installers for Windows and macOS: SHIP-1..7, M12, D-051.)* | P0 | M12 | ☐ |
+| NFR-2 | Multi-monitor & mixed-DPI safe. | P0 | M0 | 🅿 |
+| NFR-3 | Ships as a portable `.exe` (electron-builder), uses installed `claude`/`agy`. *(Replaced by installers for Windows and macOS: SHIP-1..7, M12, D-051.)* | P0 | M12 | 🅿 |
 | NFR-4 | Memory view + forget; local-only data except the user's own Drive backup. | P0 | M5 | ☑ |
+
+### 4.14 YouTube Music & DJ (MUS), M13
+Plan in D-065, YouTube Music only with a companion extension (D-066). Build order: MUS-10 + MUS-1 → MUS-2 → MUS-3/4 → MUS-6 → MUS-7..9.
+| ID | Requirement | Pri | MS | Status |
+|---|---|---|---|---|
+| MUS-1 | **Fallback now-playing reader:** Windows' media session (the same source as the volume pop-up) through one hidden PowerShell helper, like the fullscreen helper (D-035): title, artist, album, cover art, position, playing/paused, play/pause, next, previous and seek, for YouTube Music in any browser (and any other player) when the extension isn't installed or connected. Bus: `music.now` (state), `music.control`; the extension (MUS-10) feeds the same topics. | P0 | M13 | ☐ |
+| MUS-2 | **YouTube Music widget:** a small card beside her while music plays: cover art, title and artist, a progress bar with seek, ⏮ ⏯ ⏭, volume, shuffle, repeat and 👍/👎, plus tabs for **Up next** (the live queue; click to jump), **Lyrics** (when YouTube Music has them) and **Playlists** (yours, with their songs, and search). Without the extension it shows what MUS-1 and MUS-6 allow and says what the extension adds. Colors from her theme (`--tama-*`); can be dragged or pinned; hides a few seconds after the music stops; auto-show can be turned off. Desktop-only. | P0 | M13 | ☐ |
+| MUS-3 | **DJ Tama:** while music plays she wears headphones, nods along, scratches a small turntable and sometimes strikes a "drop" pose with sparkles; on a new song she says a short DJ line (composer, fallback lines in the deck; respects quiet rules and mute). New rig parts in `src/shared/rig` (headphones, deck) so every Tama gets the look. Off when the music pauses; `/music dj on\|off`. Reduced motion = headphones only. | P0 | M13 | ☐ |
+| MUS-4 | **Real beat sync:** the pet window analyses the PC's audio output (Windows loopback) in memory to find the tempo and beat, so the nod and scratches land on the beat. Nothing is recorded, saved or sent. Runs only while music plays and DJ mode is on; the permission is granted to the pet window only (amends D-055). Falls back to a steady groove when unavailable. Budget: at most about +2 % CPU while playing (`npm run perf`), unchanged idle. | P1 | M13 | ☐ |
+| ~~MUS-5~~ | ~~**Spotify**~~ *(dropped by the user: YouTube Music only, D-066).* | — | — | ✖ |
+| MUS-6 | **YouTube account data:** with Google signed in, an optional \"YouTube Music\" switch adds the read-only `youtube.readonly` scope. Lists the user's playlists and their songs and searches songs through the YouTube Data API; playing one opens it in the paired YouTube Music tab (MUS-10) or, without the extension, on music.youtube.com in the default browser, where the user's own Premium session plays it. No unofficial APIs or cookies (D-006). The dashboard shows the YouTube API quota use (search = 100 of 10,000 units a day). | P0 | M13 | ☐ |
+| MUS-7 | **Ask her:** Tama-owned tools for the chat brain and Claude Code (`music_now`, `music_control`, `music_play` (song, playlist or search), `music_queue`, `music_playlists`): reads and controls run without a tap and are announced; song titles and lyrics are untrusted data for the model. The persona knows them. | P1 | M13 | ☐ |
+| MUS-8 | **Phone:** Telegram `/np` (with cover art), `/play [song\|playlist]`, `/pause`, `/skip`, `/playlists`. | P1 | M13 | ☐ |
+| MUS-9 | **Setup & settings:** a YouTube Music card in the setup wizard (install the extension, pair it, the YouTube switch, what works without each), a Settings → Music tab (connection, DJ mode, beat sync, widget auto-show), and `/music`. | P1 | M13 | ☐ |
+| MUS-10 | **Tama Companion browser extension** (Chrome and Edge, Manifest V3, source in `extension/`, shipped with the app and loaded with \"Load unpacked\" until it is published): a content script on music.youtube.com reads the player (song, position, playing, volume, shuffle, repeat, like state, the Up next queue, lyrics) and runs controls (play/pause, next, previous, seek, jump to a queue item, shuffle, repeat, like/dislike, volume, open a song or playlist). It talks to Tama over a 127.0.0.1 WebSocket, paired once with a one-time code (like Telegram, D-036), and Tama accepts only the paired extension's origin and key. Permissions: music.youtube.com only; no cookies, history or other sites; it never reads or sends sign-in data. One tab is the controlled tab. If YouTube Music changes its page, the widget falls back to MUS-1 and says so. | P0 | M13 | ☐ |
 
 ## 5. Milestones
 
@@ -254,43 +269,44 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M8 — Usage & accounts dashboard.** *(released as 0.8.0)* Usage log, dashboard, Limits tab (what's left), account switching (USE-1..7, D-040, D-041).
 - [x] **M10 — Settings & polish.** *(released as 0.10.0)* One Settings window, reply language, quiet hours, faster voice, small reliability fixes (SET-1..6, ONB-8).
 - [x] **M11 — Quality control.** *(released in 1.0.0)* Architecture checks, dead code, performance, code review, coverage, security (QC-1..6, NFR-1).
-- [ ] **M12 — Shipping** (1.0.0 released early with SHIP-8 in part, D-058; the rest arrives as 1.x). Also closes the two open P0 rows (GOOG-6 replace section, NFR-2 mixed-DPI check) or defers them explicitly. Windows installer and macOS app, a provider layer, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..8, NFR-3).
+- [x] **M12 — Shipping** *(closed 2026-11-26: installer and setup wizard done, provider layer in place; the other SHIP rows, GOOG-6 and NFR-2 are parked, D-064)* (1.0.0 released early with SHIP-8 in part, D-058; the rest arrives as 1.x). Also closes the two open P0 rows (GOOG-6 replace section, NFR-2 mixed-DPI check) or defers them explicitly. Windows installer and macOS app, a provider layer, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..8, NFR-3).
 - [x] **M9 — Voice & polish.** *(released as 0.9.0; phone → Tama speech-to-text (VOICE-4) deferred)* AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
-- [ ] **1.x — Voice & hands** (planned, D-061, D-062): talk to her with push-to-talk (Ctrl+Alt+Space), let her act on the PC through a few safe actions, run fixed voice commands without any AI, and an optional free local brain (VH-1..7).
-- [ ] **v2 (M13+) — Tama's own agentic brain + "the work buddy who grows when you ship"** (planned, not started; D-056, D-060). Tama runs its own agent loop instead of depending on one provider's agent (AGT-1..6), and the product story centres on her growing with your real work (USP-1..6).
+- [ ] **M13 — YouTube Music & DJ (1.1.0)** (D-065, D-066): a Tama Companion browser extension for YouTube Music, a fallback media-session reader, your YouTube playlists and search, a music widget with Up next, lyrics and controls beside her, and DJ Tama who plays along on the real beat (MUS-1..4, MUS-6..10). The only open milestone.
+- 🅿 **1.x — Voice & hands** (parked, D-064; was planned in D-061, D-062; its music actions are replaced by M13): talk to her with push-to-talk (Ctrl+Alt+Space), let her act on the PC through a few safe actions, run fixed voice commands without any AI, and an optional free local brain (VH-1..7).
+- 🅿 **v2 — Tama's own agentic brain + "the work buddy who grows when you ship"** (parked, D-064; was planned in D-056, D-060). Tama runs its own agent loop instead of depending on one provider's agent (AGT-1..6), and the product story centres on her growing with your real work (USP-1..6).
 
-### 5b. v2 roadmap: Tama's own agentic brain (planned)
+### 5b. v2 roadmap: Tama's own agentic brain (parked, D-064)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| AGT-1 | **Own agent loop** (`src/main/agent/`): plan → call tools → observe → answer, with streaming, interrupt, sessions and context compaction, built on the provider layer (SHIP-8). | P0 | v2 | ☐ |
-| AGT-2 | **Model adapters over official APIs**, each with the user's own API key or a local model: Anthropic Messages API, Google Gemini API, OpenAI-compatible endpoints, local runtimes. Per-token billing and keys are shown plainly; keys live in `platform/secrets`. Never a subscription login or another app's tokens (D-006). *(Deferred, review later: per-token API cost, D-061.)* | P0 | v2 | ⏸ |
-| AGT-3 | **Tama's own tools**: files (read, edit, write in an allowed folder), shell, search, web fetch/search, Google, memory, with every call through PermissionGate (SAFE-1) and the same per-tool policies as today. | P0 | v2 | ☐ |
-| AGT-4 | **One brain for every surface**: terminal, chat, moments, Telegram and the designer run on the same loop with different tool sets and personas; the user picks a model per role. | P1 | v2 | ☐ |
-| AGT-5 | **Claude Code and agy stay optional adapters** behind the same interface, for users who prefer their subscriptions. | P1 | v2 | ☐ |
-| AGT-6 | **Evaluation and safety probes** for the own loop (like `npm run probe:agy`): tool gating, prompt injection from mail/web, cost limits. | P1 | v2 | ☐ |
+| AGT-1 | **Own agent loop** (`src/main/agent/`): plan → call tools → observe → answer, with streaming, interrupt, sessions and context compaction, built on the provider layer (SHIP-8). | P0 | v2 | 🅿 |
+| AGT-2 | **Model adapters over official APIs**, each with the user's own API key or a local model: Anthropic Messages API, Google Gemini API, OpenAI-compatible endpoints, local runtimes. Per-token billing and keys are shown plainly; keys live in `platform/secrets`. Never a subscription login or another app's tokens (D-006). *(Deferred, review later: per-token API cost, D-061.)* | P0 | v2 | 🅿 |
+| AGT-3 | **Tama's own tools**: files (read, edit, write in an allowed folder), shell, search, web fetch/search, Google, memory, with every call through PermissionGate (SAFE-1) and the same per-tool policies as today. | P0 | v2 | 🅿 |
+| AGT-4 | **One brain for every surface**: terminal, chat, moments, Telegram and the designer run on the same loop with different tool sets and personas; the user picks a model per role. | P1 | v2 | 🅿 |
+| AGT-5 | **Claude Code and agy stay optional adapters** behind the same interface, for users who prefer their subscriptions. | P1 | v2 | 🅿 |
+| AGT-6 | **Evaluation and safety probes** for the own loop (like `npm run probe:agy`): tool gating, prompt injection from mail/web, cost limits. | P1 | v2 | 🅿 |
 
-### 5b2. 1.x Voice & hands (planned, D-061)
+### 5b2. 1.x Voice & hands (parked, D-064)
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| VH-1 | **Push-to-talk:** hold **Ctrl+Alt+Space** (or click 🎙️ on her); she shows "listening…", the speech becomes a chat message, and she answers in text and voice. The microphone is allowed for the pet window only (amends D-055). | P0 | 1.x | ☐ |
-| VH-2 | **Local speech-to-text:** Whisper (whisper.cpp) on the PC, free and offline (English, Indonesian, Japanese); the model is downloaded on demand from the setup wizard. Also transcribes Telegram voice notes (closes VOICE-4). | P0 | 1.x | ☐ |
-| VH-3 | **PC actions for the chat brain** (Tama-owned tools over the existing tool bridge): `play_music(song, service)` finds the track and opens it on YouTube Music, announced; `media_control(play/pause/next/prev/volume)`; `open_url` (known sites direct, others ask); `open_app` (apps on a user-controlled list; others ask). agy stays read-only otherwise. | P0 | 1.x | ☐ |
-| VH-4 | **Setup wizard:** a "Talk to her" card for the Whisper model and microphone check. | P1 | 1.x | ☐ |
-| VH-5 | **Voice commands without AI:** fixed phrases run instantly with no model at all: "play ___ (on YouTube Music)", "pause", "next", "louder/quieter", "open ___", "remind me at ___ to ___", "start focus", "feed her". Without a brain, "play" opens the YouTube Music search for the song and starts it with the media keys. With a brain, these phrases still run instantly and anything else goes to the chat brain. | P0 | 1.x | ☐ |
-| VH-6 | **Local brain (optional):** a third provider next to Claude Code and agy, running a small local model through Ollama (or llama.cpp): free, private, offline. Serves chat, moments and the diary, and simple tool use (the VH-3 actions), when the user picks it in Settings → Brains or has no subscription. Offered in the setup wizard with the model size shown (about 2–5 GB); a 3–4B model fits a 4 GB GPU. Less capable than Claude or Gemini; the persona says so. | P1 | 1.x | ☐ |
-| VH-7 | **Gemini API free tier (optional, off by default):** the user may add their own free Google AI Studio key as another chat provider ($0, daily limits). The setup card states that Google may use free-tier prompts to improve its models. Not part of the default setup. | P2 | 1.x | ☐ |
+| VH-1 | **Push-to-talk:** hold **Ctrl+Alt+Space** (or click 🎙️ on her); she shows "listening…", the speech becomes a chat message, and she answers in text and voice. The microphone is allowed for the pet window only (amends D-055). | P0 | 1.x | 🅿 |
+| VH-2 | **Local speech-to-text:** Whisper (whisper.cpp) on the PC, free and offline (English, Indonesian, Japanese); the model is downloaded on demand from the setup wizard. Also transcribes Telegram voice notes (closes VOICE-4). | P0 | 1.x | 🅿 |
+| VH-3 | **PC actions for the chat brain** (Tama-owned tools over the existing tool bridge): `play_music(song, service)` finds the track and opens it on YouTube Music, announced; `media_control(play/pause/next/prev/volume)`; `open_url` (known sites direct, others ask); `open_app` (apps on a user-controlled list; others ask). agy stays read-only otherwise. | P0 | 1.x | 🅿 |
+| VH-4 | **Setup wizard:** a "Talk to her" card for the Whisper model and microphone check. | P1 | 1.x | 🅿 |
+| VH-5 | **Voice commands without AI:** fixed phrases run instantly with no model at all: "play ___ (on YouTube Music)", "pause", "next", "louder/quieter", "open ___", "remind me at ___ to ___", "start focus", "feed her". Without a brain, "play" opens the YouTube Music search for the song and starts it with the media keys. With a brain, these phrases still run instantly and anything else goes to the chat brain. | P0 | 1.x | 🅿 |
+| VH-6 | **Local brain (optional):** a third provider next to Claude Code and agy, running a small local model through Ollama (or llama.cpp): free, private, offline. Serves chat, moments and the diary, and simple tool use (the VH-3 actions), when the user picks it in Settings → Brains or has no subscription. Offered in the setup wizard with the model size shown (about 2–5 GB); a 3–4B model fits a 4 GB GPU. Less capable than Claude or Gemini; the persona says so. | P1 | 1.x | 🅿 |
+| VH-7 | **Gemini API free tier (optional, off by default):** the user may add their own free Google AI Studio key as another chat provider ($0, daily limits). The setup card states that Google may use free-tier prompts to improve its models. Not part of the default setup. | P2 | 1.x | 🅿 |
 
-### 5c. v2 positioning and USP (planned, D-060)
+### 5c. v2 positioning and USP (parked, D-064)
 **Positioning:** *"The work buddy who grows when you ship."* A companion that lives on your desktop, works with the AI plans (or keys) you already have, remembers you, and turns your real progress into her growth. Tama sits where desktop pets (no real work), AI companions (cloud chat, no tools, no access to your day) and work agents (no personality, no memory of you, no reason to come back) don't meet. The hook other products can't copy cheaply: **she rewards finishing things, not clicking.**
 
 | ID | Requirement | Pri | MS | Status |
 |---|---|---|---|---|
-| USP-1 | **Work → bond loop as the hero:** a daily "what we shipped today" card (commits, finished tasks and todos, focus time, Claude tasks); visible growth tied to real output (new outfits and stage evolutions at bond levels); a weekly report card she presents, shareable as an image. | P0 | v2 | ☐ |
-| USP-2 | **She knows your day:** one morning plan from calendar, todos and yesterday's open work; in the evening she drafts your stand-up or summary (sent only after you confirm the full text, D-038). | P0 | v2 | ☐ |
-| USP-3 | **Trust as a feature:** a git checkpoint before every agent task and one-click "undo what she did"; the permission prompts and the undo are part of the pitch for cautious and non-developer users. | P0 | v2 | ☐ |
-| USP-4 | **Shareable character:** export her as an image card and Telegram stickers; a public gallery of designs (opt-in, no personal data). | P1 | v2 | ☐ |
-| USP-5 | **Focus body-doubling:** during focus sessions she visibly "works" beside you and reacts gently when you drift (fullscreen, app switches, idle), never guilt-tripping. | P1 | v2 | ☐ |
-| USP-6 | **Talk to her:** speech-to-text on the PC and from Telegram voice notes (VOICE-4) for a hands-free conversation loop. | P2 | v2 | ☐ |
+| USP-1 | **Work → bond loop as the hero:** a daily "what we shipped today" card (commits, finished tasks and todos, focus time, Claude tasks); visible growth tied to real output (new outfits and stage evolutions at bond levels); a weekly report card she presents, shareable as an image. | P0 | v2 | 🅿 |
+| USP-2 | **She knows your day:** one morning plan from calendar, todos and yesterday's open work; in the evening she drafts your stand-up or summary (sent only after you confirm the full text, D-038). | P0 | v2 | 🅿 |
+| USP-3 | **Trust as a feature:** a git checkpoint before every agent task and one-click "undo what she did"; the permission prompts and the undo are part of the pitch for cautious and non-developer users. | P0 | v2 | 🅿 |
+| USP-4 | **Shareable character:** export her as an image card and Telegram stickers; a public gallery of designs (opt-in, no personal data). | P1 | v2 | 🅿 |
+| USP-5 | **Focus body-doubling:** during focus sessions she visibly "works" beside you and reacts gently when you drift (fullscreen, app switches, idle), never guilt-tripping. | P1 | v2 | 🅿 |
+| USP-6 | **Talk to her:** speech-to-text on the PC and from Telegram voice notes (VOICE-4) for a hands-free conversation loop. | P2 | v2 | 🅿 |
 
 ## 6. Open questions
 
@@ -301,6 +317,8 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.38 — 2026-11-26** — YouTube Music only: Spotify (MUS-5) dropped, new MUS-10 Tama Companion browser extension; MUS-1 becomes the fallback (D-066).
+- **0.37 — 2026-11-26** — Every open item parked (🅿, D-064); M12 closed. New M13 Music & DJ for 1.1.0 (MUS-1..9, D-065).
 - **0.36 — 2026-11-08** — VH-5 (voice commands without AI), VH-6 (optional local brain), VH-7 (optional Gemini free key) (D-062).
 - **0.35 — 2026-11-08** — 1.x Voice & hands planned (VH-1..4, Ctrl+Alt+Space); AGT-2 (API keys) deferred (D-061).
 - **0.34 — 2026-11-08** — v2 positioning ("the work buddy who grows when you ship") and USP-1..6 added to the v2 roadmap (D-060).

@@ -93,6 +93,9 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-061 | 1.x "Voice & hands": push-to-talk Ctrl+Alt+Space, local Whisper, safe PC actions (play music, media keys, open URL/app); API-key models (AGT-2) deferred for cost | Accepted (plan) |
 | D-062 | No-subscription Tama: AI-free voice commands (VH-5), optional local brain via Ollama (VH-6), optional Gemini free-tier key off by default (VH-7) | Accepted (plan) · Revisits D-003 (Ollama) for the no-subscription case |
 | D-063 | Mute for 5 minutes stops the Japanese voice engine; unmute starts and warms it again; starting muted doesn't start it | Accepted · Refines D-044 |
+| D-064 | Every open roadmap item parked (🅿): the to-do list starts from zero; M12 closed | Accepted · Parks D-051 (rest of M12), D-056, D-060, D-061, D-062 plans |
+| D-065 | M13 Music & DJ (1.1.0): Windows media session reader, Spotify Web API with the user's own app + PKCE, YouTube Music via the YouTube Data API + browser playback, widget, DJ Tama with loopback beat sync | Accepted (plan) · Partly superseded by D-066 (Spotify dropped, extension added) · Replaces VH-3/VH-5 music actions; amends D-055 when built |
+| D-066 | YouTube Music only; a Tama Companion browser extension (MV3, music.youtube.com only, paired over a 127.0.0.1 WebSocket) controls the player; the media session is the fallback | Accepted (plan) · Supersedes D-065 in part (Spotify, MUS-1 as the core) |
 
 ---
 
@@ -859,3 +862,53 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Stop at once on mute (a quick mute/unmute would cost a 30–40 s restart); keep it running (the memory cost the user asked about).
 - **Consequences:** After a long mute, her first Japanese line comes back about 30–40 s after unmuting.
 - **Refs:** VOICE-1, PET-8, D-044, src/main/services/voice/index.js
+
+### D-064 — Every open roadmap item parked; the to-do list starts from zero
+- **Date:** 2026-11-26 · **Status:** Accepted · Parks the plans of D-051 (rest of M12), D-056, D-060, D-061, D-062
+- **Context:** The user asked to drop the whole to-do list and continue from zero open items, then plan a music feature.
+- **Decision:** All 36 open PRD rows (☐, ◐, ⏸: macOS app, modular capabilities, optional components, updates, signing, provider-layer follow-ups, extra engines, Google Tasks, GOOG-6 replace section, NFR-2 mixed-DPI check, phone speech-to-text, AGT-1..6, VH-1..7, USP-1..6, and a few others) get the new status 🅿 **parked**: not planned, kept in the PRD so any can be revived with a new decision. M12 is closed with what was built (installer, setup wizard, provider layer). The only open milestone is M13 (D-065).
+- **Alternatives:** Deleting the rows (loses the reasoning; IDs must never be reused anyway); keeping them open (the user wants a clean list).
+- **Consequences:** The two P0 gaps (GOOG-6 replace section, NFR-2 mixed-DPI) stay known gaps in release notes. Reviving an item = a new decision that sets it back to ☐.
+- **Refs:** PRD §4, §5, §5b, §5b2, §5c
+
+### D-065 — M13 Music & DJ: media session reader, Spotify and YouTube Music through official APIs, widget, DJ Tama with real beat sync
+- **Date:** 2026-11-26 · **Status:** Accepted (plan; not built yet) · Partly superseded by D-066 (Spotify dropped; the extension, not the media session, is the main YouTube Music link) · Replaces the music parts of VH-3/VH-5 · Amends D-055 when MUS-4 is built
+- **Context:** The user wants Tama to play YouTube Music or Spotify with their Premium accounts through OAuth, a widget of the playlist or the playing song beside her, and Tama doing DJ things while music plays. Findings (2026-11-26):
+  - **Spotify:** the Web API supports PKCE (no client secret), and its playback control endpoints work only for Premium accounts. Since February 2026 Development Mode apps need a Premium owner and are limited to 5 users, so (like Google, D-009) each user registers their own app and enters its Client ID. The Web Playback SDK would need Widevine in Electron, so Tama controls the user's own Spotify app through Spotify Connect instead. Spotify no longer offers tempo/audio analysis to new apps.
+  - **YouTube Music:** there is no official playback API. Unofficial libraries reuse browser cookies, which D-006 rules out. The YouTube Data API (read-only scope on the user's existing Google client) lists playlists and searches; search costs 100 of the default 10,000 daily quota units.
+  - Windows' media session (SMTC) reports and controls whatever is playing (Spotify app, YouTube Music in a browser) without any sign-in.
+- **Decision:**
+  - **MUS-1 core:** `platform/media-session.js`, one hidden PowerShell helper like the fullscreen helper (D-035), for now-playing data and transport controls. Every feature reads the music state from it, whatever the service.
+  - **MUS-5 Spotify:** `services/music/spotify.js`, plain `fetch` (no SDK dependency), PKCE on a 127.0.0.1 loopback redirect, tokens in `platform/secrets`, scopes for playback state/control, the currently playing song, private and collaborative playlists and saved songs. It checks `product` and explains that control needs Premium.
+  - **MUS-6 YouTube Music:** an optional `youtube.readonly` scope added to the existing Google sign-in. Songs and playlists open on music.youtube.com in the default browser (the user's own Premium session); control goes through MUS-1. Tama never embeds YouTube Music in its own window: that would need Google sign-in inside Electron and break D-055's navigation rule.
+  - **MUS-2/3:** a widget window (`renderer/music/`) and DJ rig parts and states, colored by the theme; animations only while playing (NFR-1).
+  - **MUS-4 beat sync:** loopback audio capture in the pet window (Electron display-media audio loopback on Windows), analysed in memory only (onset energy → tempo and beat phase). The capture permission goes to the pet window only, with a steady-groove fallback. It is on only while music plays and DJ mode is on.
+  - **MUS-7/8:** tools with policy *control* (run without a tap and are announced; nothing here sends, buys or deletes), and Telegram commands (AGENTS §3 parity).
+- **Alternatives:** Unofficial YouTube Music APIs or cookie reuse (D-006; break often); embedding the players (Widevine for Spotify, Google sign-in blocked in embedded browsers); fake beat only (the user chose real sync); one shared Spotify app for all users (5-user limit, owner must be Premium).
+- **Consequences:**
+  - The Spotify setup takes the user about 3 minutes in Spotify's developer dashboard.
+  - YouTube Music has no queue control beyond what the page and the media session allow.
+  - Beat sync analyses all PC audio while on (also non-music sounds), so it is shown as on in the widget.
+  - The exact Spotify loopback-port rule must be checked when building MUS-5 (a fixed registered port is the fallback).
+- **Refs:** MUS-1..9, D-006, D-009, D-034, D-035, D-037, D-055, NFR-1, VH-3, VH-5
+
+### D-066 — YouTube Music only, controlled through a Tama Companion browser extension
+- **Date:** 2026-11-26 · **Status:** Accepted (plan; not built yet) · Supersedes D-065 in part (Spotify; the media session as the core)
+- **Context:** The user dropped Spotify and asked whether a special YouTube Music widget is possible. Without a YouTube Music playback API, the media session and the YouTube Data API give now playing, transport controls, seek, playlists and search, but not the live Up next queue, shuffle/repeat or lyrics. The user chose a browser extension from the start.
+- **Decision:**
+  - **MUS-5 Spotify is dropped.**
+  - **The extension:**
+    - The new **Tama Companion** extension (Chrome and Edge, Manifest V3, `extension/` in the repo) is the main link to YouTube Music.
+    - A content script on music.youtube.com reads the player and the page (song, queue, shuffle, repeat, like state, lyrics) and runs controls.
+    - It connects to Tama over a WebSocket on 127.0.0.1. Pairing is one-time with a code, as for Telegram (D-036). Tama checks the extension origin and a per-pairing key, and drops anything else (any web page can reach localhost).
+    - Permissions are limited to music.youtube.com: no cookies, tabs history or other hosts. It never reads or forwards sign-in data, so D-006 holds.
+  - **MUS-1** (media session) is the fallback when the extension is missing, unpaired or broken by a YouTube Music page change.
+  - **MUS-6** (YouTube Data API) stays for playlists and search.
+  - **Installation:** "Load unpacked" from the app's folder, guided by the setup wizard. Store publishing is parked.
+- **Alternatives:** Media session + API only (no queue, shuffle or lyrics; the user wanted the full widget); YouTube Music inside a Tama window (sign-in blocked, breaks D-055); unofficial cookie APIs (D-006).
+- **Consequences:**
+  - The extension depends on YouTube Music's page structure, so selectors live in one file, with a health check that reports to the widget when they stop matching.
+  - Developer-mode extensions show a browser notice.
+  - The WebSocket server is a new local listener and needs the same care as the tool bridge (D-037, D-055).
+  - Beat sync (MUS-4) is unchanged.
+- **Refs:** MUS-1, MUS-2, MUS-5, MUS-6, MUS-10, D-006, D-036, D-037, D-055, D-065

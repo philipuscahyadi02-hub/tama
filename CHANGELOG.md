@@ -15,6 +15,10 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = first stable release (D-058); the rest of M12 ships as 1.x; 2.0.0 = Tama's own agentic brain.
 
 ## [Unreleased]
+### Decisions
+- D-064 — Every open roadmap item parked (🅿): the to-do list starts from zero; M12 closed.
+- D-065 — M13 Music & DJ planned (1.1.0): now-playing for any player, Spotify (Premium, your own Spotify app) and YouTube Music (YouTube API + your browser), a music widget, DJ Tama on the real beat (MUS-1..9).
+- D-066 — YouTube Music only (Spotify dropped): a Tama Companion browser extension gives the widget the live Up next queue, shuffle/repeat, likes and lyrics; Windows media controls are the fallback (MUS-10).
 ### Added
 - **Easier onboarding for developers:** `CONTRIBUTING.md` (first run, project tour, workflow, build and release, troubleshooting); `npm run setup` (install + Electron download + checks); `npm run doctor` (Node, Electron, git, Claude Code, agy and voice engines, with the next step for each); `npm run dev` (runs with a scratch `.dev-data/` folder, never the real saves; `--fresh` for a first run); `.nvmrc` and `engines` pin Node 22+.
 ### Changed
@@ -257,6 +261,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `47e1f8a` | 2026-11-08 | docs(onboarding) | add CONTRIBUTING.md and setup, doctor and dev scripts |
 | `64a6541` | 2026-11-08 | feat(voice) | stop the Japanese engine after 5 minutes muted, restart on unmute (D-063) |
 | `066a798` | 2026-11-08 | docs(changelog) | regenerate commit table |
 | `8a1ab1a` | 2026-11-08 | fix(voice) | speak moments once (the chat copy is quiet); plan AI-free voice commands and an optional local brain (D-062) |
