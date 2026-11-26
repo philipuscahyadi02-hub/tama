@@ -146,7 +146,8 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.on('music:widget', (/** @type {unknown} */ a) => {
       if (!music) return;
       if (a === 'expand' || a === 'collapse') music.setExpanded(a === 'expand');
-      else if (a === 'unpin') music.unpin();
+      else if (a === 'beside') music.besideHer();
+      else if (a === 'hover' || a === 'unhover') music.setHover(a === 'hover');
       else if (a === 'dismiss') music.dismiss();
       else if (a === 'open') music.open();
     });

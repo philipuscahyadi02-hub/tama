@@ -26,7 +26,7 @@ function inQuietHours(d, from, to) {
 function createUiPrefs({ bus, device, now = () => Date.now() }) {
   const prefs = () => ({
     termTheme: 'night', tourDone: false, dnd: false, nudges: true, walkMarker: true, mute: false, motion: 'auto',
-    musicWidget: 'auto', replyLang: 'auto', quiet: { on: false, from: '23:00', to: '08:00' }, ...(device.get().ui || {}),
+    musicWidget: 'auto', musicLook: 'solid', musicOpacity: 100, replyLang: 'auto', quiet: { on: false, from: '23:00', to: '08:00' }, ...(device.get().ui || {}),
   });
 
   async function levelIndex() {
@@ -44,6 +44,8 @@ function createUiPrefs({ bus, device, now = () => Date.now() }) {
       termTheme, tourDone: !!p.tourDone, unlocked, dnd: !!p.dnd, nudges: p.nudges !== false, walkMarker: p.walkMarker !== false, mute: !!p.mute, motion: p.motion || 'auto',
       replyLang: REPLY_LANGS.includes(p.replyLang) ? p.replyLang : 'auto',
       musicWidget: p.musicWidget === 'off' ? 'off' : 'auto', // MUS-2: show the music widget by itself while a song plays
+      musicLook: p.musicLook === 'glass' ? 'glass' : 'solid', // D-068: Windows 11 acrylic or a solid card
+      musicOpacity: Math.round(Math.max(40, Math.min(100, Number(p.musicOpacity) || 100))),
       quiet: { on: !!(p.quiet && p.quiet.on), from: (p.quiet && p.quiet.from) || '23:00', to: (p.quiet && p.quiet.to) || '08:00' },
       // Quiet hours (M10): like /dnd while inside the window. Consumers check `dnd || quietNow`.
       quietNow: !!(p.quiet && p.quiet.on && inQuietHours(new Date(now()), p.quiet.from, p.quiet.to)),
@@ -51,7 +53,7 @@ function createUiPrefs({ bus, device, now = () => Date.now() }) {
     };
   }
 
-  /** @param {{ termTheme?: string, tourDone?: boolean, dnd?: boolean, nudges?: boolean, walkMarker?: boolean, mute?: boolean, motion?: string, musicWidget?: string, replyLang?: string, quiet?: { on?: boolean, from?: string, to?: string } }} p */
+  /** @param {{ termTheme?: string, tourDone?: boolean, dnd?: boolean, nudges?: boolean, walkMarker?: boolean, mute?: boolean, motion?: string, musicWidget?: string, musicLook?: string, musicOpacity?: number, replyLang?: string, quiet?: { on?: boolean, from?: string, to?: string } }} p */
   async function set(p) {
     /** @type {Record<string, any>} */
     const patch = {};
@@ -67,6 +69,8 @@ function createUiPrefs({ bus, device, now = () => Date.now() }) {
     if (p.mute !== undefined) patch.mute = !!p.mute;        // PET-8: no voice at all
     if (['auto', 'reduced', 'full'].includes(String(p.motion))) patch.motion = p.motion; // PET-8: auto = follow Windows
     if (p.walkMarker !== undefined) patch.walkMarker = !!p.walkMarker; // SUM-5: edge marker while hidden (D-035)
+    if (p.musicLook !== undefined) { if (!['solid', 'glass'].includes(String(p.musicLook))) return { error: 'Music widget look: solid or glass.' }; patch.musicLook = String(p.musicLook); }
+    if (p.musicOpacity !== undefined) { const n = Number(p.musicOpacity); if (!Number.isFinite(n)) return { error: 'Opacity is a number from 40 to 100.' }; patch.musicOpacity = Math.round(Math.max(40, Math.min(100, n))); }
     if (p.musicWidget !== undefined) { if (!['auto', 'off'].includes(String(p.musicWidget))) return { error: 'Music widget: auto or off.' }; patch.musicWidget = String(p.musicWidget); }
     if (p.replyLang !== undefined) {
       if (!REPLY_LANGS.includes(String(p.replyLang))) return { error: `Unknown language. Try: ${REPLY_LANGS.join(', ')}` };

@@ -187,7 +187,7 @@ contextBridge.exposeInMainWorld('tama', {
     pair: () => ipcRenderer.invoke('music:pair'),
     unpair: () => ipcRenderer.invoke('music:unpair'),
     openFolder: () => ipcRenderer.invoke('music:openFolder'),
-    /** Widget window: 'expand' | 'collapse' | 'unpin' | 'dismiss' | 'open' */
+    /** Widget window: 'expand' | 'collapse' | 'beside' | 'hover' | 'unhover' | 'dismiss' | 'open' */
     widget: (/** @type {string} */ action) => ipcRenderer.send('music:widget', action),
     onWidget: on('music'),
   },

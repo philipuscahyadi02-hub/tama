@@ -6,11 +6,11 @@ const songKey = (s) => (s ? String(s.videoId || `${s.title}|${s.artist}`) : '');
 
 /**
  * Should the widget be on screen? Pure.
- * @param {{ state: any, mode: 'auto'|'off', manual: boolean, dismissed: string, petHidden: boolean }} p
+ * The widget is its own window now (D-068), so hiding the pet doesn't hide it.
+ * @param {{ state: any, mode: 'auto'|'off', manual: boolean, dismissed: string }} p
  * @returns {'show'|'hide-soon'|'hide'}
  */
-function visibility({ state, mode, manual, dismissed, petHidden }) {
-  if (petHidden) return 'hide';
+function visibility({ state, mode, manual, dismissed }) {
   if (manual) return 'show'; // opened by hand (/music widget): stays until closed
   if (mode === 'off') return 'hide';
   if (!state) return 'hide-soon';

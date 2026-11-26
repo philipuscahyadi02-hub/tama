@@ -111,6 +111,8 @@ function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster
       mute: p?.mute == null ? undefined : !!p.mute, motion: p?.motion == null ? undefined : String(p.motion),
       walkMarker: p?.walkMarker == null ? undefined : !!p.walkMarker, // M5 extras (D-035)
       musicWidget: p?.musicWidget == null ? undefined : String(p.musicWidget).slice(0, 8), // M13 (MUS-2)
+      musicLook: p?.musicLook == null ? undefined : String(p.musicLook).slice(0, 8), // D-068
+      musicOpacity: p?.musicOpacity == null ? undefined : Number(p.musicOpacity),
       replyLang: p?.replyLang == null ? undefined : String(p.replyLang), // M10 (D-048)
       quiet: p?.quiet && typeof p.quiet === 'object' ? {
         on: p.quiet.on == null ? undefined : !!p.quiet.on,

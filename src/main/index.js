@@ -135,8 +135,8 @@ function boot() {
 
   // ---- windows ----
   const win = device.get().windows || {};
-  const music = createMusicWiring({ bus, ipc, shell, secrets, dataDir: appShell.paths.data(), log: debug });
-  const pet = createPetWindow({ savedPosition: win.pet, onMoved: (pos) => { device.patch('windows', { pet: pos }); music.onPetMoved(); } });
+  const music = createMusicWiring({ bus, ipc, shell, secrets, device, dataDir: appShell.paths.data(), log: debug });
+  const pet = createPetWindow({ savedPosition: win.pet, onMoved: (pos) => device.patch('windows', { pet: pos }) });
   const musicWidget = music.attach(pet);
   const term = createTerminalWindow({
     savedBounds: win.terminal, onBoundsChanged: (b) => device.patch('windows', { terminal: b }), isQuitting: appShell.isQuitting,

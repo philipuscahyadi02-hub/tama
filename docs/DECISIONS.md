@@ -97,6 +97,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-065 | M13 Music & DJ (1.1.0): Windows media session reader, Spotify Web API with the user's own app + PKCE, YouTube Music via the YouTube Data API + browser playback, widget, DJ Tama with loopback beat sync | Accepted (plan) · Partly superseded by D-066 (Spotify dropped, extension added) · Replaces VH-3/VH-5 music actions; amends D-055 when built |
 | D-066 | YouTube Music only; a Tama Companion browser extension (MV3, music.youtube.com only, paired over a 127.0.0.1 WebSocket) controls the player; the media session is the fallback | Accepted (plan) · Supersedes D-065 in part (Spotify, MUS-1 as the core) |
 | D-067 | YouTube Music inside a Tama window tested and rejected: Google blocks sign-in ("This browser or app may not be secure"); the extension stays | Accepted · Confirms D-066 |
+| D-068 | Music widget is a normal, movable window (not on top, not following her, position remembered) with a solid or Windows 11 glass look and 40–100 % opacity (full on hover) | Accepted · Refines MUS-2 |
 
 ---
 
@@ -921,3 +922,18 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Disguising the window further to pass Google's check (evading a security control; not done); playing without signing in (no Premium, no library).
 - **Consequences:** No embedded YouTube Music player. Don't retry without a new decision.
 - **Refs:** MUS-10, D-055, D-066
+
+### D-068 — Music widget: a normal window with glass and opacity
+- **Date:** 2026-11-27 · **Status:** Accepted · Refines MUS-2 (it no longer follows the pet)
+- **Context:** Trying it with Kero, the user found the widget laggy when it followed her and in the way: always on top, it covered their work. They asked for a normal window behind the active one, movable but not following Tama, and a lower opacity or an Apple-like glass look.
+- **Decision:**
+  - **A normal window:** not always on top, shown in the taskbar, and never stealing focus when it pops up for a new song.
+  - **Position:** the user drags it anywhere and the spot is remembered per PC (`device.json windows.music`, bottom-left anchor so expanding grows upward). The first time, or when its monitor is gone, it opens next to the pet. "Put it next to her" moves it back once.
+  - **Looks** (ui prefs `musicLook` solid|glass, `musicOpacity` 40–100):
+    - *Solid* is the transparent window with a shadowed card.
+    - *Glass* is a Windows 11 acrylic window (`backgroundMaterial: 'acrylic'`, chosen when the window is created, so changing the look rebuilds it) behind a see-through card.
+    - The opacity goes back to 100 % while the mouse is over the widget.
+  - **Pet visibility:** hiding the pet no longer hides the widget.
+- **Alternatives:** CSS `backdrop-filter` only (it can't blur the desktop behind a window); keeping the follow mode (laggy, in the way); click-through while not hovered (it's a control surface, so clicks must work).
+- **Consequences:** Acrylic needs Windows 11 22H2+. On older systems the glass look is a plain semi-transparent card. Window screenshots don't show the blur, so it is checked by eye.
+- **Refs:** MUS-2, D-066, NFR-1

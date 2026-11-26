@@ -20,10 +20,17 @@
       </div>
       <div id="corner">
         <button id="expand" class="tiny ico" data-i="down" title="Up next and lyrics"></button>
-        <button id="unpin" class="tiny ico" data-i="pin" title="Back beside her" hidden></button>
+        <button id="lookBtn" class="tiny ico" data-i="droplet" title="Look: glass and opacity"></button>
         <button id="close" class="tiny ico" data-i="close" title="Hide for this song"></button>
       </div>
     </section>
+    <div id="lookPanel" hidden>
+      <div class="row"><span>Look</span>
+        <div class="seg"><button data-look="solid">Solid</button><button data-look="glass">Glass</button></div>
+      </div>
+      <div class="row" title="It turns fully visible while your mouse is over it."><span>Opacity</span><input id="opacity" type="range" min="40" max="100" step="5" /><b id="opacityVal">100%</b></div>
+      <button id="beside" class="wide ico" data-i="pin">Put it next to her</button>
+    </div>
     <section id="progress">
       <span id="pos">0:00</span>
       <div id="bar" title="Click to jump"><div id="fill"></div><div id="knob"></div></div>

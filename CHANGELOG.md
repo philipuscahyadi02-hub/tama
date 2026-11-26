@@ -23,13 +23,15 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - **YouTube Music, step 2: the music widget (MUS-2):**
   - **Compact card:** a small card next to her while a song plays, in her colors: cover, title, artist, a progress bar you can click to jump, ⏮ ⏯ ⏭, 👍/👎, repeat, shuffle and volume.
   - **Expanded card:** **Up next** (click a song to play it) and **Lyrics**.
-  - **Moving and hiding:** it walks with her. Drag it elsewhere and it stays there; 📌 brings it back beside her. ✕ hides it for this song. `/music widget` opens it by hand, and `/music widget off` stops it from popping up.
-  - **Redesign:** its own matching icon set instead of emoji, a vinyl record behind the cover that spins while music plays, a small "Now playing" equalizer, styled progress and volume sliders, and a soft shadow. It moves together with her in every step, with no trailing. The vinyl and equalizer stand still with reduced motion.
+  - **Moving and hiding:** a normal window that stays behind the window you're working in, shows in the taskbar, and remembers where you put it (D-068). ✕ hides it for this song. `/music widget` opens it by hand, and `/music widget off` stops it from popping up.
+  - **Look (💧):** *Solid* or *Glass* (Windows 11 frosted glass), opacity from 40 to 100 % (fully visible while your mouse is over it), and "Put it next to her".
+  - **Redesign:** its own matching icon set instead of emoji, a vinyl record behind the cover that spins while music plays, a small "Now playing" equalizer, styled progress and volume sliders, and a soft shadow. The vinyl and equalizer stand still with reduced motion.
 ### Decisions
 - D-064 — Every open roadmap item parked (🅿): the to-do list starts from zero; M12 closed.
 - D-065 — M13 Music & DJ planned (1.1.0): now-playing for any player, Spotify (Premium, your own Spotify app) and YouTube Music (YouTube API + your browser), a music widget, DJ Tama on the real beat (MUS-1..9).
 - D-066 — YouTube Music only (Spotify dropped): a Tama Companion browser extension gives the widget the live Up next queue, shuffle/repeat, likes and lyrics; Windows media controls are the fallback (MUS-10).
 - D-067 — YouTube Music inside a Tama window was tested and rejected: Google blocks sign-in there. The browser extension stays.
+- D-068 — The music widget is a normal, movable window with a solid or glass look and adjustable opacity.
 ### Added
 - **Easier onboarding for developers:** `CONTRIBUTING.md` (first run, project tour, workflow, build and release, troubleshooting); `npm run setup` (install + Electron download + checks); `npm run doctor` (Node, Electron, git, Claude Code, agy and voice engines, with the next step for each); `npm run dev` (runs with a scratch `.dev-data/` folder, never the real saves; `--fresh` for a first run); `.nvmrc` and `engines` pin Node 22+.
 ### Changed
@@ -272,6 +274,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `e02655c` | 2026-11-27 | feat(music) | widget redesign with its own icon set; follows the pet without lag (MUS-2) |
 | `f16b6b8` | 2026-11-27 | feat(music) | YouTube Music widget beside the pet (MUS-2); embedded player rejected (D-067) |
 | `a8b9ee2` | 2026-11-26 | feat(music) | Tama Companion extension and media-session fallback (MUS-1, MUS-10) |
 | `22a6cb7` | 2026-11-26 | docs(prd) | park all open items; plan M13 YouTube Music & DJ (D-064..D-066) |

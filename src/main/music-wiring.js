@@ -15,26 +15,23 @@ const geometry = require('./platform/summon/geometry');
  *   ipc: typeof import('./platform/ipc'),
  *   shell: typeof import('./platform/shell'),
  *   secrets: { get: (k: string) => string | null, set: (k: string, v: string) => void, delete: (k: string) => void },
+ *   device: import('./platform/store/device').DeviceSettings,
  *   dataDir: string,
  *   log?: (m: string) => void,
  * }} deps
  */
-function createMusicWiring({ bus, ipc, shell, secrets, dataDir, log = () => {} }) {
+function createMusicWiring({ bus, ipc, shell, secrets, device, dataDir, log = () => {} }) {
   /** @type {import('./platform/windows/music-window').MusicWindow | null} */ let widget = null;
 
   return {
-    /** The pet moved: the widget moves in the same step, so they walk together without trailing. */
-    onPetMoved() { if (widget) widget.follow(); },
-
-    /** Create the widget for this pet window. @param {import('./platform/windows/pet-window').PetWindow} pet */
+    /** Create the widget (D-068: a normal window; opens next to the pet the first time, then where the user left it). @param {import('./platform/windows/pet-window').PetWindow} pet */
     attach(pet) {
       const w = createMusicWindow({
         petBody: () => geometry.bodyRect(pet.bounds()),
-        petHidden: () => !pet.win.isVisible() || pet.isHiddenByUser(),
         send: ipc.sendUi,
+        savedPosition: (device.get().windows || {}).music || null,
+        onMoved: (pos) => device.patch('windows', { music: pos }),
       });
-      pet.win.on('hide', () => w.follow());
-      pet.win.on('show', () => w.follow());
       widget = w;
       return w;
     },
@@ -47,7 +44,11 @@ function createMusicWiring({ bus, ipc, shell, secrets, dataDir, log = () => {} }
       const stops = [createMusic({ bus, secrets, media, startWs: startWsServer, openExternal: shell.openExternal, extensionDir, log }).start()];
       const w = widget;
       if (w) {
-        const syncMode = () => bus.request(TOPICS.UI_PREFS_GET).then((ui) => w.setMode(ui && ui.musicWidget === 'off' ? 'off' : 'auto')).catch(() => null);
+        const syncMode = () => bus.request(TOPICS.UI_PREFS_GET).then((ui) => {
+          if (!ui) return;
+          w.setLook({ look: ui.musicLook, opacity: ui.musicOpacity });
+          w.setMode(ui.musicWidget === 'off' ? 'off' : 'auto');
+        }).catch(() => null);
         syncMode();
         stops.push(bus.on(TOPICS.MUSIC_CHANGED, (/** @type {any} */ p) => w.update(p.state)), bus.on(TOPICS.UI_PREFS_CHANGED, syncMode), () => w.destroy());
       }

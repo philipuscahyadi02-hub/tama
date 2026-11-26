@@ -3,7 +3,7 @@
    and lyrics come from a web page. */
 const K = window.tama;
 const $ = (id) => document.getElementById(id);
-let view = { state: null, expanded: false, pinned: false, manual: false };
+let view = { state: null, expanded: false, manual: false, look: { look: 'solid', opacity: 100 } };
 let tab = 'queue';
 let receivedAt = 0;
 let seeking = false;
@@ -47,7 +47,12 @@ function render() {
   $('more').hidden = !view.expanded;
   setIcon($('expand'), view.expanded ? 'up' : 'down');
   $('kickerText').textContent = !s ? 'Music' : s.playing ? 'Now playing' : 'Paused';
-  $('unpin').hidden = !view.pinned;
+  const lk = view.look || { look: 'solid', opacity: 100 };
+  document.body.classList.toggle('glass', lk.look === 'glass');
+  for (const b of document.querySelectorAll('.seg button')) b.classList.toggle('on', b.dataset.look === lk.look);
+  if (document.activeElement !== $('opacity')) $('opacity').value = String(lk.opacity);
+  $('opacity').style.setProperty('--v', `${((Number($('opacity').value) - 40) / 60) * 100}%`);
+  $('opacityVal').textContent = `${$('opacity').value}%`;
   $('title').textContent = s ? s.title : 'Nothing playing';
   $('title').title = s ? s.title : '';
   $('sub').textContent = s ? [s.artist, s.album].filter(Boolean).join(' · ') : 'Play something on YouTube Music~';
@@ -155,7 +160,20 @@ $('shuffle').addEventListener('click', () => act('shuffle'));
 let volTimer = 0;
 $('volume').addEventListener('input', () => { $('volume').style.setProperty('--v', `${$('volume').value}%`); clearTimeout(volTimer); volTimer = setTimeout(() => act('volume', Number($('volume').value)), 150); });
 $('expand').addEventListener('click', () => K.music.widget(view.expanded ? 'collapse' : 'expand'));
-$('unpin').addEventListener('click', () => K.music.widget('unpin'));
+// Look panel (D-068): solid or glass, opacity, back next to her.
+$('lookBtn').addEventListener('click', (e) => { e.stopPropagation(); $('lookPanel').hidden = !$('lookPanel').hidden; });
+document.addEventListener('click', (e) => { if (!$('lookPanel').hidden && !$('lookPanel').contains(e.target)) $('lookPanel').hidden = true; });
+for (const b of document.querySelectorAll('.seg button')) b.addEventListener('click', () => K.ui.setPrefs({ musicLook: b.dataset.look }));
+let opTimer = 0;
+$('opacity').addEventListener('input', () => {
+  $('opacity').style.setProperty('--v', `${((Number($('opacity').value) - 40) / 60) * 100}%`);
+  $('opacityVal').textContent = `${$('opacity').value}%`;
+  clearTimeout(opTimer); opTimer = setTimeout(() => K.ui.setPrefs({ musicOpacity: Number($('opacity').value) }), 120);
+});
+$('beside').addEventListener('click', () => { $('lookPanel').hidden = true; K.music.widget('beside'); });
+// Fully visible while the mouse is over the card; see-through again when it leaves.
+document.documentElement.addEventListener('mouseenter', () => K.music.widget('hover'));
+document.documentElement.addEventListener('mouseleave', () => K.music.widget('unhover'));
 $('close').addEventListener('click', () => K.music.widget('dismiss'));
 for (const b of document.querySelectorAll('#tabs button')) b.addEventListener('click', () => { tab = b.dataset.tab; renderTab(); });
 
