@@ -153,6 +153,11 @@ src/main/platform/windows/music-window.js  MUS-2 widget window: beside the pet (
                                   dragged ("pinned"), auto-shows while playing (ui pref musicWidget auto|off), compact/expanded
 src/main/platform/windows/music-rules.js   pure show/hide rules for the widget (unit-tested)
 src/renderer/music/               the widget view: cover, progress/seek, controls, Up next, Lyrics (text only via textContent)
+src/main/platform/loopback.js     PC-audio loopback for DJ Tama, granted to the pet window only (D-069)
+src/shared/rig/dj.js              DJ headphones + booth for every design (shown with .dj-on; only where loaded)
+src/shared/beat.js                pure beat tracker: bass-energy onsets → tempo → beat clock (MUS-4)
+src/renderer/pet/dj.js, dj-beat.js DJ Tama behaviour (beat-stepped half-time animations) and the loopback listener
+assets/music/dj-lines.json        DJ lines per new song / drop / start ({title} {artist} {name})
 src/main/platform/ws-server.js    minimal RFC 6455 WebSocket server on 127.0.0.1:47821–47825 for the extension (origin check first)
 src/main/platform/media-session.js Windows media session (SMTC) via a tiny C# helper compiled once with the built-in csc.exe
                                   (cached in <data>/bin), line protocol: now / art / cmd (D-066)
@@ -253,7 +258,8 @@ stop(): void
 - Google: minimal scopes; no delete/share tools; edits to existing files need approval.
 - Renderer: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, CSP in every HTML file, preload exposes an allow-list.
   IPC is only accepted from file:// frames (`platform/ipc`), and the desktop channel coerces or allow-lists every argument (D-055).
-- Windows never navigate away from file://, never open new windows and get no browser permissions (`platform/app` `harden()`, D-055).
+- Windows never navigate away from file://, never open new windows and get no browser permissions (`platform/app` `harden()`, D-055),
+  except the pet window's PC-audio loopback for DJ Tama's beat sync (`platform/loopback`, D-069).
   Links go through `link:open` → `platform/shell` (allow-listed https hosts only).
 - Untrusted content (mail, Drive files, calendar, Maps places, the `[google]` context line) reaches models labeled as data, never as instructions.
 - Logs never contain secrets, tokens, or email bodies (`platform/crash-log` `redact()`: Telegram, Google OAuth/API, Anthropic patterns).

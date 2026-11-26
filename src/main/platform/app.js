@@ -2,6 +2,7 @@
 // Electron app lifecycle + paths. The bootstrap (src/main/index.js) only talks to Electron through here.
 const path = require('path');
 const { app, session } = require('electron');
+const { captureAllowed } = require('./loopback');
 
 let quitting = false;
 
@@ -25,8 +26,10 @@ function harden() {
     wc.on('will-attach-webview', (ev) => ev.preventDefault());
   });
   app.whenReady().then(() => {
-    session.defaultSession.setPermissionRequestHandler((_wc, _perm, cb) => cb(false));
-    session.defaultSession.setPermissionCheckHandler(() => false);
+    // The one exception (D-069): the pet window may capture the PC's audio output for DJ Tama's beat sync.
+    const capture = (/** @type {any} */ wc, /** @type {string} */ perm) => !!wc && captureAllowed(wc.id) && (perm === 'media' || perm === 'display-capture');
+    session.defaultSession.setPermissionRequestHandler((wc, perm, cb) => cb(capture(wc, perm)));
+    session.defaultSession.setPermissionCheckHandler((wc, perm) => capture(wc, perm));
   });
 }
 

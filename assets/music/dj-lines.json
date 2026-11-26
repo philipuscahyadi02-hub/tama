@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "_comment": "DJ Tama lines (MUS-3). {title} and {artist} are filled in from the song; keep lines short, they show in her speech bubble.",
+  "newSong": [
+    "next track~ ♪",
+    "ooh, this one! 🎧",
+    "DJ {name} on the decks~",
+    "turning it up~ 🔊",
+    "vibe check: passed ✨",
+    "spin it, spin it~ 💿"
+  ],
+  "withTitle": [
+    "♪ {title}~ good pick!",
+    "now spinning: {title} 💿",
+    "{artist}! I love this one~",
+    "♪ {title} · {artist} ♪"
+  ],
+  "drop": [
+    "drop!! 🔥",
+    "here it comes~ ✨",
+    "hands up~! 🙌",
+    "yeahhh~ 🎶"
+  ],
+  "start": [
+    "music time~ headphones on! 🎧",
+    "DJ mode: on 💿",
+    "let's groove~ ♪"
+  ]
+}

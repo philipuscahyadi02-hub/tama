@@ -41,6 +41,13 @@ window.makeMusicCommands = function makeMusicCommands(K, { info, error }) {
           if (!r.port) return error('✗ The music link isn\'t running (another app may be using ports 47821–47825).');
           return info(`⎿  🔗 Pairing code: ${r.code}  (valid 10 minutes)\n   Click the Tama Companion icon in your browser and enter it.\n   Not installed yet? /music install`);
         }
+        case 'dj': case 'beat': {
+          const m = (rest[0] || '').toLowerCase();
+          if (m !== 'on' && m !== 'off') return error(`✗ /music ${c} on|off`);
+          await K.ui.setPrefs(c === 'dj' ? { musicDj: m === 'on' } : { musicBeat: m === 'on' });
+          if (c === 'dj') return info(m === 'on' ? '⎿  🎧 DJ mode on: headphones and decks while music plays' : '⎿  DJ mode off');
+          return info(m === 'on' ? '⎿  🥁 I follow the real beat (I listen to your PC sound, only on this PC, nothing is recorded)' : '⎿  Beat sync off: I groove at a steady tempo');
+        }
         case 'widget': {
           const m = (rest[0] || '').toLowerCase();
           if (m === 'off' || m === 'auto') {
@@ -79,7 +86,7 @@ window.makeMusicCommands = function makeMusicCommands(K, { info, error }) {
           const link = e.connected ? `🧩 Companion connected${e.tabs ? '' : ' (no YouTube Music tab open)'}` : e.paired ? '🧩 Companion paired, not connected (is the browser open?)' : '🧩 Companion not paired: /music install, then /music pair';
           return info(`${nowLine(st.state)}\n   ${link}${st.media.available ? '' : ' · Windows media controls unavailable'}`);
         }
-        default: return error('✗ /music [now|play|pause|next|prev|like|dislike|shuffle|repeat|vol <n>|seek <m:ss>|lyrics|open <link>|widget [off|auto]|pair|unpair|install|folder]');
+        default: return error('✗ /music [now|play|pause|next|prev|like|dislike|shuffle|repeat|vol <n>|seek <m:ss>|lyrics|open <link>|widget [off|auto]|dj on|off|beat on|off|pair|unpair|install|folder]');
       }
     }],
   };

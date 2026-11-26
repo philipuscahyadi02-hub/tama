@@ -175,7 +175,7 @@ function henshin(line) {
 let walkTimer = null;
 let dir = 1;
 function startWalking(ms) {
-  if (S.asleep || isEgg || agentState !== 'idle' || dragging || document.body.classList.contains('reduce-motion')) return;
+  if (S.asleep || isEgg || agentState !== 'idle' || dragging || window.djOn || document.body.classList.contains('reduce-motion')) return; // DJ Tama stays at her booth
   dir =Math.random() < 0.5 ? -1 : 1;
   petEl.classList.add('walking');
   petEl.classList.toggle('face-left', dir < 0);

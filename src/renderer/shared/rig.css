@@ -90,3 +90,16 @@
 .tama-rig.calm .eyes-open .eye, .tama-rig.calm .hood-eyes { animation: none; }
 .tama-rig.calm.blink-now .eyes-open .eye, .tama-rig.calm.blink-now .hood-eyes { animation: blinkOnce .22s ease-in-out 1; }
 @keyframes blinkOnce { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.08); } }
+
+/* ---------- DJ Tama (MUS-3) ----------
+   The DJ headphones and booth are always in the SVG (rig/dj.js) but only show with .dj-on, which the pet window sets
+   while music plays. The head is nodded by script on each beat (dj.js), so the idle tilt stops here. */
+.dj { display: none; }
+.tama-rig.dj-on .dj { display: inline; }
+.tama-rig.dj-on .headGroup { animation: none !important; }
+/* No infinite animations here (NFR-1, D-069): the record turns and the notes float in short steps on the beat
+   (pet/dj.js), so the pet window repaints only around beats instead of every frame. */
+.tama-rig.dj-on .dj-spin, .tama-rig.dj-on .dj-note { transform-box: fill-box; transform-origin: center; }
+.tama-rig.dj-on .dj-note { opacity: 0; }
+/* Reduced motion: headphones only, no booth, nothing spins (PET-8). */
+.reduce-motion .tama-rig.dj-on .dj-deck { display: none; }

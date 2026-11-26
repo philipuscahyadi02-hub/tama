@@ -98,6 +98,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-066 | YouTube Music only; a Tama Companion browser extension (MV3, music.youtube.com only, paired over a 127.0.0.1 WebSocket) controls the player; the media session is the fallback | Accepted (plan) · Supersedes D-065 in part (Spotify, MUS-1 as the core) |
 | D-067 | YouTube Music inside a Tama window tested and rejected: Google blocks sign-in ("This browser or app may not be secure"); the extension stays | Accepted · Confirms D-066 |
 | D-068 | Music widget is a normal, movable window (not on top, not following her, position remembered) with a solid or Windows 11 glass look and 40–100 % opacity (full on hover) | Accepted · Refines MUS-2 |
+| D-069 | DJ Tama: DJ rig parts for every design; real beat from PC-audio loopback granted to the pet window only (amends D-055); beat-stepped half-time animations to stay within ~+2 % CPU | Accepted · Amends D-055 |
 
 ---
 
@@ -937,3 +938,21 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** CSS `backdrop-filter` only (it can't blur the desktop behind a window); keeping the follow mode (laggy, in the way); click-through while not hovered (it's a control surface, so clicks must work).
 - **Consequences:** Acrylic needs Windows 11 22H2+. On older systems the glass look is a plain semi-transparent card. Window screenshots don't show the blur, so it is checked by eye.
 - **Refs:** MUS-2, D-066, NFR-1
+
+### D-069 — DJ Tama: rig parts, PC-audio beat sync for the pet window only, beat-stepped animations
+- **Date:** 2026-11-27 · **Status:** Accepted · Amends D-055 (one browser permission, one window)
+- **Context:** MUS-3/MUS-4: while music plays, Tama should DJ on the real beat. Spotify-style tempo data is not available for YouTube Music, so the beat must come from the sound itself.
+- **Decision:**
+  - **Rig:** `src/shared/rig/dj.js` draws over-ear DJ headphones (in the head group, hood-aware) and a DJ booth (front panel with her accent and a note badge, a record and a mixer) from palette tokens, so every design gets them. Compose includes them only where `rig/dj.js` is loaded (the pet window); they show with `.dj-on`. Reduced motion shows the headphones only.
+  - **Beat:**
+    - The pet window asks for loopback audio through `getDisplayMedia`. `platform/loopback.js` grants it only to the pet window's webContents (screen source plus `audio: 'loopback'`), and `platform/app` allows the `media`/`display-capture` permission for that window only; everything else is still refused (D-055).
+    - The video track is stopped at once.
+    - An AnalyserNode measures the 40–150 Hz energy every 20 ms. The pure tracker in `src/shared/beat.js` (onsets → tempo histogram folded into 70–180 BPM → a beat clock pulled into phase by onsets, table-tested) produces the beats. The audio is never recorded, saved or sent.
+    - Without loopback, or with `/music beat off`, a steady 112 BPM groove takes over.
+  - **Performance:** no infinite animations while DJing. On every second beat (half-time) she bobs and the record turns a quarter, in the same frames. A note floats every 8 beats, the left hand scratches every 8, and a "drop" (hop, sparkle, optional line) comes every 64. The music card's vinyl and equalizer move only while hovered.
+    - *Measured with `npm run perf` and music playing:* card only 2.2 % CPU / 275 MB, DJ on 4.3 % / 369 MB (first version: 7.9 %).
+  - **DJ lines:** they live in `assets/music/dj-lines.json`; the core picks one per new song (none in DND or quiet hours) and fills `{title}`/`{artist}`/`{name}` as plain text.
+  - **Settings:** ui prefs `musicDj` and `musicBeat` (`/music dj|beat on|off`). She doesn't wander while DJing.
+- **Alternatives:** A fake tempo only (the user chose real sync); continuous CSS spin and float (7.9 % CPU); capturing only the YouTube Music tab's audio (needs the extension to stream audio; heavier and more permissions).
+- **Consequences:** Beat sync hears all PC sound while on (also calls or games), so it runs only while music plays and DJ mode is on. DJ mode costs about 95 MB of extra memory, mostly the audio pipeline.
+- **Refs:** MUS-3, MUS-4, D-055, D-066, NFR-1, PET-8

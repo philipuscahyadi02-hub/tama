@@ -112,6 +112,7 @@ function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster
       walkMarker: p?.walkMarker == null ? undefined : !!p.walkMarker, // M5 extras (D-035)
       musicWidget: p?.musicWidget == null ? undefined : String(p.musicWidget).slice(0, 8), // M13 (MUS-2)
       musicLook: p?.musicLook == null ? undefined : String(p.musicLook).slice(0, 8), // D-068
+      musicDj: p?.musicDj == null ? undefined : !!p.musicDj, musicBeat: p?.musicBeat == null ? undefined : !!p.musicBeat, // MUS-3/4
       musicOpacity: p?.musicOpacity == null ? undefined : Number(p.musicOpacity),
       replyLang: p?.replyLang == null ? undefined : String(p.replyLang), // M10 (D-048)
       quiet: p?.quiet && typeof p.quiet === 'object' ? {

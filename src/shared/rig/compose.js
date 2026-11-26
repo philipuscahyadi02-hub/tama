@@ -3,12 +3,13 @@
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
     module.exports = factory(require('./kit'), require('./face'), require('./hair'), require('./headwear'),
-      require('./outfit'), require('./accessories'), require('../palette'), require('../spec'));
+      require('./outfit'), require('./accessories'), require('../palette'), require('../spec'), require('./dj'));
   } else {
     const S = root.TamaShared;
-    S.rig = factory(S.kit, S.face, S.hair, S.headwear, S.outfit, S.accessories, S.palette, S.spec);
+    // S.dj is optional: only views that show DJ Tama (the pet window) load rig/dj.js.
+    S.rig = factory(S.kit, S.face, S.hair, S.headwear, S.outfit, S.accessories, S.palette, S.spec, S.dj);
   }
-}(globalThis, function (kit, face, hair, headwear, outfit, accessories, palette, specMod) {
+}(globalThis, function (kit, face, hair, headwear, outfit, accessories, palette, specMod, dj) {
   /**
    * @param {any} rawSpec  any spec-like object; normalized first
    * @param {{ idPrefix?: string }} [opts]  unique per SVG on the page (gradient ids)
@@ -46,7 +47,8 @@
       <ellipse cx="100" cy="235" rx="48" ry="5" style="fill:rgba(0,0,0,.16)" />
       ${outside}
       <g id="${id}bodyGroup" class="bodyGroup">${bodyG}</g>
-      <g id="${id}headGroup" class="headGroup">${headG}${face.expressions({ eyes: p.eyes, idPrefix: id })}</g>`;
+      <g id="${id}headGroup" class="headGroup">${headG}${face.expressions({ eyes: p.eyes, idPrefix: id })}${dj ? dj.phones(!!hw.hood) : ''}</g>
+      ${dj ? dj.deck() : ''}`;
 
     const classes = [`eyes-${p.eyes}`, hw.hood ? 'has-hood' : 'no-hood'];
     return { svg, vars: palette.derive(spec.palette, spec.paletteOverrides), classes, spec };
