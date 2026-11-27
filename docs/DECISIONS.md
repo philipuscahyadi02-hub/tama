@@ -114,6 +114,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-082 | "Ask Tama" right-click in the Tama Companion extension (contextMenus + activeTab only); explain/summarize/translate go to chat as untrusted text, remember/todo save directly | Accepted |
 | D-083 | Extension popup: ask Tama about this page (question + optional page text as untrusted data) and save this page as todo / note / reminder; no new permissions | Accepted |
 | D-084 | Calendar window (month/week/agenda, join, private notes in the event's private extended properties) + next-meeting card; creating and inviting stays in her chat | Accepted |
+| D-085 | Calendar box: a desktop widget like the music card (next event + Join, accordion agenda for today and tomorrow); replaces the separate next-meeting card; shows before meetings, always, or off | Accepted · Refines D-084 (the pop-up card) |
 
 ---
 
@@ -1131,3 +1132,15 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Creating events from a form in the calendar (would bypass her place check and the full-invitation confirmation); notes in the event description (guests see them, and changing it notifies or confuses them); polling the calendar separately for the card (the existing minute watch already lists the next events).
 - **Consequences:** No delete or drag-to-move in the calendar (GOOG-7; changes go through her or Google Calendar). Private notes show only in Tama, not in Google Calendar's own UI. Events load per visible range; the window reloads when it gets focus back.
 - **Refs:** CAL-1, CAL-2, GOOG-3, D-038, D-039, D-078, src/main/services/google/{calendar,cal-view}.js, src/main/platform/windows/meeting-window.js, src/renderer/{calendar,meeting}/
+
+### D-085 — Calendar box: a widget like the music card, replacing the next-meeting card
+- **Date:** 2026-11-27 · **Status:** Accepted · Refines D-084 (the next-meeting card)
+- **Context:** The user expected a calendar widget like the music box, not only the Calendar window and a pop-up card.
+- **Decision:** `platform/windows/calendar-box.js` + `renderer/calbox/`: a frameless desktop widget (no taskbar button, never takes focus, follows the Look via `followLook`, its spot remembered in `windows.calbox`, first time in the top-right corner of the main screen).
+  - **Closed:** today's date, the next event (or the one the next-meeting rule flagged) with a countdown, place and guests, and **Join**.
+  - **⌄:** today's and tomorrow's agenda as an accordion inside the box (same grow / slide / shrink as D-080), with New event with Tama (her chat, D-084) and Open calendar.
+  - **ui pref `calendarWidget`:** `auto` (default: it pops up when D-084's rule flags a meeting, brought into view once but not pinned on top, and hides when that's over), `always`, or `off` (only when opened by hand). ✕ hides it and dismisses that meeting.
+  - The separate meeting card (`meeting-window.js`, `renderer/meeting/`) is removed. The desktop channel pushes prefs and character to the box (`extraWindows`), so it follows Look changes live.
+- **Alternatives:** Keeping both a pop-up card and a widget (two boxes for one job); always-on-top (the user didn't want the music card on top either, D-068).
+- **Consequences:** Like the music card, Windows can't animate a window's size, so the box grows first and the list slides in. Off-screen test windows don't run CSS transitions, so screenshot runs switch the slide off.
+- **Refs:** CAL-2, CAL-1, D-068, D-078, D-080, D-084, src/main/platform/windows/calendar-box.js, src/renderer/calbox/

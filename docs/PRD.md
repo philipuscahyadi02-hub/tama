@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.52 |
+| **Version** | 0.53 |
 | **Status** | **v1.0.0 released** (D-058); installer + setup wizard done (unreleased). Every other open item is parked (D-064). **Next: M13 YouTube Music & DJ = 1.1.0** (MUS-*, D-065, D-066) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-27 |
@@ -257,7 +257,7 @@ Plan in D-065, YouTube Music only with a companion extension (D-066). Build orde
 | EXT-1 | **Ask Tama from the browser:** the Tama Companion extension adds a right-click *Ask Tama* menu: on selected text Explain, Summarize, Translate to English, Remember this, Add as a todo; on a page Summarize this page. Chat requests open her chat with the text marked untrusted; remember and todo save directly. The extension reads only what the user right-clicks, at that moment (`contextMenus`, `activeTab`). *(D-082.)* | P1 | M13 | ☑ |
 | EXT-2 | **Ask about this page + save it (extension popup):** a question box (the page's text goes along as untrusted data, optional) whose answer appears in her chat, and "Save this page" as a todo, a note (title + link) or a reminder (in 1 hour, tonight 8 pm, tomorrow 9 am). No new permissions: opening the popup grants access to that one tab. *(D-083.)* | P1 | M13 | ☑ |
 | CAL-1 | **Calendar window:** month, week (hour grid, now line) and agenda over the user's Google Calendar, in her Look. Click an event: time, place (map link), guests, description, **Join** (Meet/Zoom/Teams), Open in Google Calendar, and **private notes** (only the user sees them). **New event with Tama** / click a day or time opens her chat with the request ready: invites and places go through her with confirmation (D-038, D-039). Tray *Calendar…*, Settings → Google, `/cal`. *(D-084.)* | P1 | M13 | ◐ |
-| CAL-2 | **Next-meeting card:** pops up before a meeting (5/10/15/30 min, default 15; Settings → Google → Calendar) with time left, Join and Open calendar; hides when the meeting is underway or dismissed; skips all-day and declined events. *(D-084.)* | P1 | M13 | ◐ |
+| CAL-2 | **Calendar box** (replaces the separate next-meeting card): a desktop widget like the music card: today's date, the next event with a countdown and **Join**; ⌄ opens today's and tomorrow's agenda inside the box (accordion), with *New event with Tama* and *Open calendar*. Movable, remembered, no taskbar button, follows the Look. Settings → Google → Calendar: shows **before meetings** (5/10/15/30 min, default 15), **always**, or **off**; tray *Calendar box*, `/cal box`. *(D-084, D-085.)* | P1 | M13 | ◐ |
 
 ## 5. Milestones
 
@@ -329,6 +329,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | BUG-2 | Electron warns that its `safeStorage` usage is deprecated and will be removed (`platform/secrets` stores tokens with it). | 2026-11-27, reported by the user | Open, not investigated yet (user: no need to fix now) |
 
 ## 7. Changelog
+- **0.53 — 2026-11-27** — CAL-2 is now the calendar box, a desktop widget like the music card (D-085); BUG-1 cause found.
 - **0.52 — 2026-11-27** — Known issues noted: BUG-1 (Google backup token error in the terminal), BUG-2 (Electron safeStorage deprecation warning).
 - **0.51 — 2026-11-27** — New CAL-1 ◐ calendar window, CAL-2 ◐ next-meeting card (D-084).
 - **0.50 — 2026-11-27** — EXT-1 ☑, EXT-2 ☑ (confirmed by the user).

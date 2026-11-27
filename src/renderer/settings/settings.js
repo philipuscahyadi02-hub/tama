@@ -124,6 +124,7 @@ $('#mFolder').addEventListener('click', async () => { const r = await K.music.op
 $('#mYtm').addEventListener('click', async () => { const r = await K.music.control('open', 'https://music.youtube.com/'); say(r.ok ? 'opening YouTube Music~' : r.error, !r.ok); });
 $('#mCode').addEventListener('click', async () => { const r = await K.music.pair(); if (!r.port) { say('The music link is not running (ports 47821-47825 busy?)', true); return; } refreshMusic(); });
 $('#mUnpair').addEventListener('click', async () => { await K.music.unpair(); say('forgot that browser'); refreshMusic(); });
+$('#openCalBox').addEventListener('click', () => { K.calendar.box('open'); say('calendar box open~'); });
 $('#mOpen').addEventListener('click', () => { K.music.widget('open'); say('music card open~'); });
 let mOpTimer = 0;
 $('#mOpacity').addEventListener('input', () => {

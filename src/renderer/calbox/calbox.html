@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>Tama · Calendar</title>
+  <link rel="stylesheet" href="calbox.css" />
+  <link rel="stylesheet" href="../shared/look.css" />
+</head>
+<body>
+  <main id="card">
+    <div id="grip" title="Drag to move"></div>
+    <div class="top">
+      <span class="ico" data-i="calendar"></span><span id="date"></span>
+      <span class="grow"></span>
+      <button id="expand" class="tiny ico" data-i="down" title="Today and tomorrow"></button>
+      <button id="openCal" class="tiny ico" data-i="fwd" title="Open the calendar"></button>
+      <button id="close" class="tiny ico" data-i="close" title="Hide"></button>
+    </div>
+    <section id="next">
+      <div id="kicker"></div>
+      <div id="title">—</div>
+      <div id="sub"></div>
+    </section>
+    <div class="row"><button id="join" class="primary" hidden><span class="ico" data-i="video"></span>Join</button><span id="msg"></span></div>
+    <section id="more">
+      <ol id="agenda"></ol>
+      <div class="foot"><button id="newEv"><span class="ico" data-i="plus"></span>New event with Tama</button><button id="openCal2">Open calendar</button></div>
+    </section>
+  </main>
+  <script src="../../shared/palette.js"></script>
+  <script src="../../shared/catalog.js"></script>
+  <script src="../../shared/spec.js"></script>
+  <script src="../../shared/theme.js"></script>
+  <script src="../shared/look.js"></script>
+  <script src="../shared/icons.js"></script>
+  <script src="calbox.js"></script>
+</body>
+</html>

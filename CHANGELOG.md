@@ -49,7 +49,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - **Ask Tama from Chrome (EXT-1, D-082):** right-click selected text → *Ask Tama* → Explain, Summarize, Translate to English, Remember this or Add as a todo; right-click a page → Summarize this page. Her chat opens with the answer; remember and todo save right away. The extension (1.3.0, reload it once) reads only what you right-click, when you click.
 - **Ask about this page + save it (EXT-2, D-083):** click the Tama Companion icon: type a question about the page you're on (its text goes along, untick to leave it out) and her answer appears in the chat; or save the page as a todo, a note with its link, or a reminder (in 1 hour, tonight 8 pm, tomorrow 9 am). Extension 1.4.0: reload it once.
 - **Calendar (CAL-1, CAL-2, D-084):** a Calendar window (tray *Calendar…*, Settings → Google, `/cal`) with **Month**, **Week** and **Agenda** views in her Look. Click an event to **Join** its Meet/Zoom/Teams call, open its place on the map, see the guests, or write **private notes** (only you see them). **New event with Tama** (or a day's +, or a click in the week) opens her chat ready to set it up: she checks the place and shows the full invitation before anything is sent.
-  - **Next-meeting card:** 15 minutes before a meeting (5/10/15/30 in Settings) a small card pops up with the time left, **Join** and **Open calendar**.
+  - **Calendar box (D-085):** a desktop widget like the music card: today's date, your next event with a countdown and **Join**; ⌄ opens today's and tomorrow's agenda inside the box. It pops up 15 minutes before a meeting (5/10/15/30), or stays on the desktop, or stays off (Settings → Google → Calendar; tray *Calendar box*; `/cal box`).
 ### Decisions
 - D-064 — Every open roadmap item parked (🅿): the to-do list starts from zero; M12 closed.
 - D-065 — M13 Music & DJ planned (1.1.0): now-playing for any player, Spotify (Premium, your own Spotify app) and YouTube Music (YouTube API + your browser), a music widget, DJ Tama on the real beat (MUS-1..9).
@@ -61,6 +61,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - D-071 — Up next / Lyrics open in a panel docked beside her; the card stays small where you put it.
 - D-072 — The Up next / Lyrics panel belongs to the music card instead; card and Kero are separate unless you pin them together (replaces D-071).
 - D-075 — Telegram music commands (MUS-8) dropped: music from the phone goes through her chat.
+- D-085 — Calendar box: a widget like the music card (replaces the separate meeting card).
 - D-084 — Calendar window and next-meeting card; new events and invitations stay in her chat.
 - D-083 — Ask about this page and save it, from the extension popup.
 - D-082 — "Ask Tama" right-click in the browser extension.
@@ -314,6 +315,9 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `b512833` | 2026-11-27 | docs(prd) | BUG-1 cause (invalid_grant: expired refresh token) and fixes |
+| `e94fc25` | 2026-11-27 | docs(prd) | note known issues BUG-1 (Google backup token error) and BUG-2 (safeStorage deprecation) |
+| `3b0c9e4` | 2026-11-27 | feat(calendar) | calendar window (month/week/agenda, join, private notes) and next-meeting card (CAL-1, CAL-2, D-084) |
 | `e64f5b6` | 2026-11-27 | docs(prd) | EXT-1 and EXT-2 done (confirmed live) |
 | `185744d` | 2026-11-27 | feat(extension) | ask about this page and save it from the popup (EXT-2, D-083) |
 | `e3227c7` | 2026-11-27 | feat(extension) | Ask Tama right-click menu (EXT-1, D-082) |

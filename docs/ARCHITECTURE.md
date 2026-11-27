@@ -150,7 +150,8 @@ src/main/services/music/          M13 YouTube Music (D-065, D-066): logic.js (pu
                                   controls routed to whichever source has the song) + library.js (MUS-6: playlists/search via
                                   google.youtube, play = open a music.youtube.com link through the normal control path)
 src/main/services/google/cal-view.js  D-084 calendar window data (google.cal.range/notes), next-meeting rule from the minute watch
-src/main/platform/windows/meeting-window.js  D-084 next-meeting card (floating, Look, Join / Open calendar)
+src/main/platform/windows/calendar-box.js  D-085 calendar box widget (next event + Join, accordion agenda; auto / always / off)
+src/renderer/calbox/              D-085 the calendar box view
 src/renderer/calendar/            D-084 calendar window: month / week / agenda (views.js), detail panel, chat drafts for new events
 src/main/services/companion/      D-082 Ask Tama from the extension's right-click: companion.ask → chat (untrusted block) / memory / todo
 src/main/services/awake/          D-081 keep the PC awake (off / while she works / always) via platform/power keepAwake(on, reason)

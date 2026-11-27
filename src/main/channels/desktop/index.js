@@ -25,13 +25,14 @@ const USER_ACTIONS = new Set(['feed', 'snack', 'play', 'clean', 'sleep', 'nap', 
  *   openVoice: () => unknown,
  *   openSettings?: (tab?: string) => unknown,
  *   openSetup?: () => unknown, openCalendar?: () => unknown,
+ *   extraWindows?: () => Array<import('electron').BrowserWindow | null>,
  *   autostart?: { supported: () => boolean, get: () => boolean, set: (on: boolean) => any },
  *   pages?: () => Array<import('electron').BrowserWindow>,
  *   music?: import('../../platform/windows/music-window').MusicWindow,
  * }} deps
  */
-function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings = () => null, openSetup = () => null, openCalendar = () => null, autostart = undefined, pages, music }) {
-  const both = () => [pet.win, term.window(), chat.window(), ...(music && music.window() ? [/** @type {import('electron').BrowserWindow} */ (music.window())] : [])];
+function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings = () => null, openSetup = () => null, openCalendar = () => null, extraWindows = () => [], autostart = undefined, pages, music }) {
+  const both = () => [pet.win, term.window(), chat.window(), ...(music && music.window() ? [/** @type {import('electron').BrowserWindow} */ (music.window())] : []), .../** @type {import('electron').BrowserWindow[]} */ (extraWindows().filter(Boolean))];
   /** Framed pages (Google setup) that also want live status. */
   const pageWindows = () => (pages ? pages() : []);
   /** Fire-and-forget request; failures surface on app.error instead of becoming unhandled rejections. @param {string} topic @param {any} [payload] */

@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** Main → renderer messages arrive on one 'ui' channel as (name, payload). */
-const UI_NAMES = new Set(['chat.draft', 'meeting', 'brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram', 'usage', 'accounts', 'voice', 'encode', 'voice.changed', 'providers', 'music', 'music.ask']);
+const UI_NAMES = new Set(['chat.draft', 'calbox', 'brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram', 'usage', 'accounts', 'voice', 'encode', 'voice.changed', 'providers', 'music', 'music.ask']);
 /** @type {Map<string, Set<(p: any) => void>>} */
 const subs = new Map();
 ipcRenderer.on('ui', (_e, name, payload) => {
@@ -190,7 +190,9 @@ contextBridge.exposeInMainWorld('tama', {
     /** Open her chat with this text ready (not sent): new events, invites and places go through her (D-038). */
     draft: (/** @type {string} */ text) => ipcRenderer.send('calendar:draft', text),
     open: () => ipcRenderer.send('page:open', 'calendar'),
-    onMeeting: on('meeting'),
+    /** The calendar box (D-085): expand | collapse | dismiss | open. */
+    box: (/** @type {string} */ action) => ipcRenderer.send('calbox:widget', action),
+    onBox: on('calbox'),
   },
   music: {
     get: () => ipcRenderer.invoke('music:get'),
