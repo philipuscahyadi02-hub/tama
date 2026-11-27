@@ -317,8 +317,13 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
+_No commits._
+
+### v1.1.0
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `6e47e19` | 2026-11-27 | chore(release) | v1.1.0 |
+| `f00008d` | 2026-11-27 | fix(google) | handle an expired sign-in (invalid_grant) instead of retrying (BUG-1) |
 | `4c5b068` | 2026-11-27 | docs(prd) | BUG-1 resolved by re-sign-in (refresh verified), BUG-2 replacement APIs noted |
 | `f68adbf` | 2026-11-27 | feat(calendar) | calendar box widget like the music card (CAL-2, D-085) |
 | `b512833` | 2026-11-27 | docs(prd) | BUG-1 cause (invalid_grant: expired refresh token) and fixes |
