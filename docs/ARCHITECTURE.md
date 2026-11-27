@@ -156,8 +156,9 @@ src/main/services/music/tools.js  MUS-7 music tools (read + control policies) fo
 src/main/services/google/youtube.js  MUS-6 YouTube Data API (youtube.readonly, optional switch): playlists, items, liked music,
                                   search; slim rows with caps; cached (lists 10 min, search 1 h: 100 quota units each)
 src/main/music-wiring.js          wires the music service, the media-session helper and the widget (keeps index.js short)
-src/main/platform/windows/music-window.js  MUS-2 widget window: beside the pet (geometry.widgetPosition), follows her unless
-                                  dragged ("pinned"), auto-shows while playing (ui pref musicWidget auto|off), compact/expanded
+src/main/platform/windows/music-window.js  MUS-2 music card: a movable desktop widget (position remembered, opens next to
+                                  the pet the first time, optional pin to her, D-072); Up next / Lyrics open inside it as an
+                                  accordion (D-080); solid or Windows glass per the Look (D-078)
 src/main/platform/windows/music-rules.js   pure show/hide rules for the widget (unit-tested)
 src/renderer/music/               the widget view: cover, progress/seek, controls, Up next, Lyrics (text only via textContent)
 src/main/platform/loopback.js     PC-audio loopback for DJ Tama, granted to the pet window only (D-069)

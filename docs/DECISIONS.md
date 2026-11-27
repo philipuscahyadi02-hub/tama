@@ -101,7 +101,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-069 | DJ Tama: DJ rig parts for every design; real beat from PC-audio loopback granted to the pet window only (amends D-055); beat-stepped half-time animations to stay within ~+2 % CPU | Accepted · Amends D-055 |
 | D-070 | One-click pairing (the extension asks, the user clicks Allow on the pet's bubble; codes stay as a backup); the music card has no taskbar button | Accepted · Refines D-066, D-068 |
 | D-071 | Up next / Lyrics open in their own panel docked next to the pet (fixed, moves with her); the card stays compact wherever the user put it | Superseded by D-072 |
-| D-072 | The Up next / Lyrics panel is attached to the music card (below or above it, moves with it); the card and the pet are separate unless the user pins the card to her | Accepted · Supersedes D-071 |
+| D-072 | The Up next / Lyrics panel is attached to the music card (below or above it, moves with it); the card and the pet are separate unless the user pins the card to her | Panel part superseded by D-080 (pin and separation still apply) · Supersedes D-071 |
 | D-073 | Library playback opens the song's music.youtube.com link through the normal `open` control (the paired tab reloads); "Liked music" lists liked Music-category videos and plays YouTube Music's LM list | Accepted |
 | D-074 | MUS-6 parked: the Playlists tab and its `/music` commands are hidden (the user doesn't use playlists); the code, the separate YouTube sign-in and tests stay | Accepted · Parks MUS-6 |
 | D-075 | MUS-8 (Telegram music commands) dropped; music from the phone goes through Telegram chat and the MUS-7 tools | Accepted |
@@ -109,6 +109,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-077 | agy now asks permission for MCP tools: the chat session allows exactly Tama's own `mcp_tama_*` tools (by name), which keep their Tama-side rules; everything else is still denied | Accepted · Refines D-037 |
 | D-078 | The Look: one app-wide Material (solid/glass) × Mode (light/dark/auto) from her lead color; Windows acrylic on chat, music and pages, frosted paper on the pet; terminal keeps its themes; drawn icons, motif pattern, stickers | Accepted · Refines D-032, D-068 |
 | D-079 | NFR-1 memory target raised from 300 to 320 MB to keep the bundled rounded fonts | Accepted · Refines D-053 |
+| D-080 | One music box: Up next / Lyrics open inside the card as an accordion (the window grows downward, shifts up only to fit); no separate panel window | Accepted · Supersedes D-072 (panel part) |
 
 ---
 
@@ -994,7 +995,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Refs:** MUS-2, D-068
 
 ### D-072 — The Up next / Lyrics panel belongs to the music card; card and pet are separate unless pinned
-- **Date:** 2026-11-27 · **Status:** Accepted · Supersedes D-071
+- **Date:** 2026-11-27 · **Status:** Panel part superseded by D-080 (pin and separation still apply) · Supersedes D-071
 - **Context:** D-071 docked the panel beside the pet; the user found that confusing. The dropdown belongs to the player. Tama and the player should be fully separate, except when the user pins them together.
 - **Decision:**
   - **The panel:** it sits right below the card, or above it when there's no room (`geometry.panelPosition`, centered on the card, inside its screen). It follows the card on every `move`, also during a drag, and is no longer always on top.
@@ -1077,3 +1078,11 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Fonts on pages only, with her bubble on the Windows font (small saving, not shown to be measurable); no bundled fonts (back to about 290 MB).
 - **Consequences:** About 20 MB of headroom left; new always-open features should be measured with `npm run perf` as before.
 - **Refs:** NFR-1, D-053, D-078, scripts/perf.js
+
+### D-080 — One music box: Up next / Lyrics as an accordion inside the card
+- **Date:** 2026-11-27 · **Status:** Accepted · Supersedes D-072 (panel part; pinning and card/pet separation stay)
+- **Context:** The user asked for the card and its Up next / Lyrics not to be split into two boxes any more: one box, with the list shown or hidden like an accordion.
+- **Decision:** `music-window.js` has one window. ⌄ grows it by 300 px downward. If the screen edge is in the way, it shifts up just enough (`shift`) and moves back down when closed. The list section (`#more`) slides open with a CSS height transition. On close the list slides shut first, then the window shrinks after 200 ms. A drag while open keeps the box where the user dropped it. The saved position is now the card's top-left (`windows.music.top: true`); older bottom-left saves are read as before. The panel window, its follow-the-card code and `geometry.panelPosition` are removed.
+- **Alternatives:** Keeping the attached panel (D-072; the user found two boxes split); animating the window size itself (Electron animates `setBounds` only on macOS).
+- **Consequences:** In Glass the acrylic area appears at full height a moment before the list slides in. Hiding the card or switching the Look closes the list at once.
+- **Refs:** MUS-2, D-068, D-072, D-078, src/main/platform/windows/music-window.js, src/renderer/music/

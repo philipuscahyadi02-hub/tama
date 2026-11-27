@@ -15,7 +15,7 @@ button:disabled { opacity: .28; cursor: default; }
 .ico { display: inline-grid; place-items: center; }
 
 #card {
-  height: 100%; display: flex; flex-direction: column; overflow: hidden; -webkit-app-region: drag;
+  max-height: 100%; display: flex; flex-direction: column; overflow: hidden; -webkit-app-region: drag;
   background: linear-gradient(180deg, var(--tama-bubble) 0%, var(--tama-panel) 62px);
   border: 1.5px solid var(--tama-line); border-radius: 20px;
   box-shadow: 0 6px 16px -6px rgba(70, 30, 60, .28), 0 1px 3px rgba(70, 30, 60, .12);
@@ -87,7 +87,12 @@ body:hover .playing #eq i:nth-child(2) { animation-delay: -.35s; } body:hover .p
 #volume::-webkit-slider-thumb { -webkit-appearance: none; width: 11px; height: 11px; margin-top: -3.5px; border-radius: 50%; background: var(--tama-panel); border: 2.5px solid var(--tama-accent); }
 
 /* ---- Up next / Lyrics ---- */
-#more { flex: 1; min-height: 0; display: flex; flex-direction: column; border-top: 1px solid var(--tama-line); background: var(--tama-bg); }
+/* Up next / Lyrics (D-080): inside the card, an accordion that slides open; the window grows first and shrinks after. */
+#more { flex: none; height: 0; overflow: hidden; display: flex; flex-direction: column; border-top: 1px solid transparent; background: var(--tama-bg);
+  transition: height .2s ease, border-color .2s; }
+#card.expanded #more { height: 300px; border-top-color: var(--tama-line); }
+@media (prefers-reduced-motion: reduce) { #more { transition: none; } }
+body.reduced #more { transition: none; }
 #tabs { display: flex; gap: 4px; padding: 8px 10px 6px; }
 #tabs button { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px 4px 8px; border-radius: 11px; font-weight: 600; color: var(--tama-dim); }
 #tabs button .i { width: 14px; height: 14px; }
@@ -154,15 +159,6 @@ body.glass #source { border-top-color: color-mix(in srgb, var(--tama-line) 60%, 
 #card:hover #grip { background: var(--tama-menu-hover); }
 #now, #disc, #info, #kicker, #title, #sub, #progress { -webkit-app-region: drag; }
 
-/* ---- the docked Up next / Lyrics panel beside the pet (D-071): fixed, not draggable ---- */
-#panelClose { display: none; }
-body.panel #now, body.panel #progress, body.panel #controls, body.panel #grip, body.panel #lookPanel { display: none !important; }
-body.panel #card { -webkit-app-region: no-drag; background: var(--tama-panel); }
-body.panel #more { border-top: 0; }
-body.panel #tabs { align-items: center; padding-top: 10px; }
-body.panel #panelClose { display: inline-grid; margin-left: auto; }
-body.panel #tabs #panelClose { padding: 0; width: 22px; height: 22px; border-radius: 7px; }
-
 /* ---- Playlists tab (MUS-6) ---- */
 #library { flex: 1; min-height: 0; display: flex; flex-direction: column; -webkit-app-region: no-drag; }
 #library[hidden] { display: none !important; }
@@ -180,4 +176,3 @@ body.panel #tabs #panelClose { padding: 0; width: 22px; height: 22px; border-rad
 .empty .badge-ico { display: inline-grid; place-items: center; width: 44px; height: 44px; margin-bottom: 8px; border-radius: 50%;
   background: var(--tama-bubble); color: var(--tama-accent); box-shadow: inset 0 1px 0 var(--tama-rim, transparent); }
 .empty .badge-ico .i { width: 22px; height: 22px; }
-/* Progress and volume tracks use the neutral track color, not her second color (D-078) */

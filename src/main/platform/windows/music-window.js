@@ -4,9 +4,9 @@
 // (setting `musicWidget: 'auto'`, without taking focus) and hides a while after the music stops.
 // Looks (D-068): 'solid' (transparent window, card with a soft shadow) or 'glass' (Windows 11 acrylic behind a
 // see-through card), plus an opacity (40–100 %) that goes back to 100 % while the mouse is over the card.
-// Up next / Lyrics (D-072) open in a panel attached to the card (below it, or above when there's no room) that moves
-// with the card. The card and the pet are separate, unless the user pins the card to her (it then keeps its spot
-// relative to her as she moves).
+// Up next / Lyrics (D-080) open inside the same box, like an accordion: the window grows downward (or shifts up when
+// there's no room below, and back down when closed) and the list slides open. The card and the pet are separate, unless
+// the user pins the card to her (it then keeps its spot relative to her as she moves).
 const path = require('path');
 const { BrowserWindow } = require('electron');
 const geo = require('../summon/geometry');
@@ -17,12 +17,13 @@ const { visibility, songKey } = require('./music-rules');
 const RENDERER = path.join(__dirname, '..', '..', '..', 'renderer');
 const PRELOAD = path.join(__dirname, '..', '..', '..', 'preload', 'index.js');
 /** Solid: 10 px of transparent margin on every side for the card's shadow. Glass: the window is the card. */
+const MORE = 300; // height of the Up next / Lyrics part when open
 const SIZES = {
-  solid: { compact: { width: 352, height: 172 } },
-  glass: { compact: { width: 332, height: 152 } },
+  solid: { compact: { width: 352, height: 172 }, expanded: { width: 352, height: 172 + MORE } },
+  glass: { compact: { width: 332, height: 152 }, expanded: { width: 332, height: 152 + MORE } },
 };
-/** The Up next / Lyrics panel under the card (10 px shadow margin on every side). */
-const PANEL = { width: 332, height: 410 };
+/** The list slides closed in the page first; then the window shrinks (matches the CSS transition). */
+const COLLAPSE_MS = 200;
 const HIDE_PAUSED_MS = 20000;
 const HIDE_NONE_MS = 4000;
 
@@ -31,15 +32,14 @@ const HIDE_NONE_MS = 4000;
  * @param {{
  *   petBody: () => import('../summon/geometry').Rect,
  *   send: (win: BrowserWindow, name: string, payload: any) => void,
- *   savedPosition?: { x: number, y: number } | null,
- *   onMoved?: (pos: { x: number, y: number }) => void,
+ *   savedPosition?: { x: number, y: number, top?: boolean } | null,
+ *   onMoved?: (pos: { x: number, y: number, top?: boolean }) => void,
  *   pin?: { on: boolean, dx: number, dy: number } | null,
  *   onPin?: (pin: { on: boolean, dx: number, dy: number }) => void,
  * }} deps
  */
 function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () => {}, pin: savedPin = null, onPin = () => {} }) {
   /** @type {BrowserWindow | null} */ let win = null;
-  /** @type {BrowserWindow | null} */ let panel = null;
   /** @type {any} */ let state = null;
   /** @type {'auto'|'off'} */ let mode = 'auto';
   /** @type {Look} */ let look = { look: 'solid', opacity: 100 };
@@ -48,46 +48,18 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
   let dismissed = '';
   let hovered = false;
   let movingUntil = 0;
-  /** @type {{ x: number, y: number } | null} */ let pos = savedPosition;
+  /** The card's top-left on screen (saved with top: true; older saves stored its bottom-left). */
+  /** @type {{ x: number, y: number, top?: boolean } | null} */ let pos = savedPosition;
+  /** How far the open box was pushed up to fit on the screen; undone when it closes. */
+  let shift = 0;
+  /** @type {ReturnType<typeof setTimeout> | null} */ let shrinkTimer = null;
   /** Pinned to the pet: the card's offset from her body (D-072). */
   let pin = savedPin && savedPin.on ? { on: true, dx: Number(savedPin.dx) || 0, dy: Number(savedPin.dy) || 0 } : { on: false, dx: 0, dy: 0 };
   /** @type {ReturnType<typeof setTimeout> | null} */ let hideTimer = null;
 
   const alive = () => (win && !win.isDestroyed() ? win : null);
-  const size = () => SIZES[look.look].compact;
-  const alivePanel = () => (panel && !panel.isDestroyed() ? panel : null);
-
-  function createPanel() {
-    const p = new BrowserWindow({
-      ...PANEL, show: false, frame: false, resizable: false, movable: false,
-      maximizable: false, minimizable: false, fullscreenable: false, skipTaskbar: true,
-      // Glass (D-078): acrylic like the card, so text never sits on the bare desktop; solid: a transparent window.
-      ...(look.look === 'glass' ? { backgroundMaterial: 'acrylic', roundedCorners: true } : { transparent: true, hasShadow: false }),
-      title: 'Tama · Up next', backgroundColor: '#00000000',
-      webPreferences: { preload: PRELOAD, contextIsolation: true, nodeIntegration: false, sandbox: true },
-    });
-    p.loadFile(path.join(RENDERER, 'music', 'music.html'), { query: { panel: '1' } });
-    attachDebug(p, 'musicpanel');
-    if (process.env.TAMA_MUSIC_EVAL) p.webContents.once('did-finish-load', () => p.webContents.executeJavaScript(String(process.env.TAMA_MUSIC_EVAL)).catch(() => null));
-    p.webContents.on('did-finish-load', pushState);
-    panel = p;
-    return p;
-  }
-
-  /** Attached to the card: below it, or above when there's no room. */
-  function placePanel() {
-    const p = alivePanel();
-    const w = alive();
-    if (!p || !w) return;
-    if (process.env.TAMA_SHOT_OFFSCREEN) { p.setBounds({ x: -4000, y: 600, ...PANEL }); return; } // dev: off-screen
-    const at = geo.panelPosition(w.getBounds(), PANEL, workAreas());
-    p.setBounds({ x: at.x, y: at.y, ...PANEL });
-  }
-
-  function closePanel() {
-    expanded = false;
-    const p = alivePanel(); if (p && p.isVisible()) p.hide();
-  }
+  const size = () => SIZES[look.look][expanded ? 'expanded' : 'compact'];
+  const compact = () => SIZES[look.look].compact;
 
   function create() {
     const glass = look.look === 'glass';
@@ -101,13 +73,12 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
     const w = new BrowserWindow(opts);
     w.loadFile(path.join(RENDERER, 'music', 'music.html'));
     attachDebug(w, 'music');
-    // The panel moves with the card, also while it's being dragged.
-    w.on('move', () => { if (expanded) placePanel(); });
     // The user dragged it: remember where (and, when pinned, the new spot relative to her).
     w.on('moved', () => {
       if (Date.now() < movingUntil || w.isDestroyed()) return;
       const b = w.getBounds();
-      pos = { x: b.x, y: b.y + b.height };
+      shift = 0; // dragged while open: it stays where the user put it when it closes
+      pos = { x: b.x, y: b.y, top: true };
       onMoved(pos);
       if (pin.on) { const body = petBody(); pin = { on: true, dx: b.x - body.x, dy: b.y - body.y }; onPin(pin); }
     });
@@ -128,7 +99,7 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
     if (process.env.TAMA_SHOT_OFFSCREEN) { w.setBounds({ x: -4000, y: 40, ...s }); return; } // dev: off-screen
     const areas = workAreas();
     /** @type {import('../summon/geometry').Rect | null} */
-    const want = pos ? { x: pos.x, y: pos.y - s.height, width: s.width, height: s.height } : null;
+    const want = pos ? { x: pos.x, y: pos.top ? pos.y : pos.y - compact().height, width: s.width, height: s.height } : null;
     let p;
     if (want && areas.some((a) => geo.overlapArea(want, a) >= s.width * s.height * 0.5)) {
       const a = areas.slice().sort((q, r) => geo.overlapArea(want, r) - geo.overlapArea(want, q))[0];
@@ -154,7 +125,37 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
   function pushState() {
     const payload = { state, expanded, manual, look, pinned: pin.on };
     const w = alive(); if (w) send(w, 'music', payload);
-    const p = alivePanel(); if (p) send(p, 'music', payload);
+  }
+
+  /** Grow the box for Up next / Lyrics: downward, pushed up only as much as the screen needs. */
+  function grow() {
+    const w = alive();
+    if (!w) return;
+    const b = w.getBounds();
+    const s = SIZES[look.look].expanded;
+    movingUntil = Date.now() + 400;
+    if (process.env.TAMA_SHOT_OFFSCREEN) { w.setBounds({ x: b.x, y: b.y, ...s }); return; }
+    const r = { x: b.x, y: b.y, width: s.width, height: s.height };
+    const a = workAreas().slice().sort((q, t) => geo.overlapArea(r, t) - geo.overlapArea(r, q))[0];
+    shift = a ? Math.max(0, b.y + s.height - (a.y + a.height)) : 0;
+    w.setBounds({ x: b.x, y: b.y - shift, width: s.width, height: s.height });
+  }
+
+  /** Back to the compact card, where it was before it grew. */
+  function shrink() {
+    const w = alive();
+    if (!w) { shift = 0; return; }
+    const b = w.getBounds();
+    const s = compact();
+    movingUntil = Date.now() + 400;
+    w.setBounds({ x: b.x, y: b.y + shift, width: s.width, height: s.height });
+    shift = 0;
+  }
+
+  /** Closed right away (hidden, rebuilt): no slide. */
+  function closeNow() {
+    if (shrinkTimer) { clearTimeout(shrinkTimer); shrinkTimer = null; }
+    if (expanded) { expanded = false; shrink(); }
   }
 
   function apply() {
@@ -166,9 +167,9 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
     } else if (v === 'hide') {
       if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
       const w = alive(); if (w && w.isVisible()) w.hide();
-      closePanel();
+      closeNow();
     } else if (!hideTimer && alive()?.isVisible()) {
-      hideTimer = setTimeout(() => { hideTimer = null; const w = alive(); if (w && visibility({ state, mode, manual, dismissed }) !== 'show') { w.hide(); closePanel(); } }, state ? HIDE_PAUSED_MS : HIDE_NONE_MS);
+      hideTimer = setTimeout(() => { hideTimer = null; const w = alive(); if (w && visibility({ state, mode, manual, dismissed }) !== 'show') { w.hide(); closeNow(); } }, state ? HIDE_PAUSED_MS : HIDE_NONE_MS);
     }
     pushState();
   }
@@ -190,26 +191,26 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
       const w = alive();
       if (rebuild && w) {
         const wasVisible = w.isVisible();
+        closeNow();
         w.destroy(); win = null;
         if (wasVisible) { const n = create(); place(); n.showInactive(); }
-        const p = alivePanel();
-        if (p) { p.destroy(); panel = null; if (expanded && alive()) { createPanel(); placePanel(); /** @type {any} */ (panel).showInactive(); } }
       } else applyOpacity();
       pushState();
     },
     /** The mouse is over the card: fully visible while hovering. @param {boolean} on */
     setHover(on) { hovered = !!on; applyOpacity(); },
-    /** Up next / Lyrics: open or close the panel under the card. @param {boolean} on */
+    /** Up next / Lyrics: open or close them inside the box (accordion). @param {boolean} on */
     setExpanded(on) {
-      if (on && alive()) {
-        expanded = true;
-        const p = alivePanel() || createPanel();
-        placePanel();
-        p.showInactive();
-      } else closePanel();
+      if (shrinkTimer) { clearTimeout(shrinkTimer); shrinkTimer = null; }
+      if (on && alive() && !expanded) { expanded = true; grow(); }
+      else if (!on && expanded) {
+        expanded = false;
+        // The page slides the list closed first; then the window shrinks back.
+        shrinkTimer = setTimeout(() => { shrinkTimer = null; if (!expanded) shrink(); }, COLLAPSE_MS);
+      }
       pushState();
     },
-    /** The pet moved: a pinned card moves with her (and its panel with the card). */
+    /** The pet moved: a pinned card moves with her. */
     follow() {
       const w = alive();
       if (!pin.on || !w || !w.isVisible() || process.env.TAMA_SHOT_OFFSCREEN) return;
@@ -230,19 +231,17 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
     /** Put it next to the pet again (and remember that). */
     besideHer() {
       pos = null; place();
-      const w = alive(); if (w) { const b = w.getBounds(); pos = { x: b.x, y: b.y + b.height }; onMoved(pos); }
+      const w = alive(); if (w) { const b = w.getBounds(); pos = { x: b.x, y: b.y, top: true }; onMoved(pos); }
     },
     /** ✕: closed for this song (or, opened by hand, closed until the next song). */
     dismiss() { manual = false; dismissed = songKey(state) || '-'; apply(); },
     /** /music widget: show it even when nothing plays. */
     open() { manual = true; dismissed = ''; apply(); const w = alive(); if (w) w.show(); },
     window: alive,
-    /** The Up next / Lyrics panel window, when open (gets the same pushes as other windows). */
-    panelWindow: alivePanel,
     destroy() {
       if (hideTimer) clearTimeout(hideTimer);
+      if (shrinkTimer) clearTimeout(shrinkTimer);
       const w = alive(); if (w) w.destroy(); win = null;
-      const p = alivePanel(); if (p) p.destroy(); panel = null;
     },
   };
 }

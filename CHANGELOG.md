@@ -44,6 +44,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   - **Assets:** one drawn icon set in Settings, setup and the chat (no more mixed emoji), a faint pattern from her design on window headers (Kero-chan: lily pads and raindrops), a happy sticker of her with tap-to-ask chips in the empty chat, and note badges on the music card's empty screens.
   - Glass switches off by itself when Windows' transparency effects are off. Measured idle cost with glass: 1.78 % CPU, 296 MB.
   - **Rounded fonts:** Nunito (English) and M PLUS Rounded 1c (Japanese, loaded only for Japanese text) ship in `assets/fonts/` (OFL). They cost about 10–15 MB of memory and 0.3 s at start (idle memory now about 300–320 MB; the memory target is now 320 MB, D-079).
+- **One music box (D-080):** Up next and Lyrics are no longer a separate box. ⌄ slides them open inside the music card like an accordion (it grows downward, or moves up a little near the bottom of the screen), and ⌃ folds them away.
 ### Decisions
 - D-064 — Every open roadmap item parked (🅿): the to-do list starts from zero; M12 closed.
 - D-065 — M13 Music & DJ planned (1.1.0): now-playing for any player, Spotify (Premium, your own Spotify app) and YouTube Music (YouTube API + your browser), a music widget, DJ Tama on the real beat (MUS-1..9).
@@ -55,6 +56,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - D-071 — Up next / Lyrics open in a panel docked beside her; the card stays small where you put it.
 - D-072 — The Up next / Lyrics panel belongs to the music card instead; card and Kero are separate unless you pin them together (replaces D-071).
 - D-075 — Telegram music commands (MUS-8) dropped: music from the phone goes through her chat.
+- D-080 — One music box: Up next and Lyrics open inside the card as an accordion (replaces the separate panel of D-072).
 - D-079 — Memory target raised from 300 to 320 MB to keep the rounded fonts.
 - D-078 — The Look: app-wide glass and dark mode from her colors, with new icons, a motif pattern and stickers.
 - D-077 — Her chat may use Tama's own tools again (the newer Antigravity CLI asks permission for them).
@@ -303,6 +305,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `3a9c27e` | 2026-11-27 | docs(nfr) | memory target 300 -> 320 MB for the bundled fonts (D-079) |
 | `4218896` | 2026-11-27 | feat(look) | bundle Nunito and M PLUS Rounded 1c (OFL) as the app font (MUS-11, D-078) |
 | `fa3a0fe` | 2026-11-27 | feat(look) | app-wide Look (solid/glass x light/dark/auto), icons, motif, stickers (MUS-11, D-078) |
 | `2201d65` | 2026-11-27 | docs(prd) | MUS-7 done (confirmed live) |

@@ -2,9 +2,6 @@
    updates, and sends intents (controls, expand, close). All text goes in with textContent, never as HTML: song titles
    and lyrics come from a web page. */
 const K = window.tama;
-/** This page is either the card or the docked Up next / Lyrics panel (D-071). */
-const PANEL = new URLSearchParams(location.search).get('panel') === '1';
-if (PANEL) document.body.classList.add('panel');
 const $ = (id) => document.getElementById(id);
 let view = { state: null, expanded: false, manual: false, look: { look: 'solid', opacity: 100 } };
 let tab = 'queue';
@@ -44,11 +41,11 @@ function render() {
   const s = view.state;
   const c = (s && s.controls) || {};
   $('card').className = `${view.expanded ? 'expanded' : 'compact'}${s && s.playing ? ' playing' : ''}`;
-  $('more').hidden = !PANEL; // the list lives in the panel window; the card only toggles it
+  // Up next / Lyrics live in the same box and slide open with #card.expanded (D-080).
   setIcon($('expand'), view.expanded ? 'up' : 'down');
   $('kickerText').textContent = !s ? 'Music' : s.playing ? 'Now playing' : 'Paused';
   const lk = view.look || { look: 'solid', opacity: 100 };
-  document.body.classList.toggle('glass', !PANEL && lk.look === 'glass');
+  document.body.classList.toggle('glass', lk.look === 'glass');
   for (const b of document.querySelectorAll('.seg button[data-look]')) b.classList.toggle('on', b.dataset.look === lk.look);
   for (const b of document.querySelectorAll('#pinSeg button')) b.classList.toggle('on', (b.dataset.pin === 'on') === !!view.pinned);
   if (document.activeElement !== $('opacity')) $('opacity').value = String(lk.opacity);
@@ -76,7 +73,7 @@ function render() {
   $('volume').title = s && s.volume != null ? `Volume ${s.volume}%` : 'Volume';
   drawBar();
   renderSource();
-  if (PANEL) renderTab();
+  if (view.expanded) renderTab();
 }
 
 function renderSource() {
@@ -181,12 +178,11 @@ $('opacity').addEventListener('input', () => {
 });
 $('beside').addEventListener('click', () => { $('lookPanel').hidden = true; K.music.widget('beside'); });
 // Fully visible while the mouse is over the card; see-through again when it leaves.
-if (!PANEL) {
+{
   document.documentElement.addEventListener('mouseenter', () => K.music.widget('hover'));
   document.documentElement.addEventListener('mouseleave', () => K.music.widget('unhover'));
 }
 $('close').addEventListener('click', () => K.music.widget('dismiss'));
-$('panelClose').addEventListener('click', () => K.music.widget('collapse'));
 for (const b of document.querySelectorAll('#tabs button')) b.addEventListener('click', () => { tab = b.dataset.tab; renderTab(); });
 
 function seekTo(ev) {
