@@ -1,6 +1,6 @@
 // @ts-check
 // npm run perf (QC-3, D-053): start Tama in a scratch data folder, let it settle, measure idle CPU / memory /
-// event-loop lag for N seconds (default 30), print the result and compare it with NFR-1 (idle CPU < 2 %, RAM < 300 MB).
+// event-loop lag for N seconds (default 30), print the result and compare it with NFR-1 (idle CPU < 2 %, RAM < 320 MB; was 300 MB before D-079).
 // The pet is shown (small, never takes focus) because hidden windows are throttled and would hide the real cost.
 // Usage: npm run perf [-- --seconds 60] [-- --data <dir>]
 const { spawn } = require('child_process');
@@ -29,5 +29,5 @@ child.on('exit', () => {
   const r = JSON.parse(line.slice(7));
   console.log(JSON.stringify(r, null, 2));
   const ok = (/** @type {boolean} */ b) => (b ? 'ok' : 'OVER');
-  console.log(`NFR-1 idle CPU ${r.cpuAvg}% (< 2%: ${ok(r.cpuAvg < 2)}), memory ${r.memMB} MB (< 300 MB: ${ok(r.memMB < 300)}), ready in ${r.readyMs} ms`);
+  console.log(`NFR-1 idle CPU ${r.cpuAvg}% (< 2%: ${ok(r.cpuAvg < 2)}), memory ${r.memMB} MB (< 320 MB: ${ok(r.memMB < 320)}), ready in ${r.readyMs} ms`);
 });

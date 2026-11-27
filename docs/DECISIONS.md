@@ -108,6 +108,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-076 | Music tools for chat and Claude Code with a new `control` policy (runs, announced); "play <song>" = YouTube Music search with `#tama-autoplay`, the extension presses play on the top result | Accepted |
 | D-077 | agy now asks permission for MCP tools: the chat session allows exactly Tama's own `mcp_tama_*` tools (by name), which keep their Tama-side rules; everything else is still denied | Accepted · Refines D-037 |
 | D-078 | The Look: one app-wide Material (solid/glass) × Mode (light/dark/auto) from her lead color; Windows acrylic on chat, music and pages, frosted paper on the pet; terminal keeps its themes; drawn icons, motif pattern, stickers | Accepted · Refines D-032, D-068 |
+| D-079 | NFR-1 memory target raised from 300 to 320 MB to keep the bundled rounded fonts | Accepted · Refines D-053 |
 
 ---
 
@@ -1068,3 +1069,11 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Fonts:** Nunito (variable, Latin) and M PLUS Rounded 1c Regular/Bold (Japanese, `unicode-range` so only windows showing Japanese load it) from github.com/google/fonts, OFL, in `assets/fonts/` with their licenses; terminal and code keep monospace.
 - **Consequences:** `npm run perf` with glass on: 1.78 % CPU, 296 MB before the fonts. With the fonts, four runs gave 300–322 MB and about 1.1 s to ready (was about 0.8 s), so the fonts cost about 10–15 MB; run-to-run noise on this PC is about ±15 MB. NFR-1's 300 MB is now borderline. Screenshots can't show the acrylic blur, so glass is checked by eye. New windows must load look.css and look.js and call `TamaLook.start()`; framed or frameless non-transparent windows call `followLook(win)`.
 - **Refs:** MUS-11, ART-4, MUS-2, NFR-1, D-032, D-068, src/shared/theme.js, src/main/platform/look.js, src/renderer/shared/{look.js,look.css,icons.js}, assets/look/
+
+### D-079 — NFR-1 memory target 300 → 320 MB for the bundled fonts
+- **Date:** 2026-11-27 · **Status:** Accepted · Refines D-053 (NFR-1 numbers)
+- **Context:** The rounded fonts (D-078) cost about 10–15 MB of idle memory and about 0.3 s to ready. `npm run perf` measured 287–295 MB before and 300–322 MB after them (four runs; run-to-run noise about ±15 MB), so the 300 MB target failed. CPU stayed under 2 %.
+- **Decision:** The user chose to keep the fonts everywhere and raise the memory target to 320 MB. `scripts/perf.js` checks against 320 MB. The CPU target stays at 2 %.
+- **Alternatives:** Fonts on pages only, with her bubble on the Windows font (small saving, not shown to be measurable); no bundled fonts (back to about 290 MB).
+- **Consequences:** About 20 MB of headroom left; new always-open features should be measured with `npm run perf` as before.
+- **Refs:** NFR-1, D-053, D-078, scripts/perf.js

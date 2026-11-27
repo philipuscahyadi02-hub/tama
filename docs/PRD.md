@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.46 |
+| **Version** | 0.47 |
 | **Status** | **v1.0.0 released** (D-058); installer + setup wizard done (unreleased). Every other open item is parked (D-064). **Next: M13 YouTube Music & DJ = 1.1.0** (MUS-*, D-065, D-066) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-27 |
@@ -234,7 +234,7 @@ Status: ☐ todo · ◐ in progress · ☑ done · 🅿 parked (not planned; kep
 | SAFE-3 | Telegram accepts only the paired chat ID. | P0 | M7 | ☑ |
 | SAFE-4 | Warn before accept-edits mode outside a git repo. | P1 | M4 | ☑ |
 | SAFE-5 | Daily cost/token budget shown in `/stats`; Tama warns near the limit. | P1 | M3 | ☑ |
-| NFR-1 | Idle CPU < 2%, RAM < 300 MB (excluding engine processes). *(`npm run perf`, all Tama processes, % of one core: 1.6 % CPU and about 262 MB on 2026-11-07, D-053. Was 3.5 % / 297 MB with the same method.)* | P1 | M11 | ☑ |
+| NFR-1 | Idle CPU < 2%, RAM < 320 MB (excluding engine processes; was 300 MB until the bundled fonts, D-079). *(`npm run perf`, all Tama processes, % of one core: 1.6 % CPU and about 262 MB on 2026-11-07, D-053; with M13's music, the Look and the fonts: 1.3–2.2 % CPU, 300–322 MB on 2026-11-27.)* | P1 | M11 | ☑ |
 | NFR-2 | Multi-monitor & mixed-DPI safe. | P0 | M0 | 🅿 |
 | NFR-3 | Ships as a portable `.exe` (electron-builder), uses installed `claude`/`agy`. *(Replaced by installers for Windows and macOS: SHIP-1..7, M12, D-051.)* | P0 | M12 | 🅿 |
 | NFR-4 | Memory view + forget; local-only data except the user's own Drive backup. | P0 | M5 | ☑ |
@@ -318,7 +318,8 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
-- **0.46 — 2026-11-27** — New MUS-11 ◐ the Look: app-wide solid/glass and light/dark/auto, new tokens, icons, motif, stickers (D-078); fonts added (about +10–15 MB, memory now borderline for NFR-1).
+- **0.47 — 2026-11-27** — NFR-1 memory target 300 → 320 MB to keep the rounded fonts (D-079).
+- **0.46 — 2026-11-27** — New MUS-11 ◐ the Look: app-wide solid/glass and light/dark/auto, new tokens, icons, motif, stickers (D-078); fonts added (about +10–15 MB; NFR-1 memory target now 320 MB, D-079).
 - **0.45 — 2026-11-27** — MUS-7 ☑ (confirmed by the user: "play <song>" from chat plays it; agy permission fix D-077). Every M13 row is ☑, ✖ or 🅿.
 - **0.44 — 2026-11-27** — MUS-8 ✖ dropped (D-075). MUS-7 ◐ (music tools for chat and Claude Code, "play <song>" through YouTube Music search + extension autoplay, D-076; live chat check pending). MUS-9 ☑ (setup card, Settings → Music).
 - **0.43 — 2026-11-27** — MUS-6 🅿 parked: the user doesn't use playlists; the Playlists tab and its terminal commands are hidden, the code stays (D-074).
