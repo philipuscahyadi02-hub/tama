@@ -177,6 +177,7 @@ chrome.runtime.onMessage.addListener((m, _sender, reply) => {
     })();
     return true; // async reply
   }
+  if (m.t === 'popup-ask' || m.t === 'popup-capture') { popupAsk(m).then(reply); return true; }
   if (m.t === 'unpair') {
     send({ t: 'bye' });
     store.clear(); status = 'needs-code';
@@ -262,3 +263,27 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   const ok = await sendAsk({ action, text, url: String((tab && tab.url) || info.pageUrl || '').slice(0, 500), title: String((tab && tab.title) || '').slice(0, 200) });
   flash(ok, ok ? '' : 'Tama is not connected. Is the Tama app running? (click the icon to connect)');
 });
+
+// ---- the popup's "Ask Tama about this page" and "Save this page" (D-083) ----
+/** Opening the popup grants activeTab for the current tab, so its text can be read now (and only now). */
+async function popupAsk(m) {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab) return { ok: false, error: 'No tab is open.' };
+  const page = { url: String(tab.url || '').slice(0, 500), title: String(tab.title || '').slice(0, 200) };
+  if (m.t === 'popup-capture') {
+    const kind = ['todo', 'note', 'remind'].includes(m.kind) ? m.kind : '';
+    if (!kind) return { ok: false, error: 'Unknown choice.' };
+    const when = ['in 1h', 'at 20:00', 'tomorrow 9am'].includes(m.when) ? m.when : 'in 1h';
+    return (await sendAsk({ action: `save-${kind}`, text: page.title || page.url, when, ...page })) ? { ok: true } : { ok: false, error: 'Tama is not connected.' };
+  }
+  const question = String(m.question || '').trim().slice(0, 500);
+  if (!question) return { ok: false, error: 'Type a question first.' };
+  let text = '';
+  if (m.withPage && typeof tab.id === 'number') {
+    try {
+      const [r] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: (max) => (document.body ? document.body.innerText : '').slice(0, max), args: [ASK_MAX] });
+      text = String((r && r.result) || '');
+    } catch (e) { return { ok: false, error: 'Chrome does not let extensions read this page. Untick "Include this page’s text" to ask anyway.' }; }
+  }
+  return (await sendAsk({ action: 'question', question, text, ...page })) ? { ok: true } : { ok: false, error: 'Tama is not connected.' };
+}

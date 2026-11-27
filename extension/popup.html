@@ -18,6 +18,24 @@
     <div class="row"><input id="code" maxlength="12" autocomplete="off" spellcheck="false" placeholder="ABC123"><button type="submit">Pair</button></div>
     <p id="err" class="err"></p>
   </form>
+  <section id="askBox" hidden>
+    <label for="q">Ask Tama about this page</label>
+    <textarea id="q" rows="3" maxlength="500" placeholder="e.g. Is this a good deal? What does this error mean?"></textarea>
+    <label class="chk"><input type="checkbox" id="withPage" checked> Include this page's text</label>
+    <button id="askBtn" class="big">Ask Tama</button>
+    <div class="capTitle">Save this page</div>
+    <div class="cap">
+      <button data-cap="todo">Todo</button>
+      <button data-cap="note">Note</button>
+      <select id="remWhen" title="When to remind you">
+        <option value="in 1h">in 1 hour</option>
+        <option value="at 20:00">tonight 8 pm</option>
+        <option value="tomorrow 9am">tomorrow 9 am</option>
+      </select>
+      <button data-cap="remind">Remind me</button>
+    </div>
+    <p id="askMsg" class="hint"></p>
+  </section>
   <button id="unpair" class="link" hidden>Forget this pairing</button>
   <p class="foot">Talks only to the Tama app on this PC. Reads what plays on music.youtube.com, and only the text you right-click with Ask Tama; never your sign-in or other sites.</p>
   <script src="popup.js"></script>

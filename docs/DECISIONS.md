@@ -112,6 +112,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-080 | One music box: Up next / Lyrics open inside the card as an accordion (the window grows downward, shifts up only to fit); no separate panel window | Accepted · Supersedes D-072 (panel part) |
 | D-081 | Keep the PC awake (off / while she works = default / always): blocks system sleep only; the screen still turns off and locks, because locking doesn't stop Tama | Accepted · Generalizes TG-8's phone-only switch |
 | D-082 | "Ask Tama" right-click in the Tama Companion extension (contextMenus + activeTab only); explain/summarize/translate go to chat as untrusted text, remember/todo save directly | Accepted |
+| D-083 | Extension popup: ask Tama about this page (question + optional page text as untrusted data) and save this page as todo / note / reminder; no new permissions | Accepted |
 
 ---
 
@@ -1106,3 +1107,13 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Broad host permissions to read pages in the background (more access than needed); sending to Claude Code directly (the terminal runs tools; a chat answer is the safe default, and the user can hand off from there).
 - **Consequences:** The user must reload the extension once (1.3.0). Chrome blocks extensions on its own pages (chrome://, the Web Store), so the badge says so there. Prompt injection in a page can only steer a chat reply; her tools keep their confirmations (D-038, D-077).
 - **Refs:** EXT-1, MUS-10, D-066, D-070, D-077, extension/background.js, src/main/services/companion
+
+### D-083 — Ask about this page, and save it, from the extension popup
+- **Date:** 2026-11-27 · **Status:** Accepted
+- **Context:** Exploring more extension features, the user picked the two with the most everyday value and no new permissions: a question box about the current page, and quick capture of the page.
+- **Decision:**
+  - **Extension 1.4.0:** while connected, the popup shows **Ask Tama about this page** (a question of up to 500 characters; "Include this page's text" ticked by default, read through activeTab at that moment, up to 8,000 characters) and **Save this page**: Todo, Note, or Remind me (in 1 hour, tonight 8 pm, tomorrow 9 am; a fixed list, so nothing else reaches the reminder parser). They travel over the paired WebSocket as `ask` with the actions `question`, `save-todo`, `save-note` and `save-remind`.
+  - **Tama (`services/companion`):** the question goes to her chat with the page text in an UNTRUSTED block (no block when there's no page text). A todo is the title plus host. A note is the title plus the full link (http/https only). A reminder is "<when> read: <title>". She confirms in a bubble.
+- **Alternatives:** A free-text time field for reminders (the fixed choices are faster and safe); saving the full page text into notes (bloats notes; the link is enough).
+- **Consequences:** The user reloads the extension once (1.4.0). Chrome's own pages can't be read; the popup says to untick the page text to ask anyway.
+- **Refs:** EXT-2, EXT-1, D-082, extension/popup.*, extension/background.js, src/main/services/companion

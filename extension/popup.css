@@ -15,3 +15,12 @@ button.link { background: none; color: var(--dim); padding: 0; text-decoration: 
 code { font-size: 12px; }
 button.big { width: 100%; padding: 9px; font-size: 14px; border-radius: 9px; }
 #connectBox .hint { margin: 6px 0 8px; }
+
+#askBox { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; }
+#askBox label { display: block; margin-bottom: 4px; }
+textarea { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: inherit; font: 13px/1.4 system-ui, sans-serif; resize: vertical; }
+label.chk { font-weight: 400; color: var(--dim); font-size: 12px; margin: 4px 0 8px; display: flex; gap: 6px; align-items: center; }
+.capTitle { font-weight: 600; margin: 12px 0 6px; }
+.cap { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+.cap button { padding: 5px 10px; font-size: 12px; }
+.cap select { padding: 4px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: inherit; font-size: 12px; }

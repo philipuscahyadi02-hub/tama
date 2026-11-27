@@ -17,6 +17,7 @@ async function refresh() {
   $('connectBox').hidden = !needs || codeMode;
   $('pair').hidden = !needs || !codeMode;
   $('unpair').hidden = s.status !== 'connected';
+  $('askBox').hidden = s.status !== 'connected';
 }
 
 $('pair').addEventListener('submit', async (e) => {
@@ -38,6 +39,22 @@ $('connect').addEventListener('click', async () => {
   if (!r.ok) { $('status').textContent = `⚠ ${r.error || 'Not connected.'}`; return; }
   refresh();
 });
+// Ask about this page / save it (D-083): the page is read only now, because you opened the popup on it.
+async function askTama(msg, done) {
+  $('askMsg').textContent = 'Sending…';
+  const r = await chrome.runtime.sendMessage(msg);
+  $('askMsg').textContent = r && r.ok ? done : `⚠ ${(r && r.error) || 'Not sent.'}`;
+  if (r && r.ok) setTimeout(() => window.close(), 900);
+}
+$('askBtn').addEventListener('click', () => {
+  const question = $('q').value.trim();
+  if (!question) { $('askMsg').textContent = 'Type a question first~'; $('q').focus(); return; }
+  askTama({ t: 'popup-ask', question, withPage: $('withPage').checked }, '✓ Sent. Her answer is in the chat.');
+});
+$('q').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) $('askBtn').click(); });
+for (const b of document.querySelectorAll('[data-cap]')) {
+  b.addEventListener('click', () => askTama({ t: 'popup-capture', kind: b.dataset.cap, when: $('remWhen').value }, b.dataset.cap === 'remind' ? '✓ Reminder set.' : '✓ Saved.'));
+}
 $('useCode').addEventListener('click', () => { codeMode = true; refresh(); });
 $('unpair').addEventListener('click', async () => { await chrome.runtime.sendMessage({ t: 'unpair' }); refresh(); });
 

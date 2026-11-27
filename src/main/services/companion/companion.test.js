@@ -39,3 +39,26 @@ test('companion: chat requests open the chat and send; remember/todo go to their
   assert.match(seen[3][1], /remember/);
   assert.deepEqual(seen[4], ['todo', 'Call mom']);
 });
+
+test('companion: popup question and save-this-page (D-083)', async () => {
+  const q = /** @type {any} */ (toRequest({ action: 'question', question: 'is this a good deal?', text: 'Buy now!!', url: 'https://shop.example/x', title: 'Thing' }));
+  assert.match(q.message, /^📎 From Chrome: "Thing" \(shop\.example\)\nis this a good deal\?/);
+  assert.match(q.message, /UNTRUSTED web text/);
+  assert.ok(!/UNTRUSTED/.test(/** @type {any} */ (toRequest({ action: 'question', question: 'hi?', text: '' })).message), 'no page text, no block');
+  assert.equal(toRequest({ action: 'question', question: '  ' }).kind, 'error');
+  assert.deepEqual(toRequest({ action: 'save-todo', url: 'https://news.example/a', title: 'Long read' }), { kind: 'todo', text: 'Long read (news.example)' });
+  assert.deepEqual(toRequest({ action: 'save-remind', when: 'rm -rf', url: 'https://news.example/a', title: 'Long read' }), { kind: 'remind', input: 'in 1h read: Long read' });
+  assert.deepEqual(toRequest({ action: 'save-note', url: 'javascript:alert(1)', title: 'X' }), { kind: 'note', text: 'X' });
+
+  const bus = new Bus();
+  /** @type {any[]} */ const seen = [];
+  bus.handle(TOPICS.PROD_NOTE_ADD, (p) => { seen.push(['note', p.text]); return { ok: true }; });
+  bus.handle(TOPICS.PROD_REMIND_ADD, (p) => { seen.push(['remind', p.input]); return { ok: true, when: 'in 1 hour' }; });
+  bus.on(TOPICS.BRAIN_NOTICE, (n) => seen.push(['notice', n.text]));
+  const c = createCompanion({ bus });
+  await c.onAsk({ action: 'save-note', url: 'https://a.example/p', title: 'P' });
+  await c.onAsk({ action: 'save-remind', when: 'at 20:00', title: 'P' });
+  assert.deepEqual(seen[0], ['note', 'P\nhttps://a.example/p']);
+  assert.deepEqual(seen[2], ['remind', 'at 20:00 read: P']);
+  assert.match(seen[3][1], /remind you in 1 hour/);
+});
