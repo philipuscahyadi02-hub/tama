@@ -4,9 +4,9 @@ A chibi-anime desktop companion that is also a real agentic AI. You design her o
 desktop, chats with you, remembers you, speaks with an anime voice, codes with you through Claude Code, works with your
 Gmail, Calendar and Drive, and talks to you on Telegram. No server: everything runs on your PC with your own accounts.
 
-**Version 1.1.0** · Windows (macOS runs from source) · [Changelog](CHANGELOG.md) · [Documentation (Word)](docs/Tama-v1.0-Documentation.docx)
+**Version 1.2.0** · Windows (macOS runs from source) · [Changelog](CHANGELOG.md) · [Documentation (Word)](docs/Tama-v1.0-Documentation.docx)
 
-**⬇️ [Download Tama for Windows (Tama-Setup-1.1.0.exe)](https://github.com/philipuscahyadi02-hub/tama/releases/download/v1.1.0/Tama-Setup-1.1.0.exe)** · [release notes](https://github.com/philipuscahyadi02-hub/tama/releases/tag/v1.1.0) · unsigned build: on *"Windows protected your PC"* click **More info → Run anyway**.
+**⬇️ [Download Tama for Windows (Tama-Setup-1.2.0.exe)](https://github.com/philipuscahyadi02-hub/tama/releases/download/v1.2.0/Tama-Setup-1.2.0.exe)** · [release notes](https://github.com/philipuscahyadi02-hub/tama/releases/tag/v1.2.0) · unsigned build: on *"Windows protected your PC"* click **More info → Run anyway**.
 
 ## What she does
 | | |

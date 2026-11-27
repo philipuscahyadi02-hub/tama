@@ -15,6 +15,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = first stable release (D-058); the rest of M12 ships as 1.x; 2.0.0 = Tama's own agentic brain.
 
 ## [Unreleased]
+
+## [1.2.0] — 2026-11-27 — Antigravity models, allowance and token savings
 ### Changed
 - **Fewer tokens (D-089):** long or idle chats start fresh with a short recap; the moments session restarts every 5 lines; at most 8 model-written moments a day; water/stretch nudges use her hand-written lines.
 ### Added
