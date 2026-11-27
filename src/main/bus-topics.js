@@ -286,6 +286,10 @@ const TOPICS = {
   MUSIC_PAIR_ASK: 'music.pair.ask',
   /** { allow } → { ok, allowed? } — the user's answer to MUSIC_PAIR_ASK (from the pet's bubble) */
   MUSIC_PAIR_ANSWER: 'music.pair.answer',
+  /** { action, text, url, title } — "Ask Tama" from the browser's right-click menu (D-082); untrusted web text */
+  COMPANION_ASK: 'companion.ask',
+  /** () — open (show) the chat window, e.g. after an Ask Tama request */
+  CHAT_SHOW: 'chat.show',
   /** { op: 'playlists'|'items'|'search'|'connect', id?, q?, fresh? } → { playlists? | songs? | ok? } or { error, fix? } — the user's YouTube library (MUS-6) */
   MUSIC_LIBRARY: 'music.library',
   /** { videoId?, playlistId?, query? } → { ok, opened?, song?, error? } — play a song or playlist in YouTube Music (MUS-6) */

@@ -111,6 +111,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-079 | NFR-1 memory target raised from 300 to 320 MB to keep the bundled rounded fonts | Accepted · Refines D-053 |
 | D-080 | One music box: Up next / Lyrics open inside the card as an accordion (the window grows downward, shifts up only to fit); no separate panel window | Accepted · Supersedes D-072 (panel part) |
 | D-081 | Keep the PC awake (off / while she works = default / always): blocks system sleep only; the screen still turns off and locks, because locking doesn't stop Tama | Accepted · Generalizes TG-8's phone-only switch |
+| D-082 | "Ask Tama" right-click in the Tama Companion extension (contextMenus + activeTab only); explain/summarize/translate go to chat as untrusted text, remember/todo save directly | Accepted |
 
 ---
 
@@ -1095,3 +1096,13 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Disabling the lock screen or screen timeout (weakens the user's security and doesn't help Tama, since locking stops nothing); always awake by default (wastes power when nothing runs); `prevent-display-sleep` (keeps the screen on for no reason).
 - **Consequences:** Closing a laptop lid or pressing the power button still sleeps the PC (the user's direct action, and laptop firmware may force it). The screen still turns off and locks on its normal timer.
 - **Refs:** TG-8, D-036, src/main/services/awake, src/main/platform/power.js, src/renderer/settings
+
+### D-082 — "Ask Tama" from the browser's right-click menu
+- **Date:** 2026-11-27 · **Status:** Accepted
+- **Context:** Asked what more the browser extension could do for Tama, the user picked a right-click "Ask Tama" (over meeting quiet mode, a focus guard and more players).
+- **Decision:**
+  - **Extension 1.3.0** adds `contextMenus` and `activeTab` (no new host permissions). On selected text: Explain this, Summarize this, Translate to English, Remember this, Add as a todo. On a page: Summarize this page, which reads `document.body.innerText` of that tab only at the click, through activeTab + scripting. At most 8,000 characters are sent over the existing paired WebSocket as `{ t: 'ask', action, text, url, title }`. A badge on the icon shows ✓ sent, or ! not connected.
+  - **Tama:** the music service passes it on as `companion.ask`. `services/companion` cleans and caps it (6,000 characters, page host only). Explain, summarize, translate and page go to the chat brain (`chat.show` + `chat.send`) inside an `UNTRUSTED web text …` block. Remember (`memory.add`, source chrome) and todo (`prod.todo.add`) save directly, because the user clicked exactly that, and she confirms in a bubble.
+- **Alternatives:** Broad host permissions to read pages in the background (more access than needed); sending to Claude Code directly (the terminal runs tools; a chat answer is the safe default, and the user can hand off from there).
+- **Consequences:** The user must reload the extension once (1.3.0). Chrome blocks extensions on its own pages (chrome://, the Web Store), so the badge says so there. Prompt injection in a page can only steer a chat reply; her tools keep their confirmations (D-038, D-077).
+- **Refs:** EXT-1, MUS-10, D-066, D-070, D-077, extension/background.js, src/main/services/companion

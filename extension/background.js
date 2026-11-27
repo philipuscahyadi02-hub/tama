@@ -206,3 +206,59 @@ chrome.alarms.onAlarm.addListener((a) => { if (a.name === 'tama-reconnect' && st
 chrome.runtime.onStartup.addListener(() => { connect(); repairTabs(); });
 chrome.runtime.onInstalled.addListener(() => { connect(); repairTabs(); });
 connect();
+
+// ---- "Ask Tama" right-click (D-082) ----
+// Selected text comes from Chrome itself (info.selectionText). "Summarize this page" reads the text of the page the
+// user right-clicked, only at that moment, through activeTab (no access to any site otherwise). It goes only to Tama on
+// this PC, which treats it as untrusted web text.
+const ASK_MENU = [
+  ['explain', 'Explain this'], ['summarize', 'Summarize this'], ['translate', 'Translate to English'],
+  ['remember', 'Remember this'], ['todo', 'Add as a todo'],
+];
+const ASK_MAX = 8000;
+
+function askMenus() {
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({ id: 'tama', title: 'Ask Tama', contexts: ['selection', 'page'] });
+    for (const [id, title] of ASK_MENU) chrome.contextMenus.create({ id: `tama-${id}`, parentId: 'tama', title, contexts: ['selection'] });
+    chrome.contextMenus.create({ id: 'tama-page', parentId: 'tama', title: 'Summarize this page', contexts: ['page'] });
+  });
+}
+chrome.runtime.onInstalled.addListener(askMenus);
+chrome.runtime.onStartup.addListener(askMenus);
+
+/** A short mark on the toolbar icon: ✓ sent, ! not sent (title says why). */
+function flash(ok, why) {
+  chrome.action.setBadgeBackgroundColor({ color: ok ? '#36a865' : '#d64545' });
+  chrome.action.setBadgeText({ text: ok ? '✓' : '!' });
+  chrome.action.setTitle({ title: ok ? 'Tama Companion · sent to Tama' : `Tama Companion · ${why}` });
+  setTimeout(() => { chrome.action.setBadgeText({ text: '' }); chrome.action.setTitle({ title: 'Tama Companion' }); }, ok ? 2500 : 8000);
+}
+
+/** Send once connected (the service worker may have just woken up for this click). */
+async function sendAsk(msg) {
+  if (status !== 'connected') {
+    connect();
+    for (let i = 0; i < 30 && status !== 'connected'; i++) await new Promise((r) => setTimeout(r, 100));
+  }
+  if (status !== 'connected') return false;
+  send({ t: 'ask', ...msg });
+  return true;
+}
+
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  const id = String(info.menuItemId);
+  if (!id.startsWith('tama-')) return;
+  const action = id.slice(5);
+  let text = String(info.selectionText || '');
+  if (action === 'page' && tab && typeof tab.id === 'number') {
+    try {
+      const [r] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: (max) => (document.body ? document.body.innerText : '').slice(0, max), args: [ASK_MAX] });
+      text = String((r && r.result) || '');
+    } catch (e) { flash(false, 'Chrome does not let extensions read this page.'); return; }
+  }
+  text = text.trim().slice(0, ASK_MAX);
+  if (!text) { flash(false, 'nothing to send'); return; }
+  const ok = await sendAsk({ action, text, url: String((tab && tab.url) || info.pageUrl || '').slice(0, 500), title: String((tab && tab.title) || '').slice(0, 200) });
+  flash(ok, ok ? '' : 'Tama is not connected. Is the Tama app running? (click the icon to connect)');
+});

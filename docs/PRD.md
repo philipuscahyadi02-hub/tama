@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.47 |
+| **Version** | 0.48 |
 | **Status** | **v1.0.0 released** (D-058); installer + setup wizard done (unreleased). Every other open item is parked (D-064). **Next: M13 YouTube Music & DJ = 1.1.0** (MUS-*, D-065, D-066) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-27 |
@@ -254,6 +254,7 @@ Plan in D-065, YouTube Music only with a companion extension (D-066). Build orde
 | MUS-9 | **Setup & settings:** a YouTube Music card in the setup wizard (open the extension folder, steps, connection state; never blocks setup), a Settings → Music tab (connection, pairing code, forget, music card auto-show, look, opacity, DJ mode, beat sync, how to ask her), and `/music`. | P1 | M13 | ☑ |
 | MUS-10 | **Tama Companion browser extension** (Chrome and Edge, Manifest V3, source in `extension/`, shipped with the app and loaded with \"Load unpacked\" until it is published): a content script on music.youtube.com reads the player (song, position, playing, volume, shuffle, repeat, like state, the Up next queue, lyrics) and runs controls (play/pause, next, previous, seek, jump to a queue item, shuffle, repeat, like/dislike, volume, open a song or playlist). It talks to Tama over a 127.0.0.1 WebSocket, paired once with a one-time code (like Telegram, D-036), and Tama accepts only the paired extension's origin and key. Permissions: music.youtube.com only; no cookies, history or other sites; it never reads or sends sign-in data. One tab is the controlled tab. If YouTube Music changes its page, the widget falls back to MUS-1 and says so. | P0 | M13 | ☑ |
 | MUS-11 | **The Look (app-wide):** one switcher in Settings → her tab: **Material** solid or glass (Windows 11 acrylic on the chat, music card and panel, Settings and the other pages; her bubble and menu as frosted paper; the terminal keeps its own themes) and **Mode** light, dark or follow Windows. Colors from her lead color with checked contrast; drawn icons instead of emoji in the app chrome; her motif as a faint header pattern; a sticker of her on empty screens; rounded fonts (Nunito, M PLUS Rounded 1c). Glass falls back to solid when Windows' transparency effects are off. *(D-078.)* | P1 | M13 | ◐ |
+| EXT-1 | **Ask Tama from the browser:** the Tama Companion extension adds a right-click *Ask Tama* menu: on selected text Explain, Summarize, Translate to English, Remember this, Add as a todo; on a page Summarize this page. Chat requests open her chat with the text marked untrusted; remember and todo save directly. The extension reads only what the user right-clicks, at that moment (`contextMenus`, `activeTab`). *(D-082.)* | P1 | M13 | ◐ |
 
 ## 5. Milestones
 
@@ -318,6 +319,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.48 — 2026-11-27** — New EXT-1 ◐ Ask Tama right-click (D-082); keep the PC awake while she works (D-081).
 - **0.47 — 2026-11-27** — NFR-1 memory target 300 → 320 MB to keep the rounded fonts (D-079).
 - **0.46 — 2026-11-27** — New MUS-11 ◐ the Look: app-wide solid/glass and light/dark/auto, new tokens, icons, motif, stickers (D-078); fonts added (about +10–15 MB; NFR-1 memory target now 320 MB, D-079).
 - **0.45 — 2026-11-27** — MUS-7 ☑ (confirmed by the user: "play <song>" from chat plays it; agy permission fix D-077). Every M13 row is ☑, ✖ or 🅿.

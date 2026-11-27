@@ -63,6 +63,7 @@ const { createMusicWiring } = require('./music-wiring');
 const { createMusicTools, musicRule } = require('./services/music');
 const { setLook } = require('./platform/look');
 const { createAwake } = require('./services/awake');
+const { createCompanion } = require('./services/companion');
 
 const { createDesktopChannel } = require('./channels/desktop');
 
@@ -248,6 +249,8 @@ function boot() {
   require('fs').mkdirSync(desk, { recursive: true });
   // Keep the PC awake while she works (D-081); the screen may still turn off and lock.
   stoppers.push(createAwake({ bus, keepAwake }).start());
+  // Ask Tama from the browser's right-click menu (D-082).
+  stoppers.push(createCompanion({ bus }).start());
   stoppers.push(createTelegram({ bus, secrets, device, git, snapshot: () => pet.snapshot(), keepAwake: (on) => keepAwake(on, 'telegram'), tama: active, desk }).start());
   // Voice (M9, D-042): AivisSpeech / VOICEVOX when running, Windows' built-in voice otherwise.
   stoppers.push(voice.start());

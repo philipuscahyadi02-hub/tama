@@ -1,13 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Tama Companion",
-  "version": "1.2.1",
-  "description": "Lets your Tama desktop companion show and control what plays on YouTube Music. Talks only to the Tama app on this PC.",
+  "version": "1.3.0",
+  "description": "Lets your Tama desktop companion show and control YouTube Music, and lets you right-click to ask Tama about text or a page. Talks only to the Tama app on this PC.",
   "minimum_chrome_version": "116",
   "permissions": [
     "storage",
     "alarms",
-    "scripting"
+    "scripting",
+    "contextMenus",
+    "activeTab"
   ],
   "host_permissions": [
     "https://music.youtube.com/*"

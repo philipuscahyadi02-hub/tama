@@ -128,6 +128,7 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.on('notify', (title, body) => shell.notify(String(title), String(body)));
     ipc.on('term:show', () => term.show());
     ipc.on('chat:show', () => chat.show());
+    bus.on(TOPICS.CHAT_SHOW, () => chat.show()); // Ask Tama from the browser (D-082)
     ipc.handle('ui:prefs', () => bus.request(TOPICS.UI_PREFS_GET));
     // Start with Windows (SHIP-1): a per-PC OS setting, not a Tama preference.
     ipc.handle('app:autostart', () => ({ supported: !!(autostart && autostart.supported()), on: !!(autostart && autostart.get()) }));

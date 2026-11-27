@@ -114,6 +114,9 @@ function createMusic({ bus, secrets, media, startWs, openExternal = () => null, 
       } else if (m.t === 'result') {
         const f = waiting.get(String(m.id || ''));
         if (f) { waiting.delete(String(m.id)); f({ ok: m.ok === true, error: m.ok ? undefined : String(m.error || 'failed').slice(0, 200), lyrics: typeof m.lyrics === 'string' ? m.lyrics.slice(0, 20000) : m.lyrics === null ? null : undefined }); }
+      } else if (m.t === 'ask') {
+        // "Ask Tama" right-click (D-082): passed on as-is; services/companion cleans and caps it.
+        bus.emit(TOPICS.COMPANION_ASK, { action: m.action, text: m.text, url: m.url, title: m.title });
       } else if (m.t === 'ping') c.send({ t: 'pong' });
       else if (m.t === 'bye') { secrets.delete(SECRET); c.close(1000); }
     });
