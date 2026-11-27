@@ -331,8 +331,13 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
+_No commits._
+
+### v1.2.0
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `f5bc9b2` | 2026-11-27 | chore(release) | v1.2.0 |
+| `b55d2c6` | 2026-11-27 | feat(agy) | pick the model, read the allowance, auto-switch, fewer tokens |
 | `84cd017` | 2026-11-27 | docs(readme) | v1.1.0 download link and the new features |
 | `33295f7` | 2026-11-27 | docs(changelog) | commit table for v1.1.0 |
 
