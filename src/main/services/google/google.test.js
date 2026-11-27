@@ -376,3 +376,34 @@ test('youtube access: the sign-in asks for youtube.readonly alone, without mergi
   assert.equal(calls[0].includeGranted, false);
   assert.equal(a.connected(), true);
 });
+
+test('api: an expired refresh token (invalid_grant) is reported once and stops further refreshes (BUG-1)', async () => {
+  /** @type {any} */ let saved = { access_token: 'old', refresh_token: 'RT', expiry: 0, scope: '' };
+  let expiredCalls = 0;
+  let refreshes = 0;
+  const api = createApi({
+    getTokens: () => saved, saveTokens: (t) => { saved = t; }, now: () => 1e12,
+    refresh: async () => { refreshes += 1; const e = /** @type {any} */ (new Error('Google token error: invalid_grant (Bad Request)')); e.code = 'invalid_grant'; throw e; },
+    onExpired: () => { expiredCalls += 1; saved = { ...saved, expired: true }; },
+    fetch: /** @type {any} */ (async () => { throw new Error('no network in this test'); }),
+  });
+  await assert.rejects(api.token(), /sign-in expired/);
+  await assert.rejects(api.token(), /sign-in expired/);
+  assert.equal(expiredCalls, 1);
+  assert.equal(refreshes, 1, 'no refresh attempts after it expired');
+});
+
+test('service: expired sign-in = signed out with a one-time notice; a new sign-in clears it (BUG-1)', async () => {
+  const s = setupService();
+  s.secrets['google.client'] = JSON.stringify({ clientId: 'c', clientSecret: 's' });
+  s.secrets['google.tokens'] = JSON.stringify({ access_token: 'AT', refresh_token: 'RT', expiry: 0, scope: 'calendar.events', expired: true });
+  const st = await s.bus.request('google.status');
+  assert.equal(st.signedIn, false);
+  assert.equal(st.expired, true);
+  assert.equal((await s.bus.request('google.cal.range', { from: s.now(), to: s.now() + 86400000 })).fix, 'signin');
+  await s.bus.request('google.setClient', { clientId: '123-abc.apps.googleusercontent.com', clientSecret: 'GOCSPX-secret' });
+  const after = await s.bus.request('google.login');
+  assert.equal(after.signedIn, true);
+  assert.equal(after.expired, false);
+  s.stop();
+});

@@ -18,6 +18,7 @@ function label() {
 
 function problem(text, fix) {
   const box = document.createElement('div'); box.className = 'empty'; box.textContent = text;
+  if (fix === 'signin') { const b = document.createElement('button'); b.className = 'primary'; b.textContent = 'Sign in again'; b.addEventListener('click', async () => { b.disabled = true; b.textContent = 'Finish in your browser…'; const r = await K.google.login(); if (r && r.error) { b.disabled = false; b.textContent = 'Sign in again'; } load(); }); box.append(document.createElement('br'), b); }
   if (fix === 'google') { const b = document.createElement('button'); b.className = 'primary'; b.textContent = 'Connect Google'; b.addEventListener('click', () => K.google.open()); box.append(document.createElement('br'), b); }
   $('view').replaceChildren(box);
 }

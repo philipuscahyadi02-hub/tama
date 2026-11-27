@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.53 |
+| **Version** | 0.54 |
 | **Status** | **v1.0.0 released** (D-058); installer + setup wizard done (unreleased). Every other open item is parked (D-064). **Next: M13 YouTube Music & DJ = 1.1.0** (MUS-*, D-065, D-066) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-27 |
@@ -325,10 +325,11 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 
 | ID | Issue | Seen | Status |
 |---|---|---|---|
-| BUG-1 | Running Tama from the terminal (`npm start`) prints a bus error from the Google backup: "Google token error: Bad Request" (`google.backup`, every 10 minutes). **Cause found:** Google's `invalid_grant` = the saved refresh token is no longer valid (last successful Google call 2026-11-08; most likely the OAuth app is still in *Testing*, where sign-ins expire after 7 days, see D-009). **User fix:** publish the OAuth app (Audience → Publish app), then sign in again. **Tama fix to do:** on `invalid_grant`, mark Google as signed out, tell the user once, and stop retrying. | 2026-11-27, reported by the user | Cause known. 2026-11-27: the user signed in again (app stays in Testing); a diagnostic refresh returned 200. Tama-side fix (prompt instead of retrying) still open |
+| BUG-1 | Running Tama from the terminal (`npm start`) prints a bus error from the Google backup: "Google token error: Bad Request" (`google.backup`, every 10 minutes). **Cause found:** Google's `invalid_grant` = the saved refresh token is no longer valid (last successful Google call 2026-11-08; most likely the OAuth app is still in *Testing*, where sign-ins expire after 7 days, see D-009). **User fix:** publish the OAuth app (Audience → Publish app), then sign in again. **Tama fix to do:** on `invalid_grant`, mark Google as signed out, tell the user once, and stop retrying. | 2026-11-27, reported by the user | **Fixed:** the user signed in again (refresh verified 200); Tama now treats `invalid_grant` as an expired sign-in: one notice, Google marked signed out (backup and meeting checks pause), *Sign in again* in Settings, the Calendar window and the calendar box |
 | BUG-2 | Electron warns that its `safeStorage` usage is deprecated and will be removed (`platform/secrets` stores tokens with it): `isEncryptionAvailable` → `isAsyncEncryptionAvailable`, `encryptString`/`decryptString` → `encryptStringAsync`/`decryptStringAsync` (the secret store API becomes async). | 2026-11-27, reported by the user | Open (user: no need to fix now) |
 
 ## 7. Changelog
+- **0.54 — 2026-11-27** — BUG-1 fixed (expired Google sign-in handled).
 - **0.53 — 2026-11-27** — CAL-2 is now the calendar box, a desktop widget like the music card (D-085); BUG-1 cause found.
 - **0.52 — 2026-11-27** — Known issues noted: BUG-1 (Google backup token error in the terminal), BUG-2 (Electron safeStorage deprecation warning).
 - **0.51 — 2026-11-27** — New CAL-1 ◐ calendar window, CAL-2 ◐ next-meeting card (D-084).

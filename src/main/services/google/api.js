@@ -13,20 +13,30 @@
  *   refresh: (refreshToken: string) => Promise<{ access_token: string, expires_in?: number, scope?: string }>,
  *   fetch?: typeof fetch, now?: () => number,
  *   onCall?: (c: { method: string, url: string, status: number, ms: number }) => void,
+ *   onExpired?: () => void,
  * }} deps
+ *   onExpired: Google refused the refresh token (invalid_grant: expired, e.g. 7 days in Testing, or revoked; BUG-1).
  *   onCall: one report per HTTP call, for the usage log (D-040).
  */
-function createApi({ getTokens, saveTokens, refresh, fetch: f = fetch, now = Date.now, onCall = () => {} }) {
+function createApi({ getTokens, saveTokens, refresh, fetch: f = fetch, now = Date.now, onCall = () => {}, onExpired = () => {} }) {
   /** @type {Promise<string> | null} */
   let refreshing = null;
 
   async function token(force = false) {
     const t = getTokens();
     if (!t || !t.refresh_token) throw new Error('Not signed in to Google. Use /google in the terminal.');
+    if (/** @type {any} */ (t).expired) throw new Error('Your Google sign-in expired. Sign in again (Settings → Google).');
     if (!force && t.access_token && t.expiry - 60000 > now()) return t.access_token;
     refreshing = refreshing || (async () => {
       try {
-        const r = await refresh(t.refresh_token);
+        let r;
+        try { r = await refresh(t.refresh_token); } catch (e) {
+          if (/invalid_grant/.test(String((/** @type {any} */ (e)).code || (/** @type {any} */ (e)).message))) {
+            onExpired();
+            throw new Error('Your Google sign-in expired. Sign in again (Settings → Google).');
+          }
+          throw e;
+        }
         const next = { ...t, access_token: r.access_token, expiry: now() + (r.expires_in || 3600) * 1000, scope: r.scope || t.scope };
         saveTokens(next);
         return next.access_token;

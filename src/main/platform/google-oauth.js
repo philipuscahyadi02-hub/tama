@@ -87,7 +87,12 @@ async function revoke(token, f = fetch) {
 async function postForm(f, url, form) {
   const r = await f(url, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(form).toString() });
   const j = /** @type {any} */ (await r.json().catch(() => ({})));
-  if (!r.ok) throw new Error(`Google token error: ${j.error_description || j.error || r.status}`);
+  if (!r.ok) {
+    // Keep Google's code (e.g. invalid_grant = the sign-in expired or was revoked, BUG-1) next to its description.
+    const e = /** @type {Error & { code?: string }} */ (new Error(`Google token error: ${j.error || r.status}${j.error_description ? ` (${j.error_description})` : ''}`));
+    e.code = j.error ? String(j.error) : undefined;
+    throw e;
+  }
   return j;
 }
 

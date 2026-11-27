@@ -50,14 +50,23 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
   const logCall = (/** @type {{ method: string, url: string, status: number, ms: number }} */ c) => {
     bus.emit(TOPICS.USAGE_RECORD, { provider: 'google', surface: 'api', op: apiOp(c.method, c.url), ok: c.status > 0 && c.status < 400, ms: c.ms, account: (tokens() || {}).email });
   };
+  /** Google refused the saved sign-in (BUG-1): remember it, say so once, and stop calling until the user signs in. */
+  function onExpired() {
+    const t = tokens();
+    if (!t || t.expired) return;
+    secrets.set('google.tokens', JSON.stringify({ ...t, expired: true }));
+    bus.emit(TOPICS.BRAIN_NOTICE, { text: 'my Google sign-in expired… sign me in again in Settings → Google (or /google login) and I’ll get your calendar back~ 🔑', kind: 'warn' });
+    changed();
+  }
   const api = createApi({
+    onExpired: () => onExpired(),
     onCall: logCall,
     getTokens: tokens, saveTokens: (t) => secrets.set('google.tokens', JSON.stringify(t)), fetch: f, now,
     refresh: (rt) => { const c = client(); if (!c) throw new Error('Google client not set up.'); return oauth.refresh({ clientId: c.clientId, clientSecret: c.clientSecret, refreshToken: rt, fetch: f }); },
   });
   const calendar = createCalendar(api, now);
   // Calendar window + next-meeting card (D-084).
-  const calView = createCalView({ bus, calendar, signedIn: () => signedIn(), device, now, demo: !!process.env.TAMA_CAL_DEMO });
+  const calView = createCalView({ bus, calendar, signedIn: () => signedIn(), expired: () => expired(), device, now, demo: !!process.env.TAMA_CAL_DEMO });
   // MUS-6 (D-073): YouTube is its own sign-in and token; Google refuses youtube.readonly next to the Drive scopes.
   const youtube = createYoutubeAccess({ secrets, oauth, client, openExternal, fetch: f, now, onCall: logCall, onError: (m) => bus.emit(TOPICS.APP_ERROR, { topic: 'google.youtube', message: m }), onChange: () => changed() });
   const gmail = createGmail(api);
@@ -79,7 +88,9 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
     onCreated: (what) => bus.emit(TOPICS.BRAIN_NOTICE, { text: `made a ${what} in your Google~ ✨`, kind: 'info' }),
   });
 
-  const signedIn = () => !!(tokens() && tokens().refresh_token);
+  /** Signed in with a sign-in Google still accepts (an expired one counts as signed out, BUG-1). */
+  const signedIn = () => !!(tokens() && tokens().refresh_token && !tokens().expired);
+  const expired = () => !!(tokens() && tokens().expired);
   let meeting = /** @type {{ summary: string, end: number } | null} */ (null);
   const reminded = new Set();
   let warnedLease = false;
@@ -89,7 +100,7 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
     const p = prefs();
     const t = tokens();
     return {
-      configured: !!client(), signedIn: signedIn(), email: (t && t.email) || null, clientId: (client() || {}).clientId || null, readonly: !!p.readonly, youtube: youtube.connected(), backup: p.backup !== false,
+      configured: !!client(), signedIn: signedIn(), expired: expired(), email: (t && t.email) || null, clientId: (client() || {}).clientId || null, readonly: !!p.readonly, youtube: youtube.connected(), backup: p.backup !== false,
       lastBackup: p.lastBackup || 0, inMeeting: meeting && meeting.end > now() ? meeting.summary : null, maps: secrets.get('google.mapsKey') ? 'google' : 'web-search',
       scopes: t ? String(t.scope || '').split(' ').filter(Boolean).map((s) => s.replace('https://www.googleapis.com/auth/', '')) : [],
     };

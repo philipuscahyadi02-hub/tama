@@ -36,6 +36,7 @@ function render() {
   $('msg').replaceChildren();
   if (problem) {
     $('kicker').textContent = ''; $('title').textContent = 'Calendar'; $('sub').textContent = problem.error; $('join').hidden = true;
+    if (problem.fix === 'signin') { const b = document.createElement('button'); b.textContent = 'Sign in again'; b.addEventListener('click', async () => { b.textContent = 'Finish in your browser…'; await K.google.login(); load(); }); $('msg').append(b); }
     if (problem.fix === 'google') { const b = document.createElement('button'); b.textContent = 'Connect Google'; b.addEventListener('click', () => K.google.open()); $('msg').append(b); }
     renderAgenda(now);
     return;

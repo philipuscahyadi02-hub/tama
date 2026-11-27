@@ -94,10 +94,13 @@ $('#tgUnpair').addEventListener('click', async () => renderTg(saved(await K.tele
 function renderGoogle(g) {
   if (!g) return;
   renderDrive(g);
-  $('#gBadge').textContent = g.signedIn ? 'signed in' : g.configured ? 'signed out' : 'not set up';
+  $('#gBadge').textContent = g.signedIn ? 'signed in' : g.expired ? 'sign-in expired' : g.configured ? 'signed out' : 'not set up';
   $('#gBadge').classList.toggle('off', !g.signedIn);
   $('#gInfo').innerHTML = g.signedIn ? `Signed in as <b>${esc(g.email || '?')}</b>. Drive backup ${g.backup ? 'on' : 'off'}${g.lastBackup ? ` (last ${new Date(g.lastBackup).toLocaleString()})` : ''}.`
+    : g.expired ? 'Your Google sign-in expired (Google does this every 7 days while your app is in Testing). <button id="gRelogin" class="primary">Sign in again</button>'
     : 'Calendar, Gmail drafts, Drive, Docs and Sheets, with your own Google project.';
+  const rb = document.getElementById('gRelogin');
+  if (rb) rb.addEventListener('click', async () => { rb.disabled = true; rb.textContent = 'Finish in your browser…'; saved(await K.google.login()); renderGoogle(await K.google.status().catch(() => null)); });
 }
 
 // ---- music (MUS-9) ----

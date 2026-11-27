@@ -48,12 +48,13 @@ function demoEvents(from, to, now) {
  *   bus: import('../../bus').BusInstance,
  *   calendar: ReturnType<typeof import('./calendar').createCalendar>,
  *   signedIn: () => boolean,
+ *   expired?: () => boolean,
  *   device: { get: () => any },
  *   now?: () => number,
  *   demo?: boolean,
  * }} deps
  */
-function createCalView({ bus, calendar, signedIn, device, now = Date.now, demo = false }) {
+function createCalView({ bus, calendar, signedIn, expired = () => false, device, now = Date.now, demo = false }) {
   const dismissed = new Set();
   /** @type {string} */ let shownId = '';
   const lead = () => { const v = Number((device.get().ui || {}).calendarLead); return [5, 10, 15, 30].includes(v) ? v : 15; };
@@ -64,7 +65,7 @@ function createCalView({ bus, calendar, signedIn, device, now = Date.now, demo =
     const from = Number(p.from) || now();
     const to = Math.min(Number(p.to) || from + 7 * DAY, from + MAX_RANGE);
     if (demo) return { events: demoEvents(from, to, now()), demo: true };
-    if (!signedIn()) return { error: 'Connect Google to see your calendar.', fix: 'google' };
+    if (!signedIn()) return expired() ? { error: 'Your Google sign-in expired.', fix: 'signin' } : { error: 'Connect Google to see your calendar.', fix: 'google' };
     try { return { events: await calendar.list({ from, to, max: 250 }) }; } catch (e) { return { error: String((/** @type {any} */ (e)).message || e).slice(0, 200) }; }
   }
 
