@@ -8,12 +8,19 @@ const persona = require('./persona');
 
 /** Keep this many messages for the chat window (in memory; facts worth keeping go to memory, D-033). */
 const HISTORY_MAX = 200;
+/** Start a fresh agy session (with a short recap) once a turn re-reads this many tokens, or after this long idle (D-089).
+ *  Every turn re-sends the whole conversation, so a long chat costs more and more per message. */
+const FRESH_AT_TOKENS = 30000;
+const FRESH_AFTER_IDLE_MS = 2 * 60 * 60 * 1000;
+const RECAP_MESSAGES = 6;
 /** `[[remember: …]]` markers in a reply become memories and are never shown (EVT-4). */
 const REMEMBER_RE = /\[\[\s*remember\s*:\s*([^\]]+?)\s*\]\]/gi;
 /** `[[work: …]]` = a task the chat brain suggests handing to Claude Code (phone button, D-036). */
 const WORK_RE = /\[\[\s*work\s*:\s*([^\]]+?)\s*\]\]/i;
 /** `[[ja: <feeling> | <Japanese>]]` = the voice dub, written with the reply while the Japanese voice is on (SET-4). */
 const JA_RE = /\[\[\s*ja\s*:\s*([^\]]+?)\s*\]\]/i;
+/** What she says when the model's allowance is used up (the real numbers go to Limits and a notice, D-088). */
+const QUOTA_LINE = 'uu… my brain for this model is out of allowance for now 💤 Pick another model in Settings → Brains (or turn on the auto-switch there) and ask me again~';
 
 /** Streaming filter that hides `[[…]]` markers, even when they arrive split across chunks. */
 function markerFilter() {
@@ -62,6 +69,9 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
   let memorySig = /** @type {string | null} */ (null); // null = this session hasn't been told yet
   /** Last [google] context line sent to this session (calendar/mail summary, read-only, D-034). */
   let googleSent = '';
+  /** How much the last turn re-read, and when the user last wrote (D-089). */
+  let ctxTokens = 0;
+  let lastAt = 0;
 
   /** @param {any} ev */
   const out = (ev) => bus.emit(TOPICS.CHAT_EVENT, ev);
@@ -87,13 +97,15 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
         out({ t: 'tool', text: describeTool(ev) });
         break;
       case 'status': out({ t: 'status', state: ev.state }); break;
+      case 'context': ctxTokens = Math.max(ctxTokens, Number(ev.used) || 0); break;
       case 'init': if (ev.tier) bus.emit(TOPICS.USAGE_LIMIT, { provider: 'gemini', tier: ev.tier }); break; // plan tier for Limits (D-041)
       case 'error':
         if (/quota|RESOURCE_EXHAUSTED|rate.?limit|429/i.test(String(ev.message))) bus.emit(TOPICS.USAGE_LIMIT, { provider: 'gemini', hit: ev.message });
-        out({ t: 'error', message: ev.message });
+        if (!ev.quota) out({ t: 'error', message: ev.message }); // a used-up allowance gets her own line at the result
         break;
       case 'result': {
         onResult(ev);
+        ctxTokens = Math.max(ctxTokens, typeof ev.tokens === 'number' ? ev.tokens : 0);
         const tail = reply.filter.end();
         if (tail) out({ t: 'delta', text: tail });
         const learned = [...reply.text.matchAll(REMEMBER_RE)].map((m) => m[1]).slice(0, 2);
@@ -102,7 +114,8 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
           reply.tools.push(`📝 I'll remember: ${f}`);
           out({ t: 'tool', text: `📝 I'll remember: ${f}` });
         }
-        const text = reply.text.replace(REMEMBER_RE, '').replace(/\[\[[^\]]*\]\]/g, '').trim()
+        if (ev.subtype === 'quota') reply.text = ''; // agy's "quota reached" text is not her reply (D-088)
+        const text = (ev.subtype === 'quota' ? QUOTA_LINE : '') || reply.text.replace(REMEMBER_RE, '').replace(/\[\[[^\]]*\]\]/g, '').trim()
           // Gemini sometimes ends a turn right after a music tool without a word: say what the tool did instead.
           || (reply.done ? `Okay~ ${reply.done} ♪` : '')
           || (ev.isError ? 'uu… my brain glitched. Can you say that again? (agy error)' : 'hmm… I lost my words. Ask me again?');
@@ -124,6 +137,7 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
       engine.setCwd(scratchDir);
       memorySig = null;
       googleSent = '';
+      ctxTokens = 0;
     }
     return engine;
   }
@@ -132,6 +146,13 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
   async function send(raw) {
     const text = String(raw || '').trim().slice(0, 4000);
     if (!text) return { ok: false };
+    // A long or stale conversation starts over with a recap: much cheaper than re-reading all of it each turn (D-089).
+    let recap = '';
+    if (engine && !engine.busy && (ctxTokens >= FRESH_AT_TOKENS || (lastAt && now() - lastAt >= FRESH_AFTER_IDLE_MS))) {
+      recap = recapLine(history);
+      stopEngine();
+    }
+    lastAt = now();
     push({ role: 'user', text, at: now() });
     if (!available()) {
       push({ role: 'note', text: 'Chat needs Gemini (the Antigravity CLI, agy): install it and log in once, then restart Tama. Or let Claude chat instead: Settings → Brains (uses your Claude quota). Coding work still works in the terminal (Ctrl+Alt+K).', at: now() });
@@ -159,7 +180,7 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
         ? `[memory] What you remember about the user: ${facts.slice(-30).map((/** @type {any} */ f, /** @type {number} */ i) => `${i + 1}) ${f.text}`).join('; ')}\n`
         : '[memory] You don\'t remember anything about the user yet.\n';
     }
-    e.send(`${persona.statusLine(pet, prod, wx)}\n${googleLine}${memLine}${text}`);
+    e.send(`${persona.statusLine(pet, prod, wx)}\n${googleLine}${memLine}${recap}${text}`);
     return { ok: true };
   }
 
@@ -201,4 +222,12 @@ function describeTool(ev) {
   return `🔧 ${ev.name}`;
 }
 
-module.exports = { createChat, markerFilter };
+/** The last few messages as one context line for a fresh session (D-089). @param {ChatMessage[]} h */
+function recapLine(h) {
+  const msgs = h.filter((m) => m.role === 'user' || m.role === 'tama').slice(-RECAP_MESSAGES);
+  if (!msgs.length) return '';
+  const cut = (/** @type {string} */ s) => { const t = String(s).replace(/\s+/g, ' ').trim(); return t.length > 200 ? `${t.slice(0, 200)}…` : t; };
+  return `[recent chat] (a fresh session; this is how your conversation went just before) ${msgs.map((m) => `${m.role === 'user' ? 'User' : 'You'}: ${cut(m.text)}`).join(' | ')}\n`;
+}
+
+module.exports = { createChat, markerFilter, recapLine };

@@ -111,7 +111,7 @@ function boot() {
   const usageLog = createUsageLog({ bus, store, device });
   stoppers.push(usageLog.start());
   // What's left (D-041): Claude plan windows live (no message, $0) + from each turn; Gemini tier; Google month counts.
-  stoppers.push(createLimits({ bus, store, device, entries: () => usageLog.entries(), refreshClaude: fetchClaudeLimits }).start());
+  stoppers.push(createLimits({ bus, store, device, entries: () => usageLog.entries(), refreshClaude: fetchClaudeLimits, refreshGemini: async () => { const pv = providers.get('agy'); return pv && pv.usage ? pv.usage() : null; } }).start());
   const gate = createPermissionGate({ bus });
   // Google (M6, D-034): the user's own OAuth client; tools reach Claude Code as an MCP server while signed in.
   const google = createGoogle({
@@ -135,10 +135,28 @@ function boot() {
   const providers = createProviders({
     bus, device, refreshEnv: refreshPath, providers: [
       claudeProvider({ gate, tamaName: active.name, mcp: () => [...google.mcpServers(), { name: 'music', tools: musicTools }] }),
-      agyProvider({ gate, mcpServers: chatMcp }),
+      agyProvider({
+        gate, mcpServers: chatMcp,
+        picks: () => { const m = (device.get().providers || {}).models || {}; return { chat: m['agy:chat'], compose: m['agy:compose'] }; },
+        quota: () => ((device.get().limits || {}).gemini || {}).windows || {}, // D-088
+        autoSwitch: () => (device.get().providers || {}).autoSwitch !== false,
+        usageDir: pathMod.join(appShell.paths.data(), 'agy-workspace', 'usage'),
+      }),
     ],
   });
   stoppers.push(providers.start());
+  // D-088: when new allowance numbers change which model a session should use, restart the sessions on it and say so.
+  let lastEffective = JSON.stringify(providers.effective());
+  stoppers.push(bus.on(TOPICS.USAGE_CHANGED, (p) => {
+    if (!p || !p.gemini) return;
+    const eff = providers.effective();
+    const sig = JSON.stringify(eff);
+    if (sig === lastEffective) return;
+    lastEffective = sig;
+    const sw = eff.agy && eff.agy.chat && eff.agy.chat.switched;
+    if (sw) bus.emit(TOPICS.BRAIN_NOTICE, { text: `${sw.from}'s allowance is used up, so I'm talking with ${sw.to}${sw.back ? ` until ${new Date(sw.back).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}~`, kind: 'info' });
+    providers.announce();
+  }));
   const brain = createBrain({ bus, device, gate, git, providers, scratchDir: pathMod.join(appShell.paths.data(), 'agy-workspace') });
 
   // ---- windows ----

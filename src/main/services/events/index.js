@@ -91,7 +91,8 @@ function createEvents({ bus, store, tamaId, deck: rawDeck, now = Date.now, rando
     if (buttons.length) seed += `
 The user will answer with these buttons: ${buttons.join(' / ')}. Your line must fit them exactly (same question, same options).`;
     const fallback = e.lines.length ? e.lines[Math.floor(random() * e.lines.length)] : '…';
-    const text = (await req(TOPICS.BRAIN_COMPOSE, { kind: 'line', seed })) || fallback;
+    // Water/stretch nudges are frequent and generic: the deck's lines are enough, no model turn (D-089).
+    const text = (e.kind === 'nudge' && e.lines.length ? null : await req(TOPICS.BRAIN_COMPOSE, { kind: 'line', seed })) || fallback;
     active = { event: e, shownAt: now() };
     const show = {
       id: e.id, kind: e.kind, text,

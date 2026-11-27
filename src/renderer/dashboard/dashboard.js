@@ -139,29 +139,34 @@ function inTime(t) {
   const at = new Date(t).toLocaleString([], { weekday: h >= 20 ? 'short' : undefined, hour: '2-digit', minute: '2-digit' });
   return `resets in ${h >= 24 ? `${Math.floor(h / 24)}d ${h % 24}h` : h ? `${h}h ${m}m` : `${m}m`} (${at})`;
 }
+/** One "% left" box (Claude windows and, since D-088, Antigravity's). */
+function limWindow(v) {
+  const pct = Math.round(v.left * 100);
+  const cls = v.expired ? '' : pct <= 10 ? 'bad' : pct <= 25 ? 'warn' : '';
+  return `<div class="limw"><div class="kv"><b>${esc(v.label)}</b></div>
+    <div class="left">${v.expired ? '100' : pct}%<small> left</small></div>
+    <div class="bar"><i class="${cls}" style="width:${v.expired ? 100 : pct}%"></i></div>
+    <div class="kv dim">${Math.round(v.used * 100)}% used · ${esc(inTime(v.resetsAt))}</div></div>`;
+}
 function renderLimits(L) {
   st.limits = L;
   const c = L.claude || {};
   const wins = Object.entries(c.windows || {}).sort((a, b) => (ORDER.indexOf(a[0]) + 99) % 99 - (ORDER.indexOf(b[0]) + 99) % 99);
   $('#limSub').textContent = c.subscription || '';
   $('#limUpdated').textContent = c.updatedAt ? `updated ${when(c.updatedAt)} (${c.source === 'live' ? 'live check' : 'after a turn'})` : '';
-  $('#limWindows').innerHTML = wins.length ? wins.map(([k, v]) => {
-    const pct = Math.round(v.left * 100);
-    const cls = v.expired ? '' : pct <= 10 ? 'bad' : pct <= 25 ? 'warn' : '';
-    return `<div class="limw"><div class="kv"><b>${esc(v.label)}</b></div>
-      <div class="left">${v.expired ? '100' : pct}%<small> left</small></div>
-      <div class="bar"><i class="${cls}" style="width:${v.expired ? 100 : pct}%"></i></div>
-      <div class="kv dim">${Math.round(v.used * 100)}% used · ${esc(inTime(v.resetsAt))}</div></div>`;
-  }).join('') : '<div class="kv dim">No data yet: press "Check now" (no message is sent, it costs nothing).</div>';
+  $('#limWindows').innerHTML = wins.length ? wins.map(([, v]) => limWindow(v)).join('') : '<div class="kv dim">No data yet: press "Check now" (no message is sent, it costs nothing).</div>';
   const ex = c.extra;
   const br = (c.breakdown || []).filter((b) => b.percent > 0).map((b) => `${esc(b.name)} ${b.percent}%`).join(' · ');
   $('#limExtra').innerHTML = [ex && ex.enabled ? `Extra usage credits used this month: <b>$${(ex.usedUsd || 0).toFixed(2)}</b>` : '', br ? `This week by app: ${br}` : ''].filter(Boolean).join('<br>');
   renderLimitChart(c.history || []);
   const g = L.gemini || {};
-  $('#limGemini').innerHTML = `<div class="kv">Plan: <b>${esc(g.tier || 'unknown (chat once)')}</b></div>
+  const gw = Object.values(g.windows || {});
+  $('#limGemini').innerHTML = `<div class="kv">Plan: <b>${esc(g.tier || 'unknown (chat once)')}</b>${g.updatedAt ? ` <span class="dim">· allowance checked ${esc(when(g.updatedAt))}</span>` : ''}</div>
+    ${gw.length ? `<div class="limwins">${gw.map(limWindow).join('')}</div>` : ''}
     <div class="kv">Today: <b>${g.today ? g.today.turns : 0}</b> turns · ${fmtN(g.today ? g.today.tokens : 0)} tokens</div>
+    ${geminiModels(g)}
     <div class="kv">${g.lastHit ? `⚠️ Quota used up at ${esc(when(g.lastHit.at))}` : '✅ No quota warnings'}</div>
-    <div class="kv dim">agy doesn't share how much quota is left with other apps, so Tama shows your usage and warns when Gemini reports the quota is used up.</div>`;
+    <div class="kv dim">${gw.length ? 'From agy’s own /usage (no message is sent). Gemini and Claude/GPT models have separate allowances.' : 'Press "Check now" to read what is left from agy (no message is sent).'}</div>`;
   const go = L.google || {};
   const cap = go.placesCap;
   const apis = Object.entries((go.month && go.month.byApi) || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${esc(k)} ${v}`).join(' · ');
@@ -178,6 +183,20 @@ function renderLimits(L) {
   $('#alertB').value = String(Math.round((b || 0.1) * 100));
   if (st.accounts) renderAccounts(st.accounts);
 }
+/** Today's Antigravity use per model (D-087): which model eats the allowance. */
+function geminiModels(g) {
+  const rows = g.byModel || [];
+  if (!rows.length) return '';
+  const names = g.names || {};
+  const label = (id) => names[id] || (id === 'gemini-flash' ? 'Gemini Flash (before the model picker)' : id);
+  const max = Math.max(1, ...rows.map((r) => r.tokens));
+  return `<table class="permodel"><thead><tr><th>Model today</th><th>Turns</th><th>Tokens</th><th></th></tr></thead><tbody>${rows.map((r) => {
+    const parts = [r.chat ? `${r.chat} chat` : '', r.moments ? `${r.moments} moment${r.moments === 1 ? '' : 's'}` : '', r.errors ? `${r.errors} failed` : ''].filter(Boolean).join(' · ');
+    return `<tr><td>${esc(label(r.model))}<div class="dim">${esc(parts)}</div></td><td>${r.turns}</td><td>${fmtN(r.tokens)}</td>`
+      + `<td class="bar"><span style="width:${Math.round((r.tokens / max) * 100)}%"></span></td></tr>`;
+  }).join('')}</tbody></table>`;
+}
+
 function renderLimitChart(hist) {
   const W = 1000, H = 170, padL = 40, padB = 20, now = Date.now(), from = now - 7 * 86400000;
   const x = (t) => padL + ((t - from) / (now - from)) * (W - padL - 6);

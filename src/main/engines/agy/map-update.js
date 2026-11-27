@@ -36,6 +36,9 @@ function mapAcpUpdate(u, ctx) {
         todos: (u.entries || []).map((/** @type {any} */ e) => ({ content: e.content, status: e.status === 'completed' ? 'completed' : e.status === 'in_progress' ? 'in_progress' : 'pending' })),
       });
       break;
+    case 'usage_update': // how full the conversation is (not the allowance): chat starts fresh when it gets big (D-089)
+      if (Number.isFinite(u.used)) out.push({ t: 'context', used: Number(u.used), size: Number(u.size) || 0 });
+      break;
     case 'available_commands_update':
       out.push({ t: 'commands', commands: (u.availableCommands || []).map((/** @type {any} */ c) => c.name) });
       break;

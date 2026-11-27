@@ -233,6 +233,7 @@ contextBridge.exposeInMainWorld('tama', {
   providers: {
     get: () => ipcRenderer.invoke('providers:get'),
     set: (/** @type {any} */ p) => ipcRenderer.invoke('providers:set', p),
+    models: (/** @type {string} */ id, /** @type {boolean} */ fresh) => ipcRenderer.invoke('providers:models', id, !!fresh),
     onChange: on('providers'),
   },
   prod: {

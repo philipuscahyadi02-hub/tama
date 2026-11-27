@@ -22,6 +22,26 @@ const nice = (k) => NICE[k] || k.replace(/^model:/, '');
  * Which warnings to send now (pure): crossing below each threshold, once per window reset.
  * @param {Record<string, { used: number, resetsAt: number | null }>} windows @param {Record<string, true>} sent @param {number[]} alerts
  */
+/**
+ * Pure: today's Antigravity turns per model (D-087), biggest token use first. Turns logged before D-086 have the model
+ * 'gemini-flash'. `chat` counts the chat window and the phone; everything else (moments, diary, dubs) is `moments`.
+ * @param {any[]} gem  today's usage entries with provider 'gemini'
+ * @returns {{ model: string, turns: number, tokens: number, chat: number, moments: number, errors: number }[]}
+ */
+function geminiByModel(gem) {
+  /** @type {Map<string, { model: string, turns: number, tokens: number, chat: number, moments: number, errors: number }>} */
+  const by = new Map();
+  for (const e of gem) {
+    const model = String(e.model || 'unknown');
+    const r = by.get(model) || { model, turns: 0, tokens: 0, chat: 0, moments: 0, errors: 0 };
+    r.turns++; r.tokens += e.tokens || 0;
+    if (e.surface === 'chat') r.chat++; else r.moments++;
+    if (e.ok === false) r.errors++;
+    by.set(model, r);
+  }
+  return [...by.values()].sort((a, b) => b.tokens - a.tokens || b.turns - a.turns);
+}
+
 function dueAlerts(windows, sent, alerts) {
   /** @type {Array<{ key: string, window: string, left: number, resetsAt: number | null, threshold: number }>} */
   const out = [];
@@ -41,10 +61,11 @@ function dueAlerts(windows, sent, alerts) {
  *   bus: import('../../bus').BusInstance, store: import('../../platform/store').Store,
  *   device: import('../../platform/store/device').DeviceSettings,
  *   entries: () => Array<import('./index').UsageEntry>,
- *   refreshClaude?: () => Promise<any>, now?: () => number,
+ *   refreshClaude?: () => Promise<any>, refreshGemini?: () => Promise<any>, now?: () => number,
  * }} deps
+ *   refreshGemini: the Antigravity allowance ({ windows: { key: { used, resetsAt, label, bucket } } }, D-088).
  */
-function createLimits({ bus, store, device, entries, refreshClaude = async () => null, now = Date.now }) {
+function createLimits({ bus, store, device, entries, refreshClaude = async () => null, refreshGemini = async () => null, now = Date.now }) {
   const cur = () => ({ claude: {}, gemini: {}, google: {}, alertsSent: {}, alertAt: DEFAULT_ALERTS, ...(device.get().limits || {}) });
   const save = (/** @type {any} */ patch) => device.patch('limits', patch);
   /** @type {Array<{ at: number, window: string, used: number, resetsAt: number | null }>} */
@@ -82,22 +103,64 @@ function createLimits({ bus, store, device, entries, refreshClaude = async () =>
     bus.emit(TOPICS.USAGE_CHANGED, { limits: true });
   }
 
+  /** Antigravity allowance windows (D-088): saved, charted per window ("agy:" prefix) and warned like Claude's. @param {Record<string, any>} windows */
+  function onGemini(windows) {
+    const c = cur();
+    const prev = c.gemini.windows || {};
+    for (const [w, v] of Object.entries(windows)) {
+      const old = prev[w];
+      if (!old || Math.abs(old.used - v.used) >= 0.01 || old.resetsAt !== v.resetsAt) {
+        const h = { at: now(), window: `agy:${w}`, used: v.used, resetsAt: v.resetsAt };
+        history.push(h);
+        store.appendLine('usage/limits.jsonl', JSON.stringify(h));
+      }
+    }
+    save({ gemini: { ...c.gemini, windows, updatedAt: now() } });
+    const sent = { ...c.alertsSent };
+    for (const a of dueAlerts(Object.fromEntries(Object.entries(windows).map(([k, v]) => [`agy:${k}`, v])), sent, c.alertAt)) {
+      sent[a.key] = true;
+      const v = windows[a.window.slice(4)];
+      const reset = a.resetsAt ? new Date(a.resetsAt).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' }) : 'later';
+      const left = Math.round(a.left * 100);
+      bus.emit(TOPICS.BRAIN_NOTICE, { text: left <= 0 ? `Antigravity ${v.label}: used up until ${reset}. I can talk with another model meanwhile (Settings → Brains)~` : `Antigravity ${v.label}: only ${left}% left (resets ${reset}).`, kind: 'warn' });
+    }
+    save({ alertsSent: Object.fromEntries(Object.entries(sent).slice(-200)) });
+    bus.emit(TOPICS.USAGE_CHANGED, { limits: true, gemini: true });
+  }
+
   /** @param {any} l */
   function onLimit(l) {
     if (!l) return;
     if (l.provider === 'gemini') {
       const c = cur();
       save({ gemini: { ...c.gemini, ...(l.tier ? { tier: l.tier } : {}), ...(l.hit ? { lastHit: { at: now(), message: String(l.hit).slice(0, 200) } } : {}) } });
-      if (l.hit) bus.emit(TOPICS.BRAIN_NOTICE, { text: 'Gemini says its quota is used up for now… chat may pause until it resets 💤', kind: 'warn' });
+      if (l.hit) {
+        // Read the real numbers right away (D-088): the warning then names the reset time and the auto-switch can act.
+        refreshGeminiNow().then((ok) => { if (!ok) bus.emit(TOPICS.BRAIN_NOTICE, { text: 'Antigravity says the allowance for this model is used up for now… 💤', kind: 'warn' }); });
+      }
+      if (l.windows) onGemini(l.windows);
       return;
     }
     if (l.windows) onClaude({ windows: l.windows, source: l.source || 'turn', status: l.status });
   }
 
+  /** @returns {Promise<boolean>} whether numbers came back */
+  async function refreshGeminiNow() {
+    const g = await refreshGemini().catch(() => null);
+    if (g && g.windows && Object.keys(g.windows).length) { onGemini(g.windows); return true; }
+    return false;
+  }
+
   async function refresh() {
-    const r = await refreshClaude().catch(() => null);
+    const [r] = await Promise.all([refreshClaude().catch(() => null), refreshGeminiNow()]);
     if (r && r.windows) onClaude({ ...r, source: 'live' });
     return get();
+  }
+
+  /** Display names for agy model ids (from `agy models`, cached by the provider); {} when unavailable. */
+  async function modelNames() {
+    const r = await bus.request(TOPICS.PROVIDERS_MODELS, { id: 'agy' }).catch(() => null);
+    return Object.fromEntries(((r && r.models) || []).map((/** @type {any} */ m) => [m.id, m.name]));
   }
 
   async function get() {
@@ -120,9 +183,11 @@ function createLimits({ bus, store, device, entries, refreshClaude = async () =>
       claude: {
         ...c.claude,
         windows: Object.fromEntries(Object.entries(c.claude.windows || {}).map(([k, v]) => [k, { ...v, left: 1 - v.used, label: nice(k), expired: !!(v.resetsAt && v.resetsAt < t) }])),
-        history: history.filter((h) => h.at >= t - 7 * 86400000),
+        history: history.filter((h) => h.at >= t - 7 * 86400000 && !String(h.window).startsWith('agy:')),
       },
-      gemini: { ...c.gemini, today: { turns: gem.length, tokens: gem.reduce((a, e) => a + (e.tokens || 0), 0) } },
+      gemini: { ...c.gemini,
+        windows: Object.fromEntries(Object.entries(c.gemini.windows || {}).map(([k, v]) => [k, { ...v, left: 1 - v.used, expired: !!(v.resetsAt && v.resetsAt < t) }])),
+        today: { turns: gem.length, tokens: gem.reduce((a, e) => a + (e.tokens || 0), 0) }, byModel: geminiByModel(gem), names: await modelNames() },
       google: { month: { calls: goo.length, byApi, places }, youtube: { units: ytUsed, limit: YT_DAILY, searches: yt.filter((e) => /^youtube search/.test(String(e.op))).length }, placesCap: c.google.placesCap || null, project: clientId ? clientId.split('-')[0] : null, signedIn: !!(gstat && gstat.signedIn) },
       alertAt: c.alertAt,
     };
@@ -152,4 +217,4 @@ function createLimits({ bus, store, device, entries, refreshClaude = async () =>
   return { start, get, refresh, set, onLimit };
 }
 
-module.exports = { createLimits, dueAlerts, ytUnits };
+module.exports = { createLimits, dueAlerts, ytUnits, geminiByModel };

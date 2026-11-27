@@ -5,8 +5,11 @@
 const fs = require('fs');
 
 const TIMEOUT_MS = 40000;
-/** Restart the session now and then so its context stays small. */
-const MAX_TURNS = 15;
+/** Restart the session now and then so its context stays small: every turn re-reads all of it (D-089). */
+const MAX_TURNS = 5;
+/** Model-written event lines per day (D-089). Each costs a full agy turn (~12k tokens, mostly agy's own setup) for one
+ *  line; after this the deck's hand-written lines are used. Diary and dubs are not counted. */
+const LINES_PER_DAY = 8;
 
 const PROMPTS = {
   line: (/** @type {string} */ seed) => `[event] Write ONE short line (max 30 words) that you say to the user right now, in character.
@@ -30,9 +33,11 @@ Reply exactly as: <feeling> | <Japanese line>   (no quotes, no notes, no tools)`
  * @param {{
  *   factory: (emit: (ev: any) => void, persona: string) => import('./index').Engine,
  *   scratchDir: string, available: () => boolean, persona: () => string, onResult?: (ev: any) => void,
+ *   now?: () => number, linesPerDay?: number,
  * }} deps
  */
-function createComposer({ factory, scratchDir, available, persona, onResult = () => {} }) {
+function createComposer({ factory, scratchDir, available, persona, onResult = () => {}, now = Date.now, linesPerDay = LINES_PER_DAY }) {
+  const lines = { day: '', n: 0 };
   /** @type {import('./index').Engine | null} */
   let engine = null;
   let turns = 0;
@@ -60,6 +65,12 @@ function createComposer({ factory, scratchDir, available, persona, onResult = ()
   /** @param {{ kind?: 'line'|'diary'|'translate', seed: string }} p @returns {Promise<string | null>} */
   function compose({ kind = 'line', seed }) {
     if (!available()) return Promise.resolve(null);
+    if (kind === 'line') {
+      const day = new Date(now()).toDateString();
+      if (lines.day !== day) { lines.day = day; lines.n = 0; }
+      if (lines.n >= linesPerDay) return Promise.resolve(null); // the caller uses the deck's line
+      lines.n++;
+    }
     const run = () => new Promise((resolve) => {
       const e = get();
       turns++;
@@ -88,4 +99,4 @@ function clean(t) {
   return s || null;
 }
 
-module.exports = { createComposer, clean };
+module.exports = { createComposer, clean, LINES_PER_DAY, MAX_TURNS };

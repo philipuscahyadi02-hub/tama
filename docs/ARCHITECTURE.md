@@ -243,7 +243,7 @@ stop(): void
   walks the user's order (device.json `providers.order`, default = D-029: chat/compose → agy, json/code → Claude) and skips
   providers that are missing or need an opt-in (`providers.allow`, e.g. `claude:chat`). Providers live next to their engine
   (`engines/claude/provider.js`, `engines/agy/provider.js`) and are wired in the bootstrap; the brain and the designer only see
-  the registry. Bus: `providers.get`, `providers.set`, `providers.changed` (the brain rebuilds the persona and restarts chat).
+  the registry. Bus: `providers.get`, `providers.set`, `providers.changed` (the brain rebuilds the persona and restarts chat), `providers.models` (the models a provider can run; agy lists them with `agy models`, D-086). Providers may also report `effective()` (the model each capability runs now, D-088 auto-switch) and `usage()` (the allowance, read by the limits service). The model pick per capability lives in `device.json` `providers.models`.
 - **All tool approvals** go out as `ev.t = 'permission'` and come back through `brain/PermissionGate`. An engine must not auto-approve on its own.
 - `agy`: headless default is `always-proceed` — the engine **must** start it in a mode that requires approval (see DECISIONS).
 

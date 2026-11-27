@@ -198,6 +198,42 @@ function renderBrains(st) {
 $('#allowChat').addEventListener('change', async (e) => { renderBrains(await K.providers.set({ allow: { cap: 'chat', id: 'claude', on: e.target.checked } })); saved({ ok: true }); });
 $('#allowCompose').addEventListener('change', async (e) => { renderBrains(await K.providers.set({ allow: { cap: 'compose', id: 'claude', on: e.target.checked } })); saved({ ok: true }); });
 
+// ---- Antigravity model per capability (D-086) ----
+let agyList = { models: [], default: '' };
+function renderAgyModels(st) {
+  const picks = (st && st.models) || {};
+  for (const [cap, sel] of [['chat', $('#agyChatModel')], ['compose', $('#agyComposeModel')]]) {
+    const cur = picks[`agy:${cap}`] || '';
+    const known = agyList.models.some((m) => m.id === cur);
+    const def = agyList.models.find((m) => m.id === agyList.default);
+    sel.innerHTML = `<option value="">Default: ${esc(def ? def.name : 'Gemini Flash (Low)')}</option>`
+      + agyList.models.map((m) => `<option value="${esc(m.id)}"${m.id === cur ? ' selected' : ''}>${esc(m.name)}</option>`).join('')
+      + (cur && !known ? `<option value="${esc(cur)}" selected>${esc(cur)} (not listed now)</option>` : '');
+    sel.disabled = !agyList.models.length && !cur;
+  }
+  $('#agyAutoSwitch').checked = !st || st.autoSwitch !== false;
+  const name = (id) => (agyList.models.find((m) => m.id === id) || {}).name || id;
+  const eff = (st && st.effective && st.effective.agy) || {};
+  const sw = [['chat', 'Chat'], ['compose', 'Moments']].filter(([c]) => eff[c] && eff[c].switched)
+    .map(([c, label]) => `${label}: using ${name(eff[c].switched.to)} while ${name(eff[c].switched.from)} is used up${eff[c].switched.back ? ` (back ${new Date(eff[c].switched.back).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })})` : ''}.`);
+  $('#agyModelNote').textContent = !agyList.models.length ? 'Antigravity (agy) is not installed or did not answer, so only the default is shown.' : sw.join(' ');
+}
+$('#agyAutoSwitch').addEventListener('change', async (e) => { renderAgyModels(await K.providers.set({ autoSwitch: e.target.checked })); saved({ ok: true }); });
+async function loadAgyModels(fresh) {
+  $('#agyModelNote').textContent = 'asking Antigravity which models you have…';
+  agyList = await K.providers.models('agy', fresh).catch(() => ({ models: [], default: '' }));
+  renderAgyModels(await K.providers.get().catch(() => null));
+}
+for (const [cap, id] of [['chat', '#agyChatModel'], ['compose', '#agyComposeModel']]) {
+  $(id).addEventListener('change', async (e) => {
+    const r = await K.providers.set({ model: { cap, id: 'agy', model: e.target.value } });
+    if (r && r.error) { saved(r); return; }
+    renderAgyModels(r);
+    say('saved~ she switches from her next message');
+  });
+}
+$('#agyModelsRefresh').addEventListener('click', () => loadAgyModels(true));
+
 // ---- her ----
 async function renderHer() {
   const ch = await K.getCharacter().catch(() => null);
@@ -224,7 +260,8 @@ async function init() {
   renderWeather(); renderBrain(); refreshMusic();
   renderBrains(await K.providers.get().catch(() => null));
   renderAutostart();
-  K.providers.onChange(renderBrains);
+  K.providers.onChange((st) => { renderBrains(st); renderAgyModels(st); });
+  loadAgyModels(false);
   K.ui.onPrefs(renderUi);
   K.voice.onChanged(() => K.voice.status().then(renderVoice));
   K.telegram.onChange(renderTg);

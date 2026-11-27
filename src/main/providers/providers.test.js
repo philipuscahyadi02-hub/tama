@@ -76,3 +76,21 @@ test('bad input is ignored; saved prefs with unknown ids are tolerated; a throwi
   assert.equal(boom.pick('chat'), null);
   s.stop();
 });
+
+test('model picks (D-086): saved per provider and capability, cleared with an empty value, odd ids refused', async () => {
+  const { providers, changes, stop, dev, bus } = setup();
+  let st = providers.set({ model: { id: 'agy', cap: 'chat', model: 'claude-opus-4-6-thinking' } });
+  assert.deepEqual(st.models, { 'agy:chat': 'claude-opus-4-6-thinking' });
+  assert.equal(dev().providers.models['agy:chat'], 'claude-opus-4-6-thinking');
+  assert.ok(changes.length >= 1, 'a model change restarts the sessions');
+  st = /** @type {any} */ (providers.set({ model: { id: 'agy', cap: 'chat', model: 'bad id; rm' } }));
+  assert.ok(st.error); assert.equal(dev().providers.models['agy:chat'], 'claude-opus-4-6-thinking');
+  providers.set({ model: { id: 'agy', cap: 'json', model: 'x1' } });
+  providers.set({ model: { id: 'nobody', cap: 'chat', model: 'x1' } });
+  assert.deepEqual(Object.keys(dev().providers.models), ['agy:chat']);
+  providers.set({ model: { id: 'agy', cap: 'chat', model: '' } });
+  assert.deepEqual(dev().providers.models, {});
+  const r = await bus.request('providers.models', { id: 'agy' });
+  assert.deepEqual(r, { id: 'agy', models: [], default: '' });
+  stop();
+});

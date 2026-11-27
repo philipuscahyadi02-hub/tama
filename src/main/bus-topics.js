@@ -182,12 +182,14 @@ const TOPICS = {
   BRAIN_COMPOSE: 'brain.compose',
   /** void → { providers, caps: { chat|compose|json|code: { using, options } }, allow } — who serves what (SHIP-8, D-054) */
   PROVIDERS_GET: 'providers.get',
-  /** { prefer?: { cap, id }, allow?: { cap, id, on } } → same as providers.get */
+  /** { prefer?: { cap, id }, allow?: { cap, id, on }, model?: { cap: chat|compose, id, model ('' = default) } } → same as providers.get */
   PROVIDERS_SET: 'providers.set',
   /** event: same payload as providers.get, after a change (the brain restarts the affected sessions) */
   PROVIDERS_CHANGED: 'providers.changed',
   /** void → same as providers.get, after looking for installed tools again (fresh PATH; SHIP-4) */
   PROVIDERS_RECHECK: 'providers.recheck',
+  /** { id, fresh? } → { id, models: { id, name }[], default } — the models a provider can run, for Settings (D-086) */
+  PROVIDERS_MODELS: 'providers.models',
   /** { recheck? } → { items: SetupItem[], brains, needsSetup, seenAt } — the setup wizard's view (SHIP-4, D-059) */
   SETUP_STATUS: 'setup.status',
   /** { item, action } → { ok, message? } | { error } — install / sign in / open a page / open an official link */

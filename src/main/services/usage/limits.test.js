@@ -42,7 +42,7 @@ test('warnings: the most severe threshold crossed, once per window reset', () =>
   assert.equal(dueAlerts({ five_hour: { used: 0.92, resetsAt: 3600000 } }, { [first[0].key]: true }, [0.25, 0.1]).length, 1); // a new window
 });
 
-function setup() {
+function setup(/** @type {{ gemini?: any }} */ o = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tama-lim-'));
   const store = createStore(dir);
   const bus = new Bus();
@@ -56,7 +56,7 @@ function setup() {
   bus.handle('google.status', () => ({ signedIn: true, clientId: '987654321-x.apps.googleusercontent.com' }));
   /** @type {string[]} */ const notices = [];
   bus.on('brain.notice', (n) => notices.push(n.text));
-  const lim = createLimits({ bus, store, device, entries: () => entries, refreshClaude: async () => normalizeUsage(LIVE), now: () => T });
+  const lim = createLimits({ bus, store, device, entries: () => entries, refreshClaude: async () => normalizeUsage(LIVE), refreshGemini: async () => o.gemini || null, now: () => T });
   const stop = lim.start();
   return { dir, bus, lim, notices, stop };
 }
@@ -86,4 +86,45 @@ test('limits service: turn events + live check, history for the chart, one warni
   assert.deepEqual(L.google.month, { calls: 2, byApi: { gmail: 1, places: 1 }, places: 1 });
   assert.equal(L.google.placesCap, 100);
   assert.equal(L.google.project, '987654321');
+});
+
+test('geminiByModel (D-087): turns and tokens per model, chat vs moments, biggest first', () => {
+  const { geminiByModel } = require('./limits');
+  const rows = geminiByModel([
+    { model: 'gemini-3.8-flash-low', surface: 'events', tokens: 300 },
+    { model: 'claude-opus-4-6-thinking', surface: 'chat', tokens: 5000 },
+    { model: 'claude-opus-4-6-thinking', surface: 'chat', tokens: 2000, ok: false },
+    { model: 'gemini-3.8-flash-low', surface: 'chat', tokens: 100 },
+    { surface: 'events' },
+  ]);
+  assert.deepEqual(rows, [
+    { model: 'claude-opus-4-6-thinking', turns: 2, tokens: 7000, chat: 2, moments: 0, errors: 1 },
+    { model: 'gemini-3.8-flash-low', turns: 2, tokens: 400, chat: 1, moments: 1, errors: 0 },
+    { model: 'unknown', turns: 1, tokens: 0, chat: 0, moments: 1, errors: 0 },
+  ]);
+});
+
+test('Antigravity allowance (D-088): read on refresh, shown as % left, one warning per reset, a quota hit reads it again', async (t) => {
+  const T = new Date(2026, 10, 6, 15).getTime();
+  const gemini = { windows: {
+    'gemini.weekly': { used: 1, resetsAt: T + 6 * 86400000, label: 'Gemini · weekly', bucket: 'gemini' },
+    'claude_gpt.weekly': { used: 0.14, resetsAt: T + 7 * 86400000, label: 'Claude and GPT · weekly', bucket: 'claude_gpt' },
+  } };
+  const s = setup({ gemini });
+  t.after(s.stop);
+  /** @type {any[]} */ const changed = [];
+  s.bus.on('usage.changed', (p) => changed.push(p));
+  let L = await s.bus.request('usage.limits.refresh');
+  assert.equal(L.gemini.windows['gemini.weekly'].left, 0);
+  assert.equal(Math.round(L.gemini.windows['claude_gpt.weekly'].left * 100), 86);
+  assert.equal(L.claude.history.filter((h) => String(h.window).startsWith('agy:')).length, 0, 'not in the Claude chart');
+  const warn = s.notices.filter((n) => /Antigravity Gemini · weekly: used up/.test(n));
+  assert.equal(warn.length, 1);
+  assert.ok(changed.some((p) => p.gemini));
+  await s.bus.request('usage.limits.refresh');
+  assert.equal(s.notices.filter((n) => /Antigravity Gemini/.test(n)).length, 1, 'no repeat for the same reset');
+  s.bus.emit('usage.limit', { provider: 'gemini', hit: 'quota: Individual quota reached' });
+  await new Promise((r) => setTimeout(r, 10));
+  L = await s.bus.request('usage.limits.get');
+  assert.ok(L.gemini.lastHit);
 });

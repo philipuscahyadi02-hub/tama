@@ -81,7 +81,7 @@ function createBrain({ bus, device, gate, scratchDir, git, providers, now = Date
   const composer = createComposer({
     factory: (emit, p) => { const pv = /** @type {any} */ (providers.pick('compose')); composeBy = pv.id; return pv.compose(emit, p); },
     scratchDir: path.join(scratchDir, 'compose'), available: () => !!providers.pick('compose'), persona: () => personaText,
-    onResult: (ev) => logTurn(composeBy, 'events', ev),
+    onResult: (ev) => logTurn(composeBy, 'events', ev), now,
   });
 
   // ---------------- terminal (the `code` provider: Claude Code) ----------------
@@ -159,7 +159,7 @@ function createBrain({ bus, device, gate, scratchDir, git, providers, now = Date
     lastSpec = spec;
     const pv = providers.pick('chat');
     const f = (pv && pv.features) || {};
-    const provider = pv ? { poweredBy: pv.id === 'agy' ? persona.AGY_CHAT.poweredBy : `${pv.name}${pv.id === 'claude' ? ' (Claude Haiku)' : ''}`,
+    const provider = pv ? { poweredBy: pv.poweredBy ? pv.poweredBy() : pv.id === 'agy' ? persona.AGY_CHAT.poweredBy : `${pv.name}${pv.id === 'claude' ? ' (Claude Haiku)' : ''}`,
       webSearch: !!f.webSearch, googleTools: !!f.googleTools } : persona.AGY_CHAT;
     personaText = persona.buildPersona(spec, { today: new Date(now()).toDateString(), replyLang, dub: dubOn, provider });
     chat.setPersona(personaText);

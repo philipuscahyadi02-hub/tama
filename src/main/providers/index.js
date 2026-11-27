@@ -10,6 +10,8 @@ const { TOPICS } = require('../bus-topics');
  * @typedef {'chat'|'compose'|'json'|'code'} Capability
  */
 const CAPS = /** @type {Capability[]} */ (['chat', 'compose', 'json', 'code']);
+/** A model id as a CLI lists it (e.g. gemini-3.8-flash-low, claude-opus-4-6-thinking). */
+const MODEL_ID = /^[a-z0-9][a-z0-9._-]{1,63}$/;
 
 /** What the user gets when they never chose: D-029's split. */
 const DEFAULT_ORDER = /** @type {Record<Capability, string[]>} */ ({
@@ -25,6 +27,8 @@ const DEFAULT_ORDER = /** @type {Record<Capability, string[]>} */ ({
  *   features?: { webSearch?: boolean, googleTools?: boolean },
  *   chat?: EngineFactory, compose?: EngineFactory, code?: (emit: (ev: any) => void) => any,
  *   json?: (o: any) => Promise<any>,
+ *   models?: (fresh?: boolean) => Promise<{ id: string, name: string }[]>, defaultModel?: string, poweredBy?: () => string,
+ *   effective?: () => Record<string, { model: string, switched: any }>, usage?: () => Promise<any>,
  * }} Provider
  *   optIn: capabilities this provider only serves when the user allowed it (Claude for chat/moments spends Claude quota).
  *   features: what its chat can do beyond talking (the persona only mentions what is there).
@@ -39,7 +43,11 @@ function createProviders({ bus, device, providers, refreshEnv }) {
   const byId = new Map(providers.map((p) => [p.id, p]));
   const prefs = () => {
     const p = device.get().providers || {};
-    return { order: /** @type {Partial<Record<Capability, string[]>>} */ (p.order || {}), allow: /** @type {string[]} */ (p.allow || []) };
+    return {
+      order: /** @type {Partial<Record<Capability, string[]>>} */ (p.order || {}), allow: /** @type {string[]} */ (p.allow || []),
+      models: /** @type {Record<string, string>} */ (p.models && typeof p.models === 'object' ? p.models : {}),
+      autoSwitch: p.autoSwitch !== false, // D-088: move off a model whose allowance is used up
+    };
   };
   /** @param {Capability} cap */
   const order = (cap) => {
@@ -70,12 +78,12 @@ function createProviders({ bus, device, providers, refreshEnv }) {
           .map((p) => ({ id: p.id, name: p.name, available: safe(p.available), optIn: (p.optIn || []).includes(cap), allowed: serves(p, cap) })),
       };
     }
-    return { providers: all, caps, allow: prefs().allow };
+    return { providers: all, caps, allow: prefs().allow, models: prefs().models, autoSwitch: prefs().autoSwitch, effective: effective() };
   }
 
   /**
-   * @param {{ prefer?: { cap: string, id: string }, allow?: { cap: string, id: string, on: boolean } }} p
-   *   prefer: put this provider first for the capability. allow: opt in/out of an optIn capability.
+   * @param {{ prefer?: { cap: string, id: string }, allow?: { cap: string, id: string, on: boolean }, model?: { cap: string, id: string, model: string }, autoSwitch?: boolean }} p
+   *   prefer: put this provider first for the capability. allow: opt in/out of an optIn capability. model: which model it runs (D-086).
    */
   function set(p) {
     const cur = prefs();
@@ -88,7 +96,18 @@ function createProviders({ bus, device, providers, refreshEnv }) {
       const key = `${p.allow.id}:${p.allow.cap}`;
       cur.allow = p.allow.on ? [...new Set([...cur.allow, key])] : cur.allow.filter((k) => k !== key);
     }
-    device.patch('providers', { order: cur.order, allow: cur.allow });
+    // D-086: which model a provider runs for chat or moments ('' = its default). Ids are checked by shape here and
+    // picked from the provider's own list in Settings.
+    if (p && p.model && (p.model.cap === 'chat' || p.model.cap === 'compose') && byId.has(p.model.id)) {
+      const v = String(p.model.model || '');
+      if (v && !MODEL_ID.test(v)) return { ...status(), error: 'That model name looks wrong.' };
+      const key = `${p.model.id}:${p.model.cap}`;
+      const next = { ...cur.models };
+      if (v) next[key] = v; else delete next[key];
+      cur.models = next;
+    }
+    if (p && typeof p.autoSwitch === 'boolean') cur.autoSwitch = p.autoSwitch;
+    device.patch('providers', { order: cur.order, allow: cur.allow, models: cur.models, autoSwitch: cur.autoSwitch });
     const st = status();
     if (bus) bus.emit(TOPICS.PROVIDERS_CHANGED, st);
     return st;
@@ -108,17 +127,36 @@ function createProviders({ bus, device, providers, refreshEnv }) {
     return st;
   }
 
+  /** The model each provider runs per capability right now, and any auto-switch (D-088). */
+  function effective() {
+    /** @type {Record<string, any>} */ const out = {};
+    for (const p of providers) { try { if (p.effective) out[p.id] = p.effective(); } catch { /* no info */ } }
+    return out;
+  }
+
+  /** The models a provider can run (D-086), [] when it can't list them. @param {string} id @param {boolean} fresh */
+  async function models(id, fresh) {
+    const pv = byId.get(id);
+    if (!pv || !pv.models) return { id, models: [], default: (pv && pv.defaultModel) || '' };
+    const list = await pv.models(fresh).catch(() => []);
+    return { id, models: list, default: pv.defaultModel || '' };
+  }
+
   function start() {
     if (!bus) return () => {};
     const offs = [
       bus.handle(TOPICS.PROVIDERS_GET, () => status()),
       bus.handle(TOPICS.PROVIDERS_SET, (/** @type {any} */ p) => set(p)),
       bus.handle(TOPICS.PROVIDERS_RECHECK, () => recheck(refreshEnv)),
+      bus.handle(TOPICS.PROVIDERS_MODELS, (/** @type {any} */ p) => models(String((p && p.id) || ''), !!(p && p.fresh))),
     ];
     return () => { for (const off of offs) off(); };
   }
 
-  return { pick, status, set, recheck, start, get: (/** @type {string} */ id) => byId.get(id) || null };
+  /** Tell everyone the providers changed without a settings change (e.g. a model was switched off a used-up allowance). */
+  const announce = () => { if (bus) bus.emit(TOPICS.PROVIDERS_CHANGED, status()); };
+
+  return { pick, status, set, recheck, start, announce, effective, get: (/** @type {string} */ id) => byId.get(id) || null };
 }
 
 /** A provider's `available` must never throw into the caller (e.g. a CLI lookup failing). @param {() => boolean} f */

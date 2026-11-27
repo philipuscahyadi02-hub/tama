@@ -28,7 +28,10 @@ function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster
     ipc.handle('providers:set', (p) => bus.request(TOPICS.PROVIDERS_SET, {
       prefer: p?.prefer ? pair(p.prefer) : undefined,
       allow: p?.allow ? { ...pair(p.allow), on: !!p.allow.on } : undefined,
+      model: p?.model ? { ...pair(p.model), model: String(p.model.model || '').slice(0, 64) } : undefined, // D-086
+      autoSwitch: typeof p?.autoSwitch === 'boolean' ? p.autoSwitch : undefined, // D-088
     }));
+    ipc.handle('providers:models', (id, fresh) => bus.request(TOPICS.PROVIDERS_MODELS, { id: String(id || '').slice(0, 40), fresh: !!fresh }));
   }
 
   /** Setup wizard (SHIP-4): the service checks the item and action against its own list. */

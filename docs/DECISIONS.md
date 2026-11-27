@@ -70,7 +70,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-038 | Sending allowed after the user confirms the full draft/invitation (only Tama's own drafts; never automatic) | Accepted · Supersedes D-014 |
 | D-039 | Event places: resolve pasted Maps links; otherwise look the place up and ask the user to confirm it before creating the event | Accepted |
 | D-040 | M8 = usage & accounts dashboard (voice → M9): numbers-only usage log, plan limits, account switching via official sign-ins | Accepted |
-| D-041 | Limits tab: Claude windows from the SDK (live /usage without a message + per-turn events), Gemini tier + quota-hit only, Google counts vs user cap | Accepted |
+| D-041 | Limits tab: Claude windows from the SDK (live /usage without a message + per-turn events), Gemini tier + quota-hit only, Google counts vs user cap | Accepted · Gemini part superseded by D-088 |
 | D-042 | Voice: AivisSpeech/VOICEVOX HTTP for Japanese lines, Windows SAPI (via PowerShell) for English; audio plays in the pet window; Telegram voice notes as M4A; calm-idle animation bursts | Accepted · engine choice superseded by D-043 |
 | D-043 | Voice language setting: English (Windows voice) / Japanese dub (Gemini translates in character, AivisSpeech reads) / off; tray Voice menu + `/voice en\|ja\|off` | Accepted · Supersedes D-042 (engine choice) |
 | D-044 | Headless AivisSpeech Engine (GPU) started by Tama only while Japanese dub is on; stopped on switch/quit; crash leftovers cleaned via a PID file | Accepted |
@@ -115,6 +115,10 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-083 | Extension popup: ask Tama about this page (question + optional page text as untrusted data) and save this page as todo / note / reminder; no new permissions | Accepted |
 | D-084 | Calendar window (month/week/agenda, join, private notes in the event's private extended properties) + next-meeting card; creating and inviting stays in her chat | Accepted |
 | D-085 | Calendar box: a desktop widget like the music card (next event + Join, accordion agenda for today and tomorrow); replaces the separate next-meeting card; shows before meetings, always, or off | Accepted · Refines D-084 (the pop-up card) |
+| D-086 | Pick the Antigravity model: any model the user's agy account lists (Gemini, Claude Sonnet/Opus, GPT-OSS), one for chat and one for moments; default stays Gemini Flash (Low) | Accepted · Refines D-003 |
+| D-087 | Limits tab: today's Antigravity use per model (turns, tokens, chat vs moments) from Tama's own log; agy still shares no quota left | Accepted · Refines D-041 · "no % left" superseded by D-088 |
+| D-088 | Antigravity allowance from `agy -p /usage` (% left per bucket, warnings, "quota reached" text caught); sessions auto-switch off a used-up model until it resets | Accepted · Supersedes D-041 (Gemini part), D-087 ("no % left") |
+| D-089 | Token savings: fresh chat session with a recap at 30k tokens or 2 h idle; moments session restarts every 5 lines; 8 model-written moments a day; nudges use deck lines | Accepted · Refines D-033 |
 
 ---
 
@@ -1144,3 +1148,47 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Keeping both a pop-up card and a widget (two boxes for one job); always-on-top (the user didn't want the music card on top either, D-068).
 - **Consequences:** Like the music card, Windows can't animate a window's size, so the box grows first and the list slides in. Off-screen test windows don't run CSS transitions, so screenshot runs switch the slide off.
 - **Refs:** CAL-2, CAL-1, D-068, D-078, D-080, D-084, src/main/platform/windows/calendar-box.js, src/renderer/calbox/
+
+### D-086 — Pick the Antigravity model for chat and for moments
+- **Date:** 2026-11-27 · **Status:** Accepted · Refines D-003 (Gemini Flash is the default, no longer the only model)
+- **Context:** The user's Gemini allowance runs short. `agy models` lists more than Gemini for their account (Gemini 4 Hydrogen, Gemini 3.8 Flash at several levels, Claude Sonnet 4.6 and Opus 4.6 (Thinking), GPT-OSS 120B), and Tama had the agy model hard-coded to `gemini-3.8-flash-low`.
+- **Decision:**
+  - Settings → Brains has an "Antigravity model" card with two pickers: chat, and moments/diary/Japanese dub (`compose`). The lists come from `agy models` (cached 10 minutes, "Check again" refreshes). Empty = the default, Gemini 3.8 Flash with low thinking.
+  - The pick is stored with the other brain choices (`device.json` `providers.models`, keys like `agy:chat`), set through `providers.set { model }`. Ids are checked by shape; a change emits `providers.changed`, so the chat and composer sessions restart on the new model.
+  - A picked model sets only the model (`session/set_model`); its id already carries its thinking level, so the forced `thought_level: low` applies to the default only.
+  - The persona names the model actually used, so a Claude model doesn't call itself Gemini.
+  - Safety is unchanged: every model runs inside agy's plan mode with the workspace guard (D-027, D-037); the model choice doesn't touch tools or permissions.
+- **Alternatives:** One picker for both (moments are frequent and should stay cheap while the chat uses a bigger model); a Claude API key in Tama (deferred, D-061); Claude Code for chat (spends the Claude plan, D-057 opt-in already covers that).
+- **Consequences:** Claude models through agy use the Antigravity allowance, not the user's Claude plan. Live probe: Opus 4.6 (Thinking) answered a short question in about 6 s through ACP. Model ids change with agy updates; a saved pick that is no longer listed stays shown as "(not listed now)" and agy decides what happens with it.
+- **Refs:** SHIP-8, D-003, D-027, D-037, D-054, D-057, src/main/engines/agy/{models,provider}.js, src/main/providers/index.js, src/renderer/settings
+
+### D-087 — Antigravity use per model on the Limits tab
+- **Date:** 2026-11-27 · **Status:** Accepted · Refines D-041 (Gemini: tier and quota hits only)
+- **Context:** With the model picker (D-086) the user asked whether agy has a usage meter. Re-probed agy's ACP: `session/new` still carries only the plan (`tier`, now named "Antigravity Starter Quota", id `g1-plus-tier`); a new `usage_update` notification reports the conversation's context fill (`used` / `size`), not the allowance. Nothing reports what is left.
+- **Decision:** The Limits tab's Gemini card lists today's turns and tokens per model from Tama's own usage log (`geminiByModel`, pure), split into chat and moments, with failed turns counted and a bar per model; model names come from `agy models` (`providers.models`). Turns logged before D-086 show as "Gemini Flash (before the model picker)". Failed agy turns now also record their model. No "% left" is shown, since agy doesn't share it.
+- **Alternatives:** Reading agy's interactive status line or internal quota calls (not exposed over ACP; D-041); treating `usage_update` as a quota (it is the context window).
+- **Consequences:** The user can see which model uses their allowance; the remaining allowance is still only visible in agy's own interactive screen.
+- **Refs:** USE-6, D-040, D-041, D-086, src/main/services/usage/limits.js, src/renderer/dashboard
+
+### D-088 — Antigravity allowance from `agy -p /usage`; auto-switch off a used-up model
+- **Date:** 2026-11-27 · **Status:** Accepted · Supersedes D-041 (Gemini part: "agy shares no remaining quota") and D-087's "no % left"
+- **Context:** The user pointed out that agy has `/usage`. It is not offered over ACP (sent there it reaches the model), but `agy -p /usage` prints one line per limit (bucket, window, % left, reset time) without a model turn. On 2026-11-27 it showed Gemini models weekly 0 % (reset Dec 3) and Claude and GPT models 86 % weekly and 5-hour. A turn on a used-up model comes back over ACP as ordinary text ("⚠ Individual quota reached… Resets in 144h"), which Tama showed as her reply.
+- **Decision:**
+  - `engines/agy/usage.js` runs `agy -p /usage --mode plan` in Tama's own empty folder with the deny-all workspace guard (D-037), so even if a future agy sent the text to a model nothing could run; `parseAgyUsage` (pure) turns it into windows keyed `<bucket>.<window>`.
+  - The limits service reads it on "Check now", every 20 minutes and right after a quota hit; windows are saved, charted apart from Claude's, and warned at the same thresholds (once per reset). The Limits tab shows "% left" boxes in the Antigravity card.
+  - The agy engine turns "quota reached" text into an error with subtype `quota`; the chat shows her own line instead and the limits service re-reads the allowance.
+  - **Auto-switch** (default on, Settings → Brains): when the wanted model's bucket is at 0 % and hasn't reset, chat and moments use the best model from a bucket with room (Gemini empty → Sonnet, other Claude, GPT, Opus last; Claude/GPT empty → Gemini Flash) until the reset. When the effective model changes, the sessions restart and she says which model she uses and until when.
+- **Alternatives:** Driving agy's interactive screen (fragile); switching only after a failed turn (the user loses a message each time); no auto-switch (the default model would fail for days).
+- **Consequences:** Each read starts an agy process (about 2–4 s, no quota). Bucket names come from agy's text; a renamed bucket simply isn't matched for auto-switch until updated. Claude models through agy use the Claude/GPT allowance.
+- **Refs:** USE-6, D-037, D-041, D-086, D-087, src/main/engines/agy/{usage,provider,session}.js, src/main/services/usage/limits.js, src/renderer/{dashboard,settings}
+
+### D-089 — Token savings for agy turns
+- **Date:** 2026-11-27 · **Status:** Accepted · Refines D-033 (composer), D-029 (chat session)
+- **Context:** The user asked to optimize token use. From their own usage log: a moment (one line) cost a median of ~12k tokens and moments used more in total than chat (344k vs 310k over 39 vs 22 turns); chat turns grew from ~13k to 36k as a session got longer. Tama's persona is ~1.5k tokens; the rest of each turn is agy's own built-in setup, re-sent every turn, which Tama can't shrink.
+- **Decision:**
+  - Chat: when a turn re-read ≥ 30k tokens (result tokens or agy's `usage_update`), or after 2 hours without a message, the next message starts a fresh agy session with a `[recent chat]` recap of the last 6 messages (200 characters each); memory and Google lines are re-sent as for any new session.
+  - Moments: the composer session restarts every 5 turns (was 15); at most 8 model-written event lines a day, after which the deck's hand-written lines are used (diary and dubs not counted); water/stretch nudges always use deck lines.
+  - Per-message context lines stay delta-only (Google, memory), as before.
+- **Alternatives:** agy's `/compact` (one extra summarizing turn over the whole context, and its result is unpredictable); a slimmer persona (saves ~1k of ~12k); no model-written moments at all (loses her voice).
+- **Consequences:** Fewer, shorter turns; after a fresh start she remembers the gist rather than every detail of a long chat. The budget and thresholds are constants in `brain/compose.js` and `brain/chat.js`.
+- **Refs:** EVT-3, CHAT-1, D-029, D-033, D-086, src/main/brain/{chat,compose}.js, src/main/services/events/index.js, src/main/engines/agy/map-update.js

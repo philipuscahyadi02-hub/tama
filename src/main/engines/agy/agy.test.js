@@ -166,3 +166,74 @@ test('ensureWorkspaceGuard writes hooks.json + launcher + allow-list in the sess
     assert.equal(ask('write_file').decision, 'deny');
   }
 });
+
+// ---- model picks (D-086) ----
+test('parseAgyModels reads id<TAB>name lines and skips the rest', () => {
+  const { parseAgyModels } = require('./models');
+  const out = parseAgyModels('Fetching available models...\ngemini-3.8-flash-low\tGemini 3.8 Flash (Low)\r\nclaude-opus-4-6-thinking\tClaude Opus 4.6 (Thinking)\nBad Id\tx\ngemini-3.8-flash-low\tdup\n\n');
+  assert.deepEqual(out, [{ id: 'gemini-3.8-flash-low', name: 'Gemini 3.8 Flash (Low)' }, { id: 'claude-opus-4-6-thinking', name: 'Claude Opus 4.6 (Thinking)' }]);
+});
+
+test('agyModelFor: picked id, else empty for missing or odd values', () => {
+  const { agyModelFor } = require('./models');
+  assert.equal(agyModelFor({ chat: 'claude-opus-4-6-thinking' }, 'chat'), 'claude-opus-4-6-thinking');
+  assert.equal(agyModelFor({ chat: 'claude-opus-4-6-thinking' }, 'compose'), '');
+  assert.equal(agyModelFor({ chat: '--dangerously-skip-permissions' }, 'chat'), '');
+  assert.equal(agyModelFor(null, 'chat'), '');
+});
+
+test('agy provider: the default keeps low thinking; a pick sets only the model', () => {
+  const { agyProvider } = require('./provider');
+  let picks = {};
+  const pv = /** @type {any} */ (agyProvider({ gate: /** @type {any} */ ({}), mcpServers: () => [], picks: () => picks }));
+  const a = pv.compose(() => {}, '');
+  assert.equal(a.model, 'gemini-3.8-flash-low'); assert.equal(a.thoughtLevel, 'low');
+  picks = { chat: 'claude-opus-4-6-thinking' };
+  const c = pv.chat(() => {}, '');
+  assert.equal(c.model, 'claude-opus-4-6-thinking'); assert.equal(c.thoughtLevel, null);
+  assert.match(pv.poweredBy(), /claude-opus-4-6-thinking/);
+});
+
+// ---- allowance (D-088) ----
+const USAGE_OUT = 'Gemini Models\tWeekly Limit Remaining\t0%\t2026-12-03T16:22:27Z\r\nClaude and GPT models\tWeekly Limit Remaining\t86%\t2026-12-04T15:52:16Z\nClaude and GPT models\tFive Hour Limit Remaining\t86%\t2026-11-27T20:52:16Z\nnoise line\n';
+
+test('parseAgyUsage: one window per line, keyed by bucket and window', () => {
+  const { parseAgyUsage } = require('./usage');
+  const w = parseAgyUsage(USAGE_OUT);
+  assert.deepEqual(Object.keys(w), ['gemini.weekly', 'claude_gpt.weekly', 'claude_gpt.five_hour']);
+  assert.equal(w['gemini.weekly'].used, 1);
+  assert.equal(w['gemini.weekly'].label, 'Gemini · weekly');
+  assert.equal(w['claude_gpt.five_hour'].label, 'Claude and GPT · five hour');
+  assert.equal(Math.round(w['claude_gpt.weekly'].used * 100), 14);
+  assert.equal(w['gemini.weekly'].resetsAt, Date.parse('2026-12-03T16:22:27Z'));
+  assert.deepEqual(parseAgyUsage(''), {});
+});
+
+test('switchModel: off a used-up bucket to the best model with room, only when allowed and not yet reset', () => {
+  const { parseAgyUsage, switchModel, bucketOf } = require('./usage');
+  const w = parseAgyUsage(USAGE_OUT);
+  const now = Date.parse('2026-11-27T15:00:00Z');
+  const models = ['gemini-3.8-flash-low', 'claude-opus-4-6-thinking', 'claude-sonnet-4-6', 'gpt-oss-120b-medium'];
+  assert.equal(bucketOf('gpt-oss-120b-medium', w), 'claude_gpt');
+  assert.deepEqual(switchModel({ wanted: 'gemini-3.8-flash-low', windows: w, models, now, autoSwitch: true }),
+    { model: 'claude-sonnet-4-6', switched: { from: 'gemini-3.8-flash-low', to: 'claude-sonnet-4-6', back: Date.parse('2026-12-03T16:22:27Z') } });
+  assert.equal(switchModel({ wanted: 'gemini-3.8-flash-low', windows: w, models, now, autoSwitch: false }).model, 'gemini-3.8-flash-low');
+  assert.equal(switchModel({ wanted: 'claude-opus-4-6-thinking', windows: w, models, now, autoSwitch: true }).switched, null);
+  assert.equal(switchModel({ wanted: 'gemini-3.8-flash-low', windows: w, models, now: Date.parse('2026-12-04T00:00:00Z'), autoSwitch: true }).switched, null, 'after the reset');
+  const both = parseAgyUsage(USAGE_OUT.replace(/86%/g, '0%'));
+  assert.equal(switchModel({ wanted: 'gemini-3.8-flash-low', windows: both, models, now, autoSwitch: true }).switched, null, 'nowhere to go');
+  assert.equal(switchModel({ wanted: 'claude-sonnet-4-6', windows: parseAgyUsage(USAGE_OUT.replace('\t0%', '\t50%').replace(/86%/g, '0%')), models, now, autoSwitch: true }).model, 'gemini-3.8-flash-low');
+});
+
+test('agy turns that come back as "quota reached" text are errors, not replies', async () => {
+  const gate = createPermissionGate({ bus: new Bus() });
+  /** @type {any[]} */ const evs = [];
+  const e = new AgyEngine((ev) => evs.push(ev), { role: 'lite', gate });
+  e.cwd = os.tmpdir(); e.sessionId = 's1';
+  e.client = /** @type {any} */ ({ request: async () => { e.ctx.text = '⚠ Individual quota reached. Please upgrade your subscription. Resets in 144h16m19s.'; return { stopReason: 'end_turn' }; } });
+  e.start = async () => {};
+  await e.send('hi');
+  const res = evs.find((x) => x.t === 'result');
+  assert.equal(res.isError, true); assert.equal(res.subtype, 'quota'); assert.equal(res.text, '');
+  assert.ok(evs.some((x) => x.t === 'error' && x.quota));
+});

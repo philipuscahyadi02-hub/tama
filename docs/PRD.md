@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.55 |
+| **Version** | 0.57 |
 | **Status** | **v1.0.0 released** (D-058); installer + setup wizard done (unreleased). Every other open item is parked (D-064). **Next: M13 YouTube Music & DJ = 1.1.0** (MUS-*, D-065, D-066) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-27 |
@@ -201,7 +201,7 @@ Status: ☐ todo · ◐ in progress · ☑ done · 🅿 parked (not planned; kep
 | USE-2 | Dashboard (tray "Usage & accounts…", `/usage`): accounts, totals per service, per-day chart (calls/tokens/$), filterable log, CSV export. | P0 | M8 | ☑ |
 | USE-3 | Claude plan limits (5-hour / weekly utilization, reset time) from the Agent SDK. | P1 | M8 | ☑ |
 | USE-5 | **Limits tab:** Claude plan windows as % **left** (5-hour, weekly, per model), reset countdowns, extra-usage credits, 7-day trend; live check on demand (no message, $0) + after each turn. | P0 | M8 | ☑ |
-| USE-6 | Gemini: plan tier, today's usage, warning when Gemini reports the quota used up (agy shares no remaining-quota number). Google: calls this month per API; billable Places calls vs a user-set monthly cap; links to the project's quota and billing pages. | P1 | M8 | ☑ |
+| USE-6 | Antigravity: plan tier, % left per allowance bucket from `agy -p /usage` with warnings, auto-switch off a used-up model (D-088), today's turns and tokens per model (D-087). Google: calls this month per API; billable Places calls vs a user-set monthly cap; links to the project's quota and billing pages. | P1 | M8 | ☑ |
 | USE-7 | Warnings (pet bubble) when a Claude window falls below user-set thresholds (default 25 % and 10 % left), once per window. | P1 | M8 | ☑ |
 | USE-4 | Accounts: show who is signed in (Claude: email + plan + login expiry; Gemini/agy: email; Google: email + project + scopes + places mode; Telegram: bot + paired) and switch each via the official sign-in (Claude/agy console window, Google account picker, Google project change, Telegram re-setup); sessions restart on the new account. | P0 | M8 | ☑ |
 
@@ -329,6 +329,8 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | BUG-2 | Electron warns that its `safeStorage` usage is deprecated and will be removed (`platform/secrets` stores tokens with it): `isEncryptionAvailable` → `isAsyncEncryptionAvailable`, `encryptString`/`decryptString` → `encryptStringAsync`/`decryptStringAsync` (the secret store API becomes async). | 2026-11-27, reported by the user | Open (user: no need to fix now) |
 
 ## 7. Changelog
+- **0.57 — 2026-11-27** — Antigravity allowance (% left) and auto-switch (D-088, USE-6); token savings for chat and moments (D-089).
+- **0.56 — 2026-11-27** — The Antigravity model for chat and for moments can be picked from the user's agy account (D-086, SHIP-8); the Limits tab shows Antigravity use per model (D-087, USE-6).
 - **0.55 — 2026-11-27** — M13 released as v1.1.0.
 - **0.54 — 2026-11-27** — BUG-1 fixed (expired Google sign-in handled).
 - **0.53 — 2026-11-27** — CAL-2 is now the calendar box, a desktop widget like the music card (D-085); BUG-1 cause found.

@@ -15,6 +15,18 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = first stable release (D-058); the rest of M12 ships as 1.x; 2.0.0 = Tama's own agentic brain.
 
 ## [Unreleased]
+### Changed
+- **Fewer tokens (D-089):** long or idle chats start fresh with a short recap; the moments session restarts every 5 lines; at most 8 model-written moments a day; water/stretch nudges use her hand-written lines.
+### Added
+- **Pick the Antigravity model (D-086):** Settings → Brains lists every model your agy account has (Gemini, Claude Sonnet/Opus, GPT-OSS); one pick for chat, one for moments/diary/dub. Default stays Gemini 3.8 Flash (Low).
+- **What's left of your Antigravity allowance (D-088):** the Limits tab shows % left per bucket (Gemini; Claude and GPT) from agy's own `/usage`, with warnings; agy's "quota reached" text is no longer shown as her reply.
+- **Auto-switch (D-088):** when a model's allowance is used up, chat and moments use a model that still has room until it resets (Settings → Brains, on by default).
+- **Antigravity use per model (D-087):** the Limits tab shows today's turns and tokens per model (chat vs moments), so you can see which model eats your allowance.
+### Decisions
+- D-086 — Pick the Antigravity model for chat and for moments
+- D-087 — Antigravity use per model on the Limits tab
+- D-088 — Antigravity allowance from `agy -p /usage`; auto-switch off a used-up model
+- D-089 — Token savings for agy turns
 
 ## [1.1.0] — 2026-11-27 — YouTube Music & DJ, the Look, calendar, browser helpers
 ### Added
@@ -317,7 +329,10 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ## Commit history (generated: `npm run changelog`)
 <!-- commit-history:start -->
 ### Unreleased
-_No commits._
+| Commit | Date | Type | Subject |
+|---|---|---|---|
+| `84cd017` | 2026-11-27 | docs(readme) | v1.1.0 download link and the new features |
+| `33295f7` | 2026-11-27 | docs(changelog) | commit table for v1.1.0 |
 
 ### v1.1.0
 | Commit | Date | Type | Subject |

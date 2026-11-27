@@ -69,11 +69,11 @@ test('one composition at a time, in order', async () => {
   assert.match(made.sends[1], /second/);
 });
 
-test('the session restarts after 15 turns and takes the current persona', async () => {
+test('the session restarts after 5 turns (D-089) and takes the current persona', async () => {
   const { made, factory } = fakeFactory(() => 'ok');
   let persona = 'v1';
   const c = createComposer({ factory, scratchDir: dir(), available: () => true, persona: () => persona });
-  for (let i = 0; i < 15; i++) await c.compose({ seed: String(i) });
+  for (let i = 0; i < 5; i++) await c.compose({ kind: 'diary', seed: String(i) });
   assert.equal(made.engines, 1);
   persona = 'v2';
   await c.compose({ seed: 'again' });
@@ -96,4 +96,17 @@ test('a reply that never comes times out after 40 s, interrupts, and frees the s
   assert.equal(made.interrupts, 1);
   t.mock.timers.reset();
   assert.equal(await c.compose({ seed: 'b' }), 'late but fine');
+});
+
+test('model-written event lines have a daily budget (D-089); diary and dubs are not counted', async () => {
+  const { factory } = fakeFactory(() => 'ok');
+  let t0 = new Date(2026, 10, 27, 10).getTime();
+  const c = createComposer({ factory, scratchDir: dir(), available: () => true, persona: () => 'p', now: () => t0, linesPerDay: 2 });
+  assert.equal(await c.compose({ seed: 'a' }), 'ok');
+  assert.equal(await c.compose({ seed: 'b' }), 'ok');
+  assert.equal(await c.compose({ seed: 'c' }), null, 'over budget: the deck line is used');
+  assert.equal(await c.compose({ kind: 'translate', seed: 'd' }), 'ok');
+  assert.equal(await c.compose({ kind: 'diary', seed: 'e' }), 'ok');
+  t0 += 86400000;
+  assert.equal(await c.compose({ seed: 'next day' }), 'ok');
 });

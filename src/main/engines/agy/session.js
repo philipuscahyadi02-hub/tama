@@ -9,6 +9,9 @@ const { findAgyExecutable, ensureTamaAgySettings, ensureWorkspaceGuard, CLI_DIR_
 /** Tama's own MCP tool names as agy reports them (the tool bridge relay is registered as server "tama"). */
 const OWN_TOOL = /^mcp_tama_[a-z0-9_]+$/;
 
+/** agy answers a turn on a used-up model with this text instead of an error (seen 2026-11-27, D-088). */
+const QUOTA_TEXT = /^\W*(individual |weekly |daily )?quota (reached|exceeded|exhausted)\b/i;
+
 /** Terminal mode names (Claude style) → agy ACP mode ids. */
 const MODE_MAP = { default: 'default', acceptEdits: 'accept-edits', plan: 'plan' };
 
@@ -153,13 +156,16 @@ class AgyEngine {
       if (this.ctx.textOpen) { this.ctx.textOpen = false; this.emit({ t: 'text-end' }); }
       const tokens = (r && r.usage && r.usage.totalTokens) || 0;
       this.tokensToday += tokens;
+      // A used-up allowance comes back as ordinary text: report it as an error, never as her words.
+      const quota = QUOTA_TEXT.test(this.ctx.text.trim());
+      if (quota) this.emit({ t: 'error', message: `quota: ${this.ctx.text.trim().slice(0, 200)}`, quota: true });
       this.emit({
-        t: 'result', isError: r && r.stopReason === 'refusal', subtype: r && r.stopReason, text: this.ctx.text,
+        t: 'result', isError: quota || (r && r.stopReason === 'refusal'), subtype: quota ? 'quota' : r && r.stopReason, text: quota ? '' : this.ctx.text,
         cost: 0, tokens, totalCost: 0, durationMs: Date.now() - t0, model: this.model || undefined,
       });
     } catch (e) {
       this.emitError(e);
-      this.emit({ t: 'result', isError: true, subtype: 'error', text: String(/** @type {Error} */ (e).message || e), cost: 0 });
+      this.emit({ t: 'result', isError: true, subtype: 'error', text: String(/** @type {Error} */ (e).message || e), cost: 0, model: this.model || undefined });
     } finally {
       this.setBusy(false);
     }

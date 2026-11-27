@@ -127,6 +127,13 @@
           <p class="kv dim">Tama uses what you have installed. Pick who you'd like first; if it isn't set up, she uses the next one.</p>
           <div id="brainRows"></div>
           <div class="btns"><button data-open="setup">Setup &amp; what's installed…</button></div></div>
+        <div class="card" id="agyModels"><h3>Antigravity model</h3>
+          <p class="kv dim">Pick any model your Antigravity account has. Bigger ones answer slower and use your Antigravity allowance faster; Gemini Flash (Low) is the quickest.</p>
+          <div class="set"><span>Chat with her</span><select id="agyChatModel"></select></div>
+          <div class="set"><span>Her moments, diary and Japanese dub</span><select id="agyComposeModel"></select></div>
+          <label class="set"><span>When a model's allowance is used up, use one that still has room until it resets</span><input type="checkbox" id="agyAutoSwitch" /></label>
+          <div class="kv dim" id="agyModelNote"></div>
+          <div class="btns"><button id="agyModelsRefresh">Check again</button></div></div>
         <div class="card"><h3>Claude for chat and moments</h3>
           <p class="kv dim">Normally she talks with Gemini (Antigravity), which doesn't use your Claude quota. Turn these on to let Claude Haiku talk when Gemini isn't there, or when you pick Claude above. Claude chat has no web search or Google tools.</p>
           <label class="set"><span>Let Claude chat with you</span><input type="checkbox" id="allowChat" /></label>
