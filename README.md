@@ -4,7 +4,9 @@ A chibi-anime desktop companion that is also a real agentic AI. You design her o
 desktop, chats with you, remembers you, speaks with an anime voice, codes with you through Claude Code, works with your
 Gmail, Calendar and Drive, and talks to you on Telegram. No server: everything runs on your PC with your own accounts.
 
-**Version 1.0.0** · Windows (macOS runs from source) · [Changelog](CHANGELOG.md) · [Documentation (Word)](docs/Tama-v1.0-Documentation.docx)
+**Version 1.1.0** · Windows (macOS runs from source) · [Changelog](CHANGELOG.md) · [Documentation (Word)](docs/Tama-v1.0-Documentation.docx)
+
+**⬇️ [Download Tama for Windows (Tama-Setup-1.1.0.exe)](https://github.com/philipuscahyadi02-hub/tama/releases/download/v1.1.0/Tama-Setup-1.1.0.exe)** · [release notes](https://github.com/philipuscahyadi02-hub/tama/releases/tag/v1.1.0) · unsigned build: on *"Windows protected your PC"* click **More info → Run anyway**.
 
 ## What she does
 | | |
@@ -16,6 +18,10 @@ Gmail, Calendar and Drive, and talks to you on Telegram. No server: everything r
 | **Google** | Calendar, Gmail (drafts; sending only after you confirm the full email), Drive, Docs, Sheets, Maps places, Drive backups. Your own OAuth client; tokens never leave the PC. |
 | **Phone** | A Telegram bot paired to your chat only: talk to her, care for her, todos, and remote `/code` in folders you allowed (asks per tool). Voice notes. |
 | **Voice** | Windows voice for English or a Japanese anime dub (AivisSpeech / VOICEVOX), mood-matched. |
+| **Music & DJ** | YouTube Music through the Tama Companion browser extension: a music box with Up next and lyrics, "play <song>" from chat, and DJ Tama dancing on the real beat. |
+| **Calendar** | Month, week and agenda views, Join for Meet/Zoom/Teams, private notes on events, and a calendar box that pops up before meetings. |
+| **Browser** | Right-click *Ask Tama* (explain, summarize, translate, remember, todo) and "ask about this page" from the extension. |
+| **Look** | Solid or Windows 11 glass, light or dark, in her colors, everywhere but the terminal. |
 | **Brains** | Settings → Brains: Gemini (Antigravity) for chat by default, Claude Code for coding; Claude can chat too if you opt in. |
 | **Dashboard** | Usage per service, what's left of your Claude plan, account switching. |
 
