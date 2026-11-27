@@ -113,6 +113,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-081 | Keep the PC awake (off / while she works = default / always): blocks system sleep only; the screen still turns off and locks, because locking doesn't stop Tama | Accepted · Generalizes TG-8's phone-only switch |
 | D-082 | "Ask Tama" right-click in the Tama Companion extension (contextMenus + activeTab only); explain/summarize/translate go to chat as untrusted text, remember/todo save directly | Accepted |
 | D-083 | Extension popup: ask Tama about this page (question + optional page text as untrusted data) and save this page as todo / note / reminder; no new permissions | Accepted |
+| D-084 | Calendar window (month/week/agenda, join, private notes in the event's private extended properties) + next-meeting card; creating and inviting stays in her chat | Accepted |
 
 ---
 
@@ -1117,3 +1118,16 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** A free-text time field for reminders (the fixed choices are faster and safe); saving the full page text into notes (bloats notes; the link is enough).
 - **Consequences:** The user reloads the extension once (1.4.0). Chrome's own pages can't be read; the popup says to untick the page text to ask anyway.
 - **Refs:** EXT-2, EXT-1, D-082, extension/popup.*, extension/background.js, src/main/services/companion
+
+### D-084 — Calendar window and next-meeting card; creating and inviting stays in her chat
+- **Date:** 2026-11-27 · **Status:** Accepted
+- **Context:** The user wants a calendar view (month, week, agenda) to join meetings and put notes on events. Setting up meetings, inviting people and adding places should work like it does in the Gemini chat. A card should pop up 15 minutes before a meeting.
+- **Decision:**
+  - **Data:** `services/google/calendar.js` events now carry `meet` (the video link from hangoutLink, conferenceData or the text; Meet, Zoom or Teams over https only), `guests`, `myResponse` and `notes`. `setNotes` writes `extendedProperties.private.tamaNotes` with `sendUpdates=none`: private to this calendar's copy, so guests never see it and nobody is notified. `services/google/cal-view.js` serves `google.cal.range` (up to 62 days), `google.cal.notes` and `google.meeting.dismiss`. The minute calendar watch feeds `nextMeeting()` (timed events within `ui.calendarLead` minutes, default 15; not all-day, declined, dismissed, or running for more than 5 minutes), announced as `google.meeting.next`.
+  - **Windows:** `renderer/calendar/` is a page window in the Look (D-078) with month, week and agenda views and a detail panel (Join, map link, Open in Google Calendar, guests, description, private notes). **New event with Tama**, a day's +, a click in the week grid and "Ask Tama about this event" open her chat with the request typed in but not sent (`chat.draft`), so creating, inviting and places use the existing confirmed flow (D-038, D-039). `platform/windows/meeting-window.js` is a small floating card (follows the Look, never takes focus, placed next to her) with Join and Open calendar.
+  - **Links:** `platform/shell` allows meet.google.com, *.zoom.us, teams.microsoft.com, teams.live.com and www.google.com (Maps search, event pages).
+  - **Settings:** Google tab → Calendar: open, pop up before meetings (on/off), how long before (5/10/15/30). Also the tray *Calendar…* and `/cal`.
+  - **Dev:** `TAMA_CAL_DEMO=1` gives a made-up calendar (with a meeting 10 minutes away) for screenshots without a Google account; `TAMA_PAGE_EVAL=<js>` runs in page windows.
+- **Alternatives:** Creating events from a form in the calendar (would bypass her place check and the full-invitation confirmation); notes in the event description (guests see them, and changing it notifies or confuses them); polling the calendar separately for the card (the existing minute watch already lists the next events).
+- **Consequences:** No delete or drag-to-move in the calendar (GOOG-7; changes go through her or Google Calendar). Private notes show only in Tama, not in Google Calendar's own UI. Events load per visible range; the window reloads when it gets focus back.
+- **Refs:** CAL-1, CAL-2, GOOG-3, D-038, D-039, D-078, src/main/services/google/{calendar,cal-view}.js, src/main/platform/windows/meeting-window.js, src/renderer/{calendar,meeting}/

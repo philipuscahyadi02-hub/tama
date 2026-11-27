@@ -11,6 +11,7 @@ const { googleTools, policyRule } = require('./tools');
 const { createBackup } = require('./backup');
 const { createMaps } = require('./maps');
 const { createYoutubeAccess } = require('./youtube');
+const { createCalView } = require('./cal-view');
 const { dayOf } = require('../../day');
 
 const SCOPES = {
@@ -55,6 +56,8 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
     refresh: (rt) => { const c = client(); if (!c) throw new Error('Google client not set up.'); return oauth.refresh({ clientId: c.clientId, clientSecret: c.clientSecret, refreshToken: rt, fetch: f }); },
   });
   const calendar = createCalendar(api, now);
+  // Calendar window + next-meeting card (D-084).
+  const calView = createCalView({ bus, calendar, signedIn: () => signedIn(), device, now, demo: !!process.env.TAMA_CAL_DEMO });
   // MUS-6 (D-073): YouTube is its own sign-in and token; Google refuses youtube.readonly next to the Drive scopes.
   const youtube = createYoutubeAccess({ secrets, oauth, client, openExternal, fetch: f, now, onCall: logCall, onError: (m) => bus.emit(TOPICS.APP_ERROR, { topic: 'google.youtube', message: m }), onChange: () => changed() });
   const gmail = createGmail(api);
@@ -140,8 +143,9 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
   // ---- calendar watch: reminders 5 min before, quiet during meetings (GOOG-3, PET-6) ----
   async function watch() {
     if (!signedIn()) return;
-    const evs = await calendar.list({ from: now() - 3 * 3600000, to: now() + 15 * 60000 }).catch(() => null);
+    const evs = await calendar.list({ from: now() - 3 * 3600000, to: now() + (Math.max(15, calView.lead()) + 1) * 60000 }).catch(() => null);
     if (!evs) return;
+    calView.onWatch(evs);
     const t = now();
     const timed = evs.filter((e) => !e.allDay).map((e) => ({ ...e, s: Date.parse(e.start), e: Date.parse(e.end) }));
     const cur = timed.find((e) => e.s <= t && e.e > t);
@@ -253,6 +257,7 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
       bus.handle(TOPICS.GOOGLE_SET, (/** @type {any} */ p) => set(p || {})),
       bus.handle(TOPICS.GOOGLE_BRIEF, () => brief()),
       bus.handle(TOPICS.GOOGLE_YOUTUBE, (/** @type {any} */ p) => youtubeData(p || {})),
+      calView.start(),
       bus.handle(TOPICS.GOOGLE_CONTEXT, () => chatContext()),
       bus.handle(TOPICS.GOOGLE_BACKUP_NOW, async () => { const r = await backup.backupNow(); device.patch('google', { lastBackup: now() }); return r; }),
       bus.handle(TOPICS.GOOGLE_BACKUPS, async () => ({ backups: await backup.list() })),

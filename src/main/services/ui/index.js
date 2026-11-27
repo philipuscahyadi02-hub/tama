@@ -26,7 +26,7 @@ function inQuietHours(d, from, to) {
 function createUiPrefs({ bus, device, now = () => Date.now() }) {
   const prefs = () => ({
     termTheme: 'night', tourDone: false, dnd: false, nudges: true, walkMarker: true, mute: false, motion: 'auto',
-    keepAwake: 'working', musicWidget: 'auto', musicLook: 'solid', musicOpacity: 100, musicDj: true, musicBeat: true, replyLang: 'auto', quiet: { on: false, from: '23:00', to: '08:00' }, ...(device.get().ui || {}),
+    keepAwake: 'working', calendarPopup: true, calendarLead: 15, musicWidget: 'auto', musicLook: 'solid', musicOpacity: 100, musicDj: true, musicBeat: true, replyLang: 'auto', quiet: { on: false, from: '23:00', to: '08:00' }, ...(device.get().ui || {}),
   });
 
   /** @param {any} p */
@@ -52,6 +52,8 @@ function createUiPrefs({ bus, device, now = () => Date.now() }) {
       lookMaterial: material(p),
       lookMode: ['light', 'dark', 'auto'].includes(p.lookMode) ? p.lookMode : 'light',
       keepAwake: ['off', 'working', 'always'].includes(p.keepAwake) ? p.keepAwake : 'working', // D-081: sleep stops Tama, lock doesn't
+      calendarPopup: p.calendarPopup !== false, // D-084: the next-meeting card
+      calendarLead: [5, 10, 15, 30].includes(Number(p.calendarLead)) ? Number(p.calendarLead) : 15,
       musicLook: material(p), // the music card follows the Look (kept for older callers)
       musicOpacity: Math.round(Math.max(40, Math.min(100, Number(p.musicOpacity) || 100))),
       musicDj: p.musicDj !== false,     // MUS-3: DJ Tama while music plays
@@ -63,7 +65,7 @@ function createUiPrefs({ bus, device, now = () => Date.now() }) {
     };
   }
 
-  /** @param {{ termTheme?: string, tourDone?: boolean, dnd?: boolean, nudges?: boolean, walkMarker?: boolean, mute?: boolean, motion?: string, musicWidget?: string, musicLook?: string, lookMaterial?: string, lookMode?: string, keepAwake?: string, musicOpacity?: number, musicDj?: boolean, musicBeat?: boolean, replyLang?: string, quiet?: { on?: boolean, from?: string, to?: string } }} p */
+  /** @param {{ termTheme?: string, tourDone?: boolean, dnd?: boolean, nudges?: boolean, walkMarker?: boolean, mute?: boolean, motion?: string, musicWidget?: string, musicLook?: string, lookMaterial?: string, lookMode?: string, keepAwake?: string, calendarPopup?: boolean, calendarLead?: number, musicOpacity?: number, musicDj?: boolean, musicBeat?: boolean, replyLang?: string, quiet?: { on?: boolean, from?: string, to?: string } }} p */
   async function set(p) {
     /** @type {Record<string, any>} */
     const patch = {};
@@ -83,6 +85,8 @@ function createUiPrefs({ bus, device, now = () => Date.now() }) {
     if (p.musicBeat !== undefined) patch.musicBeat = !!p.musicBeat;
     const look = p.lookMaterial !== undefined ? p.lookMaterial : p.musicLook;
     if (look !== undefined) { if (!['solid', 'glass'].includes(String(look))) return { error: 'Look: solid or glass.' }; patch.lookMaterial = String(look); patch.musicLook = String(look); }
+    if (p.calendarPopup !== undefined) patch.calendarPopup = !!p.calendarPopup;
+    if (p.calendarLead !== undefined) { const n = Number(p.calendarLead); if (![5, 10, 15, 30].includes(n)) return { error: 'Pop-up time: 5, 10, 15 or 30 minutes.' }; patch.calendarLead = n; }
     if (p.keepAwake !== undefined) { if (!['off', 'working', 'always'].includes(String(p.keepAwake))) return { error: 'Keep awake: off, working or always.' }; patch.keepAwake = String(p.keepAwake); }
     if (p.lookMode !== undefined) { if (!['light', 'dark', 'auto'].includes(String(p.lookMode))) return { error: 'Mode: light, dark or auto.' }; patch.lookMode = String(p.lookMode); }
     if (p.musicOpacity !== undefined) { const n = Number(p.musicOpacity); if (!Number.isFinite(n)) return { error: 'Opacity is a number from 40 to 100.' }; patch.musicOpacity = Math.round(Math.max(40, Math.min(100, n))); }

@@ -24,13 +24,13 @@ const USER_ACTIONS = new Set(['feed', 'snack', 'play', 'clean', 'sleep', 'nap', 
  *   openDashboard: (tab?: string) => unknown,
  *   openVoice: () => unknown,
  *   openSettings?: (tab?: string) => unknown,
- *   openSetup?: () => unknown,
+ *   openSetup?: () => unknown, openCalendar?: () => unknown,
  *   autostart?: { supported: () => boolean, get: () => boolean, set: (on: boolean) => any },
  *   pages?: () => Array<import('electron').BrowserWindow>,
  *   music?: import('../../platform/windows/music-window').MusicWindow,
  * }} deps
  */
-function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings = () => null, openSetup = () => null, autostart = undefined, pages, music }) {
+function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings = () => null, openSetup = () => null, openCalendar = () => null, autostart = undefined, pages, music }) {
   const both = () => [pet.win, term.window(), chat.window(), ...(music && music.window() ? [/** @type {import('electron').BrowserWindow} */ (music.window())] : [])];
   /** Framed pages (Google setup) that also want live status. */
   const pageWindows = () => (pages ? pages() : []);
@@ -129,6 +129,7 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     ipc.on('term:show', () => term.show());
     ipc.on('chat:show', () => chat.show());
     bus.on(TOPICS.CHAT_SHOW, () => chat.show()); // Ask Tama from the browser (D-082)
+    bus.on(TOPICS.CHAT_DRAFT, (p) => ipc.sendUi(chat.window(), 'chat.draft', { text: String((p && p.text) || '') })); // D-084
     ipc.handle('ui:prefs', () => bus.request(TOPICS.UI_PREFS_GET));
     // Start with Windows (SHIP-1): a per-PC OS setting, not a Tama preference.
     ipc.handle('app:autostart', () => ({ supported: !!(autostart && autostart.supported()), on: !!(autostart && autostart.get()) }));
@@ -208,7 +209,7 @@ function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOn
     chatIpc();
     productivityIpc();
     terminalIpc();
-    wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings, openSetup });
+    wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings, openSetup, openCalendar });
   }
 
   return { start };

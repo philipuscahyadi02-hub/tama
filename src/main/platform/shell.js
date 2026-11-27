@@ -80,11 +80,14 @@ function setTrayItems(tray, items) {
 }
 
 /** Hosts Tama may open in the user's browser (Google sign-in, setup help, links Tama created). */
-const EXTERNAL_HOSTS = ['docs.claude.com', 'antigravity.google', 'aivis-project.com', 'voicevox.hiroshiba.jp', 'accounts.google.com', 'console.cloud.google.com', 'myaccount.google.com', 'docs.google.com', 'drive.google.com', 'mail.google.com', 'calendar.google.com', 'support.google.com', 'developers.google.com', 't.me', 'music.youtube.com'];
+const EXTERNAL_HOSTS = ['docs.claude.com', 'antigravity.google', 'aivis-project.com', 'voicevox.hiroshiba.jp', 'accounts.google.com', 'console.cloud.google.com', 'myaccount.google.com', 'docs.google.com', 'drive.google.com', 'mail.google.com', 'calendar.google.com', 'support.google.com', 'developers.google.com', 't.me', 'music.youtube.com', 'meet.google.com', 'www.google.com', 'zoom.us', 'teams.microsoft.com', 'teams.live.com'];
+/** Hosts whose subdomains are allowed too (company Zoom links like us02web.zoom.us; D-084). */
+const EXTERNAL_SUFFIXES = ['.zoom.us'];
 /** @param {string} url */
 function openExternal(url) {
   const u = new URL(url);
-  if (u.protocol !== 'https:' || !EXTERNAL_HOSTS.includes(u.hostname)) throw new Error(`Not opening ${u.hostname}: not an allowed site.`);
+  const ok = EXTERNAL_HOSTS.includes(u.hostname) || EXTERNAL_SUFFIXES.some((s) => u.hostname.endsWith(s));
+  if (u.protocol !== 'https:' || !ok) throw new Error(`Not opening ${u.hostname}: not an allowed site.`);
   return require('electron').shell.openExternal(u.toString());
 }
 

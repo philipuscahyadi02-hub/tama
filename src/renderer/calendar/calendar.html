@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>Calendar</title>
+  <link rel="stylesheet" href="../dashboard/dashboard.css" />
+  <link rel="stylesheet" href="calendar.css" />
+  <link rel="stylesheet" href="../shared/look.css" />
+</head>
+<body>
+  <header>
+    <h1><span class="ico" data-i="calendar"></span>Calendar</h1>
+    <div class="nav">
+      <button id="today">Today</button>
+      <button id="prev" class="ico" data-i="back" title="Previous"></button>
+      <button id="next" class="ico" data-i="fwd" title="Next"></button>
+      <b id="label"></b>
+    </div>
+    <span class="spacer"></span>
+    <div class="seg" id="views"><button data-v="month">Month</button><button data-v="week">Week</button><button data-v="agenda">Agenda</button></div>
+    <button id="newEv" class="primary"><span class="ico" data-i="plus"></span>New event with Tama</button>
+  </header>
+  <div class="layout">
+    <main id="view"><div class="empty">Loading your calendar…</div></main>
+    <aside id="detail" hidden>
+      <button id="dClose" class="x ico" data-i="close" title="Close"></button>
+      <h2 id="dTitle"></h2>
+      <div class="drow"><span class="ico" data-i="clock"></span><span id="dWhen"></span></div>
+      <div class="drow" id="dPlaceRow"><span class="ico" data-i="pin"></span><a id="dPlace" class="lnk"></a></div>
+      <div class="dbtns"><button id="dJoin" class="primary"><span class="ico" data-i="video"></span>Join</button><button id="dOpen">Open in Google Calendar</button></div>
+      <div class="drow top" id="dGuestsRow"><span class="ico" data-i="people"></span><ul id="dGuests"></ul></div>
+      <div id="dDesc"></div>
+      <label for="dNotes" class="dlabel"><span class="ico" data-i="notes"></span>My notes <small>private: only you see them, guests don't</small></label>
+      <textarea id="dNotes" rows="5" maxlength="4000" placeholder="Agenda, questions, what to bring…"></textarea>
+      <div class="dbtns"><button id="dSave">Save notes</button><button id="dAsk">Ask Tama about this event</button></div>
+      <div id="dMsg" class="dim"></div>
+    </aside>
+  </div>
+  <script src="../../shared/palette.js"></script>
+  <script src="../../shared/catalog.js"></script>
+  <script src="../../shared/spec.js"></script>
+  <script src="../../shared/theme.js"></script>
+  <script src="../shared/look.js"></script>
+  <script src="../shared/icons.js"></script>
+  <script src="views.js"></script>
+  <script src="calendar.js"></script>
+</body>
+</html>

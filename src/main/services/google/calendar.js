@@ -3,14 +3,34 @@
 // that as sending (the user confirms first).
 const BASE = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
 
-/** @typedef {{ id: string, summary: string, start: string, end: string, allDay: boolean, location?: string, description?: string, link?: string }} CalEvent */
+/**
+ * @typedef {{ email: string, name?: string, self?: boolean, organizer?: boolean, response?: string }} Guest
+ * @typedef {{ id: string, summary: string, start: string, end: string, allDay: boolean, location?: string, description?: string,
+ *   link?: string, meet?: string, guests?: Guest[], myResponse?: string, notes?: string }} CalEvent
+ *   meet: the video-call link (Meet, Zoom, Teams; https only). notes: the user's private Tama notes (D-084).
+ */
+/** Video-call hosts the Join button may open (also allowed in platform/shell). */
+const MEET_HOST = /^https:\/\/(meet\.google\.com|([a-z0-9-]+\.)?zoom\.us|teams\.microsoft\.com|teams\.live\.com)\//i;
+
+/** The event's video-call link, if any. @param {any} e */
+function meetLink(e) {
+  const v = (e.conferenceData && Array.isArray(e.conferenceData.entryPoints) ? e.conferenceData.entryPoints : []).find((x) => x && x.entryPointType === 'video');
+  const fromText = String(e.location || '').concat(' ', e.description || '').match(/https:\/\/[^\s"'<>]+/g) || [];
+  return [e.hangoutLink, v && v.uri, ...fromText].find((u) => typeof u === 'string' && MEET_HOST.test(u)) || undefined;
+}
 
 /** @param {any} e @returns {CalEvent} */
 function slim(e) {
   return {
     id: e.id, summary: e.summary || '(no title)', allDay: !!(e.start && e.start.date),
     start: (e.start && (e.start.dateTime || e.start.date)) || '', end: (e.end && (e.end.dateTime || e.end.date)) || '',
-    location: e.location || undefined, description: e.description ? String(e.description).slice(0, 500) : undefined, link: e.htmlLink,
+    location: e.location || undefined, description: e.description ? String(e.description).slice(0, 2000) : undefined, link: e.htmlLink,
+    meet: meetLink(e),
+    guests: Array.isArray(e.attendees) && e.attendees.length ? e.attendees.slice(0, 30).map((/** @type {any} */ a) => ({
+      email: String(a.email || ''), name: a.displayName || undefined, self: !!a.self || undefined, organizer: !!a.organizer || undefined, response: a.responseStatus || undefined,
+    })) : undefined,
+    myResponse: (Array.isArray(e.attendees) && (e.attendees.find((/** @type {any} */ a) => a.self) || {}).responseStatus) || undefined,
+    notes: (e.extendedProperties && e.extendedProperties.private && typeof e.extendedProperties.private.tamaNotes === 'string') ? e.extendedProperties.private.tamaNotes : undefined,
   };
 }
 
@@ -53,6 +73,16 @@ function createCalendar(api, now = Date.now) {
       });
       return (r.items || []).filter((/** @type {any} */ e) => e.status !== 'cancelled').map(slim);
     },
+    /**
+     * The user's private notes on an event (D-084): stored in the event's private extended properties, which only this
+     * calendar's copy has; guests never see them, and nobody is notified.
+     * @param {{ eventId: string, notes: string }} p
+     */
+    async setNotes(p) {
+      const notes = String(p.notes || '').slice(0, 4000);
+      const r = await api.request(`${BASE}/${encodeURIComponent(p.eventId)}`, { method: 'PATCH', query: { sendUpdates: 'none' }, json: { extendedProperties: { private: { tamaNotes: notes } } } });
+      return slim(r);
+    },
     /** @param {{ summary: string, start: string, end: string, description?: string, location?: string, attendees?: string, placeLink?: string }} p */
     async create(p) {
       if (!p.summary) throw new Error('An event needs a summary.');
@@ -80,4 +110,4 @@ function createCalendar(api, now = Date.now) {
   };
 }
 
-module.exports = { createCalendar, slim, when, addLink, guestList };
+module.exports = { createCalendar, slim, when, addLink, guestList, meetLink, MEET_HOST };

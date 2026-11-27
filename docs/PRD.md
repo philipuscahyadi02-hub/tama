@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.50 |
+| **Version** | 0.51 |
 | **Status** | **v1.0.0 released** (D-058); installer + setup wizard done (unreleased). Every other open item is parked (D-064). **Next: M13 YouTube Music & DJ = 1.1.0** (MUS-*, D-065, D-066) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-27 |
@@ -256,6 +256,8 @@ Plan in D-065, YouTube Music only with a companion extension (D-066). Build orde
 | MUS-11 | **The Look (app-wide):** one switcher in Settings → her tab: **Material** solid or glass (Windows 11 acrylic on the chat, music card and panel, Settings and the other pages; her bubble and menu as frosted paper; the terminal keeps its own themes) and **Mode** light, dark or follow Windows. Colors from her lead color with checked contrast; drawn icons instead of emoji in the app chrome; her motif as a faint header pattern; a sticker of her on empty screens; rounded fonts (Nunito, M PLUS Rounded 1c). Glass falls back to solid when Windows' transparency effects are off. *(D-078.)* | P1 | M13 | ◐ |
 | EXT-1 | **Ask Tama from the browser:** the Tama Companion extension adds a right-click *Ask Tama* menu: on selected text Explain, Summarize, Translate to English, Remember this, Add as a todo; on a page Summarize this page. Chat requests open her chat with the text marked untrusted; remember and todo save directly. The extension reads only what the user right-clicks, at that moment (`contextMenus`, `activeTab`). *(D-082.)* | P1 | M13 | ☑ |
 | EXT-2 | **Ask about this page + save it (extension popup):** a question box (the page's text goes along as untrusted data, optional) whose answer appears in her chat, and "Save this page" as a todo, a note (title + link) or a reminder (in 1 hour, tonight 8 pm, tomorrow 9 am). No new permissions: opening the popup grants access to that one tab. *(D-083.)* | P1 | M13 | ☑ |
+| CAL-1 | **Calendar window:** month, week (hour grid, now line) and agenda over the user's Google Calendar, in her Look. Click an event: time, place (map link), guests, description, **Join** (Meet/Zoom/Teams), Open in Google Calendar, and **private notes** (only the user sees them). **New event with Tama** / click a day or time opens her chat with the request ready: invites and places go through her with confirmation (D-038, D-039). Tray *Calendar…*, Settings → Google, `/cal`. *(D-084.)* | P1 | M13 | ◐ |
+| CAL-2 | **Next-meeting card:** pops up before a meeting (5/10/15/30 min, default 15; Settings → Google → Calendar) with time left, Join and Open calendar; hides when the meeting is underway or dismissed; skips all-day and declined events. *(D-084.)* | P1 | M13 | ◐ |
 
 ## 5. Milestones
 
@@ -320,6 +322,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.51 — 2026-11-27** — New CAL-1 ◐ calendar window, CAL-2 ◐ next-meeting card (D-084).
 - **0.50 — 2026-11-27** — EXT-1 ☑, EXT-2 ☑ (confirmed by the user).
 - **0.49 — 2026-11-27** — New EXT-2 ◐ ask about this page + save it from the extension popup (D-083).
 - **0.48 — 2026-11-27** — New EXT-1 ◐ Ask Tama right-click (D-082); keep the PC awake while she works (D-081).

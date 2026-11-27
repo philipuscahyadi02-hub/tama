@@ -17,9 +17,10 @@ const { TOPICS } = require('../../bus-topics');
  *   openVoice: () => unknown,
  *   openSettings: (tab?: string) => unknown,
  *   openSetup?: () => unknown,
+ *   openCalendar?: () => unknown,
  * }} d
  */
-function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings, openSetup = () => null }) {
+function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings, openSetup = () => null, openCalendar = () => null }) {
   /** Settings → Brains (SHIP-8): who serves chat, moments, design and coding. The registry validates the names. */
   function providersIpc() {
     const pair = (/** @type {any} */ x) => ({ cap: String(x?.cap || '').slice(0, 20), id: String(x?.id || '').slice(0, 40) });
@@ -48,7 +49,7 @@ function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster
     ipc.on('settings:open', (tab) => openSettings(typeof tab === 'string' ? tab.slice(0, 20) : ''));
     ipc.on('page:open', (name) => {
       /** @type {Record<string, () => unknown>} */
-      const PAGES = { voice: () => openVoice(), google: () => openGoogle(), dashboard: () => openDashboard(), limits: () => openDashboard('limits'), settings: () => openSettings(), setup: () => openSetup() };
+      const PAGES = { calendar: () => openCalendar(), voice: () => openVoice(), google: () => openGoogle(), dashboard: () => openDashboard(), limits: () => openDashboard('limits'), settings: () => openSettings(), setup: () => openSetup() };
       const fn = Object.hasOwn(PAGES, String(name)) ? PAGES[String(name)] : null;
       if (fn) fn();
     });
@@ -110,7 +111,7 @@ function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster
       dnd: p?.dnd == null ? undefined : !!p.dnd, nudges: p?.nudges == null ? undefined : !!p.nudges,
       mute: p?.mute == null ? undefined : !!p.mute, motion: p?.motion == null ? undefined : String(p.motion),
       walkMarker: p?.walkMarker == null ? undefined : !!p.walkMarker, // M5 extras (D-035)
-      lookMaterial: p?.lookMaterial == null ? undefined : String(p.lookMaterial).slice(0, 8), lookMode: p?.lookMode == null ? undefined : String(p.lookMode).slice(0, 8), keepAwake: p?.keepAwake == null ? undefined : String(p.keepAwake).slice(0, 8), // D-078, D-081
+      lookMaterial: p?.lookMaterial == null ? undefined : String(p.lookMaterial).slice(0, 8), lookMode: p?.lookMode == null ? undefined : String(p.lookMode).slice(0, 8), keepAwake: p?.keepAwake == null ? undefined : String(p.keepAwake).slice(0, 8), calendarPopup: typeof p?.calendarPopup === 'boolean' ? p.calendarPopup : undefined, calendarLead: p?.calendarLead == null ? undefined : Number(p.calendarLead), // D-078, D-081, D-084
       musicWidget: p?.musicWidget == null ? undefined : String(p.musicWidget).slice(0, 8), // M13 (MUS-2)
       musicLook: p?.musicLook == null ? undefined : String(p.musicLook).slice(0, 8), // D-068
       musicDj: p?.musicDj == null ? undefined : !!p.musicDj, musicBeat: p?.musicBeat == null ? undefined : !!p.musicBeat, // MUS-3/4
@@ -131,6 +132,11 @@ function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster
 
   /** M13 YouTube Music (D-066): status, controls (validated again by the music service), pairing, folder */
   function musicIpc() {
+    // Calendar window (D-084): read a range, private notes, and the next-meeting card.
+    ipc.handle('calendar:range', (p) => bus.request(TOPICS.GOOGLE_CAL_RANGE, { from: Number(p?.from) || 0, to: Number(p?.to) || 0 }).catch((e) => ({ error: String(e.message || e) })));
+    ipc.handle('calendar:notes', (p) => bus.request(TOPICS.GOOGLE_CAL_NOTES, { eventId: String(p?.eventId || '').slice(0, 1024), notes: String(p?.notes || '').slice(0, 4000) }).catch((e) => ({ error: String(e.message || e) })));
+    ipc.handle('calendar:dismiss', (id) => bus.request(TOPICS.GOOGLE_MEETING_DISMISS, { eventId: String(id || '').slice(0, 1024) }));
+    ipc.on('calendar:draft', (t) => { bus.emit(TOPICS.CHAT_SHOW, {}); bus.emit(TOPICS.CHAT_DRAFT, { text: String(t || '').slice(0, 500) }); });
     ipc.handle('music:get', () => bus.request(TOPICS.MUSIC_GET));
     ipc.handle('music:control', (p) => bus.request(TOPICS.MUSIC_CONTROL, {
       action: String(p?.action || '').slice(0, 20),

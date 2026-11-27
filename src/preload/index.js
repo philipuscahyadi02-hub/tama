@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** Main → renderer messages arrive on one 'ui' channel as (name, payload). */
-const UI_NAMES = new Set(['brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram', 'usage', 'accounts', 'voice', 'encode', 'voice.changed', 'providers', 'music', 'music.ask']);
+const UI_NAMES = new Set(['chat.draft', 'meeting', 'brain.notice', 'pet.state', 'pet.bond', 'prod', 'focus', 'reminder', 'commit', 'summon', 'tray', 'agent.event', 'term.focus', 'character', 'chat.event', 'chat.focus', 'ui.prefs', 'event', 'google', 'telegram', 'usage', 'accounts', 'voice', 'encode', 'voice.changed', 'providers', 'music', 'music.ask']);
 /** @type {Map<string, Set<(p: any) => void>>} */
 const subs = new Map();
 ipcRenderer.on('ui', (_e, name, payload) => {
@@ -92,6 +92,7 @@ contextBridge.exposeInMainWorld('tama', {
     confirm: (/** @type {number} */ id, /** @type {boolean} */ yes) => ipcRenderer.invoke('chat:confirm', id, yes),
     onEvent: on('chat.event'),
     onFocus: on('chat.focus'),
+    onDraft: on('chat.draft'),
   },
 
   // ---- UI preferences (terminal theme, tour) ----
@@ -181,6 +182,16 @@ contextBridge.exposeInMainWorld('tama', {
   },
 
   // ---- M13 YouTube Music & DJ (D-066) ----
+  /** Calendar window and next-meeting card (D-084). */
+  calendar: {
+    range: (/** @type {number} */ from, /** @type {number} */ to) => ipcRenderer.invoke('calendar:range', { from, to }),
+    notes: (/** @type {string} */ eventId, /** @type {string} */ notes) => ipcRenderer.invoke('calendar:notes', { eventId, notes }),
+    dismiss: (/** @type {string} */ eventId) => ipcRenderer.invoke('calendar:dismiss', eventId),
+    /** Open her chat with this text ready (not sent): new events, invites and places go through her (D-038). */
+    draft: (/** @type {string} */ text) => ipcRenderer.send('calendar:draft', text),
+    open: () => ipcRenderer.send('page:open', 'calendar'),
+    onMeeting: on('meeting'),
+  },
   music: {
     get: () => ipcRenderer.invoke('music:get'),
     control: (/** @type {string} */ action, /** @type {number|string|undefined} */ value) => ipcRenderer.invoke('music:control', { action, value }),

@@ -40,6 +40,13 @@
     mic: `<rect ${S} x="9" y="3" width="6" height="11" rx="3"/><path ${S} d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>`,
     gear: `<circle ${S} cx="12" cy="12" r="3"/><path ${S} d="M12 2.8v2.4m0 13.6v2.4M2.8 12h2.4m13.6 0h2.4M5.5 5.5l1.7 1.7m9.6 9.6 1.7 1.7m0-13-1.7 1.7m-9.6 9.6-1.7 1.7"/>`,
     reset: `<path ${S} d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path ${S} d="M4.5 4.5v4h4"/>`,
+    calendar: `<rect ${S} x="3.5" y="5" width="17" height="15.5" rx="2.6"/><path ${S} d="M3.5 10h17M8 3v4m8-4v4"/><circle ${F} cx="8.5" cy="14.5" r="1.3"/><circle ${F} cx="12" cy="14.5" r="1.3"/>`,
+    video: `<rect ${S} x="3" y="6.5" width="12.5" height="11" rx="2.4"/><path ${S} d="m15.5 10.5 5.5-3.2v9.4l-5.5-3.2"/>`,
+    people: `<circle ${S} cx="9" cy="8.5" r="3.2"/><path ${S} d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><circle ${S} cx="16.5" cy="9.5" r="2.6"/><path ${S} d="M15.8 14.3a4.6 4.6 0 0 1 4.7 4.7"/>`,
+    clock: `<circle ${S} cx="12" cy="12" r="8.5"/><path ${S} d="M12 7.5V12l3 2"/>`,
+    plus: `<path ${S} d="M12 5v14M5 12h14"/>`,
+    fwd: `<path ${S} d="m9.5 6 6 6-6 6"/>`,
+    notes: `<path ${S} d="M6 3.5h9l3.5 3.5v13.5H6z"/><path ${S} d="M14.5 3.5V7.5h4M9 12h6M9 15.5h6"/>`,
     box: `<path ${S} d="M3.5 8 12 4l8.5 4v8.5L12 20.5 3.5 16.5z"/><path ${S} d="M3.5 8 12 12l8.5-4M12 12v8.5"/>`,
   };
   const sprite = `<svg xmlns="http://www.w3.org/2000/svg" style="display:none">${Object.entries(ICONS).map(([k, v]) => `<symbol id="i-${k}" viewBox="0 0 24 24">${v}</symbol>`).join('')}</svg>`;

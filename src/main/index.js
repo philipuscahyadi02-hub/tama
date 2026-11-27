@@ -64,6 +64,8 @@ const { createMusicTools, musicRule } = require('./services/music');
 const { setLook } = require('./platform/look');
 const { createAwake } = require('./services/awake');
 const { createCompanion } = require('./services/companion');
+const { createMeetingWindow } = require('./platform/windows/meeting-window');
+const geometry = require('./platform/summon/geometry');
 
 const { createDesktopChannel } = require('./channels/desktop');
 
@@ -169,10 +171,15 @@ function boot() {
   ipc.on('logs:open', () => { openLogs(log.dir()).catch(() => null); });
   const openSettings = (tab = '') => openPage('settings/settings.html', { width: 900, height: 680, title: 'Settings', frame: true, query: tab ? { tab } : {} });
   const openSetup = () => openPage('setup/setup.html', { width: 860, height: 720, title: 'Set up Tama', frame: true });
+  // Calendar window (D-084): month, week, agenda; join meetings and private notes.
+  const openCalendar = () => openPage('calendar/calendar.html', { width: 1100, height: 780, title: 'Calendar', frame: true });
   const openDashboard = (tab = '') => openPage('dashboard/dashboard.html', { width: 1060, height: 780, title: 'Usage & accounts', frame: true, query: tab ? { tab } : {} });
   const openRoster = (/** @type {boolean | undefined} */ importNow) =>
     openPage('roster/roster.html', { width: 900, height: 660, title: 'My Tamas', query: importNow ? { import: '1' } : {} });
-  createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings, openSetup, autostart: appShell.autostart, pages: openPages, music: musicWidget }).start();
+  createDesktopChannel({ bus, ipc, shell, pet, term, chat: chatWin, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings, openSetup, openCalendar, autostart: appShell.autostart, pages: openPages, music: musicWidget }).start();
+  // Next-meeting card (D-084): pops up before meetings with Join and Open calendar.
+  const meetingCard = createMeetingWindow({ petBody: () => geometry.bodyRect(pet.bounds()), send: (w, name, payload) => ipc.sendUi(w, name, payload) });
+  stoppers.push(bus.on(TOPICS.GOOGLE_MEETING_NEXT, (p) => meetingCard.show(p && p.event)), () => meetingCard.destroy());
   // Voice (M9, D-042/D-043): created before the tray, whose Voice submenu shows its setting; started with the services.
   /** @type {Record<string, ReturnType<typeof createVoiceEngineProcess>>} */ const voiceProcs = {};
   for (const id of /** @type {const} */ (['aivis', 'voicevox'])) {
@@ -215,6 +222,7 @@ function boot() {
         { label: 'Google…', click: () => openGoogle() },
       ] },
       { label: 'Setup & what\'s installed…', click: () => openSetup() },
+      { label: 'Calendar…', click: () => openCalendar() },
       { label: 'Settings…', click: () => openSettings() },
       { type: 'separator' },
       { label: 'Quit', click: appShell.quit },

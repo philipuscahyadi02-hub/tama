@@ -10,7 +10,7 @@ const say = (t, err) => {
   clearTimeout(msgTimer); if (t && !err) msgTimer = setTimeout(() => say(''), 2500);
 };
 const saved = (r) => { if (r && r.error) say(r.error, true); else say('saved ✓'); return r; };
-const seg = (el, v) => el.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === v));
+const seg = (el, v) => el.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === String(v)));
 
 // ---- tabs ----
 function showTab(tab) {

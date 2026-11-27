@@ -48,6 +48,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - **Keep the PC awake (D-081):** Settings → her tab → *Keep the PC awake*: Off, **While she works** (default: while Claude or her chat is busy or music plays, and 5 minutes after) or Always. It only stops Windows from sleeping; the screen still turns off and locks as usual (locking doesn't stop her).
 - **Ask Tama from Chrome (EXT-1, D-082):** right-click selected text → *Ask Tama* → Explain, Summarize, Translate to English, Remember this or Add as a todo; right-click a page → Summarize this page. Her chat opens with the answer; remember and todo save right away. The extension (1.3.0, reload it once) reads only what you right-click, when you click.
 - **Ask about this page + save it (EXT-2, D-083):** click the Tama Companion icon: type a question about the page you're on (its text goes along, untick to leave it out) and her answer appears in the chat; or save the page as a todo, a note with its link, or a reminder (in 1 hour, tonight 8 pm, tomorrow 9 am). Extension 1.4.0: reload it once.
+- **Calendar (CAL-1, CAL-2, D-084):** a Calendar window (tray *Calendar…*, Settings → Google, `/cal`) with **Month**, **Week** and **Agenda** views in her Look. Click an event to **Join** its Meet/Zoom/Teams call, open its place on the map, see the guests, or write **private notes** (only you see them). **New event with Tama** (or a day's +, or a click in the week) opens her chat ready to set it up: she checks the place and shows the full invitation before anything is sent.
+  - **Next-meeting card:** 15 minutes before a meeting (5/10/15/30 in Settings) a small card pops up with the time left, **Join** and **Open calendar**.
 ### Decisions
 - D-064 — Every open roadmap item parked (🅿): the to-do list starts from zero; M12 closed.
 - D-065 — M13 Music & DJ planned (1.1.0): now-playing for any player, Spotify (Premium, your own Spotify app) and YouTube Music (YouTube API + your browser), a music widget, DJ Tama on the real beat (MUS-1..9).
@@ -59,6 +61,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - D-071 — Up next / Lyrics open in a panel docked beside her; the card stays small where you put it.
 - D-072 — The Up next / Lyrics panel belongs to the music card instead; card and Kero are separate unless you pin them together (replaces D-071).
 - D-075 — Telegram music commands (MUS-8) dropped: music from the phone goes through her chat.
+- D-084 — Calendar window and next-meeting card; new events and invitations stay in her chat.
 - D-083 — Ask about this page and save it, from the extension popup.
 - D-082 — "Ask Tama" right-click in the browser extension.
 - D-081 — Keep the PC awake while she works; the lock screen stays as it is.
@@ -311,6 +314,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `e64f5b6` | 2026-11-27 | docs(prd) | EXT-1 and EXT-2 done (confirmed live) |
+| `185744d` | 2026-11-27 | feat(extension) | ask about this page and save it from the popup (EXT-2, D-083) |
 | `e3227c7` | 2026-11-27 | feat(extension) | Ask Tama right-click menu (EXT-1, D-082) |
 | `48559b1` | 2026-11-27 | feat(power) | keep the PC awake while she works (D-081) |
 | `047fc50` | 2026-11-27 | feat(music) | one music box, Up next / Lyrics as an accordion inside the card (D-080) |

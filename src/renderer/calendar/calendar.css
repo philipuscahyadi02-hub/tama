@@ -1,0 +1,96 @@
+/* Calendar window (D-084). Base from dashboard.css; colors are --tama-* tokens from the Look (D-078). */
+body { padding: 14px 18px 18px; height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; }
+header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+h1 { margin: 0; display: flex; align-items: center; gap: 8px; }
+h1 .i { width: 24px; height: 24px; color: var(--tama-accent); }
+.ico { display: inline-grid; place-items: center; }
+.i { width: 18px; height: 18px; display: block; }
+.nav { display: flex; align-items: center; gap: 6px; }
+.nav button.ico { width: 32px; height: 32px; padding: 0; }
+#label { font-size: 15px; margin-left: 6px; min-width: 190px; }
+.spacer { flex: 1; }
+button.primary { display: inline-flex; align-items: center; gap: 6px; }
+button.primary .i { width: 16px; height: 16px; }
+.seg { display: inline-flex; border: 1px solid var(--tama-line); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; padding: 6px 12px; background: transparent; }
+.seg button.on { background: var(--tama-accent); color: var(--tama-accent-ink); }
+.layout { flex: 1; min-height: 0; display: flex; gap: 14px; margin-top: 12px; }
+#view { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.empty { margin: auto; color: var(--tama-dim); text-align: center; line-height: 1.8; }
+
+/* ---- event chips ---- */
+.ev { display: flex; gap: 5px; align-items: baseline; width: 100%; text-align: left; border: 0; border-radius: 6px; padding: 2px 6px; margin-top: 2px;
+  font: inherit; font-size: 11.5px; cursor: pointer; background: var(--tama-bubble); color: var(--tama-ink); box-shadow: inset 3px 0 0 var(--tama-accent); overflow: hidden; }
+.ev .t { color: var(--tama-dim); font-variant-numeric: tabular-nums; flex: none; }
+.ev .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.ev.all { background: var(--tama-accent); color: var(--tama-accent-ink); box-shadow: none; }
+.ev .cam { margin-left: auto; flex: none; font-size: 8px; color: var(--tama-accent); } /* has a Join link */
+.ev.all .cam { color: inherit; }
+.ev.past { opacity: .55; }
+.ev.declined .n { text-decoration: line-through; }
+.ev:hover { filter: brightness(.97); outline: 1px solid var(--tama-accent); }
+
+/* ---- month ---- */
+.month { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: auto repeat(6, 1fr); gap: 4px; }
+.dow { color: var(--tama-dim); font-size: 11.5px; font-weight: 700; text-transform: uppercase; padding: 0 6px 2px; }
+.cell { background: var(--tama-panel); border: 1px solid var(--tama-line); border-radius: var(--tama-r-md, 12px); padding: 4px 5px; overflow: hidden; min-height: 0; }
+.cell.out { opacity: .5; }
+.cell.today { border-color: var(--tama-accent); box-shadow: inset 0 0 0 1px var(--tama-accent); }
+.dnum { display: flex; align-items: center; font-weight: 700; font-size: 12px; padding: 0 2px; }
+.cell.today .dnum { color: var(--tama-accent); }
+.dnum .add { margin-left: auto; width: 20px; height: 20px; padding: 0; border: 0; background: none; color: var(--tama-dim); opacity: 0; cursor: pointer; border-radius: 6px; }
+.dnum .add .i { width: 14px; height: 14px; }
+.cell:hover .add { opacity: 1; }
+.dnum .add:hover { background: var(--tama-bubble); color: var(--tama-accent); }
+.more { border: 0; background: none; color: var(--tama-dim); font: inherit; font-size: 11px; padding: 1px 6px; cursor: pointer; }
+
+/* ---- week ---- */
+.week { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--tama-panel); border: 1px solid var(--tama-line); border-radius: var(--tama-r-md, 12px); overflow: hidden; }
+.whead, .wall { display: grid; grid-template-columns: 56px repeat(7, 1fr); border-bottom: 1px solid var(--tama-line); }
+.wd { padding: 8px 6px; font-weight: 700; font-size: 12.5px; text-align: center; }
+.wd.today { color: var(--tama-accent); }
+.wall .gutter { color: var(--tama-dim); font-size: 10.5px; padding: 4px 6px; }
+.wallc { padding: 2px 3px; min-height: 22px; border-left: 1px solid var(--tama-line); }
+.wbody { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: 56px repeat(7, 1fr); position: relative; }
+.hours .h { height: 44px; box-sizing: border-box; color: var(--tama-dim); font-size: 10.5px; text-align: right; padding-right: 6px; transform: translateY(-6px); }
+.wcol { position: relative; border-left: 1px solid var(--tama-line);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 43px, var(--tama-line) 43px 44px); cursor: copy; }
+.wcol.today { background-color: color-mix(in srgb, var(--tama-accent) 5%, transparent); }
+.ev.block { position: absolute; margin: 0; flex-direction: column; gap: 0; align-items: stretch; padding: 3px 6px; font-size: 11px; cursor: pointer; }
+.ev.block .n { white-space: normal; }
+.nowline { position: absolute; left: 0; right: 0; height: 2px; background: var(--tama-accent); z-index: 2; }
+.nowline::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--tama-accent); }
+
+/* ---- agenda ---- */
+.agenda { flex: 1; overflow-y: auto; padding-right: 4px; }
+.aday h3 { margin: 14px 0 6px; font-size: 13px; color: var(--tama-dim); text-transform: uppercase; letter-spacing: .3px; }
+.aday.today h3 { color: var(--tama-accent); }
+.arow { display: grid; grid-template-columns: 100px 1fr auto auto; gap: 10px; align-items: center; width: 100%; text-align: left; border: 1px solid var(--tama-line);
+  background: var(--tama-panel); color: var(--tama-ink); border-radius: var(--tama-r-md, 12px); padding: 9px 12px; margin-bottom: 6px; font: inherit; cursor: pointer; box-shadow: inset 4px 0 0 var(--tama-accent); }
+.arow.all { background: var(--tama-bubble); }
+.arow .at { color: var(--tama-dim); font-variant-numeric: tabular-nums; }
+.arow .an { font-weight: 700; }
+.arow .al { color: var(--tama-dim); font-size: 12px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arow .aj { background: var(--tama-accent); color: var(--tama-accent-ink); border-radius: 999px; padding: 2px 10px; font-size: 11.5px; font-weight: 700; }
+.arow:hover { border-color: var(--tama-accent); }
+
+/* ---- detail ---- */
+#detail { width: 320px; flex: none; overflow-y: auto; position: relative; background: var(--tama-panel); border: 1px solid var(--tama-line);
+  border-radius: var(--tama-r-lg, 18px); padding: 16px; box-shadow: var(--tama-shadow); }
+#detail h2 { margin: 0 24px 10px 0; font-size: 17px; }
+.x { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; padding: 0; border: 0; background: none; color: var(--tama-dim); cursor: pointer; border-radius: 8px; }
+.x:hover { background: var(--tama-bubble); }
+.drow { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+.drow.top { align-items: flex-start; }
+.drow > .ico { color: var(--tama-accent); flex: none; }
+.drow ul { margin: 0; padding: 0; list-style: none; line-height: 1.6; font-size: 12.5px; }
+.dbtns { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+#dDesc { white-space: pre-wrap; font-size: 12.5px; color: var(--tama-dim); border-top: 1px solid var(--tama-line); padding-top: 8px; margin-top: 8px; max-height: 180px; overflow-y: auto; user-select: text; }
+.dlabel { display: grid; grid-template-columns: auto 1fr; column-gap: 6px; align-items: center; font-weight: 700; margin-top: 12px; }
+.dlabel .ico { color: var(--tama-accent); }
+.dlabel small { grid-column: 2; color: var(--tama-dim); font-weight: 400; font-size: 11.5px; }
+#dNotes { width: 100%; box-sizing: border-box; margin-top: 6px; border-radius: 10px; border: 1px solid var(--tama-line); padding: 8px; background: var(--tama-bg); color: var(--tama-ink); font: inherit; resize: vertical; }
+#dMsg { font-size: 12px; min-height: 16px; }
+.lnk { cursor: pointer; color: var(--tama-accent); text-decoration: underline; }
+.ev.block.short { flex-direction: row; align-items: center; gap: 5px; padding: 1px 6px; }
+.ev.block.short .n { white-space: nowrap; }

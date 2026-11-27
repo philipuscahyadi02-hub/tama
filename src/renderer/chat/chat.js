@@ -140,6 +140,8 @@ $('#wClose').addEventListener('click', K.win.close);
 $('#wTerm').addEventListener('click', K.showTerminal);
 $('#wClear').addEventListener('click', () => K.chat.clear());
 K.chat.onFocus(() => input.focus());
+// A ready-made request (e.g. "New event with Tama" from the calendar, D-084): put it in the box, don't send it.
+if (K.chat.onDraft) K.chat.onDraft((d) => { input.value = String((d && d.text) || ''); autosize(); input.focus(); input.setSelectionRange(input.value.length, input.value.length); });
 K.onCharacter(applyCharacter);
 
 /** The empty chat (D-078): a happy sticker of her, one line, and a few things to ask with one tap. */

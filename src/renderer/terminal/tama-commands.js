@@ -168,6 +168,7 @@ window.makeTamaCommands = function makeTamaCommands(K, { info, error, getCwd }) 
         info(on ? '⎿  🤫 quiet mode on: no events until /dnd off' : '⎿  quiet mode off~');
       }],
       // ---- M10 (D-048) ----
+      cal: ['Open the calendar (month, week, agenda; join meetings, private notes)', async () => { K.calendar.open(); info('⎿  📅 opening your calendar~ (new events and invites: ask her in the chat)'); }],
       settings: ['Open the Settings window', async (arg) => { K.openSettings(String(arg || '').trim()); info('⎿  ⚙️ opening Settings~'); }],
       setup: ['What is installed, what it unlocks, and how to add the rest', async () => { K.openPage('setup'); info('⎿  🧰 opening Setup~'); }],
       quiet: ['Quiet hours: /quiet 23:00-08:00 | on | off', async (arg) => {

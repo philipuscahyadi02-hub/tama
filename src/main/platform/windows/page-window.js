@@ -30,6 +30,8 @@ function openPage(page, opts = {}) {
   win.on('closed', () => open.delete(page));
   attachDebug(win, page.split('/')[0]);
   followLook(win); // D-078
+  // Dev: TAMA_PAGE_EVAL=<js> runs in every page window after it loads (screenshots of a view, a tab, …).
+  if (process.env.TAMA_PAGE_EVAL) win.webContents.once('did-finish-load', () => win.webContents.executeJavaScript(String(process.env.TAMA_PAGE_EVAL)).catch(() => null));
   open.set(page, win);
   return win;
 }

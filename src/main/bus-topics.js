@@ -51,6 +51,8 @@ const TOPICS = {
   GOOGLE_CHANGED: 'google.changed',
   /** { summary, start, minutes } — a calendar event starts in ≤ 5 minutes (GOOG-3) */
   GOOGLE_MEETING_SOON: 'google.meeting.soon',
+  /** { event: CalEvent | null } — the meeting the next-meeting card should show (within the pop-up time), or none (D-084) */
+  GOOGLE_MEETING_NEXT: 'google.meeting.next',
   /** TelegramStatus { configured, paired, running, enabled, bot, repos, remote, awake, pairing: {code, link}|null, ignored } (D-036) */
   TELEGRAM_CHANGED: 'telegram.changed',
   /** UsageEntry-like { provider, surface, op, model?, tokensIn?, tokensOut?, cacheRead?, cacheWrite?, tokens?, costUsd?, ms?, ok } — log one call (D-040) */
@@ -210,6 +212,12 @@ const TOPICS = {
   GOOGLE_SET: 'google.set',
   /** () → { text, events, mail, todos } | { error } — morning brief (GOOG-8) */
   GOOGLE_BRIEF: 'google.brief',
+  /** { from, to } (ms) → { events: CalEvent[], demo? } | { error, fix? } — the calendar window's range (D-084) */
+  GOOGLE_CAL_RANGE: 'google.cal.range',
+  /** { eventId, notes } → { ok, event } | { error } — the user's private notes on an event (D-084) */
+  GOOGLE_CAL_NOTES: 'google.cal.notes',
+  /** { eventId } → { ok } — hide the next-meeting card for this meeting (D-084) */
+  GOOGLE_MEETING_DISMISS: 'google.meeting.dismiss',
   /** { op: 'playlists'|'items'|'search', id?, q?, fresh? } → { playlists? | songs? } or { error, fix? } — YouTube account data (MUS-6) */
   GOOGLE_YOUTUBE: 'google.youtube',
   /** () → string — short read-only context line for the chat brain ('' when signed out) */
@@ -290,6 +298,8 @@ const TOPICS = {
   COMPANION_ASK: 'companion.ask',
   /** () — open (show) the chat window, e.g. after an Ask Tama request */
   CHAT_SHOW: 'chat.show',
+  /** { text } — open the chat with this text ready in the input (not sent), e.g. "New event with Tama" (D-084) */
+  CHAT_DRAFT: 'chat.draft',
   /** { op: 'playlists'|'items'|'search'|'connect', id?, q?, fresh? } → { playlists? | songs? | ok? } or { error, fix? } — the user's YouTube library (MUS-6) */
   MUSIC_LIBRARY: 'music.library',
   /** { videoId?, playlistId?, query? } → { ok, opened?, song?, error? } — play a song or playlist in YouTube Music (MUS-6) */
