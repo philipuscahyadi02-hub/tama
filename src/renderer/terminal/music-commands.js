@@ -27,6 +27,7 @@ window.makeMusicCommands = function makeMusicCommands(K, { info, error }) {
   }
 
   // MUS-6: the last numbered lists, so "/music play 2" and "/music playlist 3" can pick from them.
+  const HIDDEN_LIBRARY = true; // D-074
   let lastSongs = [];
   let lastPlaylists = [];
   const why = (r) => `✗ ${r.error}${r.fix === 'connect' ? ' → /music youtube' : r.fix === 'enable-api' ? ' (APIs & Services → Library → YouTube Data API v3 → Enable)' : ''}`;
@@ -72,12 +73,13 @@ window.makeMusicCommands = function makeMusicCommands(K, { info, error }) {
   }
 
   return {
-    music: ['YouTube Music: now playing, controls, your playlists (play <song>|search|playlists|playlist <n>|youtube|widget|pair|lyrics|vol|seek)', async (arg) => {
+    music: ['YouTube Music: now playing, controls, extension (widget|pair|unpair|folder|lyrics|vol <0-100>|seek <m:ss>|open <link>)', async (arg) => {
       const [cmd = '', ...rest] = String(arg || '').trim().split(/\s+/);
       const c = cmd.toLowerCase();
       const v = rest.join(' ');
-      if (c === 'play' && v) return playWords(v);
-      if (['youtube', 'search', 'playlists', 'playlist'].includes(c)) return library(c, v);
+      // Playlists and search (MUS-6) are hidden for now (D-074): playWords() and library() stay for when they come back.
+      if (HIDDEN_LIBRARY === false && c === 'play' && v) return playWords(v);
+      if (HIDDEN_LIBRARY === false && ['youtube', 'search', 'playlists', 'playlist'].includes(c)) return library(c, v);
       if (ACTIONS[c]) {
         const r = await K.music.control(ACTIONS[c]);
         return r.ok ? info(`⎿  ${c} ✓`) : error(`✗ ${r.error}`);
@@ -133,7 +135,7 @@ window.makeMusicCommands = function makeMusicCommands(K, { info, error }) {
           const link = e.connected ? `🧩 Companion connected${e.tabs ? '' : ' (no YouTube Music tab open)'}` : e.paired ? '🧩 Companion paired, not connected (is the browser open?)' : '🧩 Companion not paired: /music install, then /music pair';
           return info(`${nowLine(st.state)}\n   ${link}${st.media.available ? '' : ' · Windows media controls unavailable'}`);
         }
-        default: return error('✗ /music [now|play [song|n]|search <words>|playlists|playlist <n>|youtube|pause|next|prev|like|dislike|shuffle|repeat|vol <n>|seek <m:ss>|lyrics|open <link>|widget [off|auto]|dj on|off|beat on|off|pair|unpair|install|folder]');
+        default: return error('✗ /music [now|play|pause|next|prev|like|dislike|shuffle|repeat|vol <n>|seek <m:ss>|lyrics|open <link>|widget [off|auto]|dj on|off|beat on|off|pair|unpair|install|folder]');
       }
     }],
   };

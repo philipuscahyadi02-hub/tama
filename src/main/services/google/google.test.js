@@ -345,16 +345,34 @@ test('calendar: a confirmed place link is added to the event notes (only Google 
   assert.equal(JSON.parse(g.calls.filter((c) => c.method === 'POST' && c.url.pathname.includes('/calendar/')).at(-1)?.body).description, undefined);
 });
 
-test('service: the YouTube switch asks for youtube.readonly at the next sign-in (MUS-6)', async () => {
+test('service: YouTube is its own sign-in with only youtube.readonly, never mixed with Drive (MUS-6, D-073)', async () => {
   const s = setupService();
   s.secrets['google.client'] = JSON.stringify({ clientId: 'c', clientSecret: 's' });
-  s.secrets['google.tokens'] = JSON.stringify({ access_token: 'AT', refresh_token: 'RT', expiry: s.now() + 3600000, scope: 'https://www.googleapis.com/auth/calendar.events' });
-  const no = await s.bus.request('google.youtube', { op: 'playlists' });
-  assert.equal(no.fix, 'connect');
-  const r = await s.bus.request('google.set', { youtube: true });
-  assert.equal(r.youtube, true);
-  assert.equal(r.needsLogin, true);
-  s.secrets['google.tokens'] = JSON.stringify({ ...JSON.parse(s.secrets['google.tokens']), scope: 'https://www.googleapis.com/auth/youtube.readonly' });
-  assert.equal((await s.bus.request('google.set', { youtube: true })).needsLogin, false);
+  assert.equal((await s.bus.request('google.youtube', { op: 'playlists' })).fix, 'google', 'needs the normal sign-in first');
+  s.secrets['google.tokens'] = JSON.stringify({ access_token: 'AT', refresh_token: 'RT', expiry: s.now() + 3600000, scope: 'https://www.googleapis.com/auth/drive.file' });
+  assert.equal((await s.bus.request('google.youtube', { op: 'playlists' })).fix, 'connect');
+  const r = await s.bus.request('google.youtube', { op: 'connect' });
+  assert.deepEqual(r, { ok: true });
+  assert.match(s.secrets['google.youtube.tokens'], /RT1/);
+  assert.match(s.secrets['google.tokens'], /"RT"/, 'the main Google token is untouched');
+  assert.equal((await s.bus.request('google.status')).youtube, true);
+  await s.bus.request('google.set', { youtube: false });
+  await new Promise((res) => setImmediate(res));
+  assert.equal(s.secrets['google.youtube.tokens'], undefined);
   s.stop();
+});
+
+test('youtube access: the sign-in asks for youtube.readonly alone, without merging earlier grants', async () => {
+  const { createYoutubeAccess, SCOPE } = require('./youtube');
+  /** @type {any[]} */ const calls = [];
+  /** @type {Record<string, string>} */ const store = {};
+  const a = createYoutubeAccess({
+    secrets: { get: (k) => store[k] || null, set: (k, v) => { store[k] = v; }, delete: (k) => { delete store[k]; } },
+    oauth: { authorize: async (/** @type {any} */ o) => { calls.push(o); return { access_token: 'A', refresh_token: 'R', expires_in: 3600 }; }, refresh: async () => ({}), revoke: async () => {} },
+    client: () => ({ clientId: 'c', clientSecret: 's' }), openExternal: () => {},
+  });
+  assert.deepEqual(await a.connect(), { ok: true });
+  assert.deepEqual(calls[0].scopes, [SCOPE]);
+  assert.equal(calls[0].includeGranted, false);
+  assert.equal(a.connected(), true);
 });

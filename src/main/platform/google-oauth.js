@@ -21,11 +21,12 @@ const DONE_PAGE = (/** @type {string} */ msg) => `<!doctype html><meta charset="
  * Run the browser sign-in. Resolves with Google's token response.
  * @param {{
  *   clientId: string, clientSecret: string, scopes: string[],
- *   openExternal: (url: string) => any, fetch?: typeof fetch, timeoutMs?: number, loginHint?: string,
+ *   openExternal: (url: string) => any, fetch?: typeof fetch, timeoutMs?: number, loginHint?: string, includeGranted?: boolean,
  * }} o
+ *   includeGranted: false for a separate grant (YouTube can't share a token with Drive scopes, D-073).
  * @returns {Promise<TokenResponse>}
  */
-function authorize({ clientId, clientSecret, scopes, openExternal, fetch: f = fetch, timeoutMs = 5 * 60000, loginHint }) {
+function authorize({ clientId, clientSecret, scopes, openExternal, fetch: f = fetch, timeoutMs = 5 * 60000, loginHint, includeGranted = true }) {
   const verifier = b64url(crypto.randomBytes(48));
   const challenge = b64url(crypto.createHash('sha256').update(verifier).digest());
   const state = b64url(crypto.randomBytes(16));
@@ -61,7 +62,7 @@ function authorize({ clientId, clientSecret, scopes, openExternal, fetch: f = fe
       const q = new URLSearchParams({
         client_id: clientId, redirect_uri: redirectUri, response_type: 'code', scope: scopes.join(' '),
         code_challenge: challenge, code_challenge_method: 'S256', state, access_type: 'offline', prompt: 'select_account consent', // pick the account every time (D-040)
-        include_granted_scopes: 'true', ...(loginHint ? { login_hint: loginHint } : {}),
+        include_granted_scopes: includeGranted ? 'true' : 'false', ...(loginHint ? { login_hint: loginHint } : {}),
       });
       timer = setTimeout(() => finish(new Error('Google sign-in timed out (5 minutes).')), timeoutMs);
       Promise.resolve(openExternal(`${AUTH_URL}?${q}`)).catch((/** @type {any} */ e) => finish(e));

@@ -35,11 +35,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   - **The real beat:** she finds it by listening to your PC's sound, only on this PC; nothing is recorded or sent. Without that she grooves at a steady tempo.
   - **Settings:** `/music dj on|off`, `/music beat on|off`. Reduced motion means headphones only.
   - **Redesign:** its own matching icon set instead of emoji, a vinyl record behind the cover that spins while music plays, a small "Now playing" equalizer, styled progress and volume sliders, and a soft shadow. The vinyl and equalizer stand still with reduced motion.
-- **YouTube Music, step 4: your playlists and search (MUS-6):**
-  - **Playlists tab** in the Up next / Lyrics panel: your YouTube Music playlists (Liked music first), their songs, and a song search box. Click a song or **Play all**: it plays in your YouTube Music tab (or opens music.youtube.com in your browser without the extension).
-  - **Read-only:** it uses your own Google sign-in with the `youtube.readonly` permission, added only when you click **Connect YouTube** (or `/music youtube`). Your project needs the YouTube Data API turned on; the tab links to it.
-  - **Terminal:** `/music play <song>` (searches and plays the first match), `/music search <words>` then `/music play <n>`, `/music playlists`, `/music playlist <n>`.
-  - **Quota:** search costs 100 of the 10,000 daily units, so results are cached for an hour (lists for 10 minutes). The Limits tab shows today's YouTube units.
+- **YouTube Music, step 4 (MUS-6), built then hidden:** a Playlists tab (your playlists, song search, play from your library) was built, then hidden at the user's request; the code stays for later (D-074). YouTube would use its own read-only sign-in, because Google refuses YouTube and Drive permissions in one sign-in.
 ### Decisions
 - D-064 — Every open roadmap item parked (🅿): the to-do list starts from zero; M12 closed.
 - D-065 — M13 Music & DJ planned (1.1.0): now-playing for any player, Spotify (Premium, your own Spotify app) and YouTube Music (YouTube API + your browser), a music widget, DJ Tama on the real beat (MUS-1..9).
@@ -50,6 +46,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - D-070 — Pair the extension with one click (Allow on Kero's bubble); the music card has no taskbar button.
 - D-071 — Up next / Lyrics open in a panel docked beside her; the card stays small where you put it.
 - D-072 — The Up next / Lyrics panel belongs to the music card instead; card and Kero are separate unless you pin them together (replaces D-071).
+- D-074 — Playlists and search hidden for now (MUS-6 parked); the code stays.
 - D-073 — Playing from your library opens the song's YouTube Music link in the paired tab (the page reloads); "Liked music" lists your liked music videos and plays YouTube Music's own Liked list.
 ### Added
 - **Easier onboarding for developers:** `CONTRIBUTING.md` (first run, project tour, workflow, build and release, troubleshooting); `npm run setup` (install + Electron download + checks); `npm run doctor` (Node, Electron, git, Claude Code, agy and voice engines, with the next step for each); `npm run dev` (runs with a scratch `.dev-data/` folder, never the real saves; `--fresh` for a first run); `.nvmrc` and `engines` pin Node 22+.
@@ -293,6 +290,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `46a2d38` | 2026-11-27 | feat(music) | YouTube playlists, search and play from the library (MUS-6, D-073) |
 | `942edf5` | 2026-11-27 | feat(music) | Up next / Lyrics panel attached to the card; optional pin to Tama (D-072) |
 | `ac76637` | 2026-11-27 | feat(music) | Up next / Lyrics in a panel docked beside the pet (D-071) |
 | `a4a1411` | 2026-11-27 | fix(extension) | reconnect open YouTube Music tabs after an extension reload (1.1.0) |

@@ -46,16 +46,10 @@ test('library: play a search picks the first match; without YouTube it opens the
   assert.equal((await off.lib.play({ videoId: '<x>' })).ok, false);
 });
 
-test('library: connect turns the YouTube switch on and signs in again only when needed', async () => {
-  const a = setup({ needsLogin: true });
-  assert.deepEqual(await a.lib.library({ op: 'connect' }), { ok: true });
-  assert.deepEqual(a.asked[0], { youtube: true });
-  assert.equal(a.logins(), 1);
-  const b = setup({ needsLogin: false });
-  await b.lib.library({ op: 'connect' });
-  assert.equal(b.logins(), 0);
-  const c = setup({ signedIn: false });
-  assert.equal((await c.lib.library({ op: 'connect' })).fix, 'google');
-  assert.match((await c.lib.library({ op: 'nope' })).error, /unknown/);
-  assert.deepEqual(await c.lib.library({ op: 'items', id: 'PL1' }), { error: 'Connect YouTube to see your playlists.', fix: 'connect' });
+test('library: connect asks the Google service for the separate YouTube sign-in; other requests pass through', async () => {
+  const a = setup();
+  await a.lib.library({ op: 'connect' });
+  assert.deepEqual(a.asked[0], { op: 'connect' });
+  assert.match((await a.lib.library({ op: 'nope' })).error, /unknown/);
+  assert.deepEqual(await a.lib.library({ op: 'items', id: 'PL1' }), { error: 'Connect YouTube to see your playlists.', fix: 'connect' });
 });

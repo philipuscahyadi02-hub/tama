@@ -33,15 +33,8 @@ const searchUrl = (q) => `${BASE}/search?q=${enc(String(q).trim().slice(0, 120))
 function createLibrary({ bus, control }) {
   const google = (/** @type {any} */ p) => bus.request(TOPICS.GOOGLE_YOUTUBE, p).catch((e) => ({ error: String(e?.message || e) }));
 
-  /** Turn on the YouTube switch and sign in again when the permission is missing. */
-  async function connect() {
-    const st = await bus.request(TOPICS.GOOGLE_STATUS).catch(() => null);
-    if (!st || !st.signedIn) return { error: 'Sign in to Google first (/google), then connect YouTube.', fix: 'google' };
-    const r = await bus.request(TOPICS.GOOGLE_SET, { youtube: true });
-    if (!r || !r.needsLogin) return { ok: true };
-    const l = await bus.request(TOPICS.GOOGLE_LOGIN).catch((e) => ({ error: String(e?.message || e) }));
-    return l && l.error ? { error: l.error } : { ok: true };
-  }
+  /** YouTube's own read-only sign-in (D-073); needs the normal Google sign-in first. */
+  const connect = () => google({ op: 'connect' });
 
   /** @param {any} p */
   async function library(p) {

@@ -103,6 +103,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-071 | Up next / Lyrics open in their own panel docked next to the pet (fixed, moves with her); the card stays compact wherever the user put it | Superseded by D-072 |
 | D-072 | The Up next / Lyrics panel is attached to the music card (below or above it, moves with it); the card and the pet are separate unless the user pins the card to her | Accepted · Supersedes D-071 |
 | D-073 | Library playback opens the song's music.youtube.com link through the normal `open` control (the paired tab reloads); "Liked music" lists liked Music-category videos and plays YouTube Music's LM list | Accepted |
+| D-074 | MUS-6 parked: the Playlists tab and its `/music` commands are hidden (the user doesn't use playlists); the code, the separate YouTube sign-in and tests stay | Accepted · Parks MUS-6 |
 
 ---
 
@@ -1009,3 +1010,11 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Driving YouTube Music's in-page router or `loadVideoById` from the page script (no reload, but undocumented and it can desync the page's own state); reading LM from the page through the extension (works only with the extension; may come later for MUS-7).
 - **Consequences:** Starting a song from the library takes about two seconds while the tab reloads. Users must enable the YouTube Data API in their Google Cloud project; the tab links to it.
 - **Refs:** MUS-6, MUS-10, D-006, D-034, D-066, src/main/services/google/youtube.js, src/main/services/music/library.js, src/renderer/music/library.js
+
+### D-074 — MUS-6 parked: Playlists and search hidden
+- **Date:** 2026-11-27 · **Status:** Accepted · Parks MUS-6
+- **Context:** Trying MUS-6, Google refused one sign-in with both `drive.file` and `youtube.readonly` ("scopes that cannot be requested together"). While the fix (a separate YouTube-only sign-in) was being made, the user said they don't use playlists and asked to hide the feature.
+- **Decision:** The Playlists tab is hidden and the `/music play <song>|search|playlists|playlist|youtube` commands are switched off (`HIDDEN_LIBRARY` in the terminal commands). The code stays and is tested: YouTube gets its own sign-in with only `youtube.readonly` and `include_granted_scopes=false`, tokens under `google.youtube.tokens` (`createYoutubeAccess`), so the main Google sign-in never asks for YouTube. MUS-6 is 🅿 in the PRD.
+- **Alternatives:** Deleting the code (the separate sign-in fix would be lost); leaving it visible (the user doesn't want it).
+- **Consequences:** Reviving it = unhide the tab, set `HIDDEN_LIBRARY` to false, test the separate sign-in live, and a new decision. The YouTube line on the Limits tab only appears when YouTube calls were made, so it stays invisible.
+- **Refs:** MUS-6, D-073, src/main/services/google/youtube.js, src/renderer/music/music.html, src/renderer/terminal/music-commands.js

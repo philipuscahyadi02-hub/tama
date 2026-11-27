@@ -3,6 +3,8 @@
 // API with the read-only youtube.readonly scope. No unofficial APIs or cookies (D-006). Results are cached to save the
 // daily quota (10,000 units; a search costs 100, a list 1). Titles come from YouTube: untrusted text, kept short.
 
+const { createApi } = require('./api');
+
 const API = 'https://youtube.googleapis.com/youtube/v3';
 const LIST_TTL = 10 * 60000;
 const SEARCH_TTL = 60 * 60000;
@@ -48,8 +50,7 @@ function explain(e) {
   const m = String((e && e.message) || e);
   if (/has not been used|is disabled|accessNotConfigured|SERVICE_DISABLED/i.test(m)) return { error: 'The YouTube Data API is off in your Google Cloud project. Turn it on, then try again.', fix: 'enable-api' };
   if (/quotaExceeded|dailyLimitExceeded|quota/i.test(m)) return { error: 'YouTube\'s daily limit for your project is used up. It resets at midnight Pacific time.', fix: 'quota' };
-  if (/permission missing|insufficient/i.test(m)) return { error: 'Tama needs the YouTube permission. Connect YouTube again.', fix: 'connect' };
-  if (/Not signed in/i.test(m)) return { error: 'Sign in to Google first (/google).', fix: 'google' };
+  if (/permission missing|insufficient|Not signed in|invalid_grant/i.test(m)) return { error: 'Tama needs the YouTube permission again. Connect YouTube.', fix: 'connect' };
   if (/playlistNotFound|404/i.test(m)) return { error: 'That playlist is gone or private.' };
   return { error: m.slice(0, 200) };
 }
@@ -116,4 +117,69 @@ function createYoutube(api, { now = Date.now } = {}) {
 /** Quota units a call costs (YouTube Data API v3). Pure. @param {string} op e.g. "youtube search GET" */
 const quotaUnits = (op) => (/^youtube search/.test(op) ? 100 : /^youtube /.test(op) ? 1 : 0);
 
-module.exports = { createYoutube, slimPlaylist, slimSong, explain, quotaUnits, API };
+const SCOPE = 'https://www.googleapis.com/auth/youtube.readonly';
+const KEY = 'google.youtube.tokens';
+
+/**
+ * YouTube's own grant (D-073): Google refuses youtube.readonly in the same request as Drive scopes, so YouTube gets a
+ * separate sign-in with only that scope and its own tokens in secrets. It may even be another Google account.
+ * @param {{
+ *   secrets: { get: (k: string) => string | null, set: (k: string, v: string) => void, delete: (k: string) => void },
+ *   oauth: { authorize: Function, refresh: Function, revoke: Function },
+ *   client: () => { clientId: string, clientSecret: string } | null,
+ *   openExternal: (url: string) => any, fetch?: typeof fetch, now?: () => number,
+ *   onCall?: (c: { method: string, url: string, status: number, ms: number }) => void,
+ *   onError?: (message: string) => void, onChange?: () => void,
+ * }} d
+ */
+function createYoutubeAccess({ secrets, oauth, client, openExternal, fetch: f = fetch, now = Date.now, onCall = () => {}, onError = () => {}, onChange = () => {} }) {
+  const tokens = () => { try { return JSON.parse(secrets.get(KEY) || 'null'); } catch { return null; } };
+  const connected = () => !!(tokens() && tokens().refresh_token);
+  const api = createApi({
+    onCall, fetch: f, now,
+    getTokens: tokens, saveTokens: (t) => secrets.set(KEY, JSON.stringify(t)),
+    refresh: (rt) => { const c = client(); if (!c) throw new Error('Google client not set up.'); return oauth.refresh({ clientId: c.clientId, clientSecret: c.clientSecret, refreshToken: rt, fetch: f }); },
+  });
+  const yt = createYoutube(api, { now });
+
+  async function connect() {
+    const c = client();
+    if (!c) return { error: 'Set up Google first (/google).', fix: 'google' };
+    try {
+      const r = await oauth.authorize({ clientId: c.clientId, clientSecret: c.clientSecret, scopes: [SCOPE], openExternal, fetch: f, includeGranted: false });
+      if (!r.refresh_token) return { error: 'Google did not return a refresh token. Remove Tama at myaccount.google.com/permissions and connect again.' };
+      secrets.set(KEY, JSON.stringify({ access_token: r.access_token, refresh_token: r.refresh_token, expiry: now() + (r.expires_in || 3600) * 1000, scope: r.scope || SCOPE }));
+      yt.clear();
+      onChange();
+      return { ok: true };
+    } catch (e) { return { error: String((/** @type {any} */ (e)).message || e).slice(0, 200) }; }
+  }
+
+  async function disconnect() {
+    const t = tokens();
+    if (t && t.refresh_token) await oauth.revoke(t.refresh_token, f);
+    secrets.delete(KEY);
+    yt.clear();
+    onChange();
+  }
+
+  /** @param {{ op?: string, id?: string, q?: string, fresh?: boolean }} p */
+  async function data(p) {
+    if (p.op === 'connect') return connect();
+    if (!connected()) return { error: 'Connect YouTube to see your playlists.', fix: 'connect' };
+    try {
+      if (p.op === 'playlists') return { playlists: await yt.playlists(!!p.fresh) };
+      if (p.op === 'items') return { songs: await yt.items(String(p.id || '')) };
+      if (p.op === 'search') return { songs: await yt.search(String(p.q || '')) };
+      return { error: 'unknown request' };
+    } catch (e) {
+      const x = explain(e);
+      if (!x.fix) onError(String((/** @type {any} */ (e)).message || e));
+      return x;
+    }
+  }
+
+  return { connected, connect, disconnect, data };
+}
+
+module.exports = { createYoutube, createYoutubeAccess, slimPlaylist, slimSong, explain, quotaUnits, API, SCOPE };
