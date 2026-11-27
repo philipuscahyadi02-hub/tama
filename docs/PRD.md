@@ -325,7 +325,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 
 | ID | Issue | Seen | Status |
 |---|---|---|---|
-| BUG-1 | Running Tama from the terminal (`npm start`) prints a bus error from the Google backup: a Google token error (`google.backup`). | 2026-11-27, reported by the user | Open, not investigated yet (user: no need to fix now) |
+| BUG-1 | Running Tama from the terminal (`npm start`) prints a bus error from the Google backup: "Google token error: Bad Request" (`google.backup`, every 10 minutes). **Cause found:** Google's `invalid_grant` = the saved refresh token is no longer valid (last successful Google call 2026-11-08; most likely the OAuth app is still in *Testing*, where sign-ins expire after 7 days, see D-009). **User fix:** publish the OAuth app (Audience → Publish app), then sign in again. **Tama fix to do:** on `invalid_grant`, mark Google as signed out, tell the user once, and stop retrying. | 2026-11-27, reported by the user | Cause known; Tama-side fix open |
 | BUG-2 | Electron warns that its `safeStorage` usage is deprecated and will be removed (`platform/secrets` stores tokens with it). | 2026-11-27, reported by the user | Open, not investigated yet (user: no need to fix now) |
 
 ## 7. Changelog
