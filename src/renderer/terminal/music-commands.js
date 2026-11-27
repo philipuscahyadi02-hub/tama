@@ -26,11 +26,58 @@ window.makeMusicCommands = function makeMusicCommands(K, { info, error }) {
     return lines.join('\n');
   }
 
+  // MUS-6: the last numbered lists, so "/music play 2" and "/music playlist 3" can pick from them.
+  let lastSongs = [];
+  let lastPlaylists = [];
+  const why = (r) => `✗ ${r.error}${r.fix === 'connect' ? ' → /music youtube' : r.fix === 'enable-api' ? ' (APIs & Services → Library → YouTube Data API v3 → Enable)' : ''}`;
+  const songLine = (x, i) => `   ${i + 1}. ${x.title}${x.artist ? ` · ${x.artist}` : ''}`;
+
+  async function playWords(v) {
+    const n = Number(v);
+    if (Number.isInteger(n) && n > 0 && lastSongs[n - 1]) {
+      const s = lastSongs[n - 1];
+      const r = await K.music.play({ videoId: s.videoId });
+      return r.ok ? info(`⎿  ▶ ${s.title}${s.artist ? ` · ${s.artist}` : ''}`) : error(`✗ ${r.error}`);
+    }
+    const r = await K.music.play({ query: v });
+    if (!r.ok) return error(`✗ ${r.error}`);
+    return info(r.song ? `⎿  ▶ ${r.song.title}${r.song.artist ? ` · ${r.song.artist}` : ''}` : `⎿  ${r.note || 'Opened YouTube Music.'}`);
+  }
+
+  async function library(c, v) {
+    if (c === 'youtube') {
+      info('⎿  Connecting YouTube (read-only)… finish the sign-in in your browser if it opens.');
+      const r = await K.music.library({ op: 'connect' });
+      return r.ok ? info('⎿  ✓ YouTube connected: /music playlists · /music search <words>') : error(why(r));
+    }
+    if (c === 'search') {
+      if (!v) return error('✗ /music search <words>');
+      const r = await K.music.library({ op: 'search', q: v });
+      if (r.error) return error(why(r));
+      lastSongs = (r.songs || []).slice(0, 10);
+      if (!lastSongs.length) return info('⎿  Nothing found.');
+      return info(`⎿  Songs for "${v}" (/music play <n>):\n${lastSongs.map(songLine).join('\n')}`);
+    }
+    if (c === 'playlists') {
+      const r = await K.music.library({ op: 'playlists', fresh: true });
+      if (r.error) return error(why(r));
+      lastPlaylists = r.playlists || [];
+      return info(`⎿  Your playlists (/music playlist <n> plays one):\n${lastPlaylists.map((p, i) => `   ${i + 1}. ${p.title}${p.liked ? '' : ` (${p.count})`}`).join('\n')}`);
+    }
+    // playlist <n>
+    const p = lastPlaylists[Number(v) - 1];
+    if (!p) return error('✗ /music playlists first, then /music playlist <n>');
+    const r = await K.music.play({ playlistId: p.id });
+    return r.ok ? info(`⎿  ▶ playlist ${p.title}`) : error(`✗ ${r.error}`);
+  }
+
   return {
-    music: ['YouTube Music: now playing, controls, extension (widget|pair|unpair|folder|lyrics|vol <0-100>|seek <m:ss>|open <link>)', async (arg) => {
+    music: ['YouTube Music: now playing, controls, your playlists (play <song>|search|playlists|playlist <n>|youtube|widget|pair|lyrics|vol|seek)', async (arg) => {
       const [cmd = '', ...rest] = String(arg || '').trim().split(/\s+/);
       const c = cmd.toLowerCase();
       const v = rest.join(' ');
+      if (c === 'play' && v) return playWords(v);
+      if (['youtube', 'search', 'playlists', 'playlist'].includes(c)) return library(c, v);
       if (ACTIONS[c]) {
         const r = await K.music.control(ACTIONS[c]);
         return r.ok ? info(`⎿  ${c} ✓`) : error(`✗ ${r.error}`);
@@ -86,7 +133,7 @@ window.makeMusicCommands = function makeMusicCommands(K, { info, error }) {
           const link = e.connected ? `🧩 Companion connected${e.tabs ? '' : ' (no YouTube Music tab open)'}` : e.paired ? '🧩 Companion paired, not connected (is the browser open?)' : '🧩 Companion not paired: /music install, then /music pair';
           return info(`${nowLine(st.state)}\n   ${link}${st.media.available ? '' : ' · Windows media controls unavailable'}`);
         }
-        default: return error('✗ /music [now|play|pause|next|prev|like|dislike|shuffle|repeat|vol <n>|seek <m:ss>|lyrics|open <link>|widget [off|auto]|dj on|off|beat on|off|pair|unpair|install|folder]');
+        default: return error('✗ /music [now|play [song|n]|search <words>|playlists|playlist <n>|youtube|pause|next|prev|like|dislike|shuffle|repeat|vol <n>|seek <m:ss>|lyrics|open <link>|widget [off|auto]|dj on|off|beat on|off|pair|unpair|install|folder]');
       }
     }],
   };

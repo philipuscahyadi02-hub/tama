@@ -169,6 +169,7 @@ function renderLimits(L) {
     <div class="kv">Gmail, Calendar, Drive, Docs, Sheets: free with generous per-user limits.</div>
     <div class="kv">Maps Places (billable with a key): <b>${go.month ? go.month.places : 0}</b>${cap ? ` of your ${cap} cap · <b>${Math.max(0, cap - (go.month ? go.month.places : 0))} left</b>` : ''}
       · cap <input id="placesCap" type="number" min="0" class="num" value="${cap || ''}" placeholder="none" /> <button id="capSave">Save</button></div>
+    ${go.youtube && go.youtube.units ? `<div class="kv">YouTube (music library) today: <b>${fmtN(go.youtube.units)}</b> of ${fmtN(go.youtube.limit)} units · ${go.youtube.searches} search${go.youtube.searches === 1 ? '' : 'es'} (100 units each) · <b>${fmtN(Math.max(0, go.youtube.limit - go.youtube.units))} left</b>, resets at midnight Pacific</div>` : ''}
     ${go.project ? `<div class="kv"><a class="lnk" data-href="https://console.cloud.google.com/apis/dashboard?project=${encodeURIComponent(go.project)}">Quotas in Google Cloud ↗</a><a class="lnk" data-href="https://console.cloud.google.com/billing?project=${encodeURIComponent(go.project)}">Billing ↗</a></div>` : '<div class="kv dim">Connect Google to see your project links.</div>'}`;
   document.querySelectorAll('#limGoogle a[data-href]').forEach((a) => a.addEventListener('click', () => K.openLink(a.dataset.href)));
   $('#capSave').addEventListener('click', async () => { const v = $('#placesCap').value.trim(); renderLimits(await K.limits.set({ placesCap: v ? Number(v) : null })); });

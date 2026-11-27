@@ -93,18 +93,18 @@ body:hover .playing #eq i:nth-child(2) { animation-delay: -.35s; } body:hover .p
 #tabs button .i { width: 14px; height: 14px; }
 #tabs button:hover { background: var(--tama-menu-hover); color: var(--tama-ink); }
 #tabs button.on { background: var(--tama-accent); color: var(--tama-accent-ink); }
-#queue, #lyrics { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding: 0 6px 8px; -webkit-app-region: no-drag; user-select: text; }
-#queue { list-style: none; }
-#queue li { display: flex; align-items: center; gap: 9px; padding: 5px 6px; border-radius: 10px; cursor: pointer; }
-#queue li:hover { background: var(--tama-menu-hover); }
-#queue li.current { background: var(--tama-panel); box-shadow: inset 3px 0 0 var(--tama-accent); }
-#queue li.current .t div:first-child { color: var(--tama-accent); font-weight: 700; }
-#queue img, #queue .ph { width: 34px; height: 34px; border-radius: 7px; object-fit: cover; flex: none; background: var(--tama-head); color: var(--tama-accent); display: grid; place-items: center; }
-#queue .ph .i { width: 16px; height: 16px; opacity: .7; }
-#queue .t { flex: 1; min-width: 0; }
-#queue .t div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#queue .a { color: var(--tama-dim); font-size: 11px; }
-#queue .d { color: var(--tama-dim); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+#queue, #lyrics, #libList { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding: 0 6px 8px; -webkit-app-region: no-drag; user-select: text; }
+.list { list-style: none; }
+.list li { display: flex; align-items: center; gap: 9px; padding: 5px 6px; border-radius: 10px; cursor: pointer; }
+.list li:hover { background: var(--tama-menu-hover); }
+.list li.current { background: var(--tama-panel); box-shadow: inset 3px 0 0 var(--tama-accent); }
+.list li.current .t div:first-child { color: var(--tama-accent); font-weight: 700; }
+.list img, .list .ph { width: 34px; height: 34px; border-radius: 7px; object-fit: cover; flex: none; background: var(--tama-head); color: var(--tama-accent); display: grid; place-items: center; }
+.list .ph .i { width: 16px; height: 16px; opacity: .7; }
+.list .t { flex: 1; min-width: 0; }
+.list .t div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list .a { color: var(--tama-dim); font-size: 11px; }
+.list .d { color: var(--tama-dim); font-size: 10.5px; font-variant-numeric: tabular-nums; }
 #lyrics { white-space: pre-wrap; padding: 4px 14px 12px; line-height: 1.65; font-size: 12.5px; }
 .empty { color: var(--tama-dim); padding: 18px 12px; text-align: center; white-space: normal; }
 #source { color: var(--tama-dim); font-size: 10.5px; padding: 5px 12px 8px; border-top: 1px solid var(--tama-line); }
@@ -145,7 +145,7 @@ body.glass #card {
   background: linear-gradient(180deg, color-mix(in srgb, var(--tama-bubble) 55%, transparent) 0%, color-mix(in srgb, var(--tama-panel) 38%, transparent) 70px);
 }
 body.glass #more { background: color-mix(in srgb, var(--tama-bg) 35%, transparent); border-top-color: color-mix(in srgb, var(--tama-line) 60%, transparent); }
-body.glass #queue li.current { background: color-mix(in srgb, var(--tama-panel) 60%, transparent); }
+body.glass .list li.current { background: color-mix(in srgb, var(--tama-panel) 60%, transparent); }
 body.glass #source { border-top-color: color-mix(in srgb, var(--tama-line) 60%, transparent); }
 
 /* Drag grip (the whole card drags too; the grip just shows where to grab). */
@@ -162,3 +162,17 @@ body.panel #more { border-top: 0; }
 body.panel #tabs { align-items: center; padding-top: 10px; }
 body.panel #panelClose { display: inline-grid; margin-left: auto; }
 body.panel #tabs #panelClose { padding: 0; width: 22px; height: 22px; border-radius: 7px; }
+
+/* ---- Playlists tab (MUS-6) ---- */
+#library { flex: 1; min-height: 0; display: flex; flex-direction: column; -webkit-app-region: no-drag; }
+#library[hidden] { display: none !important; }
+#libSearch { display: flex; align-items: center; gap: 6px; margin: 0 10px 6px; padding: 4px 6px 4px 9px; border-radius: 10px; background: var(--tama-panel); border: 1px solid var(--tama-line); }
+#libSearch > .ico .i { width: 14px; height: 14px; color: var(--tama-dim); }
+#libQ { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--tama-ink); font: inherit; }
+#libHead { display: flex; align-items: center; gap: 6px; padding: 0 10px 6px; }
+#libTitle { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px 3px 7px; border-radius: 11px; background: var(--tama-accent); color: var(--tama-accent-ink); font-weight: 600; font-size: 11.5px; }
+.pill .i { width: 12px; height: 12px; }
+.empty .pill { margin-top: 10px; }
+#libList .note { color: var(--tama-dim); font-size: 11px; padding: 2px 8px 6px; cursor: default; }
+#libList .note:hover { background: none; }

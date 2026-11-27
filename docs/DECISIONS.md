@@ -102,6 +102,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-070 | One-click pairing (the extension asks, the user clicks Allow on the pet's bubble; codes stay as a backup); the music card has no taskbar button | Accepted · Refines D-066, D-068 |
 | D-071 | Up next / Lyrics open in their own panel docked next to the pet (fixed, moves with her); the card stays compact wherever the user put it | Superseded by D-072 |
 | D-072 | The Up next / Lyrics panel is attached to the music card (below or above it, moves with it); the card and the pet are separate unless the user pins the card to her | Accepted · Supersedes D-071 |
+| D-073 | Library playback opens the song's music.youtube.com link through the normal `open` control (the paired tab reloads); "Liked music" lists liked Music-category videos and plays YouTube Music's LM list | Accepted |
 
 ---
 
@@ -996,3 +997,15 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** A panel docked to the pet (D-071; confusing); always following her (the laggy, in-the-way behavior of the first version).
 - **Consequences:** A pinned card can land on another monitor edge as she walks; it is clamped inside the screen she's on.
 - **Refs:** MUS-2, D-068, D-071
+
+### D-073 — Playing from the YouTube library: open the song's link; "Liked music" from the API's liked videos
+- **Date:** 2026-11-27 · **Status:** Accepted
+- **Context:** MUS-6 lists the user's playlists and search results through the YouTube Data API, and a click must play the song with the user's own Premium session. The API has no access to YouTube Music's own "Liked music" list (LM).
+- **Decision:**
+  - **Playing** builds a `music.youtube.com/watch?v=…[&list=…]` link and sends it through the existing `open` control: the paired tab navigates to it (the page reloads, the content script comes back by itself), or without the extension the default browser opens it. A playlist plays as `watch?list=…`; "Liked music" plays `watch?list=LM`.
+  - **Listing "Liked music"** uses `videos?myRating=like` filtered to the Music category (10). It can differ a little from YouTube Music's own list (uploads without that category are left out).
+  - **Search** asks for Music-category videos only, 20 results, cached for an hour per query (100 quota units each); lists are cached for 10 minutes. The Limits tab counts today's units against 10,000 (Pacific day).
+  - The `youtube.readonly` scope is requested only after the user turns the switch on (Connect YouTube / `/music youtube`), which signs in again.
+- **Alternatives:** Driving YouTube Music's in-page router or `loadVideoById` from the page script (no reload, but undocumented and it can desync the page's own state); reading LM from the page through the extension (works only with the extension; may come later for MUS-7).
+- **Consequences:** Starting a song from the library takes about two seconds while the tab reloads. Users must enable the YouTube Data API in their Google Cloud project; the tab links to it.
+- **Refs:** MUS-6, MUS-10, D-006, D-034, D-066, src/main/services/google/youtube.js, src/main/services/music/library.js, src/renderer/music/library.js

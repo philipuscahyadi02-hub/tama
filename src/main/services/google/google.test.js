@@ -344,3 +344,17 @@ test('calendar: a confirmed place link is added to the event notes (only Google 
   await cal.create({ summary: 'X', start: '2026-11-07', end: '2026-11-08', placeLink: 'https://evil.example/x' });
   assert.equal(JSON.parse(g.calls.filter((c) => c.method === 'POST' && c.url.pathname.includes('/calendar/')).at(-1)?.body).description, undefined);
 });
+
+test('service: the YouTube switch asks for youtube.readonly at the next sign-in (MUS-6)', async () => {
+  const s = setupService();
+  s.secrets['google.client'] = JSON.stringify({ clientId: 'c', clientSecret: 's' });
+  s.secrets['google.tokens'] = JSON.stringify({ access_token: 'AT', refresh_token: 'RT', expiry: s.now() + 3600000, scope: 'https://www.googleapis.com/auth/calendar.events' });
+  const no = await s.bus.request('google.youtube', { op: 'playlists' });
+  assert.equal(no.fix, 'connect');
+  const r = await s.bus.request('google.set', { youtube: true });
+  assert.equal(r.youtube, true);
+  assert.equal(r.needsLogin, true);
+  s.secrets['google.tokens'] = JSON.stringify({ ...JSON.parse(s.secrets['google.tokens']), scope: 'https://www.googleapis.com/auth/youtube.readonly' });
+  assert.equal((await s.bus.request('google.set', { youtube: true })).needsLogin, false);
+  s.stop();
+});

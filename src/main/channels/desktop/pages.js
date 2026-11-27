@@ -85,7 +85,7 @@ function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster
     ipc.handle('google:login', () => bus.request(TOPICS.GOOGLE_LOGIN).catch((e) => ({ error: String(e.message || e) })));
     ipc.handle('google:logout', () => bus.request(TOPICS.GOOGLE_LOGOUT));
     ipc.handle('google:set', (p) => bus.request(TOPICS.GOOGLE_SET, {
-      readonly: typeof p?.readonly === 'boolean' ? p.readonly : undefined, backup: typeof p?.backup === 'boolean' ? p.backup : undefined,
+      readonly: typeof p?.readonly === 'boolean' ? p.readonly : undefined, youtube: typeof p?.youtube === 'boolean' ? p.youtube : undefined, backup: typeof p?.backup === 'boolean' ? p.backup : undefined,
       mapsKey: p?.mapsKey === null ? null : typeof p?.mapsKey === 'string' ? p.mapsKey : undefined,
     }));
     ipc.handle('google:brief', () => bus.request(TOPICS.GOOGLE_BRIEF).catch((e) => ({ error: String(e.message || e) })));
@@ -135,6 +135,15 @@ function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster
       action: String(p?.action || '').slice(0, 20),
       value: typeof p?.value === 'number' && Number.isFinite(p.value) ? p.value : typeof p?.value === 'string' ? p.value.slice(0, 500) : undefined,
     }));
+    ipc.handle('music:library', (p) => bus.request(TOPICS.MUSIC_LIBRARY, {
+      op: String(p?.op || '').slice(0, 20), id: typeof p?.id === 'string' ? p.id.slice(0, 64) : undefined,
+      q: typeof p?.q === 'string' ? p.q.slice(0, 120) : undefined, fresh: p?.fresh === true,
+    }).catch((e) => ({ error: String(e.message || e) })));
+    ipc.handle('music:play', (p) => bus.request(TOPICS.MUSIC_PLAY, {
+      videoId: typeof p?.videoId === 'string' ? p.videoId.slice(0, 64) : undefined,
+      playlistId: typeof p?.playlistId === 'string' ? p.playlistId.slice(0, 64) : undefined,
+      query: typeof p?.query === 'string' ? p.query.slice(0, 120) : undefined,
+    }).catch((e) => ({ ok: false, error: String(e.message || e) })));
     ipc.handle('music:pair', () => bus.request(TOPICS.MUSIC_PAIR));
     ipc.handle('music:unpair', () => bus.request(TOPICS.MUSIC_UNPAIR));
     ipc.handle('music:openFolder', async () => {

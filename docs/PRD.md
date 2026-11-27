@@ -5,10 +5,10 @@
 
 | | |
 |---|---|
-| **Version** | 0.41 |
+| **Version** | 0.42 |
 | **Status** | **v1.0.0 released** (D-058); installer + setup wizard done (unreleased). Every other open item is parked (D-064). **Next: M13 YouTube Music & DJ = 1.1.0** (MUS-*, D-065, D-066) |
 | **Owner** | philipuscahyadi02-hub |
-| **Last updated** | 2026-11-26 |
+| **Last updated** | 2026-11-27 |
 | **Related** | [ARCHITECTURE.md](ARCHITECTURE.md) · [DECISIONS.md](DECISIONS.md) · [../AGENTS.md](../AGENTS.md) · [../CHANGELOG.md](../CHANGELOG.md) |
 
 ---
@@ -248,7 +248,7 @@ Plan in D-065, YouTube Music only with a companion extension (D-066). Build orde
 | MUS-3 | **DJ Tama:** while music plays she wears headphones, nods along, scratches a small turntable and sometimes strikes a "drop" pose with sparkles; on a new song she says a short DJ line (composer, fallback lines in the deck; respects quiet rules and mute). New rig parts in `src/shared/rig` (headphones, deck) so every Tama gets the look. Off when the music pauses; `/music dj on\|off`. Reduced motion = headphones only. | P0 | M13 | ☑ |
 | MUS-4 | **Real beat sync:** the pet window analyses the PC's audio output (Windows loopback) in memory to find the tempo and beat, so the nod and scratches land on the beat. Nothing is recorded, saved or sent. Runs only while music plays and DJ mode is on; the permission is granted to the pet window only (amends D-055). Falls back to a steady groove when unavailable. Budget: at most about +2 % CPU while playing (`npm run perf`), unchanged idle. | P1 | M13 | ☑ |
 | ~~MUS-5~~ | ~~**Spotify**~~ *(dropped by the user: YouTube Music only, D-066).* | — | — | ✖ |
-| MUS-6 | **YouTube account data:** with Google signed in, an optional \"YouTube Music\" switch adds the read-only `youtube.readonly` scope. Lists the user's playlists and their songs and searches songs through the YouTube Data API; playing one opens it in the paired YouTube Music tab (MUS-10) or, without the extension, on music.youtube.com in the default browser, where the user's own Premium session plays it. No unofficial APIs or cookies (D-006). The dashboard shows the YouTube API quota use (search = 100 of 10,000 units a day). | P0 | M13 | ☐ |
+| MUS-6 | **YouTube account data:** with Google signed in, an optional \"YouTube Music\" switch (Connect YouTube in the widget's **Playlists** tab, `/music youtube`) adds the read-only `youtube.readonly` scope. Lists the user's playlists (Liked music first) and their songs and searches songs through the YouTube Data API; playing one opens it in the paired YouTube Music tab (MUS-10) or, without the extension, on music.youtube.com in the default browser, where the user's own Premium session plays it (D-073). Terminal: `/music play <song>`, `/music search`, `/music playlists`, `/music playlist <n>`. No unofficial APIs or cookies (D-006). The Limits tab shows today's YouTube API units (search = 100 of 10,000 a day; results cached). | P0 | M13 | ◐ |
 | MUS-7 | **Ask her:** Tama-owned tools for the chat brain and Claude Code (`music_now`, `music_control`, `music_play` (song, playlist or search), `music_queue`, `music_playlists`): reads and controls run without a tap and are announced; song titles and lyrics are untrusted data for the model. The persona knows them. | P1 | M13 | ☐ |
 | MUS-8 | **Phone:** Telegram `/np` (with cover art), `/play [song\|playlist]`, `/pause`, `/skip`, `/playlists`. | P1 | M13 | ☐ |
 | MUS-9 | **Setup & settings:** a YouTube Music card in the setup wizard (install the extension, pair it, the YouTube switch, what works without each), a Settings → Music tab (connection, DJ mode, beat sync, widget auto-show), and `/music`. | P1 | M13 | ☐ |
@@ -317,6 +317,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.42 — 2026-11-27** — MUS-6 ◐ (Playlists tab, search, play from the library; built and tested against a fake API, live check with the user's account pending) (D-073).
 - **0.41 — 2026-11-27** — MUS-3 ☑ (DJ Tama), MUS-4 ☑ (beat sync from PC audio, pet window only; +2 % CPU measured) (D-069). Widget is a normal window with glass/opacity (D-068).
 - **0.40 — 2026-11-27** — MUS-2 ☑ (music widget: compact card beside her, expanded Up next and Lyrics; Playlists tab follows with MUS-6). Embedded player rejected (D-067).
 - **0.39 — 2026-11-26** — MUS-1 ☑ (media-session fallback), MUS-10 ☑ (Companion extension; checked live in Chrome: song, cover, queue, lyrics, pause/play/seek, reconnect).

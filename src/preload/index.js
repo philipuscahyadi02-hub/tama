@@ -184,6 +184,9 @@ contextBridge.exposeInMainWorld('tama', {
   music: {
     get: () => ipcRenderer.invoke('music:get'),
     control: (/** @type {string} */ action, /** @type {number|string|undefined} */ value) => ipcRenderer.invoke('music:control', { action, value }),
+    /** YouTube library (MUS-6): op 'playlists' | 'items' (id) | 'search' (q) | 'connect' */
+    library: (/** @type {any} */ p) => ipcRenderer.invoke('music:library', p),
+    play: (/** @type {any} */ p) => ipcRenderer.invoke('music:play', p),
     pair: () => ipcRenderer.invoke('music:pair'),
     unpair: () => ipcRenderer.invoke('music:unpair'),
     openFolder: () => ipcRenderer.invoke('music:openFolder'),

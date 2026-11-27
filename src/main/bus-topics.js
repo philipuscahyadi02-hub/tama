@@ -210,6 +210,8 @@ const TOPICS = {
   GOOGLE_SET: 'google.set',
   /** () → { text, events, mail, todos } | { error } — morning brief (GOOG-8) */
   GOOGLE_BRIEF: 'google.brief',
+  /** { op: 'playlists'|'items'|'search', id?, q?, fresh? } → { playlists? | songs? } or { error, fix? } — YouTube account data (MUS-6) */
+  GOOGLE_YOUTUBE: 'google.youtube',
   /** () → string — short read-only context line for the chat brain ('' when signed out) */
   GOOGLE_CONTEXT: 'google.context',
   /** () → { ok, name, size } — back up the active Tama to Drive appData (PORT-6) */
@@ -284,6 +286,10 @@ const TOPICS = {
   MUSIC_PAIR_ASK: 'music.pair.ask',
   /** { allow } → { ok, allowed? } — the user's answer to MUSIC_PAIR_ASK (from the pet's bubble) */
   MUSIC_PAIR_ANSWER: 'music.pair.answer',
+  /** { op: 'playlists'|'items'|'search'|'connect', id?, q?, fresh? } → { playlists? | songs? | ok? } or { error, fix? } — the user's YouTube library (MUS-6) */
+  MUSIC_LIBRARY: 'music.library',
+  /** { videoId?, playlistId?, query? } → { ok, opened?, song?, error? } — play a song or playlist in YouTube Music (MUS-6) */
+  MUSIC_PLAY: 'music.play',
 };
 
 module.exports = { TOPICS };

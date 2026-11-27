@@ -98,7 +98,8 @@ function renderTab() {
   for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('on', b.dataset.tab === tab);
   $('queue').hidden = tab !== 'queue';
   $('lyrics').hidden = tab !== 'lyrics';
-  if (tab === 'queue') renderQueue(); else renderLyrics();
+  $('library').hidden = tab !== 'library';
+  if (tab === 'queue') renderQueue(); else if (tab === 'lyrics') renderLyrics(); else if (window.TamaLibrary) window.TamaLibrary.show();
 }
 
 function renderQueue() {

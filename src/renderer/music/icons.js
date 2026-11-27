@@ -23,6 +23,10 @@
     droplet: `<path ${S} d="M12 3.5s6 6.4 6 10.6a6 6 0 0 1-12 0C6 9.9 12 3.5 12 3.5z"/><path ${S} stroke-width="1.6" d="M9.2 14.6a2.9 2.9 0 0 0 2.4 2.6"/>`,
     note: `<path ${S} d="M9.5 17.5V6l10-2v11.5"/><circle ${F} cx="7" cy="17.5" r="2.6"/><circle ${F} cx="17" cy="15.5" r="2.6"/>`,
     queue: `<path ${S} d="M4 6.5h11M4 11.5h11M4 16.5h7"/><path ${F} d="M16 14.6v5.8a.5.5 0 0 0 .78.42l4.2-2.9a.5.5 0 0 0 0-.84l-4.2-2.9a.5.5 0 0 0-.78.42z"/>`,
+    library: `<rect ${S} x="3.5" y="7.5" width="13" height="13" rx="2.5"/><path ${S} d="M7.5 4h10a3 3 0 0 1 3 3v10"/><path ${S} stroke-width="1.8" d="M11.5 16.8v-6l3-.8"/><circle ${F} cx="10" cy="16.8" r="1.7"/>`,
+    search: `<circle ${S} cx="10.5" cy="10.5" r="6"/><path ${S} d="m15 15 5 5"/>`,
+    back: `<path ${S} d="M14.5 6 8.5 12l6 6"/>`,
+    heart: `<path ${S} d="M12 19.5s-7.5-4.4-7.5-10A4.2 4.2 0 0 1 12 7a4.2 4.2 0 0 1 7.5 2.5c0 5.6-7.5 10-7.5 10z"/>`,
     lyrics: `<path ${S} d="M4.5 6.5h15M4.5 11.5h10M4.5 16.5h6.5"/><path ${S} d="M18 13v5.2"/><circle ${F} cx="16.6" cy="18.6" r="1.8"/>`,
   };
   const sprite = `<svg xmlns="http://www.w3.org/2000/svg" style="display:none">${Object.entries(ICONS).map(([k, v]) => `<symbol id="i-${k}" viewBox="0 0 24 24">${v}</symbol>`).join('')}</svg>`;

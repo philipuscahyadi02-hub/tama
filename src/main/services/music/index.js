@@ -6,6 +6,7 @@
 const crypto = require('crypto');
 const { TOPICS } = require('../../bus-topics');
 const L = require('./logic');
+const { createLibrary } = require('./library');
 
 const PORTS = [47821, 47822, 47823, 47824, 47825]; // the extension tries the same list
 const CODE_TTL_MS = 10 * 60000;
@@ -243,6 +244,8 @@ function createMusic({ bus, secrets, media, startWs, openExternal = () => null, 
     return { code: pairing.code, until: pairing.until, port, dir: extensionDir };
   }
 
+  const lib = createLibrary({ bus, control });
+
   function start() {
     /** @type {{ close: () => void } | null} */ let server = null;
     startWs({ ports: PORTS, verifyOrigin: (o) => { const ok = EXT_ORIGIN.test(o); if (!ok) log(`[music] refused a connection from ${o.slice(0, 60) || 'no origin'}`); return ok; }, onConnection, onError: (m) => err('music.ws', m) })
@@ -253,6 +256,8 @@ function createMusic({ bus, secrets, media, startWs, openExternal = () => null, 
       bus.handle(TOPICS.MUSIC_GET, () => status()),
       bus.handle(TOPICS.MUSIC_CONTROL, (/** @type {any} */ p) => control(p || {})),
       bus.handle(TOPICS.MUSIC_PAIR, () => newCode()),
+      bus.handle(TOPICS.MUSIC_LIBRARY, (/** @type {any} */ p) => lib.library(p || {})),
+      bus.handle(TOPICS.MUSIC_PLAY, (/** @type {any} */ p) => lib.play(p || {})),
       bus.handle(TOPICS.MUSIC_PAIR_ANSWER, (/** @type {any} */ p) => endAsk(!!(p && p.allow === true))),
       bus.handle(TOPICS.MUSIC_UNPAIR, () => {
         secrets.delete(SECRET);

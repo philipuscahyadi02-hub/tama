@@ -10,6 +10,7 @@ const { createDrive } = require('./drive');
 const { googleTools, policyRule } = require('./tools');
 const { createBackup } = require('./backup');
 const { createMaps } = require('./maps');
+const { createYoutube, explain: explainYoutube } = require('./youtube');
 const { dayOf } = require('../../day');
 
 const SCOPES = {
@@ -21,6 +22,7 @@ const SCOPES = {
     'https://www.googleapis.com/auth/drive.appdata',
   ],
   readonly: 'https://www.googleapis.com/auth/drive.readonly',
+  youtube: 'https://www.googleapis.com/auth/youtube.readonly', // MUS-6, only with the YouTube Music switch
 };
 const POLL_MS = 60000;            // meeting watch tick
 const BACKUP_EVERY_MS = 20 * 3600000;
@@ -38,7 +40,7 @@ const LEASE_EVERY_MS = 5 * 60000;
  * }} deps
  */
 function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceName, fetch: f = fetch, now = Date.now }) {
-  const prefs = () => ({ readonly: false, backup: true, folderId: null, lastBackup: 0, briefDay: '', deviceId: '', tamaDrafts: /** @type {string[]} */ ([]), ...(device.get().google || {}) });
+  const prefs = () => ({ readonly: false, youtube: false, backup: true, folderId: null, lastBackup: 0, briefDay: '', deviceId: '', tamaDrafts: /** @type {string[]} */ ([]), ...(device.get().google || {}) });
   if (!prefs().deviceId) device.patch('google', { deviceId: `pc-${now().toString(36)}-${Math.random().toString(36).slice(2, 8)}` });
   const json = (/** @type {string} */ k) => { try { return JSON.parse(secrets.get(k) || 'null'); } catch { return null; } };
   const client = () => /** @type {{ clientId: string, clientSecret: string } | null} */ (json('google.client'));
@@ -54,6 +56,7 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
     refresh: (rt) => { const c = client(); if (!c) throw new Error('Google client not set up.'); return oauth.refresh({ clientId: c.clientId, clientSecret: c.clientSecret, refreshToken: rt, fetch: f }); },
   });
   const calendar = createCalendar(api, now);
+  const youtube = createYoutube(api, { now });
   const gmail = createGmail(api);
   const drive = createDrive(api, { getFolderId: () => prefs().folderId, setFolderId: (id) => device.patch('google', { folderId: id }) });
   const backup = createBackup({ bus, drive, tamaId: () => tama.id, tamaName: () => tama.name, deviceId: prefs().deviceId, deviceName, now });
@@ -83,7 +86,7 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
     const p = prefs();
     const t = tokens();
     return {
-      configured: !!client(), signedIn: signedIn(), email: (t && t.email) || null, clientId: (client() || {}).clientId || null, readonly: !!p.readonly, backup: p.backup !== false,
+      configured: !!client(), signedIn: signedIn(), email: (t && t.email) || null, clientId: (client() || {}).clientId || null, readonly: !!p.readonly, youtube: !!p.youtube, backup: p.backup !== false,
       lastBackup: p.lastBackup || 0, inMeeting: meeting && meeting.end > now() ? meeting.summary : null, maps: secrets.get('google.mapsKey') ? 'google' : 'web-search',
       scopes: t ? String(t.scope || '').split(' ').filter(Boolean).map((s) => s.replace('https://www.googleapis.com/auth/', '')) : [],
     };
@@ -104,7 +107,7 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
   async function login() {
     const c = client();
     if (!c) return { error: 'Set up your Google OAuth client first (/google setup).' };
-    const scopes = [...SCOPES.base, ...(prefs().readonly ? [SCOPES.readonly] : [])];
+    const scopes = [...SCOPES.base, ...(prefs().readonly ? [SCOPES.readonly] : []), ...(prefs().youtube ? [SCOPES.youtube] : [])];
     const r = await oauth.authorize({ clientId: c.clientId, clientSecret: c.clientSecret, scopes, openExternal, fetch: f });
     if (!r.refresh_token) return { error: 'Google did not return a refresh token. Remove Tama\'s access at myaccount.google.com/permissions and try again.' };
     secrets.set('google.tokens', JSON.stringify({ access_token: r.access_token, refresh_token: r.refresh_token, expiry: now() + (r.expires_in || 3600) * 1000, scope: r.scope || scopes.join(' ') }));
@@ -119,6 +122,7 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
     const t = tokens();
     if (t && t.refresh_token) await oauth.revoke(t.refresh_token, f);
     secrets.delete('google.tokens');
+    youtube.clear();
     meeting = null;
     changed();
     return status();
@@ -209,7 +213,7 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
     }
   }
 
-  /** @param {{ readonly?: boolean, backup?: boolean, mapsKey?: string | null }} p */
+  /** @param {{ readonly?: boolean, youtube?: boolean, backup?: boolean, mapsKey?: string | null }} p */
   function set(p) {
     /** @type {Record<string, any>} */ const patch = {};
     if (p.mapsKey === null || p.mapsKey === '') secrets.delete('google.mapsKey');
@@ -218,11 +222,33 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
       secrets.set('google.mapsKey', p.mapsKey.trim());
     }
     if (typeof p.readonly === 'boolean') patch.readonly = p.readonly;
+    if (typeof p.youtube === 'boolean') patch.youtube = p.youtube;
     if (typeof p.backup === 'boolean') patch.backup = p.backup;
     device.patch('google', patch);
     changed();
-    const needsLogin = typeof p.readonly === 'boolean' && signedIn() && p.readonly && !status().scopes.includes('drive.readonly');
+    const missing = (/** @type {string} */ sc) => !status().scopes.includes(sc);
+    const needsLogin = signedIn() && ((p.readonly === true && missing('drive.readonly')) || (p.youtube === true && missing('youtube.readonly')));
     return { ...status(), needsLogin };
+  }
+
+  /**
+   * YouTube account data for the music service (MUS-6). Errors come back as { error, fix } instead of throwing.
+   * @param {{ op?: string, id?: string, q?: string, fresh?: boolean }} p
+   */
+  async function youtubeData(p) {
+    const st = status();
+    if (!st.signedIn) return { error: 'Sign in to Google first (/google).', fix: 'google' };
+    if (!st.scopes.includes('youtube.readonly')) return { error: 'Connect YouTube to see your playlists.', fix: 'connect' };
+    try {
+      if (p.op === 'playlists') return { playlists: await youtube.playlists(!!p.fresh) };
+      if (p.op === 'items') return { songs: await youtube.items(String(p.id || '')) };
+      if (p.op === 'search') return { songs: await youtube.search(String(p.q || '')) };
+      return { error: 'unknown request' };
+    } catch (e) {
+      const x = explainYoutube(e);
+      if (!x.fix) bus.emit(TOPICS.APP_ERROR, { topic: 'google.youtube', message: String((/** @type {any} */ (e)).message || e) });
+      return x;
+    }
   }
 
   const safe = (/** @type {() => Promise<any>} */ fn, /** @type {string} */ topic) => () => fn().catch((e) => bus.emit(TOPICS.APP_ERROR, { topic, message: String(e.message || e) }));
@@ -241,6 +267,7 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
       bus.handle(TOPICS.GOOGLE_LOGOUT, () => logout()),
       bus.handle(TOPICS.GOOGLE_SET, (/** @type {any} */ p) => set(p || {})),
       bus.handle(TOPICS.GOOGLE_BRIEF, () => brief()),
+      bus.handle(TOPICS.GOOGLE_YOUTUBE, (/** @type {any} */ p) => youtubeData(p || {})),
       bus.handle(TOPICS.GOOGLE_CONTEXT, () => chatContext()),
       bus.handle(TOPICS.GOOGLE_BACKUP_NOW, async () => { const r = await backup.backupNow(); device.patch('google', { lastBackup: now() }); return r; }),
       bus.handle(TOPICS.GOOGLE_BACKUPS, async () => ({ backups: await backup.list() })),
@@ -250,7 +277,7 @@ function createGoogle({ bus, secrets, device, oauth, openExternal, tama, deviceN
   }
 
   return {
-    start, status, login, logout, setClient, brief, chatContext, watch, daily,
+    start, status, login, logout, setClient, brief, chatContext, watch, daily, youtubeData,
     /** Tool servers for Claude Code sessions (only while signed in). */
     mcpServers: () => (signedIn() ? [{ name: 'google', tools }] : []),
     gateRule: policyRule(tools),

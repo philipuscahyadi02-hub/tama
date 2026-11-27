@@ -147,7 +147,10 @@ src/main/platform/windows/walk-marker.js  44x44 "out for a walk" edge tab while 
 src/renderer/marker/              the walk tab view (Tama's face; click = summon)
 src/main/services/music/          M13 YouTube Music (D-065, D-066): logic.js (pure: control validation, untrusted extension state rebuilt
                                   field by field, change detection) + index.js (extension pairing + link, media-session fallback poll,
-                                  controls routed to whichever source has the song)
+                                  controls routed to whichever source has the song) + library.js (MUS-6: playlists/search via
+                                  google.youtube, play = open a music.youtube.com link through the normal control path)
+src/main/services/google/youtube.js  MUS-6 YouTube Data API (youtube.readonly, optional switch): playlists, items, liked music,
+                                  search; slim rows with caps; cached (lists 10 min, search 1 h: 100 quota units each)
 src/main/music-wiring.js          wires the music service, the media-session helper and the widget (keeps index.js short)
 src/main/platform/windows/music-window.js  MUS-2 widget window: beside the pet (geometry.widgetPosition), follows her unless
                                   dragged ("pinned"), auto-shows while playing (ui pref musicWidget auto|off), compact/expanded
@@ -204,7 +207,7 @@ bus.on('engine.event', handler)
 Events: `app.error`, `pet.state.changed`, `pet.bond.changed`, `engine.event`, `chat.event`, `brain.notice`, `ui.prefs.changed`, `memory.changed`, `event.shown`, `google.changed`, `google.meeting.soon`, `telegram.changed`, `usage.{record,changed,limit}`, `accounts.changed`, `summon.done`, `tray.action`, `character.changed`, `device.{power,idle}.changed`, `prod.{changed,focus.phase,reminder.due,commit.seen}`.
 Requests: `pet.{get,act,award}`, `roster.{get,switch,hatchNew,graduate,restore,delete,export,import}`, `prod.*`, `character.{get,save}`, `designer.{generate,refine,voice}`, `engine.{info,send,interrupt,clear,setMode,setModel,setEffort,setCwd,answerPermission,resume}`, `chat.{send,history,interrupt,clear,push,confirm}`, `ui.prefs.{get,set}`, `memory.{get,add,forget}`, `diary.{write,list,read}`, `events.{answer,trigger}`, `brain.compose`, `google.{status,setClient,login,logout,set,brief,context,backupNow,backups,restore}`, `telegram.{status,setup,newCode,unpair,set}`, `usage.get`, `usage.limits.{get,refresh,set}`, `voice.{say,render,status,set,detect,encode,preview,info}` + `voice.play` / `voice.changed` / `voice.skipped`, `accounts.{get,switch}`, `brain.{status,set}`, `summon`.
 M5 extras (D-035): requests `weather.{get,set}`, `device.fullscreen.get`.
-M13 (D-066): event `music.changed`; requests `music.{get,control,pair,unpair}`.
+M13 (D-066): event `music.changed`; requests `music.{get,control,pair,unpair,library,play}`, `google.youtube` (MUS-6).
 Renderer messages arrive on one `ui` IPC channel: `pet.state`, `pet.bond`, `prod`, `focus`, `reminder`, `commit`, `summon`, `tray`, `agent.event`, `term.focus`, `character`.
 
 ## 5. Engine contract

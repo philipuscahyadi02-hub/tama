@@ -55,10 +55,16 @@
       <nav id="tabs">
         <button data-tab="queue" class="on"><span class="ico" data-i="queue"></span>Up next</button>
         <button data-tab="lyrics"><span class="ico" data-i="lyrics"></span>Lyrics</button>
+        <button data-tab="library"><span class="ico" data-i="library"></span>Playlists</button>
         <button id="panelClose" class="tiny ico" data-i="close" title="Close"></button>
       </nav>
-      <ol id="queue"></ol>
+      <ol id="queue" class="list"></ol>
       <div id="lyrics" hidden></div>
+      <div id="library" hidden>
+        <form id="libSearch" autocomplete="off"><span class="ico" data-i="search"></span><input id="libQ" maxlength="120" placeholder="Search songs on YouTube" spellcheck="false" /><button id="libClear" type="button" class="tiny ico" data-i="close" title="Back to your playlists" hidden></button></form>
+        <div id="libHead" hidden><button id="libBack" class="tiny ico" data-i="back" title="Back"></button><b id="libTitle"></b><button id="libPlayAll" class="pill"><span class="ico" data-i="play"></span>Play all</button></div>
+        <ol id="libList" class="list"></ol>
+      </div>
       <footer id="source"></footer>
     </section>
   </main>
@@ -68,5 +74,6 @@
   <script src="../../shared/theme.js"></script>
   <script src="icons.js"></script>
   <script src="music.js"></script>
+  <script src="library.js"></script>
 </body>
 </html>

@@ -10,6 +10,11 @@ const HISTORY_DAYS = 90;
 const DEFAULT_ALERTS = [0.25, 0.10]; // fraction LEFT
 const NICE = /** @type {Record<string, string>} */ ({ five_hour: '5-hour', seven_day: 'weekly', seven_day_opus: 'weekly Opus', seven_day_sonnet: 'weekly Sonnet', seven_day_oauth_apps: 'weekly apps' });
 
+/** YouTube Data API quota (MUS-6): 10,000 units a day per project, reset at midnight Pacific; search 100, lists 1. */
+const YT_DAILY = 10000;
+const ytUnits = (/** @type {string} */ op) => (/^youtube search/.test(op) ? 100 : /^youtube /.test(op) ? 1 : 0);
+const pacificDay = (/** @type {number} */ t) => new Date(t).toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+
 /** @param {string} k */
 const nice = (k) => NICE[k] || k.replace(/^model:/, '');
 
@@ -106,6 +111,9 @@ function createLimits({ bus, store, device, entries, refreshClaude = async () =>
     /** @type {Record<string, number>} */ const byApi = {};
     for (const e of goo) { const api = String(e.op).split(/[ .]/)[0]; byApi[api] = (byApi[api] || 0) + 1; }
     const places = goo.filter((e) => /^places/.test(e.op)).length;
+    const ptToday = pacificDay(t);
+    const yt = all.filter((e) => e.provider === 'google' && /^youtube /.test(String(e.op)) && pacificDay(e.at) === ptToday);
+    const ytUsed = yt.reduce((a, e) => a + ytUnits(String(e.op)), 0);
     const gstat = await bus.request(TOPICS.GOOGLE_STATUS).catch(() => null);
     const clientId = gstat && gstat.clientId ? String(gstat.clientId) : '';
     return {
@@ -115,7 +123,7 @@ function createLimits({ bus, store, device, entries, refreshClaude = async () =>
         history: history.filter((h) => h.at >= t - 7 * 86400000),
       },
       gemini: { ...c.gemini, today: { turns: gem.length, tokens: gem.reduce((a, e) => a + (e.tokens || 0), 0) } },
-      google: { month: { calls: goo.length, byApi, places }, placesCap: c.google.placesCap || null, project: clientId ? clientId.split('-')[0] : null, signedIn: !!(gstat && gstat.signedIn) },
+      google: { month: { calls: goo.length, byApi, places }, youtube: { units: ytUsed, limit: YT_DAILY, searches: yt.filter((e) => /^youtube search/.test(String(e.op))).length }, placesCap: c.google.placesCap || null, project: clientId ? clientId.split('-')[0] : null, signedIn: !!(gstat && gstat.signedIn) },
       alertAt: c.alertAt,
     };
   }
@@ -144,4 +152,4 @@ function createLimits({ bus, store, device, entries, refreshClaude = async () =>
   return { start, get, refresh, set, onLimit };
 }
 
-module.exports = { createLimits, dueAlerts };
+module.exports = { createLimits, dueAlerts, ytUnits };
