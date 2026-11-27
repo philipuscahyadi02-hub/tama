@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.54 |
+| **Version** | 0.55 |
 | **Status** | **v1.0.0 released** (D-058); installer + setup wizard done (unreleased). Every other open item is parked (D-064). **Next: M13 YouTube Music & DJ = 1.1.0** (MUS-*, D-065, D-066) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-27 |
@@ -276,7 +276,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 - [x] **M11 — Quality control.** *(released in 1.0.0)* Architecture checks, dead code, performance, code review, coverage, security (QC-1..6, NFR-1).
 - [x] **M12 — Shipping** *(closed 2026-11-26: installer and setup wizard done, provider layer in place; the other SHIP rows, GOOG-6 and NFR-2 are parked, D-064)* (1.0.0 released early with SHIP-8 in part, D-058; the rest arrives as 1.x). Also closes the two open P0 rows (GOOG-6 replace section, NFR-2 mixed-DPI check) or defers them explicitly. Windows installer and macOS app, a provider layer, modular capabilities with a setup wizard, optional components on demand, updates, signing (SHIP-1..8, NFR-3).
 - [x] **M9 — Voice & polish.** *(released as 0.9.0; phone → Tama speech-to-text (VOICE-4) deferred)* AivisSpeech voice, voice notes on Telegram, reduced motion/mute, performance (VOICE-1, VOICE-4, TG-3 voice, PET-8, NFR-1). Portable .exe postponed.
-- [ ] **M13 — YouTube Music & DJ (1.1.0)** (D-065, D-066): a Tama Companion browser extension for YouTube Music, a fallback media-session reader, your YouTube playlists and search, a music widget with Up next, lyrics and controls beside her, and DJ Tama who plays along on the real beat (MUS-1..4, MUS-6..10). The only open milestone.
+- [x] **M13 — YouTube Music & DJ (1.1.0)** (D-065, D-066): a Tama Companion browser extension for YouTube Music, a fallback media-session reader, your YouTube playlists and search, a music widget with Up next, lyrics and controls beside her, and DJ Tama who plays along on the real beat (MUS-1..4, MUS-6..10). Released as v1.1.0 on 2026-11-27, together with the Look (MUS-11), the calendar (CAL-1/2), the browser helpers (EXT-1/2) and keep-awake. MUS-11, CAL-1 and CAL-2 stay ◐ until the user has checked glass and the calendar with real data.
 - 🅿 **1.x — Voice & hands** (parked, D-064; was planned in D-061, D-062; its music actions are replaced by M13): talk to her with push-to-talk (Ctrl+Alt+Space), let her act on the PC through a few safe actions, run fixed voice commands without any AI, and an optional free local brain (VH-1..7).
 - 🅿 **v2 — Tama's own agentic brain + "the work buddy who grows when you ship"** (parked, D-064; was planned in D-056, D-060). Tama runs its own agent loop instead of depending on one provider's agent (AGT-1..6), and the product story centres on her growing with your real work (USP-1..6).
 
@@ -329,6 +329,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | BUG-2 | Electron warns that its `safeStorage` usage is deprecated and will be removed (`platform/secrets` stores tokens with it): `isEncryptionAvailable` → `isAsyncEncryptionAvailable`, `encryptString`/`decryptString` → `encryptStringAsync`/`decryptStringAsync` (the secret store API becomes async). | 2026-11-27, reported by the user | Open (user: no need to fix now) |
 
 ## 7. Changelog
+- **0.55 — 2026-11-27** — M13 released as v1.1.0.
 - **0.54 — 2026-11-27** — BUG-1 fixed (expired Google sign-in handled).
 - **0.53 — 2026-11-27** — CAL-2 is now the calendar box, a desktop widget like the music card (D-085); BUG-1 cause found.
 - **0.52 — 2026-11-27** — Known issues noted: BUG-1 (Google backup token error in the terminal), BUG-2 (Electron safeStorage deprecation warning).

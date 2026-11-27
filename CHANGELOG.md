@@ -15,6 +15,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   Fixes between milestones are patch versions. 1.0.0 = first stable release (D-058); the rest of M12 ships as 1.x; 2.0.0 = Tama's own agentic brain.
 
 ## [Unreleased]
+
+## [1.1.0] — 2026-11-27 — YouTube Music & DJ, the Look, calendar, browser helpers
 ### Added
 - **YouTube Music, step 1 (M13, D-066):**
   - **Tama Companion browser extension** (`extension/`, Chrome and Edge): it reads the YouTube Music player (song, cover, position, volume, repeat, like, the Up next queue, lyrics) and runs Tama's controls. It pairs once with a code (`/music pair`), talks only to Tama on 127.0.0.1, and only runs on music.youtube.com (MUS-10).
