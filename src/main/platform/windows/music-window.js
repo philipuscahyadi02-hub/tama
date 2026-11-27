@@ -59,8 +59,10 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
 
   function createPanel() {
     const p = new BrowserWindow({
-      ...PANEL, show: false, frame: false, transparent: true, hasShadow: false, resizable: false, movable: false,
+      ...PANEL, show: false, frame: false, resizable: false, movable: false,
       maximizable: false, minimizable: false, fullscreenable: false, skipTaskbar: true,
+      // Glass (D-078): acrylic like the card, so text never sits on the bare desktop; solid: a transparent window.
+      ...(look.look === 'glass' ? { backgroundMaterial: 'acrylic', roundedCorners: true } : { transparent: true, hasShadow: false }),
       title: 'Tama · Up next', backgroundColor: '#00000000',
       webPreferences: { preload: PRELOAD, contextIsolation: true, nodeIntegration: false, sandbox: true },
     });
@@ -190,6 +192,8 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
         const wasVisible = w.isVisible();
         w.destroy(); win = null;
         if (wasVisible) { const n = create(); place(); n.showInactive(); }
+        const p = alivePanel();
+        if (p) { p.destroy(); panel = null; if (expanded && alive()) { createPanel(); placePanel(); /** @type {any} */ (panel).showInactive(); } }
       } else applyOpacity();
       pushState();
     },
@@ -233,6 +237,8 @@ function createMusicWindow({ petBody, send, savedPosition = null, onMoved = () =
     /** /music widget: show it even when nothing plays. */
     open() { manual = true; dismissed = ''; apply(); const w = alive(); if (w) w.show(); },
     window: alive,
+    /** The Up next / Lyrics panel window, when open (gets the same pushes as other windows). */
+    panelWindow: alivePanel,
     destroy() {
       if (hideTimer) clearTimeout(hideTimer);
       const w = alive(); if (w) w.destroy(); win = null;

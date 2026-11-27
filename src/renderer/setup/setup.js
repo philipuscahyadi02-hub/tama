@@ -8,7 +8,7 @@ const say = (t, err) => {
   $('#msg').textContent = t || ''; $('#msg').classList.toggle('err', !!err);
   clearTimeout(msgTimer); if (t && !err) msgTimer = setTimeout(() => say(''), 6000);
 };
-const ICONS = { claude: '💻', agy: '💬', voice: '🎙️', google: '🔗', music: '🎵', telegram: '📱' };
+const ICONS = { claude: 'code', agy: 'talk', voice: 'mic', google: 'link', music: 'note', telegram: 'phone' }; // drawn icons (D-078)
 const STATE = { ready: 'Ready', signin: 'Sign in', missing: 'Not installed', optional: 'Optional' };
 const BRAIN = { claude: 'Claude Code', agy: 'Gemini' };
 
@@ -17,14 +17,14 @@ function render(st) {
   const b = st.brains || {};
   const who = (cap, none) => (b[cap] ? `<b>${esc(BRAIN[b[cap]] || b[cap])}</b>` : `<b>nothing yet</b> (${esc(none)})`);
   $('#summary').innerHTML = [
-    `💬 Chat: ${who('chat', 'install agy, or let Claude chat in Settings → Brains')}`,
-    `💻 Terminal: ${who('code', 'install Claude Code')}`,
-    `✨ Moments & diary: ${who('compose', 'she uses her built-in lines')}`,
-    `🎨 New looks: ${who('json', 'designed from keywords')}`,
+    `${window.TamaIcon('talk')} Chat: ${who('chat', 'install agy, or let Claude chat in Settings → Brains')}`,
+    `${window.TamaIcon('code')} Terminal: ${who('code', 'install Claude Code')}`,
+    `${window.TamaIcon('sparkle')} Moments & diary: ${who('compose', 'she uses her built-in lines')}`,
+    `${window.TamaIcon('bow')} New looks: ${who('json', 'designed from keywords')}`,
   ].join('<br>');
   $('#items').innerHTML = st.items.map((it) => `
     <div class="card item" data-id="${esc(it.id)}">
-      <div class="icon">${ICONS[it.id] || '•'}</div>
+      <div class="icon">${window.TamaIcon(ICONS[it.id] || 'sparkle')}</div>
       <div>
         <h3>${esc(it.name)} <span class="state ${esc(it.state)}">${esc(STATE[it.state] || it.state)}</span>${it.core || it.state === 'optional' ? '' : ' <span class="core-tag">optional</span>'}</h3>
         <p class="unlocks">${esc(it.unlocks)}</p>
@@ -60,6 +60,7 @@ K.providers.onChange(() => load(false));
 
 (async function init() {
   const ch = await K.getCharacter().catch(() => null);
-  if (ch && ch.stage !== 'egg') for (const [k, v] of Object.entries(window.TamaShared.theme.chatVars(ch.spec))) document.documentElement.style.setProperty(k, v);
+  window.TamaLook.start(); // D-078
+  void ch;
   await load(false);
 })();

@@ -64,8 +64,7 @@ G.onChange(render);
 
 (async function boot() {
   const ch = await K.getCharacter().catch(() => null);
-  if (ch && ch.stage !== 'egg') {
-    for (const [k, v] of Object.entries(window.TamaShared.theme.chatVars(ch.spec))) document.documentElement.style.setProperty(k, v);
-  }
+  window.TamaLook.start(); // D-078
+  void ch;
   render(await G.status());
 })();

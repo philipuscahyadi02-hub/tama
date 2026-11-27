@@ -6,12 +6,9 @@ const log = $('#log');
 const input = $('#input');
 const sendBtn = $('#send');
 
-const st = { busy: false, live: null, liveText: '', name: 'Tama', tools: null };
+const st = { busy: false, live: null, liveText: '', name: 'Tama', tools: null, spec: null };
 
 // ---------------- theme (shared with the terminal, src/shared/theme.js) ----------------
-function applyTheme(spec) {
-  for (const [k, v] of Object.entries(window.TamaShared.theme.chatVars(spec))) document.documentElement.style.setProperty(k, v);
-}
 
 function applyCharacter(ch) {
   const avatar = $('#avatar');
@@ -21,7 +18,7 @@ function applyCharacter(ch) {
   } else {
     const spec = window.TamaShared.renderRig(avatar, avatar.querySelector('svg'), ch.spec, 'chat-');
     st.name = spec.name;
-    applyTheme(spec);
+    st.spec = ch.spec;
   }
   $('#name').textContent = st.name;
   document.title = `Chat with ${st.name}`;
@@ -145,8 +142,31 @@ $('#wClear').addEventListener('click', () => K.chat.clear());
 K.chat.onFocus(() => input.focus());
 K.onCharacter(applyCharacter);
 
+/** The empty chat (D-078): a happy sticker of her, one line, and a few things to ask with one tap. */
+const HELLO_ASKS = ['What’s playing?', 'Play something chill', 'How’s my day?'];
 function hello() {
-  addMessage({ role: 'note', text: `This is your chat with ${st.name} (Gemini via agy, your Google login · web search · your Google calendar, mail drafts, Docs & Sheets when connected).\nCode and files → the terminal 💻 (Ctrl+Alt+K).` });
+  const card = document.createElement('div');
+  card.className = 'hello glass-surface';
+  const sticker = document.createElement('div');
+  sticker.className = 'sticker tama-rig mood-happy';
+  sticker.innerHTML = '<svg class="rig-svg" viewBox="0 0 200 240"></svg>';
+  if (st.spec) { try { window.TamaShared.renderRig(sticker, sticker.querySelector('svg'), st.spec, 'hello-'); } catch { sticker.hidden = true; } } else sticker.hidden = true;
+  const body = document.createElement('div');
+  const hi = document.createElement('b');
+  hi.textContent = `Hi hi, it’s ${st.name}~`;
+  const p = document.createElement('p');
+  p.textContent = 'Talk to me, ask me to play a song, or check your day. Code and files go to the terminal (Ctrl+Alt+K).';
+  const chips = document.createElement('div');
+  chips.className = 'chips';
+  for (const q of HELLO_ASKS) {
+    const b = document.createElement('button');
+    b.textContent = q;
+    b.addEventListener('click', () => { if (st.busy) return; input.value = q; submit(); });
+    chips.append(b);
+  }
+  body.append(hi, p, chips);
+  card.append(sticker, body);
+  log.appendChild(card);
 }
 
 (async function boot() {
@@ -159,3 +179,5 @@ function hello() {
   scroll(true);
   input.focus();
 })();
+window.TamaLook.start(); // colors and glass (D-078)
+window.TamaIcons.fill(); // titlebar icons (D-078)

@@ -20,11 +20,8 @@ const songKey = (s) => (s ? String(s.videoId || `${s.title}|${s.artist}`) : '');
 const setIcon = (el, name) => { if (el.dataset.i !== name || !el.firstChild) { el.dataset.i = name; el.innerHTML = window.TamaIcon(name); } };
 for (const el of document.querySelectorAll('.ico[data-i]')) el.insertAdjacentHTML('afterbegin', window.TamaIcon(el.dataset.i));
 
-async function theme() {
-  const ch = await K.getCharacter().catch(() => null);
-  if (!ch || ch.stage === 'egg' || !ch.spec) return;
-  for (const [k, v] of Object.entries(window.TamaShared.theme.chatVars(ch.spec))) document.documentElement.style.setProperty(k, v);
-}
+/** Colors come from shared/look.js (D-078). */
+const theme = () => window.TamaLook.start();
 
 function position() {
   const s = view.state;
@@ -92,7 +89,13 @@ function renderSource() {
   el.textContent = 'Via Tama Companion · YouTube Music';
 }
 
-function empty(text) { const d = document.createElement('div'); d.className = 'empty'; d.textContent = text; return d; }
+function empty(text) {
+  const d = document.createElement('div'); d.className = 'empty';
+  const badge = document.createElement('span'); badge.className = 'badge-ico'; badge.innerHTML = window.TamaIcon('note'); // D-078
+  const t = document.createElement('div'); t.textContent = text;
+  d.append(badge, t);
+  return d;
+}
 
 function renderTab() {
   for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('on', b.dataset.tab === tab);
@@ -209,7 +212,7 @@ K.music.onWidget((v) => {
   render();
 });
 setInterval(() => { if (view.state && view.state.playing && !seeking) drawBar(); }, 500);
-K.onCharacter && K.onCharacter(theme);
+// (TamaLook follows character changes itself)
 theme();
 // Reduced motion (PET-8): the vinyl and the equalizer stand still.
 const motion = (p) => document.body.classList.toggle('reduced', !!p && p.motion === 'reduced');

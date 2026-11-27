@@ -110,6 +110,7 @@ function wirePageIpc({ bus, ipc, shell, fire, summon, openOnboarding, openRoster
       dnd: p?.dnd == null ? undefined : !!p.dnd, nudges: p?.nudges == null ? undefined : !!p.nudges,
       mute: p?.mute == null ? undefined : !!p.mute, motion: p?.motion == null ? undefined : String(p.motion),
       walkMarker: p?.walkMarker == null ? undefined : !!p.walkMarker, // M5 extras (D-035)
+      lookMaterial: p?.lookMaterial == null ? undefined : String(p.lookMaterial).slice(0, 8), lookMode: p?.lookMode == null ? undefined : String(p.lookMode).slice(0, 8), // D-078
       musicWidget: p?.musicWidget == null ? undefined : String(p.musicWidget).slice(0, 8), // M13 (MUS-2)
       musicLook: p?.musicLook == null ? undefined : String(p.musicLook).slice(0, 8), // D-068
       musicDj: p?.musicDj == null ? undefined : !!p.musicDj, musicBeat: p?.musicBeat == null ? undefined : !!p.musicBeat, // MUS-3/4

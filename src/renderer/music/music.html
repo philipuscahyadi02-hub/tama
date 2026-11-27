@@ -5,6 +5,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data: https://*.googleusercontent.com https://*.ytimg.com https://*.ggpht.com" />
   <title>Tama · Music</title>
   <link rel="stylesheet" href="music.css" />
+  <link rel="stylesheet" href="../shared/look.css" />
 </head>
 <body>
   <main id="card" class="compact">
@@ -26,7 +27,7 @@
       </div>
     </section>
     <div id="lookPanel" hidden>
-      <div class="row"><span>Look</span>
+      <div class="row" title="Solid or glass for all of Tama's windows (Settings → Look)."><span>Look</span>
         <div class="seg"><button data-look="solid">Solid</button><button data-look="glass">Glass</button></div>
       </div>
       <div class="row" title="It turns fully visible while your mouse is over it."><span>Opacity</span><input id="opacity" type="range" min="40" max="100" step="5" /><b id="opacityVal">100%</b></div>
@@ -72,7 +73,8 @@
   <script src="../../shared/catalog.js"></script>
   <script src="../../shared/spec.js"></script>
   <script src="../../shared/theme.js"></script>
-  <script src="icons.js"></script>
+  <script src="../shared/look.js"></script>
+  <script src="../shared/icons.js"></script>
   <script src="music.js"></script>
   <script src="library.js"></script>
 </body>

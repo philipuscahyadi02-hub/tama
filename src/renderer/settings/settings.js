@@ -203,14 +203,15 @@ async function renderHer() {
   document.title = `Settings · ${name}`;
   const pet = await K.getPet().catch(() => null);
   $('#herInfo').textContent = [ch.spec && ch.spec.motif, ch.stage === 'egg' ? 'still an egg' : null, pet && pet.level ? `bond: ${pet.level.title}` : null].filter(Boolean).join(' · ');
-  if (ch.stage !== 'egg') for (const [k, v] of Object.entries(window.TamaShared.theme.chatVars(ch.spec))) document.documentElement.style.setProperty(k, v);
 }
 
 async function init() {
+  window.TamaIcons.fill();
   const q = new URLSearchParams(location.search).get('tab');
   let tab = q;
   if (!tab) { try { tab = localStorage.getItem('settingsTab'); } catch { tab = null; } }
   showTab($(`#nav [data-tab="${tab}"]`) ? tab : 'her');
+  window.TamaLook.start(); // D-078
   renderHer();
   renderUi(await K.ui.prefs());
   renderVoice(await K.voice.status().catch(() => null));

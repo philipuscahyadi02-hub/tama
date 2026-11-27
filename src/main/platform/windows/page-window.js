@@ -4,6 +4,7 @@
 const path = require('path');
 const { BrowserWindow } = require('electron');
 const { attachDebug } = require('./debug');
+const { followLook } = require('../look');
 
 const RENDERER = path.join(__dirname, '..', '..', '..', 'renderer');
 const PRELOAD = path.join(__dirname, '..', '..', '..', 'preload', 'index.js');
@@ -28,6 +29,7 @@ function openPage(page, opts = {}) {
   win.once('ready-to-show', () => { if (process.env.TAMA_SHOT_OFFSCREEN) win.showInactive(); else { win.show(); win.focus(); } });
   win.on('closed', () => open.delete(page));
   attachDebug(win, page.split('/')[0]);
+  followLook(win); // D-078
   open.set(page, win);
   return win;
 }

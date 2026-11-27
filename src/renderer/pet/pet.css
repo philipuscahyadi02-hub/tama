@@ -6,6 +6,16 @@
   --green: #86d36f;
   --green-l: #e7f8df;
 }
+/* The Look (D-078): the pet window is fully transparent, so glass here is a frosted, slightly see-through paper
+   (no desktop blur) that keeps the manga outline; dark mode swaps paper and ink. */
+html[data-mode="dark"] { --ink: #f4ecf7; --paper: #2a2130; --pink-l: #4a2c3d; --green-l: #2c3d2a; }
+html[data-material="glass"] { --paper: rgba(255, 250, 243, 0.84); }
+html[data-material="glass"][data-mode="dark"] { --paper: rgba(42, 33, 48, 0.86); }
+html[data-material="glass"] #bubble, html[data-material="glass"] #eventBox, html[data-material="glass"] #menu {
+  box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.7), 3px 3px 0 var(--ink);
+}
+html[data-mode="dark"] #bubble.clicky { background: #4a3f1f; }
+html[data-mode="dark"] #bubble.shout { background: #3a2c44; }
 * { box-sizing: border-box; }
 html, body {
   margin: 0; height: 100%; overflow: hidden; background: transparent;

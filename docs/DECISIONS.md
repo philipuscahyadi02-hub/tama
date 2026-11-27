@@ -107,6 +107,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-075 | MUS-8 (Telegram music commands) dropped; music from the phone goes through Telegram chat and the MUS-7 tools | Accepted |
 | D-076 | Music tools for chat and Claude Code with a new `control` policy (runs, announced); "play <song>" = YouTube Music search with `#tama-autoplay`, the extension presses play on the top result | Accepted |
 | D-077 | agy now asks permission for MCP tools: the chat session allows exactly Tama's own `mcp_tama_*` tools (by name), which keep their Tama-side rules; everything else is still denied | Accepted · Refines D-037 |
+| D-078 | The Look: one app-wide Material (solid/glass) × Mode (light/dark/auto) from her lead color; Windows acrylic on chat, music and pages, frosted paper on the pet; terminal keeps its themes; drawn icons, motif pattern, stickers | Accepted · Refines D-032, D-068 |
 
 ---
 
@@ -1048,3 +1049,21 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** A gate rule for the chat role (the gate's "chat can't use tools" stays a simple, absolute rule); turning permissions off in Tama's agy settings (would widen more than these tools).
 - **Consequences:** Verified live with real agy: "what's playing" (music_now) and "pause the music" (music_control) both ran. When chat replies end empty after a control tool, the tool's result is shown instead (D-076 follow-up). `npm run probe:agy` should gain a check for this request after the next agy update.
 - **Refs:** MUS-7, GOOG-2, D-037, D-038, D-076, src/main/engines/agy/{session,provider}.js
+
+### D-078 — The Look: app-wide glass and dark mode from her colors
+- **Date:** 2026-11-27 · **Status:** Accepted · Refines D-032 (chat tokens) and D-068 (glass was music-card only)
+- **Context:** A design review (screenshots of every window) found four different looks (mint chat, white-on-mint Settings, a white music card, the dark terminal), her second color washed over whole windows with low-contrast text, a "glass" that only existed on the music card and barely read as glass, emoji mixed with drawn icons, and text walls on empty screens. The user asked for glass as a general theme, plus better assets. Their choices: glass on everything but the terminal; light, dark and follow Windows; rounded fonts.
+- **Decision:**
+  - **Tokens:** `shared/theme.js lookVars(spec, { mode, glass })` gives every window (chat, music card and panel, Settings, setup, dashboard, voice, Google pages, the pet's bubble and menu) one set of `--tama-*` tokens. Her lead (most colorful) color tints the surfaces; the second color is only an accent. Text is checked for contrast (dim text ≥ 4.5:1). Filled buttons deepen the lead color in HSL until white text reads (≥ 3.2:1), otherwise use dark ink. Glass turns surfaces into rgba tints and adds a rim and shadow. `chatVars` now returns the light solid Look.
+  - **Prefs:** `ui.lookMaterial` (solid|glass) and `ui.lookMode` (light|dark|auto). An older music-only `musicLook: glass` carries over; the music card's own buttons now set the global Look.
+  - **Windows:** `platform/look.js` paints registered windows (chat, pages) with `setBackgroundMaterial('acrylic')` and a transparent background, live, and sets `nativeTheme.themeSource` from the mode. The music card and its panel are rebuilt with acrylic, because they are transparent windows otherwise. When `nativeTheme.prefersReducedTransparency` is set (Windows transparency effects off), glass falls back to solid; pages use the matching CSS media query.
+  - **Pet:** the pet window is transparent, so its bubble, menu and event box get a frosted, slightly see-through paper that keeps the manga outline (no desktop blur).
+  - **Page side:** `renderer/shared/look.js` (TamaLook) replaces each window's own theme code; `renderer/shared/look.css` has the radius family, glass rim and sheen, dark inputs, and the motif header.
+  - **Assets:**
+    - `renderer/shared/icons.js` (moved from music) is one drawn icon family, now also used in Settings, setup and the chat titlebar. The pet menu keeps its emoji, as playful stickers.
+    - `assets/look/*.svg` motif tiles (pond, paws, petals, notes, hearts, stars), picked by `motifOf(spec)` from her motif and parts. They are used as a CSS mask in her accent on headers.
+    - The empty chat shows a sticker of her (the rig, happy) with tap-to-ask chips.
+  - **Terminal:** keeps its bond-unlocked variants (D-032).
+- **Alternatives:** CSS `backdrop-filter` (can't blur the desktop behind a window and costs GPU per frame); per-window glass switches (the inconsistency the review flagged); glass terminal (code over a blurred desktop reads worse; the user chose no).
+- **Consequences:** `npm run perf` with glass on: 1.78 % CPU, 296 MB (within NFR-1). Screenshots can't show the acrylic blur, so glass is checked by eye. New windows must load look.css and look.js and call `TamaLook.start()`; framed or frameless non-transparent windows call `followLook(win)`.
+- **Refs:** MUS-11, ART-4, MUS-2, NFR-1, D-032, D-068, src/shared/theme.js, src/main/platform/look.js, src/renderer/shared/{look.js,look.css,icons.js}, assets/look/

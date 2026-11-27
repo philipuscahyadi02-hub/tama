@@ -16,3 +16,8 @@
 .core-tag { font-size: 11px; color: var(--tama-dim); font-weight: 400; }
 .foot { display: flex; gap: 8px; align-items: center; margin: 14px 0 6px; }
 .spacer { flex: 1; }
+/* Drawn icons (D-078) */
+.icon { color: var(--tama-accent); }
+.icon .i { width: 26px; height: 26px; }
+.h1i { width: 26px; height: 26px; color: var(--tama-accent); margin-right: 8px; vertical-align: -5px; }
+#summary .i { width: 17px; height: 17px; color: var(--tama-accent); vertical-align: -3px; margin-right: 4px; }

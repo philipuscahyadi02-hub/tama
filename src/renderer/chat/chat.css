@@ -72,3 +72,18 @@ body {
 .confirm button { font: inherit; font-weight: 700; border: 0; border-radius: 10px; padding: 6px 12px; cursor: pointer; background: var(--tama-bg); color: var(--tama-ink); }
 .confirm button.yes { background: var(--tama-accent); color: var(--tama-accent-ink); }
 .confirm.answered { border-style: solid; border-color: var(--tama-line); opacity: .8; }
+.wbtn .ico { display: inline-grid; place-items: center; }
+.wbtn .i { width: 17px; height: 17px; }
+
+/* Empty chat (D-078): sticker of her + one line + tap-to-ask chips */
+.hello { display: flex; gap: 12px; align-items: center; margin: 10px 4px 4px; padding: 12px 14px; border-radius: var(--tama-r-lg, 18px);
+  background: var(--tama-panel); border: 1px solid var(--tama-line); box-shadow: var(--tama-shadow); }
+.hello .sticker { width: 64px; height: 72px; overflow: hidden; flex-shrink: 0; border-radius: 50%; background: var(--tama-bubble);
+  box-shadow: 0 0 0 3px var(--tama-panel), 0 0 0 5px var(--tama-accent); }
+.hello .sticker svg { width: 112px; height: 134px; margin: -14px 0 0 -24px; }
+.hello b { font-size: 14.5px; }
+.hello p { margin: 3px 0 8px; color: var(--tama-dim); font-size: 12.5px; line-height: 1.4; }
+.hello .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.hello .chips button { border: 1px solid var(--tama-bubble-line); background: var(--tama-bubble); color: var(--tama-ink); border-radius: 999px;
+  padding: 4px 11px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.hello .chips button:hover { background: var(--tama-accent); color: var(--tama-accent-ink); border-color: transparent; }

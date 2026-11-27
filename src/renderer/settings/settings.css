@@ -19,3 +19,11 @@ button:disabled { opacity: .5; cursor: default; border-color: var(--tama-line); 
 .steps { margin: 6px 0 4px; padding-left: 20px; line-height: 1.6; }
 .steps code { font-size: 12px; }
 #mOpacity { width: 140px; accent-color: var(--tama-accent); vertical-align: middle; }
+.set > span:first-child { flex: 1; min-width: 0; }
+.set .seg { flex-shrink: 0; }
+/* Icons (D-078): drawn line icons in her accent instead of emoji. */
+.ico { display: inline-grid; place-items: center; }
+.ico .i { width: 18px; height: 18px; }
+nav .ico { width: 22px; margin-right: 8px; color: var(--tama-accent); vertical-align: -4px; }
+h1 .ico { margin-right: 8px; color: var(--tama-accent); vertical-align: -3px; }
+h1 .ico .i { width: 24px; height: 24px; }

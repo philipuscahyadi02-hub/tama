@@ -287,8 +287,7 @@ function applyCharacter(ch) {
   petEl.classList.toggle('egg', isEgg);
   if (isEgg) { window.TamaShared.renderEgg(petEl, svgEl); return; }
   spec = window.TamaShared.renderRig(petEl, svgEl, ch.spec);
-  // Menu colors follow the character (ART-4).
-  for (const [k, v] of Object.entries(window.TamaShared.theme.petVars(spec))) document.documentElement.style.setProperty(k, v);
+  // Menu colors follow the character (ART-4) through the Look (D-078, shared/look.js).
   petName = spec.name;
   renderMood();
 }
@@ -350,3 +349,4 @@ T.ui.prefs().then(applyUiPrefs).catch(() => {});
   setInterval(renderMood, 1000);
   setTimeout(behave, 4000);
 })();
+window.TamaLook.start(); // bubble, menu and event box colors (D-078)

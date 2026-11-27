@@ -10,6 +10,7 @@ const { startWsServer } = require('./platform/ws-server');
 const { createMusicWindow } = require('./platform/windows/music-window');
 const geometry = require('./platform/summon/geometry');
 const { allowLoopback } = require('./platform/loopback');
+const look = require('./platform/look');
 
 /** DJ lines (MUS-3) from assets/music/dj-lines.json (data over code, AGENTS rule 12). */
 function djLines() {
@@ -68,11 +69,12 @@ function createMusicWiring({ bus, ipc, shell, secrets, device, dataDir, log = ()
       if (w) {
         const syncMode = () => bus.request(TOPICS.UI_PREFS_GET).then((ui) => {
           if (!ui) return;
-          w.setLook({ look: ui.musicLook, opacity: ui.musicOpacity });
+          // The card follows the Look (D-078); glass only while Windows' transparency effects are on.
+          w.setLook({ look: ui.musicLook === 'glass' && look.glassAllowed() ? 'glass' : 'solid', opacity: ui.musicOpacity });
           w.setMode(ui.musicWidget === 'off' ? 'off' : 'auto');
         }).catch(() => null);
         syncMode();
-        stops.push(bus.on(TOPICS.MUSIC_CHANGED, (/** @type {any} */ p) => w.update(p.state)), bus.on(TOPICS.UI_PREFS_CHANGED, syncMode), () => w.destroy());
+        stops.push(bus.on(TOPICS.MUSIC_CHANGED, (/** @type {any} */ p) => w.update(p.state)), bus.on(TOPICS.UI_PREFS_CHANGED, syncMode), look.onGlassChange(() => syncMode()), () => w.destroy());
       }
       // DJ Tama (MUS-3): the pet hears about the music; a new song brings a DJ line unless it's quiet time.
       if (petWin) {

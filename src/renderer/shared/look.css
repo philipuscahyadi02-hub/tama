@@ -1,0 +1,46 @@
+/* The Look (D-078): shared surfaces for every window but the terminal. Colors are --tama-* tokens from
+   shared/theme.js lookVars (set by shared/look.js); this file only adds what all windows share: the radius family,
+   the glass rim and sheen, and dark-mode details. Window CSS keeps its own layout. */
+:root {
+  --tama-r-lg: 18px;   /* windows and big cards */
+  --tama-r-md: 12px;   /* cards, bubbles, inputs */
+  --tama-r-sm: 8px;    /* chips, small buttons */
+}
+[hidden] { display: none !important; }
+
+/* Glass: the window is acrylic (Windows blurs the desktop); surfaces are see-through tints with a bright rim and a soft
+   light sheen from the top-left, like light catching a glass pane. No CSS blur: Windows does it, so it costs nothing. */
+html[data-material="glass"],
+html[data-material="glass"] body { background: transparent; }
+html[data-material="glass"] body {
+  background-image:
+    radial-gradient(120% 70% at 0% 0%, rgba(255, 255, 255, 0.28), transparent 55%),
+    linear-gradient(var(--tama-bg), var(--tama-bg));
+}
+html[data-material="glass"][data-mode="dark"] body {
+  background-image:
+    radial-gradient(120% 70% at 0% 0%, rgba(255, 255, 255, 0.07), transparent 55%),
+    linear-gradient(var(--tama-bg), var(--tama-bg));
+}
+html[data-material="glass"] .card,
+html[data-material="glass"] .glass-surface {
+  border-color: var(--tama-rim) !important;
+  box-shadow: inset 0 1px 0 var(--tama-rim), var(--tama-shadow);
+}
+
+/* Dark mode: native controls and scrollbars follow it; inputs get her surfaces instead of white. */
+html[data-mode="dark"] input, html[data-mode="dark"] select, html[data-mode="dark"] textarea {
+  background: var(--tama-panel); color: var(--tama-ink); border-color: var(--tama-line);
+}
+html[data-mode="dark"] ::-webkit-scrollbar-thumb { background: var(--tama-line); }
+
+/* Her motif (D-078): a faint pattern in her accent on window headers, fading out to the right. Mask, not image, so
+   one SVG tile takes any color. */
+header, #titlebar { position: relative; isolation: isolate; }
+header::before, #titlebar::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: var(--tama-accent); opacity: 0.11;
+  -webkit-mask: var(--tama-motif) 0 0 / 46px 46px repeat, linear-gradient(90deg, #000 0%, transparent 70%);
+  -webkit-mask-composite: source-in;
+}
+html[data-mode="dark"] header::before, html[data-mode="dark"] #titlebar::before { opacity: 0.16; }

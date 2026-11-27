@@ -6,25 +6,30 @@
   <title>Settings</title>
   <link rel="stylesheet" href="../dashboard/dashboard.css" />
   <link rel="stylesheet" href="settings.css" />
+  <link rel="stylesheet" href="../shared/look.css" />
 </head>
 <body>
-  <header><h1>⚙️ Settings</h1><span class="spacer"></span><span class="msg" id="msg"></span></header>
+  <header><h1><span class="ico" data-i="gear"></span>Settings</h1><span class="spacer"></span><span class="msg" id="msg"></span></header>
   <div class="layout">
     <nav id="nav">
-      <button data-tab="her" class="on">🎀 <span id="navName">Her</span></button>
-      <button data-tab="talk">🗣️ Talking &amp; voice</button>
-      <button data-tab="quiet">🌙 Quiet &amp; moments</button>
-      <button data-tab="music">🎵 Music</button>
-      <button data-tab="phone">📱 Phone</button>
-      <button data-tab="google">🔗 Google</button>
-      <button data-tab="brains">🧠 Brains</button>
-      <button data-tab="accounts">📊 Accounts &amp; usage</button>
+      <button data-tab="her" class="on"><span class="ico" data-i="bow"></span><span id="navName">Her</span></button>
+      <button data-tab="talk"><span class="ico" data-i="talk"></span>Talking &amp; voice</button>
+      <button data-tab="quiet"><span class="ico" data-i="moon"></span>Quiet &amp; moments</button>
+      <button data-tab="music"><span class="ico" data-i="note"></span>Music</button>
+      <button data-tab="phone"><span class="ico" data-i="phone"></span>Phone</button>
+      <button data-tab="google"><span class="ico" data-i="link"></span>Google</button>
+      <button data-tab="brains"><span class="ico" data-i="sparkle"></span>Brains</button>
+      <button data-tab="accounts"><span class="ico" data-i="chart"></span>Accounts &amp; usage</button>
     </nav>
     <main>
       <!-- Her -->
       <section data-pane="her">
         <div class="card"><h3 id="herName">—</h3><div class="kv dim" id="herInfo"></div>
           <div class="btns"><button data-open="roster">My Tamas…</button><button data-open="restyle">Restyle…</button><button data-open="rebirth">Rebirth…</button></div></div>
+        <div class="card"><h3>Look</h3>
+          <div class="set"><span>Material<br><small class="dim">Glass lets your desktop show through, softly blurred (Windows 11). Off when Windows' transparency effects are off.</small></span><div class="seg" data-pref="lookMaterial"><button data-v="solid">Solid</button><button data-v="glass">Glass</button></div></div>
+          <div class="set"><span>Mode</span><div class="seg" data-pref="lookMode"><button data-v="light">Light</button><button data-v="dark">Dark</button><button data-v="auto">Follow Windows</button></div></div>
+          <div class="kv dim">For the chat, the music card, her bubble and menu, Settings and the other pages, in her colors. The terminal keeps its own themes (below).</div></div>
         <div class="card"><h3>Can't find her?</h3>
           <div class="set"><span>Brings her (and Tama's windows) to the screen your mouse is on. Same as Ctrl+Alt+P.</span><button class="primary" id="summon">Bring her here</button></div></div>
         <div class="card"><h3>Backup &amp; moving</h3>
@@ -79,7 +84,7 @@
           <div class="kv dim" id="mCodeInfo"></div></div>
         <div class="card"><h3>Music card</h3>
           <div class="set"><span>Pop up by itself while a song plays</span><div class="seg" data-pref="musicWidget"><button data-v="auto">On</button><button data-v="off">Off</button></div></div>
-          <div class="set"><span>Look</span><div class="seg" data-pref="musicLook"><button data-v="solid">Solid</button><button data-v="glass">Glass</button></div></div>
+          <div class="kv dim">Solid or glass follows the Look on her tab.</div>
           <div class="set"><span>Opacity (fully visible while your mouse is over it)</span><span><input type="range" id="mOpacity" min="40" max="100" step="5" /> <b id="mOpacityVal"></b></span></div>
           <div class="btns"><button id="mOpen">Open the music card</button></div></div>
         <div class="card"><h3>DJ Tama</h3>
@@ -133,6 +138,8 @@
   <script src="../../shared/catalog.js"></script>
   <script src="../../shared/spec.js"></script>
   <script src="../../shared/theme.js"></script>
+  <script src="../shared/look.js"></script>
+  <script src="../shared/icons.js"></script>
   <script src="settings.js"></script>
 </body>
 </html>

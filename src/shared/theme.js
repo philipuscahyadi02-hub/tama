@@ -5,7 +5,7 @@
   if (typeof module === 'object' && module.exports) module.exports = factory(require('./palette'));
   else (root.TamaShared = root.TamaShared || {}).theme = factory(root.TamaShared.palette);
 }(globalThis, function (palette) {
-  const { mix, contrast, saturation, luminance } = palette;
+  const { mix, contrast, saturation, luminance, shade } = palette;
 
   /**
    * Terminal looks. Variants unlock with bond level (BOND-3): index into the bond LEVELS
@@ -81,8 +81,84 @@
     };
   }
 
-  /** Chat window tokens (light, soft). @param {any} spec @returns {Record<string, string>} */
-  function chatVars(spec) {
+  /** "#rrggbb" + alpha → "rgba(…)" (glass surfaces). @param {string} hex @param {number} a */
+  function rgba(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${Math.round(a * 100) / 100})`;
+  }
+
+  /**
+   * The Look (D-078): every window except the terminal takes its colors from here, in light or dark mode and as solid
+   * or glass. Her lead color (the most colorful one) tints the surfaces; the second color is only an accent. Glass turns
+   * the surfaces see-through (Windows 11 blurs the desktop behind the window) and adds a bright rim; text colors are
+   * checked against the solid equivalent so they stay readable either way.
+   * @param {any} spec @param {{ mode?: 'light'|'dark', glass?: boolean }} [o]
+   * @returns {Record<string, string>}
+   */
+  function lookVars(spec, o = {}) {
+    const b = base(spec);
+    const dark = o.mode === 'dark';
+    const glass = !!o.glass;
+    const lead = b.accent1;
+    // White text on her color when it reads (3:1 for bold UI text), else dark ink.
+    const inkOn = (/** @type {string} */ hex) => (contrast('#ffffff', hex) >= 3 || contrast('#ffffff', hex) >= contrast('#2b2340', hex) ? '#ffffff' : '#2b2340');
+    const bg = dark ? mix(lead, '#15121d', 0.9) : mix(lead, '#ffffff', 0.94);
+    const panel = dark ? mix(bg, '#ffffff', 0.06) : '#ffffff';
+    const head = dark ? mix(lead, '#15121d', 0.74) : mix(lead, '#ffffff', 0.78);
+    const bubble = dark ? mix(lead, '#15121d', 0.8) : mix(lead, '#ffffff', 0.87);
+    const ink = dark ? '#f4ecf7' : '#2b2340';
+    // Light: deepen the lead color until white text on it reads (3:1, bold UI text); dark: keep it bright on the dark bg.
+    let accent = lead;
+    if (dark) accent = readable(lead, bg, 3.2);
+    else for (let i = 0; i < 12 && contrast('#ffffff', accent) < 3.2; i++) accent = shade(accent, -0.025, 0.015); // darker, still vivid
+    const accent2 = readable(b.accent2, bg, 3);
+    const s = (/** @type {string} */ hex, /** @type {number} */ a) => (glass ? rgba(hex, a) : hex);
+    return {
+      '--tama-scheme': dark ? 'dark' : 'light',
+      '--tama-bg': s(bg, dark ? 0.55 : 0.5),
+      '--tama-panel': s(panel, dark ? 0.42 : 0.62),
+      '--tama-head': s(head, dark ? 0.5 : 0.55),
+      '--tama-ink': ink,
+      '--tama-dim': readable(mix(ink, bg, 0.42), bg, 4.5),
+      '--tama-accent': accent,
+      '--tama-accent-ink': inkOn(accent),
+      '--tama-accent2': accent2,
+      '--tama-bubble': s(bubble, dark ? 0.55 : 0.6),
+      '--tama-bubble-line': s(dark ? mix(lead, '#15121d', 0.62) : mix(lead, '#ffffff', 0.7), glass ? 0.6 : 1),
+      '--tama-user': accent,
+      '--tama-user-ink': inkOn(accent),
+      '--tama-line': s(dark ? mix(bg, '#ffffff', 0.14) : mix(lead, '#ffffff', 0.8), glass ? 0.7 : 1),
+      '--tama-track': dark ? mix(bg, '#ffffff', 0.16) : mix(lead, '#ffffff', 0.82), // unfilled part of sliders / progress
+      '--tama-menu-1': s(dark ? mix(lead, '#15121d', 0.7) : mix(lead, '#ffffff', 0.72), glass ? 0.78 : 1),
+      '--tama-menu-2': s(dark ? mix(b.accent2, '#15121d', 0.7) : mix(b.accent2, '#ffffff', 0.72), glass ? 0.78 : 1),
+      '--tama-menu-hover': s(dark ? mix(lead, '#15121d', 0.6) : mix(lead, '#ffffff', 0.6), glass ? 0.7 : 1),
+      '--tama-rim': glass ? (dark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.75)') : 'transparent',
+      '--tama-shadow': dark ? '0 10px 28px -12px rgba(0, 0, 0, 0.6)' : `0 10px 28px -12px ${rgba(mix(lead, '#2b2340', 0.6), 0.35)}`,
+      '--tama-warn': dark ? '#ffd36a' : '#a35a00',
+    };
+  }
+
+  /** Header pattern per design (D-078): keywords in her motif or parts → a tile in assets/look/. First match wins. */
+  const MOTIFS = [
+    { tile: 'pond', words: ['frog', 'raincoat', 'rain', 'duck', 'pond', 'fish', 'mermaid'] },
+    { tile: 'paws', words: ['cat', 'kitty', 'neko', 'dog', 'puppy', 'inu', 'fox', 'kitsune', 'bunny', 'bunnies', 'rabbit', 'usagi', 'bear', 'wolf', 'paw'] },
+    { tile: 'petals', words: ['sakura', 'flower', 'petal', 'fairy', 'witch', 'shrine', 'miko', 'kimono'] },
+    { tile: 'notes', words: ['idol', 'music', 'singer', 'dj', 'band', 'guitar'] },
+    { tile: 'hearts', words: ['heart', 'magical', 'sweet', 'candy', 'maid', 'love'] },
+  ];
+  /** Pure: which tile fits this design ("stars" when nothing matches). @param {any} spec */
+  function motifOf(spec) {
+    const parts = spec && spec.parts ? Object.values(spec.parts).join(' ') : '';
+    const text = `${(spec && spec.motif) || ''} ${parts}`.toLowerCase();
+    const hit = MOTIFS.find((m) => m.words.some((w) => text.split(/[^a-z]+/).some((t) => t === w || t === `${w}s` || t === `${w}es`)));
+    return hit ? hit.tile : 'stars';
+  }
+
+  /** Chat window tokens: the light, solid Look (kept for callers that predate D-078). @param {any} spec */
+  function chatVars(spec) { return lookVars(spec, { mode: 'light' }); }
+
+  /** Old chat tokens (D-032), kept only for the comparison test. @param {any} spec @returns {Record<string, string>} */
+  function chatVarsV1(spec) {
     const b = base(spec);
     const main = b.main;
     const inkOn = (/** @type {string} */ hex) => (luminance(hex) > 0.45 ? '#2b2340' : '#ffffff');
@@ -148,5 +224,5 @@
   /** Variants this bond level can use. @param {number} levelIndex */
   function unlocked(levelIndex) { return VARIANTS.filter((v) => (levelIndex || 0) >= v.minLevel); }
 
-  return { VARIANTS, terminalVars, chatVars, petVars, flavor, unlocked, readable };
+  return { VARIANTS, terminalVars, chatVars, chatVarsV1, lookVars, motifOf, petVars, flavor, unlocked, readable, rgba };
 }));

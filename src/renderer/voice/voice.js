@@ -136,7 +136,7 @@ K.voice.onChanged((s) => { if (s) render(s); });
   const ch = await K.getCharacter().catch(() => null);
   if (ch && ch.spec) {
     $('#who').textContent = `${ch.spec.name}'s`;
-    if (ch.stage !== 'egg') for (const [k, v] of Object.entries(window.TamaShared.theme.chatVars(ch.spec))) document.documentElement.style.setProperty(k, v);
   }
+  window.TamaLook.start(); // D-078
   render(await K.voice.detect());
 }());

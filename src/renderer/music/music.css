@@ -61,7 +61,7 @@ body:hover .playing #eq i:nth-child(2) { animation-delay: -.35s; } body:hover .p
 /* ---- progress ---- */
 #progress { display: flex; align-items: center; gap: 8px; padding: 6px 14px 0; color: var(--tama-dim); font-size: 10.5px; font-variant-numeric: tabular-nums; }
 #bar { flex: 1; height: 16px; position: relative; cursor: pointer; -webkit-app-region: no-drag; }
-#bar::before { content: ""; position: absolute; left: 0; right: 0; top: 6.5px; height: 4px; border-radius: 2px; background: var(--tama-line); }
+#bar::before { content: ""; position: absolute; left: 0; right: 0; top: 6.5px; height: 4px; border-radius: 2px; background: var(--tama-track, var(--tama-line)); }
 #fill { position: absolute; left: 0; top: 6.5px; height: 4px; border-radius: 2px; background: var(--tama-accent); width: 0; }
 #knob { position: absolute; top: 3.5px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--tama-panel); border: 2.5px solid var(--tama-accent); left: 0; transform: scale(.0); transition: transform .12s; }
 #bar:hover #knob { transform: scale(1); }
@@ -83,7 +83,7 @@ body:hover .playing #eq i:nth-child(2) { animation-delay: -.35s; } body:hover .p
 #vol { display: flex; align-items: center; gap: 3px; width: 82px; color: var(--tama-dim); -webkit-app-region: no-drag; }
 #vol .i { width: 15px; height: 15px; flex: none; }
 #volume { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 16px; background: transparent; cursor: pointer; }
-#volume::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--tama-accent) var(--v, 50%), var(--tama-line) var(--v, 50%)); }
+#volume::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--tama-accent) var(--v, 50%), var(--tama-track, var(--tama-line)) var(--v, 50%)); }
 #volume::-webkit-slider-thumb { -webkit-appearance: none; width: 11px; height: 11px; margin-top: -3.5px; border-radius: 50%; background: var(--tama-panel); border: 2.5px solid var(--tama-accent); }
 
 /* ---- Up next / Lyrics ---- */
@@ -130,7 +130,7 @@ body:hover .playing #eq i:nth-child(2) { animation-delay: -.35s; } body:hover .p
 .seg button { flex: 1; padding: 3px 0; border-radius: 7px; font-weight: 600; color: var(--tama-dim); }
 .seg button.on { background: var(--tama-panel); color: var(--tama-ink); box-shadow: 0 1px 3px rgba(70, 30, 60, .2); }
 #opacity { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 16px; background: transparent; }
-#opacity::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--tama-accent) var(--v, 100%), var(--tama-line) var(--v, 100%)); }
+#opacity::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--tama-accent) var(--v, 100%), var(--tama-track, var(--tama-line)) var(--v, 100%)); }
 #opacity::-webkit-slider-thumb { -webkit-appearance: none; width: 11px; height: 11px; margin-top: -3.5px; border-radius: 50%; background: var(--tama-panel); border: 2.5px solid var(--tama-accent); }
 .wide { display: flex !important; align-items: center; justify-content: center; gap: 6px; padding: 5px; border-radius: 9px; background: var(--tama-bubble); font-weight: 600; }
 .wide .i { width: 14px; height: 14px; }
@@ -176,3 +176,8 @@ body.panel #tabs #panelClose { padding: 0; width: 22px; height: 22px; border-rad
 .empty .pill { margin-top: 10px; }
 #libList .note { color: var(--tama-dim); font-size: 11px; padding: 2px 8px 6px; cursor: default; }
 #libList .note:hover { background: none; }
+/* Empty states (D-078): a note badge in her color above the line */
+.empty .badge-ico { display: inline-grid; place-items: center; width: 44px; height: 44px; margin-bottom: 8px; border-radius: 50%;
+  background: var(--tama-bubble); color: var(--tama-accent); box-shadow: inset 0 1px 0 var(--tama-rim, transparent); }
+.empty .badge-ico .i { width: 22px; height: 22px; }
+/* Progress and volume tracks use the neutral track color, not her second color (D-078) */

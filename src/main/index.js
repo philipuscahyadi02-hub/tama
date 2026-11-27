@@ -61,6 +61,7 @@ const { createWalkMarker } = require('./platform/windows/walk-marker');
 // M13 YouTube Music & DJ (D-065, D-066): music service + widget beside the pet.
 const { createMusicWiring } = require('./music-wiring');
 const { createMusicTools, musicRule } = require('./services/music');
+const { setLook } = require('./platform/look');
 
 const { createDesktopChannel } = require('./channels/desktop');
 
@@ -284,6 +285,10 @@ function boot() {
   pet.win.on('hide', syncMarker);
   pet.win.on('show', syncMarker);
   stoppers.push(bus.on(TOPICS.UI_PREFS_CHANGED, syncMarker), () => walkMarker.destroy());
+  // The Look (D-078): Windows glass and light/dark for the chat window and pages.
+  const syncLook = () => bus.request(TOPICS.UI_PREFS_GET).then((ui) => { if (ui) setLook(ui); }).catch(() => null);
+  syncLook();
+  stoppers.push(bus.on(TOPICS.UI_PREFS_CHANGED, syncLook));
   if (process.env.TAMA_HIDE_PET) setTimeout(() => pet.hide(), 1500); // dev: start hidden (walk-marker screenshots)
 
   summoner.startWatchdog();

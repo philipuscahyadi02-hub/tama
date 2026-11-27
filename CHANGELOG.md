@@ -39,6 +39,10 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - **YouTube Music, step 5: ask her (MUS-7):** in chat (also from your phone's chat) say "play Idol by YOASOBI", "skip", "pause", "turn it down to 30", "what's playing?" or "what are the lyrics?". She does it right away and says what she did. Claude Code in the terminal has the same music tools. "Play <song>" searches YouTube Music and the extension plays the top result (extension 1.2.0: reload it once in chrome://extensions).
 - **YouTube Music setup (MUS-9):** a YouTube Music card in the setup wizard and a **Settings → Music** tab: connection, opening the extension folder, pairing code, forgetting the browser, the music card's pop-up, look and opacity, DJ mode and beat sync.
 - **Fixes after the first try of "play <song>":** YouTube Music removes the `#tama-autoplay` marker from the address right after loading, so the extension now reads the address the page was opened with (extension 1.2.1). The real reason she went quiet: the newer Antigravity CLI asks permission before using Tama's tools, and Tama said no; her own tools are now allowed in chat (D-077), which also fixes Google tools in chat. When Gemini runs a music tool and then says nothing, she now says what the tool did instead of "I lost my words".
+- **The Look (MUS-11, D-078):** one Look for all of Tama, in Settings → her tab. **Material:** Solid or Glass (real Windows 11 glass on the chat, the music card and its panel, Settings and the other pages; her bubble and menu become frosted paper). **Mode:** Light, Dark or Follow Windows. The terminal keeps its own themes.
+  - **Her colors, done right:** her lead color tints every window (no more mint wash), text contrast is checked, and buttons stay readable in every mode.
+  - **Assets:** one drawn icon set in Settings, setup and the chat (no more mixed emoji), a faint pattern from her design on window headers (Kero-chan: lily pads and raindrops), a happy sticker of her with tap-to-ask chips in the empty chat, and note badges on the music card's empty screens.
+  - Glass switches off by itself when Windows' transparency effects are off. Measured idle cost with glass: 1.78 % CPU, 296 MB.
 ### Decisions
 - D-064 — Every open roadmap item parked (🅿): the to-do list starts from zero; M12 closed.
 - D-065 — M13 Music & DJ planned (1.1.0): now-playing for any player, Spotify (Premium, your own Spotify app) and YouTube Music (YouTube API + your browser), a music widget, DJ Tama on the real beat (MUS-1..9).
@@ -50,6 +54,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - D-071 — Up next / Lyrics open in a panel docked beside her; the card stays small where you put it.
 - D-072 — The Up next / Lyrics panel belongs to the music card instead; card and Kero are separate unless you pin them together (replaces D-071).
 - D-075 — Telegram music commands (MUS-8) dropped: music from the phone goes through her chat.
+- D-078 — The Look: app-wide glass and dark mode from her colors, with new icons, a motif pattern and stickers.
 - D-077 — Her chat may use Tama's own tools again (the newer Antigravity CLI asks permission for them).
 - D-076 — Music tools for her chat and Claude Code; "play <song>" plays the top YouTube Music search result through the extension.
 - D-074 — Playlists and search hidden for now (MUS-6 parked); the code stays.
@@ -296,6 +301,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `2201d65` | 2026-11-27 | docs(prd) | MUS-7 done (confirmed live) |
+| `8fe5b5d` | 2026-11-27 | fix(chat) | allow Tama's own MCP tools when agy asks permission (D-077) |
 | `bb6707b` | 2026-11-27 | fix(music) | autoplay reads the opened address; reply when Gemini goes quiet after a music tool (MUS-7) |
 | `b80dc7d` | 2026-11-27 | feat(music) | ask her to play/pause/skip, music settings and setup card (MUS-7, MUS-9; D-075, D-076) |
 | `eac0da6` | 2026-11-27 | chore(music) | hide Playlists and search; YouTube gets its own sign-in (MUS-6 parked, D-074) |

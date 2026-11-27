@@ -1,4 +1,4 @@
-/* Music widget icon set (MUS-2): one consistent 24x24 line-icon family drawn for Tama, colored by the theme
+/* Tama's icon set (MUS-2, D-078): one consistent 24x24 line-icon family drawn for Tama, colored by the theme
    (currentColor). Injected once as an inline SVG sprite, used as <svg class="i"><use href="#i-play"/></svg>.
    Static markup only: no page data ever goes through here. */
 (function () {
@@ -28,9 +28,24 @@
     back: `<path ${S} d="M14.5 6 8.5 12l6 6"/>`,
     heart: `<path ${S} d="M12 19.5s-7.5-4.4-7.5-10A4.2 4.2 0 0 1 12 7a4.2 4.2 0 0 1 7.5 2.5c0 5.6-7.5 10-7.5 10z"/>`,
     lyrics: `<path ${S} d="M4.5 6.5h15M4.5 11.5h10M4.5 16.5h6.5"/><path ${S} d="M18 13v5.2"/><circle ${F} cx="16.6" cy="18.6" r="1.8"/>`,
+    // App chrome (D-078): Settings, setup and page headers use these instead of emoji.
+    bow: `<path ${S} d="M12 11.5 5 7.5v8l7-4zm0 0 7-4v8l-7-4z"/><circle ${F} cx="12" cy="11.5" r="1.9"/><path ${S} d="m10.6 13.3-1.8 5.2m4.6-5.2 1.8 5.2"/>`,
+    talk: `<path ${S} d="M5.5 5h13A2.5 2.5 0 0 1 21 7.5v7a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 3.5V17h-1A2.5 2.5 0 0 1 3 14.5v-7A2.5 2.5 0 0 1 5.5 5z"/><circle ${F} cx="8.5" cy="11" r="1.1"/><circle ${F} cx="12" cy="11" r="1.1"/><circle ${F} cx="15.5" cy="11" r="1.1"/>`,
+    moon: `<path ${S} d="M19.5 14.6A7.8 7.8 0 0 1 9.4 4.5a7.8 7.8 0 1 0 10.1 10.1z"/><path ${S} stroke-width="1.6" d="M17 4v3m-1.5-1.5h3"/>`,
+    phone: `<rect ${S} x="6.5" y="2.8" width="11" height="18.4" rx="2.6"/><path ${S} d="M10.5 18h3"/>`,
+    link: `<path ${S} d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path ${S} d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>`,
+    sparkle: `<path ${S} d="M12 3.5c.6 4.3 2.2 5.9 6.5 6.5-4.3.6-5.9 2.2-6.5 6.5-.6-4.3-2.2-5.9-6.5-6.5 4.3-.6 5.9-2.2 6.5-6.5z"/><path ${S} stroke-width="1.6" d="M18.5 16.5v4m-2-2h4"/>`,
+    chart: `<path ${S} d="M4 20h16"/><rect ${S} x="5.5" y="11" width="3" height="6" rx="1"/><rect ${S} x="10.5" y="6.5" width="3" height="10.5" rx="1"/><rect ${S} x="15.5" y="9" width="3" height="8" rx="1"/>`,
+    code: `<rect ${S} x="2.8" y="4.5" width="18.4" height="13" rx="2.2"/><path ${S} d="m7 9 2.5 2-2.5 2m4.5 0h4.5M8 21h8"/>`,
+    mic: `<rect ${S} x="9" y="3" width="6" height="11" rx="3"/><path ${S} d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>`,
+    gear: `<circle ${S} cx="12" cy="12" r="3"/><path ${S} d="M12 2.8v2.4m0 13.6v2.4M2.8 12h2.4m13.6 0h2.4M5.5 5.5l1.7 1.7m9.6 9.6 1.7 1.7m0-13-1.7 1.7m-9.6 9.6-1.7 1.7"/>`,
+    reset: `<path ${S} d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path ${S} d="M4.5 4.5v4h4"/>`,
+    box: `<path ${S} d="M3.5 8 12 4l8.5 4v8.5L12 20.5 3.5 16.5z"/><path ${S} d="M3.5 8 12 12l8.5-4M12 12v8.5"/>`,
   };
   const sprite = `<svg xmlns="http://www.w3.org/2000/svg" style="display:none">${Object.entries(ICONS).map(([k, v]) => `<symbol id="i-${k}" viewBox="0 0 24 24">${v}</symbol>`).join('')}</svg>`;
   document.body.insertAdjacentHTML('afterbegin', sprite);
   /** Markup for one icon (static names only). */
   window.TamaIcon = (name) => `<svg class="i" aria-hidden="true"><use href="#i-${ICONS[name] ? name : 'note'}"/></svg>`;
+  /** Fill every `.ico[data-i]` placeholder under root once (static icon names from the page's own markup). */
+  window.TamaIcons = { fill(root = document) { for (const el of root.querySelectorAll('.ico[data-i]:not([data-filled])')) { el.insertAdjacentHTML('afterbegin', window.TamaIcon(el.dataset.i)); el.dataset.filled = '1'; } } };
 })();

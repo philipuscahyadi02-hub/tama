@@ -31,7 +31,7 @@ const USER_ACTIONS = new Set(['feed', 'snack', 'play', 'clean', 'sleep', 'nap', 
  * }} deps
  */
 function createDesktopChannel({ bus, ipc, shell, pet, term, chat, summon, openOnboarding, openRoster, openGoogle, openDashboard, openVoice, openSettings = () => null, openSetup = () => null, autostart = undefined, pages, music }) {
-  const both = () => [pet.win, term.window(), chat.window(), ...(music && music.window() ? [/** @type {import('electron').BrowserWindow} */ (music.window())] : [])];
+  const both = () => [pet.win, term.window(), chat.window(), .../** @type {import('electron').BrowserWindow[]} */ (music ? [music.window(), music.panelWindow && music.panelWindow()].filter(Boolean) : [])];
   /** Framed pages (Google setup) that also want live status. */
   const pageWindows = () => (pages ? pages() : []);
   /** Fire-and-forget request; failures surface on app.error instead of becoming unhandled rejections. @param {string} topic @param {any} [payload] */

@@ -29,6 +29,9 @@ function createUiPrefs({ bus, device, now = () => Date.now() }) {
     musicWidget: 'auto', musicLook: 'solid', musicOpacity: 100, musicDj: true, musicBeat: true, replyLang: 'auto', quiet: { on: false, from: '23:00', to: '08:00' }, ...(device.get().ui || {}),
   });
 
+  /** @param {any} p */
+  const material = (p) => ((p.lookMaterial || p.musicLook) === 'glass' ? 'glass' : 'solid');
+
   async function levelIndex() {
     const pet = await bus.request(TOPICS.PET_GET).catch(() => null);
     return (pet && pet.level && pet.level.index) || 0;
@@ -44,7 +47,11 @@ function createUiPrefs({ bus, device, now = () => Date.now() }) {
       termTheme, tourDone: !!p.tourDone, unlocked, dnd: !!p.dnd, nudges: p.nudges !== false, walkMarker: p.walkMarker !== false, mute: !!p.mute, motion: p.motion || 'auto',
       replyLang: REPLY_LANGS.includes(p.replyLang) ? p.replyLang : 'auto',
       musicWidget: p.musicWidget === 'off' ? 'off' : 'auto', // MUS-2: show the music widget by itself while a song plays
-      musicLook: p.musicLook === 'glass' ? 'glass' : 'solid', // D-068: Windows 11 acrylic or a solid card
+      // The Look (D-078) for every window but the terminal: solid or glass (Windows 11 acrylic), light, dark or auto.
+      // An older music-card-only "glass" (D-068) carries over until the user picks a Look.
+      lookMaterial: material(p),
+      lookMode: ['light', 'dark', 'auto'].includes(p.lookMode) ? p.lookMode : 'light',
+      musicLook: material(p), // the music card follows the Look (kept for older callers)
       musicOpacity: Math.round(Math.max(40, Math.min(100, Number(p.musicOpacity) || 100))),
       musicDj: p.musicDj !== false,     // MUS-3: DJ Tama while music plays
       musicBeat: p.musicBeat !== false, // MUS-4: follow the real beat (PC audio loopback)
@@ -55,7 +62,7 @@ function createUiPrefs({ bus, device, now = () => Date.now() }) {
     };
   }
 
-  /** @param {{ termTheme?: string, tourDone?: boolean, dnd?: boolean, nudges?: boolean, walkMarker?: boolean, mute?: boolean, motion?: string, musicWidget?: string, musicLook?: string, musicOpacity?: number, musicDj?: boolean, musicBeat?: boolean, replyLang?: string, quiet?: { on?: boolean, from?: string, to?: string } }} p */
+  /** @param {{ termTheme?: string, tourDone?: boolean, dnd?: boolean, nudges?: boolean, walkMarker?: boolean, mute?: boolean, motion?: string, musicWidget?: string, musicLook?: string, lookMaterial?: string, lookMode?: string, musicOpacity?: number, musicDj?: boolean, musicBeat?: boolean, replyLang?: string, quiet?: { on?: boolean, from?: string, to?: string } }} p */
   async function set(p) {
     /** @type {Record<string, any>} */
     const patch = {};
@@ -73,7 +80,9 @@ function createUiPrefs({ bus, device, now = () => Date.now() }) {
     if (p.walkMarker !== undefined) patch.walkMarker = !!p.walkMarker; // SUM-5: edge marker while hidden (D-035)
     if (p.musicDj !== undefined) patch.musicDj = !!p.musicDj;
     if (p.musicBeat !== undefined) patch.musicBeat = !!p.musicBeat;
-    if (p.musicLook !== undefined) { if (!['solid', 'glass'].includes(String(p.musicLook))) return { error: 'Music widget look: solid or glass.' }; patch.musicLook = String(p.musicLook); }
+    const look = p.lookMaterial !== undefined ? p.lookMaterial : p.musicLook;
+    if (look !== undefined) { if (!['solid', 'glass'].includes(String(look))) return { error: 'Look: solid or glass.' }; patch.lookMaterial = String(look); patch.musicLook = String(look); }
+    if (p.lookMode !== undefined) { if (!['light', 'dark', 'auto'].includes(String(p.lookMode))) return { error: 'Mode: light, dark or auto.' }; patch.lookMode = String(p.lookMode); }
     if (p.musicOpacity !== undefined) { const n = Number(p.musicOpacity); if (!Number.isFinite(n)) return { error: 'Opacity is a number from 40 to 100.' }; patch.musicOpacity = Math.round(Math.max(40, Math.min(100, n))); }
     if (p.musicWidget !== undefined) { if (!['auto', 'off'].includes(String(p.musicWidget))) return { error: 'Music widget: auto or off.' }; patch.musicWidget = String(p.musicWidget); }
     if (p.replyLang !== undefined) {

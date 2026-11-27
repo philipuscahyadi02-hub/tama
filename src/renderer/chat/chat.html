@@ -6,6 +6,7 @@
   <title>Chat</title>
   <link rel="stylesheet" href="../shared/rig.css" />
   <link rel="stylesheet" href="chat.css" />
+  <link rel="stylesheet" href="../shared/look.css" />
 </head>
 <body>
   <header id="titlebar">
@@ -15,9 +16,9 @@
       <div id="sub">chat · Gemini via agy</div>
     </div>
     <span class="spacer"></span>
-    <button class="wbtn" id="wClear" title="New chat (forget this conversation)">⟲</button>
-    <button class="wbtn" id="wTerm" title="Open the terminal for coding work (Ctrl+Alt+K)">💻</button>
-    <button class="wbtn close" id="wClose" title="Hide (Ctrl+Alt+J)">✕</button>
+    <button class="wbtn" id="wClear" title="New chat (forget this conversation)"><span class="ico" data-i="reset"></span></button>
+    <button class="wbtn" id="wTerm" title="Open the terminal for coding work (Ctrl+Alt+K)"><span class="ico" data-i="code"></span></button>
+    <button class="wbtn close" id="wClose" title="Hide (Ctrl+Alt+J)"><span class="ico" data-i="close"></span></button>
   </header>
 
   <main id="log"></main>
@@ -33,6 +34,8 @@
   <script src="../../shared/catalog.js"></script>
   <script src="../../shared/spec.js"></script>
   <script src="../../shared/theme.js"></script>
+  <script src="../shared/look.js"></script>
+  <script src="../shared/icons.js"></script>
   <script src="../../shared/rig/kit.js"></script>
   <script src="../../shared/rig/face.js"></script>
   <script src="../../shared/rig/hair.js"></script>

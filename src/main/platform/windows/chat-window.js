@@ -6,6 +6,7 @@ const { BrowserWindow, screen } = require('electron');
 const { workAreas } = require('../displays');
 const geo = require('../summon/geometry');
 const { attachDebug } = require('./debug');
+const { followLook } = require('../look');
 
 const RENDERER = path.join(__dirname, '..', '..', '..', 'renderer');
 const PRELOAD = path.join(__dirname, '..', '..', '..', 'preload', 'index.js');
@@ -31,11 +32,12 @@ function createChatWindow({ savedBounds, onBoundsChanged = () => {}, isQuitting,
     const height = b.height || H;
     const titleBar = b.x != null && b.y != null ? { x: b.x, y: b.y, width, height: 40 } : null;
     placed = !!titleBar && workAreas().some((a) => geo.overlapArea(titleBar, a) > 0);
-    const w = new BrowserWindow({
+    const w = /** @type {import('electron').BrowserWindow} */ (new BrowserWindow({
       width, height, x: placed ? b.x : undefined, y: placed ? b.y : undefined,
       minWidth: 300, minHeight: 360, frame: false, show: false, backgroundColor: '#fff7fb', title: 'Chat',
       webPreferences: { preload: PRELOAD, contextIsolation: true, nodeIntegration: false, sandbox: true },
-    });
+    }));
+    followLook(w); // D-078: Windows glass when the Look is glass
     w.loadFile(path.join(RENDERER, 'chat', 'chat.html'));
     const remember = () => { if (!w.isMaximized() && !w.isMinimized()) onBoundsChanged(w.getBounds()); };
     w.on('resize', remember);
