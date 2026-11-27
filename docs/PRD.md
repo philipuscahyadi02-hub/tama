@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.51 |
+| **Version** | 0.52 |
 | **Status** | **v1.0.0 released** (D-058); installer + setup wizard done (unreleased). Every other open item is parked (D-064). **Next: M13 YouTube Music & DJ = 1.1.0** (MUS-*, D-065, D-066) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-27 |
@@ -321,7 +321,15 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q2 | Final product name? | "Tama" (each Tama is named in onboarding) |
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
+### Known issues (to look at later)
+
+| ID | Issue | Seen | Status |
+|---|---|---|---|
+| BUG-1 | Running Tama from the terminal (`npm start`) prints a bus error from the Google backup: a Google token error (`google.backup`). | 2026-11-27, reported by the user | Open, not investigated yet (user: no need to fix now) |
+| BUG-2 | Electron warns that its `safeStorage` usage is deprecated and will be removed (`platform/secrets` stores tokens with it). | 2026-11-27, reported by the user | Open, not investigated yet (user: no need to fix now) |
+
 ## 7. Changelog
+- **0.52 — 2026-11-27** — Known issues noted: BUG-1 (Google backup token error in the terminal), BUG-2 (Electron safeStorage deprecation warning).
 - **0.51 — 2026-11-27** — New CAL-1 ◐ calendar window, CAL-2 ◐ next-meeting card (D-084).
 - **0.50 — 2026-11-27** — EXT-1 ☑, EXT-2 ☑ (confirmed by the user).
 - **0.49 — 2026-11-27** — New EXT-2 ◐ ask about this page + save it from the extension popup (D-083).
