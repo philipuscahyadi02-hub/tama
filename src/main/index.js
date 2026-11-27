@@ -62,6 +62,7 @@ const { createWalkMarker } = require('./platform/windows/walk-marker');
 const { createMusicWiring } = require('./music-wiring');
 const { createMusicTools, musicRule } = require('./services/music');
 const { setLook } = require('./platform/look');
+const { createAwake } = require('./services/awake');
 
 const { createDesktopChannel } = require('./channels/desktop');
 
@@ -245,7 +246,9 @@ function boot() {
   // Tama's desk: an empty folder of her own, so phone tasks that need no project (Google, questions) have a safe place to run.
   const desk = pathMod.join(appShell.paths.data(), 'desk');
   require('fs').mkdirSync(desk, { recursive: true });
-  stoppers.push(createTelegram({ bus, secrets, device, git, snapshot: () => pet.snapshot(), keepAwake, tama: active, desk }).start());
+  // Keep the PC awake while she works (D-081); the screen may still turn off and lock.
+  stoppers.push(createAwake({ bus, keepAwake }).start());
+  stoppers.push(createTelegram({ bus, secrets, device, git, snapshot: () => pet.snapshot(), keepAwake: (on) => keepAwake(on, 'telegram'), tama: active, desk }).start());
   // Voice (M9, D-042): AivisSpeech / VOICEVOX when running, Windows' built-in voice otherwise.
   stoppers.push(voice.start());
   // Accounts (M8, D-040): sign-ins stay in the official tools; switching opens their sign-in in a console window.

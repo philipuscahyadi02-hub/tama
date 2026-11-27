@@ -110,6 +110,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-078 | The Look: one app-wide Material (solid/glass) × Mode (light/dark/auto) from her lead color; Windows acrylic on chat, music and pages, frosted paper on the pet; terminal keeps its themes; drawn icons, motif pattern, stickers | Accepted · Refines D-032, D-068 |
 | D-079 | NFR-1 memory target raised from 300 to 320 MB to keep the bundled rounded fonts | Accepted · Refines D-053 |
 | D-080 | One music box: Up next / Lyrics open inside the card as an accordion (the window grows downward, shifts up only to fit); no separate panel window | Accepted · Supersedes D-072 (panel part) |
+| D-081 | Keep the PC awake (off / while she works = default / always): blocks system sleep only; the screen still turns off and locks, because locking doesn't stop Tama | Accepted · Generalizes TG-8's phone-only switch |
 
 ---
 
@@ -1086,3 +1087,11 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Keeping the attached panel (D-072; the user found two boxes split); animating the window size itself (Electron animates `setBounds` only on macOS).
 - **Consequences:** In Glass the acrylic area appears at full height a moment before the list slides in. Hiding the card or switching the Look closes the list at once.
 - **Refs:** MUS-2, D-068, D-072, D-078, src/main/platform/windows/music-window.js, src/renderer/music/
+
+### D-081 — Keep the PC awake while she works; never touch the lock screen
+- **Date:** 2026-11-27 · **Status:** Accepted · Generalizes TG-8 (keep awake for the phone)
+- **Context:** The user asked to make sure the PC doesn't sleep, or lock if that stops the process. Sleep pauses every process (Claude tasks, music, the Telegram bot). Locking does not: Tama, Claude Code and the bot keep running behind the lock screen.
+- **Decision:** A new `services/awake` with ui pref `keepAwake`: `off`, `working` (default) or `always`. "Working" means a coding or chat turn is running (`engine.event` / `chat.event` status not idle) or music is playing, plus a 5-minute grace. `platform/power.keepAwake(on, reason)` now counts reasons ("work", "telegram"), and Electron's `prevent-app-suspension` blocker runs while any is on. The Telegram "keep the PC awake" switch is one of those reasons. Settings → her tab has the control.
+- **Alternatives:** Disabling the lock screen or screen timeout (weakens the user's security and doesn't help Tama, since locking stops nothing); always awake by default (wastes power when nothing runs); `prevent-display-sleep` (keeps the screen on for no reason).
+- **Consequences:** Closing a laptop lid or pressing the power button still sleeps the PC (the user's direct action, and laptop firmware may force it). The screen still turns off and locks on its normal timer.
+- **Refs:** TG-8, D-036, src/main/services/awake, src/main/platform/power.js, src/renderer/settings

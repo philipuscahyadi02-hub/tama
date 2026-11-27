@@ -41,12 +41,20 @@ function watchPower({ onPower, onIdle }) {
 }
 
 let blockerId = /** @type {number | null} */ (null);
-/** Keep the PC from sleeping (remote mode, TG-8). Screen may still turn off. @param {boolean} on */
-function keepAwake(on) {
+/** Who wants the PC awake right now (e.g. "telegram", "work"). The blocker runs while any reason is on. */
+const reasons = new Set();
+/**
+ * Keep the PC from sleeping (TG-8, D-081). The screen may still turn off and lock: locking doesn't stop Tama, sleep does.
+ * @param {boolean} on @param {string} [reason]
+ */
+function keepAwake(on, reason = 'default') {
   const { powerSaveBlocker } = require('electron');
-  if (on && blockerId === null) blockerId = powerSaveBlocker.start('prevent-app-suspension');
-  if (!on && blockerId !== null) { powerSaveBlocker.stop(blockerId); blockerId = null; }
+  if (on) reasons.add(reason); else reasons.delete(reason);
+  if (reasons.size && blockerId === null) blockerId = powerSaveBlocker.start('prevent-app-suspension');
+  if (!reasons.size && blockerId !== null) { powerSaveBlocker.stop(blockerId); blockerId = null; }
   return blockerId !== null;
 }
+/** Reasons currently keeping the PC awake (for status). */
+const awakeReasons = () => [...reasons];
 
-module.exports = { watchPower, keepAwake, IDLE_NAP_SECONDS };
+module.exports = { watchPower, keepAwake, awakeReasons, IDLE_NAP_SECONDS };

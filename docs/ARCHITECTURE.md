@@ -149,6 +149,7 @@ src/main/services/music/          M13 YouTube Music (D-065, D-066): logic.js (pu
                                   field by field, change detection) + index.js (extension pairing + link, media-session fallback poll,
                                   controls routed to whichever source has the song) + library.js (MUS-6: playlists/search via
                                   google.youtube, play = open a music.youtube.com link through the normal control path)
+src/main/services/awake/          D-081 keep the PC awake (off / while she works / always) via platform/power keepAwake(on, reason)
 src/main/platform/look.js         D-078 the Look: Windows acrylic on chat/pages (followLook), nativeTheme light/dark, glass off when Windows transparency is off
 src/renderer/shared/look.{js,css} D-078 TamaLook: lookVars tokens per mode/material, glass rim, motif header (assets/look/*.svg); shared/icons.js = the icon family
 src/main/services/music/tools.js  MUS-7 music tools (read + control policies) for the chat brain (tool bridge) and Claude Code
