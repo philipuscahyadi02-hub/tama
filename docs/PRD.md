@@ -318,7 +318,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
-- **0.46 — 2026-11-27** — New MUS-11 ◐ the Look: app-wide solid/glass and light/dark/auto, new tokens, icons, motif, stickers (D-078); fonts pending.
+- **0.46 — 2026-11-27** — New MUS-11 ◐ the Look: app-wide solid/glass and light/dark/auto, new tokens, icons, motif, stickers (D-078); fonts added (about +10–15 MB, memory now borderline for NFR-1).
 - **0.45 — 2026-11-27** — MUS-7 ☑ (confirmed by the user: "play <song>" from chat plays it; agy permission fix D-077). Every M13 row is ☑, ✖ or 🅿.
 - **0.44 — 2026-11-27** — MUS-8 ✖ dropped (D-075). MUS-7 ◐ (music tools for chat and Claude Code, "play <song>" through YouTube Music search + extension autoplay, D-076; live chat check pending). MUS-9 ☑ (setup card, Settings → Music).
 - **0.43 — 2026-11-27** — MUS-6 🅿 parked: the user doesn't use playlists; the Playlists tab and its terminal commands are hidden, the code stays (D-074).

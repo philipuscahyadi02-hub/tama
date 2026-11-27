@@ -1,7 +1,12 @@
 /* The Look (D-078): shared surfaces for every window but the terminal. Colors are --tama-* tokens from
    shared/theme.js lookVars (set by shared/look.js); this file only adds what all windows share: the radius family,
    the glass rim and sheen, and dark-mode details. Window CSS keeps its own layout. */
+/* Rounded fonts (D-078, assets/fonts, OFL): Nunito for Latin, M PLUS Rounded 1c for Japanese, Segoe UI as fallback. */
+@font-face { font-family: "Nunito"; src: url("../../../assets/fonts/Nunito%5Bwght%5D.ttf") format("truetype"); font-weight: 200 1000; font-display: swap; }
+@font-face { font-family: "M PLUS Rounded 1c"; src: url("../../../assets/fonts/MPLUSRounded1c-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; unicode-range: U+3000-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF; }
+@font-face { font-family: "M PLUS Rounded 1c"; src: url("../../../assets/fonts/MPLUSRounded1c-Bold.ttf") format("truetype"); font-weight: 600 900; font-display: swap; unicode-range: U+3000-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF; }
 :root {
+  --tama-font: "Nunito", "M PLUS Rounded 1c", "Segoe UI", system-ui, sans-serif;
   --tama-r-lg: 18px;   /* windows and big cards */
   --tama-r-md: 12px;   /* cards, bubbles, inputs */
   --tama-r-sm: 8px;    /* chips, small buttons */
@@ -44,3 +49,6 @@ header::before, #titlebar::before {
   -webkit-mask-composite: source-in;
 }
 html[data-mode="dark"] header::before, html[data-mode="dark"] #titlebar::before { opacity: 0.16; }
+
+/* One font everywhere but code (code, pre and the terminal keep their monospace). */
+body, button, input, select, textarea { font-family: var(--tama-font); }

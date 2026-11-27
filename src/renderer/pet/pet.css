@@ -1,3 +1,7 @@
+/* Rounded fonts (D-078, assets/fonts). */
+@font-face { font-family: "Nunito"; src: url("../../../assets/fonts/Nunito%5Bwght%5D.ttf") format("truetype"); font-weight: 200 1000; font-display: swap; }
+@font-face { font-family: "M PLUS Rounded 1c"; src: url("../../../assets/fonts/MPLUSRounded1c-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; unicode-range: U+3000-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF; }
+@font-face { font-family: "M PLUS Rounded 1c"; src: url("../../../assets/fonts/MPLUSRounded1c-Bold.ttf") format("truetype"); font-weight: 600 900; font-display: swap; unicode-range: U+3000-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF; }
 :root {
   --ink: #3a2a4d;
   --paper: #fffaf3;
@@ -19,7 +23,7 @@ html[data-mode="dark"] #bubble.shout { background: #3a2c44; }
 * { box-sizing: border-box; }
 html, body {
   margin: 0; height: 100%; overflow: hidden; background: transparent;
-  font-family: "Segoe UI Rounded", "Segoe UI", system-ui, sans-serif;
+  font-family: "Nunito", "M PLUS Rounded 1c", "Segoe UI Rounded", "Segoe UI", system-ui, sans-serif; /* D-078 */
   color: var(--ink); user-select: none;
 }
 .hidden { display: none !important; }
