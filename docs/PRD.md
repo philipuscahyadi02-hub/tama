@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.44 |
+| **Version** | 0.45 |
 | **Status** | **v1.0.0 released** (D-058); installer + setup wizard done (unreleased). Every other open item is parked (D-064). **Next: M13 YouTube Music & DJ = 1.1.0** (MUS-*, D-065, D-066) |
 | **Owner** | philipuscahyadi02-hub |
 | **Last updated** | 2026-11-27 |
@@ -249,7 +249,7 @@ Plan in D-065, YouTube Music only with a companion extension (D-066). Build orde
 | MUS-4 | **Real beat sync:** the pet window analyses the PC's audio output (Windows loopback) in memory to find the tempo and beat, so the nod and scratches land on the beat. Nothing is recorded, saved or sent. Runs only while music plays and DJ mode is on; the permission is granted to the pet window only (amends D-055). Falls back to a steady groove when unavailable. Budget: at most about +2 % CPU while playing (`npm run perf`), unchanged idle. | P1 | M13 | ☑ |
 | ~~MUS-5~~ | ~~**Spotify**~~ *(dropped by the user: YouTube Music only, D-066).* | — | — | ✖ |
 | MUS-6 | **YouTube account data:** with Google signed in, an optional \"YouTube Music\" switch (Connect YouTube in the widget's **Playlists** tab, `/music youtube`) adds the read-only `youtube.readonly` scope. Lists the user's playlists (Liked music first) and their songs and searches songs through the YouTube Data API; playing one opens it in the paired YouTube Music tab (MUS-10) or, without the extension, on music.youtube.com in the default browser, where the user's own Premium session plays it (D-073). Terminal: `/music play <song>`, `/music search`, `/music playlists`, `/music playlist <n>`. No unofficial APIs or cookies (D-006). The Limits tab shows today's YouTube API units (search = 100 of 10,000 a day; results cached). | P0 | M13 | 🅿 |
-| MUS-7 | **Ask her:** Tama-owned music tools for the chat brain and Claude Code (`music_now`, `music_queue`, `music_lyrics`, `music_control` (play, pause, next, prev, like, dislike, shuffle, repeat, volume, seek, jump), `music_play` (words → YouTube Music search, the extension plays the top result, D-076)). They run without a tap and are announced; song titles and lyrics reach the model as untrusted data. The persona knows them; from the phone they work through Telegram chat. | P1 | M13 | ◐ |
+| MUS-7 | **Ask her:** Tama-owned music tools for the chat brain and Claude Code (`music_now`, `music_queue`, `music_lyrics`, `music_control` (play, pause, next, prev, like, dislike, shuffle, repeat, volume, seek, jump), `music_play` (words → YouTube Music search, the extension plays the top result, D-076)). They run without a tap and are announced; song titles and lyrics reach the model as untrusted data. The persona knows them; from the phone they work through Telegram chat. | P1 | M13 | ☑ |
 | ~~MUS-8~~ | ~~**Phone commands**~~ *(dropped by the user, D-075; music from the phone works through Telegram chat and MUS-7's tools).* | — | — | ✖ |
 | MUS-9 | **Setup & settings:** a YouTube Music card in the setup wizard (open the extension folder, steps, connection state; never blocks setup), a Settings → Music tab (connection, pairing code, forget, music card auto-show, look, opacity, DJ mode, beat sync, how to ask her), and `/music`. | P1 | M13 | ☑ |
 | MUS-10 | **Tama Companion browser extension** (Chrome and Edge, Manifest V3, source in `extension/`, shipped with the app and loaded with \"Load unpacked\" until it is published): a content script on music.youtube.com reads the player (song, position, playing, volume, shuffle, repeat, like state, the Up next queue, lyrics) and runs controls (play/pause, next, previous, seek, jump to a queue item, shuffle, repeat, like/dislike, volume, open a song or playlist). It talks to Tama over a 127.0.0.1 WebSocket, paired once with a one-time code (like Telegram, D-036), and Tama accepts only the paired extension's origin and key. Permissions: music.youtube.com only; no cookies, history or other sites; it never reads or sends sign-in data. One tab is the controlled tab. If YouTube Music changes its page, the widget falls back to MUS-1 and says so. | P0 | M13 | ☑ |
@@ -317,6 +317,7 @@ Check off when *all P0 rows* for that milestone are ☑. Update the "Status" lin
 | Q3 | Git commit watcher: which repos by default? | None; user adds |
 
 ## 7. Changelog
+- **0.45 — 2026-11-27** — MUS-7 ☑ (confirmed by the user: "play <song>" from chat plays it; agy permission fix D-077). Every M13 row is ☑, ✖ or 🅿.
 - **0.44 — 2026-11-27** — MUS-8 ✖ dropped (D-075). MUS-7 ◐ (music tools for chat and Claude Code, "play <song>" through YouTube Music search + extension autoplay, D-076; live chat check pending). MUS-9 ☑ (setup card, Settings → Music).
 - **0.43 — 2026-11-27** — MUS-6 🅿 parked: the user doesn't use playlists; the Playlists tab and its terminal commands are hidden, the code stays (D-074).
 - **0.42 — 2026-11-27** — MUS-6 ◐ (Playlists tab, search, play from the library; built and tested against a fake API, live check with the user's account pending) (D-073).
