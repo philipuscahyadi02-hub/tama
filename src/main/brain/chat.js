@@ -57,7 +57,7 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
   /** @type {import('./index').Engine | null} */
   let engine = null;
   let personaText = '';
-  let reply = { text: '', tools: /** @type {string[]} */ ([]), filter: markerFilter() };
+  let reply = { text: '', tools: /** @type {string[]} */ ([]), filter: markerFilter(), done: '' };
   /** Which memories this agy session already knows (sent as a [memory] line when they change). */
   let memorySig = /** @type {string | null} */ (null); // null = this session hasn't been told yet
   /** Last [google] context line sent to this session (calendar/mail summary, read-only, D-034). */
@@ -103,11 +103,13 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
           out({ t: 'tool', text: `📝 I'll remember: ${f}` });
         }
         const text = reply.text.replace(REMEMBER_RE, '').replace(/\[\[[^\]]*\]\]/g, '').trim()
+          // Gemini sometimes ends a turn right after a music tool without a word: say what the tool did instead.
+          || (reply.done ? `Okay~ ${reply.done} ♪` : '')
           || (ev.isError ? 'uu… my brain glitched. Can you say that again? (agy error)' : 'hmm… I lost my words. Ask me again?');
         const work = WORK_RE.exec(reply.text);
         const ja = JA_RE.exec(reply.text);
         push({ role: 'tama', text, at: now(), tools: reply.tools.length ? reply.tools : undefined, work: work ? work[1].slice(0, 1000) : undefined, ja: ja ? ja[1].slice(0, 1000) : undefined });
-        reply = { text: '', tools: [], filter: markerFilter() };
+        reply = { text: '', tools: [], filter: markerFilter(), done: '' };
         out({ t: 'done', isError: !!ev.isError });
         break;
       }
@@ -138,7 +140,7 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
     }
     const e = getEngine();
     if (e.busy) { push({ role: 'note', text: 'one at a time~ I\'m still answering.', at: now() }); return { ok: false }; }
-    reply = { text: '', tools: [], filter: markerFilter() };
+    reply = { text: '', tools: [], filter: markerFilter(), done: '' };
     const [pet, prod, mem, gctx, wx] = await Promise.all([
       bus.request(TOPICS.PET_GET).catch(() => null),
       bus.request(TOPICS.PROD_GET).catch(() => null),
@@ -166,6 +168,7 @@ function createChat({ bus, scratchDir, available, factory, onResult = () => {}, 
   function start() {
     const offs = [
       bus.handle(TOPICS.CHAT_SEND, (/** @type {string} */ t) => send(t)),
+      bus.on(TOPICS.CHAT_EVENT, (/** @type {any} */ e) => { if (e && e.t === 'tool-done' && engine && engine.busy) reply.done = String(e.text || '').slice(0, 300); }),
       bus.handle(TOPICS.CHAT_HISTORY, () => ({ messages: history.slice(), busy: !!(engine && engine.busy), available: available() })),
       bus.handle(TOPICS.CHAT_INTERRUPT, () => engine && engine.busy && engine.interrupt()),
       bus.handle(TOPICS.CHAT_CLEAR, () => { stopEngine(); history.length = 0; out({ t: 'cleared' }); }),

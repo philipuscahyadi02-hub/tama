@@ -93,6 +93,7 @@ function createChatTools({ bus, tools, now = Date.now }) {
     bus.emit(TOPICS.CHAT_EVENT, { t: 'tool', text: `${policy === 'read' ? '🔎' : '✨'} ${t.title}` });
     try {
       const r = await t.run(args);
+      if (policy === 'control' && typeof r === 'string') bus.emit(TOPICS.CHAT_EVENT, { t: 'tool-done', text: r.slice(0, 300) });
       if (policy !== 'read') bus.emit(TOPICS.BRAIN_NOTICE, { text: `done: ${describe(name, args).split('\n')[0].replace(/^\S+ /, '')} ✨`, kind: 'info' });
       return { text: typeof r === 'string' ? r : JSON.stringify(r, null, 2) };
     } catch (e) {

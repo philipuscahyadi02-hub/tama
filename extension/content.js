@@ -195,9 +195,18 @@
   }
   // "Play <song>" from Tama (MUS-7, D-076): Tama opens YouTube Music's search for the words with #tama-autoplay; here the
   // top result is played. Only on a search page, only once (the marker is removed first), and it only presses play.
+  // YouTube Music rewrites the search URL right after loading (dropping the #marker), so read the address the page was
+  // opened with; only within 30 s of that load, so a re-injected copy (self-repair) never plays again later.
+  function openedWithMarker() {
+    if (location.pathname !== '/search' || performance.now() > 30000) return false;
+    const nav = performance.getEntriesByType('navigation')[0];
+    try { return new URL(nav ? nav.name : location.href).hash === '#tama-autoplay'; } catch (e) { return false; }
+  }
+  let autoplayed = false;
   async function autoplay() {
-    if (location.hash !== '#tama-autoplay' || location.pathname !== '/search') return;
-    history.replaceState(history.state, '', location.pathname + location.search);
+    if (autoplayed || !openedWithMarker()) return;
+    autoplayed = true;
+    if (location.hash) history.replaceState(history.state, '', location.pathname + location.search);
     for (let i = 0; i < 40; i++) {
       const b = q('searchTopPlay') || q('searchFirstPlay');
       if (b) { (b.querySelector('#play-button, yt-icon-button, button') || b).click(); setTimeout(tick, 1500); return; }
