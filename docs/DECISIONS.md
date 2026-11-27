@@ -106,6 +106,7 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-074 | MUS-6 parked: the Playlists tab and its `/music` commands are hidden (the user doesn't use playlists); the code, the separate YouTube sign-in and tests stay | Accepted · Parks MUS-6 |
 | D-075 | MUS-8 (Telegram music commands) dropped; music from the phone goes through Telegram chat and the MUS-7 tools | Accepted |
 | D-076 | Music tools for chat and Claude Code with a new `control` policy (runs, announced); "play <song>" = YouTube Music search with `#tama-autoplay`, the extension presses play on the top result | Accepted |
+| D-077 | agy now asks permission for MCP tools: the chat session allows exactly Tama's own `mcp_tama_*` tools (by name), which keep their Tama-side rules; everything else is still denied | Accepted · Refines D-037 |
 
 ---
 
@@ -1039,3 +1040,11 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** The YouTube Data API search (parked with MUS-6; needs a second sign-in and quota); driving YouTube Music's internal search API from the page (undocumented).
 - **Consequences:** Any page linking to such a search URL with the marker could start a song in the user's YouTube Music (harmless: it only presses play on a search result). The top result can be a video or an artist mix rather than the exact song, so she checks with `music_now`. The selectors for search results live in `extension/selectors.js`; the user must reload the extension once for 1.2.0.
 - **Refs:** MUS-7, MUS-10, D-034, D-037, D-066, D-074, src/main/services/music/tools.js, src/main/brain/{chat-tools,persona}.js, extension/content.js
+
+### D-077 — agy asks permission for MCP tools now: allow exactly Tama's own tools in the chat session
+- **Date:** 2026-11-27 · **Status:** Accepted · Refines D-037 ("agy never asks permission for MCP tools")
+- **Context:** The user's "play idol by yoasobi" got "I lost my words". agy's transcript showed `mcp_tama_music_play` called, then "user denied permission for mcp(tama/music_play)": the installed agy now sends `session/request_permission` for MCP tools, and PermissionGate denies every tool to the chat brain. The same would block the Google tools in chat.
+- **Decision:** The agy chat session (`ownTools: true`, set only by `agyProvider.chat`) answers a permission request with "allow once" when `toolCall.name` is exactly `mcp_tama_<name>`, without asking the gate. The arguments are never looked at. These tools come only from Tama's tool bridge and keep their own rules in `brain/chat-tools` (reads and player controls run; creating, editing and sending wait for the user's tap, D-038). Any other request still goes to the gate and is denied; the workspace guard hook still allows only `mcp_tama_*`, `search_web` and `read_url_content`.
+- **Alternatives:** A gate rule for the chat role (the gate's "chat can't use tools" stays a simple, absolute rule); turning permissions off in Tama's agy settings (would widen more than these tools).
+- **Consequences:** Verified live with real agy: "what's playing" (music_now) and "pause the music" (music_control) both ran. When chat replies end empty after a control tool, the tool's result is shown instead (D-076 follow-up). `npm run probe:agy` should gain a check for this request after the next agy update.
+- **Refs:** MUS-7, GOOG-2, D-037, D-038, D-076, src/main/engines/agy/{session,provider}.js

@@ -19,7 +19,7 @@ function agyProvider({ gate, mcpServers }) {
     available: () => !!exe,
     recheck: () => !!(exe = findAgyExecutable()),
     features: { webSearch: true, googleTools: true },
-    chat: (emit, persona) => new AgyEngine(emit, { ...base, persona, mcpServers, guard: CHAT_ALLOW }),
+    chat: (emit, persona) => new AgyEngine(emit, { ...base, persona, mcpServers, guard: CHAT_ALLOW, ownTools: true }),
     compose: (emit, persona) => new AgyEngine(emit, { ...base, persona, guard: DENY_ALL }),
   };
 }

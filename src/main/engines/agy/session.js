@@ -6,6 +6,9 @@ const { createAcpClient } = require('../acp');
 const { mapAcpUpdate, pickOption } = require('./map-update');
 const { findAgyExecutable, ensureTamaAgySettings, ensureWorkspaceGuard, CLI_DIR_NAME } = require('./setup');
 
+/** Tama's own MCP tool names as agy reports them (the tool bridge relay is registered as server "tama"). */
+const OWN_TOOL = /^mcp_tama_[a-z0-9_]+$/;
+
 /** Terminal mode names (Claude style) → agy ACP mode ids. */
 const MODE_MAP = { default: 'default', acceptEdits: 'accept-edits', plan: 'plan' };
 
@@ -23,7 +26,7 @@ class AgyEngine {
    *   mode?: 'default'|'acceptEdits'|'plan',
    *   lockMode?: boolean,
    *   spawnAgent?: (cwd: string) => any,
-   *   mcpServers?: () => any[],
+   *   mcpServers?: () => any[], ownTools?: boolean,
    *   guard?: string | null,
    *   prepare?: () => void,
    * }} opts
@@ -39,6 +42,8 @@ class AgyEngine {
     this.prepare = opts.prepare || (() => { ensureTamaAgySettings(); });
     /** MCP servers (ACP stdio entries) for new sessions, e.g. Tama's Google tools relay (D-037). */
     this.mcpServers = opts.mcpServers || (() => []);
+    /** Allow Tama's own MCP tools (mcp_tama_*) without the gate: they enforce their own rules. */
+    this.ownTools = opts.ownTools === true;
     /** Allow-list regex for the hard read-only hook in the working folder ('' = no tools); null = no guard (D-037). */
     this.guard = opts.guard === undefined ? null : opts.guard;
     /** @type {string | null} */ this.cwd = null;
@@ -97,6 +102,13 @@ class AgyEngine {
     });
     client.onRequest('session/request_permission', async (p) => {
       const tc = (p && p.toolCall) || {};
+      // Tama's own MCP tools (D-037, D-076): newer agy asks permission for MCP tools too. These tools carry their own
+      // rules Tama-side (brain/chat-tools: reads and player controls run, creating/editing/sending waits for a tap), so the
+      // chat session allows exactly them, matched on the tool name only (never its arguments); the guard hook still applies.
+      if (this.ownTools && OWN_TOOL.test(String(tc.name || ''))) {
+        const yes = pickOption(p.options, 'yes');
+        if (yes) return { outcome: { outcome: 'selected', optionId: yes } };
+      }
       const d = await this.gate.request({
         engine: 'agy', role: this.role, sessionKey: this.sessionId || '',
         tool: { name: tc.name || tc.title || 'tool', title: tc.title, kind: tc.kind, input: tc.args || tc.rawInput },
