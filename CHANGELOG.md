@@ -36,6 +36,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
   - **Settings:** `/music dj on|off`, `/music beat on|off`. Reduced motion means headphones only.
   - **Redesign:** its own matching icon set instead of emoji, a vinyl record behind the cover that spins while music plays, a small "Now playing" equalizer, styled progress and volume sliders, and a soft shadow. The vinyl and equalizer stand still with reduced motion.
 - **YouTube Music, step 4 (MUS-6), built then hidden:** a Playlists tab (your playlists, song search, play from your library) was built, then hidden at the user's request; the code stays for later (D-074). YouTube would use its own read-only sign-in, because Google refuses YouTube and Drive permissions in one sign-in.
+- **YouTube Music, step 5: ask her (MUS-7):** in chat (also from your phone's chat) say "play Idol by YOASOBI", "skip", "pause", "turn it down to 30", "what's playing?" or "what are the lyrics?". She does it right away and says what she did. Claude Code in the terminal has the same music tools. "Play <song>" searches YouTube Music and the extension plays the top result (extension 1.2.0: reload it once in chrome://extensions).
+- **YouTube Music setup (MUS-9):** a YouTube Music card in the setup wizard and a **Settings → Music** tab: connection, opening the extension folder, pairing code, forgetting the browser, the music card's pop-up, look and opacity, DJ mode and beat sync.
 ### Decisions
 - D-064 — Every open roadmap item parked (🅿): the to-do list starts from zero; M12 closed.
 - D-065 — M13 Music & DJ planned (1.1.0): now-playing for any player, Spotify (Premium, your own Spotify app) and YouTube Music (YouTube API + your browser), a music widget, DJ Tama on the real beat (MUS-1..9).
@@ -46,6 +48,8 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 - D-070 — Pair the extension with one click (Allow on Kero's bubble); the music card has no taskbar button.
 - D-071 — Up next / Lyrics open in a panel docked beside her; the card stays small where you put it.
 - D-072 — The Up next / Lyrics panel belongs to the music card instead; card and Kero are separate unless you pin them together (replaces D-071).
+- D-075 — Telegram music commands (MUS-8) dropped: music from the phone goes through her chat.
+- D-076 — Music tools for her chat and Claude Code; "play <song>" plays the top YouTube Music search result through the extension.
 - D-074 — Playlists and search hidden for now (MUS-6 parked); the code stays.
 - D-073 — Playing from your library opens the song's YouTube Music link in the paired tab (the page reloads); "Liked music" lists your liked music videos and plays YouTube Music's own Liked list.
 ### Added
@@ -290,6 +294,7 @@ Every version of Tama: what changed, which decisions were made, and the exact co
 ### Unreleased
 | Commit | Date | Type | Subject |
 |---|---|---|---|
+| `eac0da6` | 2026-11-27 | chore(music) | hide Playlists and search; YouTube gets its own sign-in (MUS-6 parked, D-074) |
 | `46a2d38` | 2026-11-27 | feat(music) | YouTube playlists, search and play from the library (MUS-6, D-073) |
 | `942edf5` | 2026-11-27 | feat(music) | Up next / Lyrics panel attached to the card; optional pin to Tama (D-072) |
 | `ac76637` | 2026-11-27 | feat(music) | Up next / Lyrics in a panel docked beside the pet (D-071) |

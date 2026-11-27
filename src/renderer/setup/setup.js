@@ -8,7 +8,7 @@ const say = (t, err) => {
   $('#msg').textContent = t || ''; $('#msg').classList.toggle('err', !!err);
   clearTimeout(msgTimer); if (t && !err) msgTimer = setTimeout(() => say(''), 6000);
 };
-const ICONS = { claude: '💻', agy: '💬', voice: '🎙️', google: '🔗', telegram: '📱' };
+const ICONS = { claude: '💻', agy: '💬', voice: '🎙️', google: '🔗', music: '🎵', telegram: '📱' };
 const STATE = { ready: 'Ready', signin: 'Sign in', missing: 'Not installed', optional: 'Optional' };
 const BRAIN = { claude: 'Claude Code', agy: 'Gemini' };
 

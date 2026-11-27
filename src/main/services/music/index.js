@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const { TOPICS } = require('../../bus-topics');
 const L = require('./logic');
 const { createLibrary } = require('./library');
+const { createMusicTools, musicRule } = require('./tools');
 
 const PORTS = [47821, 47822, 47823, 47824, 47825]; // the extension tries the same list
 const CODE_TTL_MS = 10 * 60000;
@@ -277,4 +278,4 @@ function createMusic({ bus, secrets, media, startWs, openExternal = () => null, 
   return { start, status, control, poll };
 }
 
-module.exports = { createMusic, PORTS };
+module.exports = { createMusic, createMusicTools, musicRule, PORTS };

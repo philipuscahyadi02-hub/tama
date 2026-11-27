@@ -73,3 +73,23 @@ test('service: status over the bus, recheck asks providers to look again, action
   assert.deepEqual(ran, ['install:claude', 'link:https://aivis-project.com/', 'open:telegram']);
   stop();
 });
+
+test('setup: YouTube Music card follows the extension (optional → paired → connected) and opens its folder (MUS-9)', async () => {
+  const card = (/** @type {any} */ extension) => buildItems({ providers: { providers: [] }, accounts: {}, voice: null, music: { extension } }).find((i) => i.id === 'music');
+  const none = /** @type {any} */ (card({ paired: false, connected: false }));
+  assert.equal(none.state, 'optional');
+  assert.equal(none.core, false);
+  assert.deepEqual(none.actions.map((/** @type {any} */ a) => a.id), ['folder', 'open']);
+  assert.equal(/** @type {any} */ (card({ paired: true, connected: false })).state, 'signin');
+  assert.equal(/** @type {any} */ (card({ paired: true, connected: true, tabs: 1 })).state, 'ready');
+  assert.equal(needsSetup(buildItems({ providers: { providers: [{ id: 'claude', available: true }, { id: 'agy', available: true }] }, accounts: {}, voice: null })), false, 'music never blocks setup');
+
+  const { Bus } = require('../../bus');
+  const bus = new Bus();
+  /** @type {string[]} */ const opened = [];
+  bus.handle('music.get', () => ({ extension: { paired: false, connected: false, dir: 'C:/tama/extension' } }));
+  const s = createSetup({ bus, device: { get: () => ({}), patch: () => {} }, run: { install: () => {}, signIn: () => {}, open: (id) => opened.push(`open:${id}`), link: () => null, folder: (d) => opened.push(`folder:${d}`) } });
+  assert.equal((await s.act({ item: 'music', action: 'folder' })).ok, true);
+  await s.act({ item: 'music', action: 'open' });
+  assert.deepEqual(opened, ['folder:C:/tama/extension', 'open:music']);
+});

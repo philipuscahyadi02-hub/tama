@@ -44,6 +44,8 @@ function describe(name, a) {
     case 'sheets_create': return `📊 Create a Google Sheet ${q(a.title)} with ${(a.sheets || []).length || 1} tab(s) in "Tama Drafts"`;
     case 'sheets_write_range': return `📊 Overwrite cells ${a.range} in an existing Sheet`;
     case 'sheets_append_rows': return `📊 Add ${(a.rows || []).length} row(s) to an existing Sheet`;
+    case 'music_play': return `🎵 play "${String(a.query || '').slice(0, 80)}" on YouTube Music`;
+    case 'music_control': return `🎵 ${String(a.action || '')}${a.value != null ? ` ${a.value}` : ''}`;
     default: return `🔧 ${name}`;
   }
 }
@@ -69,7 +71,7 @@ function createChatTools({ bus, tools, now = Date.now }) {
   async function list() {
     return tools().map((t) => ({
       name: t.name,
-      description: `${t.description}${t.policy === 'read' || t.policy === 'draft' ? '' : ' Tama shows the user a confirm button and only runs it after a yes; the result tells you whether it was done.'}`,
+      description: `${t.description}${t.policy === 'read' || t.policy === 'draft' || t.policy === 'control' ? '' : ' Tama shows the user a confirm button and only runs it after a yes; the result tells you whether it was done.'}`,
       inputSchema: jsonSchema(t.params),
       annotations: { readOnlyHint: t.policy === 'read' },
     }));

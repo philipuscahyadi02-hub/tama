@@ -193,6 +193,18 @@
     const queue = document.querySelector('ytmusic-player-queue');
     if (queue) obs.observe(queue, { subtree: true, childList: true, attributes: true, attributeFilter: ['selected', 'play-button-state'] });
   }
+  // "Play <song>" from Tama (MUS-7, D-076): Tama opens YouTube Music's search for the words with #tama-autoplay; here the
+  // top result is played. Only on a search page, only once (the marker is removed first), and it only presses play.
+  async function autoplay() {
+    if (location.hash !== '#tama-autoplay' || location.pathname !== '/search') return;
+    history.replaceState(history.state, '', location.pathname + location.search);
+    for (let i = 0; i < 40; i++) {
+      const b = q('searchTopPlay') || q('searchFirstPlay');
+      if (b) { (b.querySelector('#play-button, yt-icon-button, button') || b).click(); setTimeout(tick, 1500); return; }
+      await sleep(250);
+    }
+  }
+  autoplay();
   setInterval(tick, 2000); // position, volume and player state (not all of it shows up as DOM changes)
   observe();
   connect();

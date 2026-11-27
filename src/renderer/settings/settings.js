@@ -36,6 +36,8 @@ function renderUi(u) {
   $('#termTheme').innerHTML = u.variants.map((v) => `<option value="${esc(v.id)}" ${v.unlocked ? '' : 'disabled'} ${v.id === u.termTheme ? 'selected' : ''}>${esc(v.label)}${v.unlocked ? '' : ' 🔒'}</option>`).join('');
   $('#qOn').checked = u.quiet.on; $('#qFrom').value = u.quiet.from; $('#qTo').value = u.quiet.to;
   $('#qNow').textContent = u.quiet.on ? (u.quietNow ? 'quiet right now' : 'not now') : '';
+  if (document.activeElement !== $('#mOpacity')) $('#mOpacity').value = String(u.musicOpacity ?? 100);
+  $('#mOpacityVal').textContent = `${$('#mOpacity').value}%`;
 }
 const setUi = async (p) => { const r = saved(await K.ui.setPrefs(p)); if (r && !r.error) renderUi(r); };
 $$('.seg[data-pref]').forEach((el) => el.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => setUi({ [el.dataset.pref]: b.dataset.v }))));
@@ -97,6 +99,38 @@ function renderGoogle(g) {
   $('#gInfo').innerHTML = g.signedIn ? `Signed in as <b>${esc(g.email || '?')}</b>. Drive backup ${g.backup ? 'on' : 'off'}${g.lastBackup ? ` (last ${new Date(g.lastBackup).toLocaleString()})` : ''}.`
     : 'Calendar, Gmail drafts, Drive, Docs and Sheets, with your own Google project.';
 }
+
+// ---- music (MUS-9) ----
+function renderMusic(st) {
+  if (!st) return;
+  const e = st.extension || {};
+  const s = st.state;
+  $('#mBadge').textContent = e.connected ? 'connected' : e.paired ? 'paired, browser not connected' : 'not connected';
+  $('#mBadge').classList.toggle('off', !e.connected);
+  const now = s ? `${s.playing ? '▶' : '⏸'} <b>${esc(s.title)}</b>${s.artist ? ` · ${esc(s.artist)}` : ''} <span class="dim">(${s.source === 'extension' ? 'via Tama Companion' : `via Windows media controls, ${esc(s.app)}`})</span>` : 'Nothing playing.';
+  $('#mInfo').innerHTML = e.connected
+    ? `The Tama Companion extension is connected${e.tabs ? '' : ' (no YouTube Music tab open)'}. ${now}`
+    : e.paired
+      ? `This browser is paired, but it isn't connected right now: open Chrome (or Edge) with YouTube Music. ${now}`
+      : `Install the <b>Tama Companion</b> browser extension once for Up next, lyrics, full controls and "play &lt;song&gt;". Without it Tama reads what plays from Windows' media controls. ${now}`;
+  $('#mSteps').hidden = !!e.paired;
+  $('#mFolder').hidden = !!e.paired; $('#mCode').hidden = !!e.connected; $('#mUnpair').hidden = !e.paired;
+  $('#mYtm').hidden = !!(e.connected && e.tabs);
+  if (st.pairing) $('#mCodeInfo').innerHTML = `Pairing code: <b>${esc(st.pairing.code)}</b> · click the extension's icon → "Use a pairing code instead" (valid 10 minutes).`;
+  else if (e.connected) $('#mCodeInfo').textContent = '';
+}
+const refreshMusic = async () => renderMusic(await K.music.get().catch(() => null));
+$('#mFolder').addEventListener('click', async () => { const r = await K.music.openFolder(); say(r.ok ? 'opened the folder~' : 'no extension folder found', !r.ok); });
+$('#mYtm').addEventListener('click', async () => { const r = await K.music.control('open', 'https://music.youtube.com/'); say(r.ok ? 'opening YouTube Music~' : r.error, !r.ok); });
+$('#mCode').addEventListener('click', async () => { const r = await K.music.pair(); if (!r.port) { say('The music link is not running (ports 47821-47825 busy?)', true); return; } refreshMusic(); });
+$('#mUnpair').addEventListener('click', async () => { await K.music.unpair(); say('forgot that browser'); refreshMusic(); });
+$('#mOpen').addEventListener('click', () => { K.music.widget('open'); say('music card open~'); });
+let mOpTimer = 0;
+$('#mOpacity').addEventListener('input', () => {
+  $('#mOpacityVal').textContent = `${$('#mOpacity').value}%`;
+  clearTimeout(mOpTimer); mOpTimer = setTimeout(() => setUi({ musicOpacity: Number($('#mOpacity').value) }), 200);
+});
+setInterval(() => { if (!$('[data-pane="music"]').hidden) refreshMusic(); }, 3000);
 
 // ---- her: summon + backups (SET-5) ----
 $('#summon').addEventListener('click', () => { K.summon(); say('here she is~'); });
@@ -182,7 +216,7 @@ async function init() {
   renderVoice(await K.voice.status().catch(() => null));
   renderTg(await K.telegram.status().catch(() => null));
   renderGoogle(await K.google.status().catch(() => null));
-  renderWeather(); renderBrain();
+  renderWeather(); renderBrain(); refreshMusic();
   renderBrains(await K.providers.get().catch(() => null));
   renderAutostart();
   K.providers.onChange(renderBrains);

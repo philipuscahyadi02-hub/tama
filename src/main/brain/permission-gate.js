@@ -40,7 +40,7 @@ function createPermissionGate({ bus }) {
     for (const rule of rules) {
       const r = rule(tool);
       if (r === 'allow') {
-        emit(engine, role, { t: 'info', text: `⎿  ✓ ${tool.title || tool.name} (allowed by Tama's Google rules)` });
+        emit(engine, role, { t: 'info', text: `⎿  ✓ ${tool.title || tool.name} (allowed by Tama's rules)` });
         return Promise.resolve({ choice: 'yes' });
       }
       if (r === 'ask') break;

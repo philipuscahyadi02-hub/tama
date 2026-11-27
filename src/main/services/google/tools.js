@@ -10,7 +10,7 @@
 // There are no delete or share tools (GOOG-7).
 
 /**
- * @typedef {'read'|'draft'|'create'|'edit'|'send'} Policy
+ * @typedef {'read'|'draft'|'create'|'edit'|'send'|'control'} Policy  control = steers the user's own player, runs and is announced (MUS-7)
  * @typedef {{ type: 'string'|'number'|'boolean'|'rows'|'tabs', desc: string, optional?: boolean }} Param
  * @typedef {{ name: string, title: string, description: string, policy: Policy, policyFor?: (args: any) => Policy,
  *   preview?: (args: any) => Promise<string>, params: Record<string, Param>, run: (args: any) => Promise<any> }} GoogleTool

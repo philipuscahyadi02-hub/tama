@@ -16,3 +16,6 @@ main section .card:first-child { margin-top: 0; }
 .badge:empty { display: none; }
 .set button { white-space: nowrap; flex-shrink: 0; }
 button:disabled { opacity: .5; cursor: default; border-color: var(--tama-line); }
+.steps { margin: 6px 0 4px; padding-left: 20px; line-height: 1.6; }
+.steps code { font-size: 12px; }
+#mOpacity { width: 140px; accent-color: var(--tama-accent); vertical-align: middle; }

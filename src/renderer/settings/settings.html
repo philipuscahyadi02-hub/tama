@@ -14,6 +14,7 @@
       <button data-tab="her" class="on">🎀 <span id="navName">Her</span></button>
       <button data-tab="talk">🗣️ Talking &amp; voice</button>
       <button data-tab="quiet">🌙 Quiet &amp; moments</button>
+      <button data-tab="music">🎵 Music</button>
       <button data-tab="phone">📱 Phone</button>
       <button data-tab="google">🔗 Google</button>
       <button data-tab="brains">🧠 Brains</button>
@@ -64,6 +65,29 @@
         <div class="card"><h3>Weather moments</h3>
           <div class="set"><span>City <input id="city" placeholder="e.g. Jakarta" /></span><span><button id="citySave">Save</button> <button id="cityOff">Off</button></span></div>
           <div class="kv dim" id="cityInfo"></div></div>
+      </section>
+
+      <!-- Music (MUS-9) -->
+      <section data-pane="music" hidden>
+        <div class="card"><h3>YouTube Music <span class="badge" id="mBadge"></span></h3><div class="kv" id="mInfo"></div>
+          <ol class="steps" id="mSteps" hidden>
+            <li>In Chrome or Edge, open <code>chrome://extensions</code> (<code>edge://extensions</code>) and turn on <b>Developer mode</b>.</li>
+            <li>Click <b>Load unpacked</b> and choose the <b>Tama Companion</b> folder (the button below opens it).</li>
+            <li>Click the extension's icon, then <b>Connect to Tama</b>, and click <b>Allow</b> on her speech bubble.</li>
+          </ol>
+          <div class="btns"><button class="primary" id="mFolder">Open the extension folder</button><button id="mYtm">Open YouTube Music</button><button id="mCode">Use a pairing code</button><button id="mUnpair">Forget this browser</button></div>
+          <div class="kv dim" id="mCodeInfo"></div></div>
+        <div class="card"><h3>Music card</h3>
+          <div class="set"><span>Pop up by itself while a song plays</span><div class="seg" data-pref="musicWidget"><button data-v="auto">On</button><button data-v="off">Off</button></div></div>
+          <div class="set"><span>Look</span><div class="seg" data-pref="musicLook"><button data-v="solid">Solid</button><button data-v="glass">Glass</button></div></div>
+          <div class="set"><span>Opacity (fully visible while your mouse is over it)</span><span><input type="range" id="mOpacity" min="40" max="100" step="5" /> <b id="mOpacityVal"></b></span></div>
+          <div class="btns"><button id="mOpen">Open the music card</button></div></div>
+        <div class="card"><h3>DJ Tama</h3>
+          <label class="set"><span>DJ headphones and decks while music plays</span><input type="checkbox" data-pref="musicDj" /></label>
+          <label class="set"><span>Follow the real beat<br><small class="dim">She listens to your PC's sound on this PC only; nothing is recorded or sent. Off = a steady groove.</small></span><input type="checkbox" data-pref="musicBeat" /></label></div>
+        <div class="card"><h3>Ask her</h3>
+          <div class="kv">In chat (or from your phone's chat): <i>"play Idol by YOASOBI"</i>, <i>"skip"</i>, <i>"turn it down to 30"</i>, <i>"what's playing?"</i>, <i>"what are the lyrics?"</i>. Claude Code in the terminal can use the same music tools.</div>
+          <div class="kv dim">Playing a song by name and the queue, likes and lyrics need the extension. Without it she can still play, pause, skip and tell you what plays.</div></div>
       </section>
 
       <!-- Phone -->

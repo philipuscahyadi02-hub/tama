@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tama Companion",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Lets your Tama desktop companion show and control what plays on YouTube Music. Talks only to the Tama app on this PC.",
   "minimum_chrome_version": "116",
   "permissions": [

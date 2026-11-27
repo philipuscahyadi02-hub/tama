@@ -104,6 +104,8 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 | D-072 | The Up next / Lyrics panel is attached to the music card (below or above it, moves with it); the card and the pet are separate unless the user pins the card to her | Accepted · Supersedes D-071 |
 | D-073 | Library playback opens the song's music.youtube.com link through the normal `open` control (the paired tab reloads); "Liked music" lists liked Music-category videos and plays YouTube Music's LM list | Accepted |
 | D-074 | MUS-6 parked: the Playlists tab and its `/music` commands are hidden (the user doesn't use playlists); the code, the separate YouTube sign-in and tests stay | Accepted · Parks MUS-6 |
+| D-075 | MUS-8 (Telegram music commands) dropped; music from the phone goes through Telegram chat and the MUS-7 tools | Accepted |
+| D-076 | Music tools for chat and Claude Code with a new `control` policy (runs, announced); "play <song>" = YouTube Music search with `#tama-autoplay`, the extension presses play on the top result | Accepted |
 
 ---
 
@@ -1018,3 +1020,22 @@ Don't log: routine refactors, naming, bug fixes with no design impact.
 - **Alternatives:** Deleting the code (the separate sign-in fix would be lost); leaving it visible (the user doesn't want it).
 - **Consequences:** Reviving it = unhide the tab, set `HIDDEN_LIBRARY` to false, test the separate sign-in live, and a new decision. The YouTube line on the Limits tab only appears when YouTube calls were made, so it stays invisible.
 - **Refs:** MUS-6, D-073, src/main/services/google/youtube.js, src/renderer/music/music.html, src/renderer/terminal/music-commands.js
+
+### D-075 — MUS-8 Telegram music commands dropped
+- **Date:** 2026-11-27 · **Status:** Accepted
+- **Context:** The user asked to drop MUS-8 (`/np`, `/play`, `/pause`, `/skip`, `/playlists` on Telegram) and build MUS-7 and MUS-9.
+- **Decision:** MUS-8 is ✖ in the PRD. Phone messages already go to the chat brain, which gets the MUS-7 music tools, so "skip" or "what's playing?" from the phone still works through chat (AGENTS §3 parity is met through chat).
+- **Alternatives:** Keeping the slash commands (no extra value over chat for this user).
+- **Consequences:** No cover image on the phone for now-playing. Reviving it = a new decision.
+- **Refs:** MUS-7, MUS-8, D-036, D-066
+
+### D-076 — Music tools: a `control` policy, and "play <song>" through YouTube Music search with extension autoplay
+- **Date:** 2026-11-27 · **Status:** Accepted
+- **Context:** MUS-7: she should play, pause, skip and say what plays when asked in chat, and Claude Code should be able to do the same. Playing a song by name has no API now that MUS-6 is parked (D-074).
+- **Decision:**
+  - `services/music/tools.js` describes five tools in the Google tool shape: `music_now`, `music_queue`, `music_lyrics` (policy **read**) and `music_control`, `music_play` (new policy **control**: runs without a tap and is announced, because it only steers the user's own player; nothing sends, buys or deletes). Titles, artists and lyrics are returned as `UNTRUSTED …` page data.
+  - The chat brain gets them through the existing tool bridge, now always on (not only while Google is signed in); Claude Code gets an in-process MCP server `music`, and a PermissionGate rule allows `mcp__music__*`. The model can't use `open` with arbitrary links: `music_control` accepts only player actions.
+  - **"Play <song>":** Tama opens `music.youtube.com/search?q=<words>#tama-autoplay` through the normal `open` control (paired tab, a new tab, or the default browser). The extension (1.2.0) sees the marker on a search page, removes it, and clicks play on the top result (else the first song). Without the extension the search page simply opens.
+- **Alternatives:** The YouTube Data API search (parked with MUS-6; needs a second sign-in and quota); driving YouTube Music's internal search API from the page (undocumented).
+- **Consequences:** Any page linking to such a search URL with the marker could start a song in the user's YouTube Music (harmless: it only presses play on a search result). The top result can be a video or an artist mix rather than the exact song, so she checks with `music_now`. The selectors for search results live in `extension/selectors.js`; the user must reload the extension once for 1.2.0.
+- **Refs:** MUS-7, MUS-10, D-034, D-037, D-066, D-074, src/main/services/music/tools.js, src/main/brain/{chat-tools,persona}.js, extension/content.js

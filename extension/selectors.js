@@ -23,5 +23,8 @@ globalThis.TAMA_SEL = {
   queuePlay: ['ytmusic-play-button-renderer', '.song-info'],
   pageTabs: ['ytmusic-player-page tp-yt-paper-tab', '#tabs tp-yt-paper-tab'],
   lyrics: ['ytmusic-player-page ytmusic-description-shelf-renderer .description', 'ytmusic-description-shelf-renderer .description'],
+  // Search results (MUS-7 "play <song>"): the top result's play button, else the first song's.
+  searchTopPlay: ['ytmusic-card-shelf-renderer ytmusic-play-button-renderer', 'ytmusic-card-shelf-renderer #play-button'],
+  searchFirstPlay: ['ytmusic-shelf-renderer ytmusic-responsive-list-item-renderer ytmusic-play-button-renderer', 'ytmusic-responsive-list-item-renderer ytmusic-play-button-renderer'],
   lyricsSource: ['ytmusic-player-page ytmusic-description-shelf-renderer .footer', 'ytmusic-description-shelf-renderer .footer'],
 };

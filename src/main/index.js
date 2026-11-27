@@ -60,6 +60,7 @@ const { createFullscreenDetector } = require('./platform/fullscreen');
 const { createWalkMarker } = require('./platform/windows/walk-marker');
 // M13 YouTube Music & DJ (D-065, D-066): music service + widget beside the pet.
 const { createMusicWiring } = require('./music-wiring');
+const { createMusicTools, musicRule } = require('./services/music');
 
 const { createDesktopChannel } = require('./channels/desktop');
 
@@ -113,12 +114,15 @@ function boot() {
     bus, secrets, device, oauth: googleOAuth, openExternal: shell.openExternal, tama: active, deviceName: os.hostname(),
   });
   gate.addRule(google.gateRule);
+  // Music tools (MUS-7, D-076): what plays and player controls, for the chat brain and Claude Code; they run and are announced.
+  const musicTools = createMusicTools({ bus });
+  gate.addRule(musicRule(musicTools));
   // Google tools for the chat brain (D-037): served by a localhost bridge; agy reaches it through a tiny MCP relay.
-  const chatTools = createChatTools({ bus, tools: () => (google.status().signedIn ? google.tools : []) });
+  const chatTools = createChatTools({ bus, tools: () => [...(google.status().signedIn ? google.tools : []), ...musicTools] });
   /** @type {{ url: string, key: string, close: () => void } | null} */
   let bridge = null;
   const relay = pathMod.join(__dirname, 'engines', 'agy', 'mcp-relay.js').replace(`app.asar${pathMod.sep}`, `app.asar.unpacked${pathMod.sep}`);
-  const chatMcp = () => (bridge && google.status().signedIn ? [{
+  const chatMcp = () => (bridge ? [{
     name: 'tama', command: process.execPath, args: [relay],
     env: [{ name: 'ELECTRON_RUN_AS_NODE', value: '1' }, { name: 'TAMA_BRIDGE_URL', value: bridge.url }, { name: 'TAMA_BRIDGE_KEY', value: bridge.key }],
   }] : []);
@@ -126,7 +130,7 @@ function boot() {
   // read-only plan mode with the workspace guard (D-027, D-037); Claude chats only when the user opted in.
   const providers = createProviders({
     bus, device, refreshEnv: refreshPath, providers: [
-      claudeProvider({ gate, tamaName: active.name, mcp: () => google.mcpServers() }),
+      claudeProvider({ gate, tamaName: active.name, mcp: () => [...google.mcpServers(), { name: 'music', tools: musicTools }] }),
       agyProvider({ gate, mcpServers: chatMcp }),
     ],
   });
@@ -255,7 +259,8 @@ function boot() {
     run: {
       install: (id) => shell.runConsoleScript(`install-${id}`, engineAccounts.installScript(id)),
       signIn: (id) => shell.runConsoleScript(`signin-${id}`, engineAccounts.signInScript(id)),
-      open: (id) => { if (id === 'voice') openVoice(); else if (id === 'google') openGoogle(); else if (id === 'telegram') openSettings('phone'); },
+      open: (id) => { if (id === 'voice') openVoice(); else if (id === 'google') openGoogle(); else if (id === 'telegram') openSettings('phone'); else if (id === 'music') openSettings('music'); },
+      folder: (dir) => shell.openFolder(dir),
       link: (url) => shell.openExternal(url),
     },
   }).start());

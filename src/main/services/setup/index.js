@@ -17,6 +17,7 @@ const LINKS = {
   agy: 'https://antigravity.google/',
   aivis: 'https://aivis-project.com/',
   voicevox: 'https://voicevox.hiroshiba.jp/',
+  ytm: 'https://music.youtube.com/',
 };
 /** The official one-line installers (shown to the user before they run, in a visible window). */
 const INSTALL = {
@@ -26,10 +27,10 @@ const INSTALL = {
 
 /**
  * Pure: turn the status of every part into wizard items.
- * @param {{ providers: any, accounts: any, voice: any }} s
+ * @param {{ providers: any, accounts: any, voice: any, music?: any }} s
  * @returns {SetupItem[]}
  */
-function buildItems({ providers, accounts, voice }) {
+function buildItems({ providers, accounts, voice, music }) {
   const avail = (/** @type {string} */ id) => !!((providers && providers.providers) || []).find((p) => p.id === id && p.available);
   const acc = accounts || {};
   const items = /** @type {SetupItem[]} */ ([]);
@@ -78,6 +79,20 @@ function buildItems({ providers, accounts, voice }) {
     actions: go.signedIn ? [] : [{ id: 'open', label: go.configured ? 'Sign in' : 'Set up Google', primary: !go.configured ? false : true }],
   });
 
+  // MUS-9: the Tama Companion extension (D-066, D-070). Optional: without it the media session still shows what plays.
+  const ext = (music && music.extension) || {};
+  items.push({
+    id: 'music', name: 'YouTube Music (Tama Companion extension)', core: false,
+    unlocks: 'The music card with Up next, lyrics and full controls, DJ Tama, and asking her to play a song. Without it she still shows what plays and can play, pause and skip.',
+    state: ext.connected ? 'ready' : ext.paired ? 'signin' : 'optional',
+    detail: ext.connected ? `Connected${ext.tabs ? '' : ' (open YouTube Music to start)'}.`
+      : ext.paired ? 'Paired. Open Chrome or Edge with YouTube Music to connect.'
+        : 'Optional, 1 minute: chrome://extensions → Developer mode → Load unpacked → the folder Tama opens; then the extension’s Connect to Tama, and Allow on her bubble.',
+    actions: ext.connected ? [{ id: 'open', label: 'Music settings' }]
+      : ext.paired ? [{ id: 'link', label: 'Open YouTube Music', primary: true, link: LINKS.ytm }, { id: 'open', label: 'Music settings' }]
+        : [{ id: 'folder', label: 'Open the extension folder', primary: true }, { id: 'open', label: 'Music settings' }],
+  });
+
   const tg = acc.telegram || {};
   items.push({
     id: 'telegram', name: 'Telegram (her on your phone)', core: false,
@@ -96,19 +111,20 @@ const needsSetup = (items) => !items.some((i) => i.id === 'agy' && i.state !== '
  * @param {{
  *   bus: import('../../bus').BusInstance,
  *   device: { get: () => any, patch: (s: string | null, p: any) => void },
- *   run: { install: (id: 'claude'|'agy') => void, signIn: (id: 'claude'|'agy') => void, open: (id: string) => void, link: (url: string) => unknown },
+ *   run: { install: (id: 'claude'|'agy') => void, signIn: (id: 'claude'|'agy') => void, open: (id: string) => void, link: (url: string) => unknown, folder?: (dir: string) => unknown },
  *   now?: () => number,
  * }} deps
  */
 function createSetup({ bus, device, run, now = Date.now }) {
   /** @param {{ recheck?: boolean }} [o] */
   async function status(o = {}) {
-    const [providers, accounts, voice] = await Promise.all([
+    const [providers, accounts, voice, music] = await Promise.all([
       bus.request(o.recheck ? TOPICS.PROVIDERS_RECHECK : TOPICS.PROVIDERS_GET).catch(() => null),
       bus.request(TOPICS.ACCOUNTS_GET, { refresh: !!o.recheck }).catch(() => null),
       bus.request(TOPICS.VOICE_STATUS).catch(() => null),
+      bus.request(TOPICS.MUSIC_GET).catch(() => null),
     ]);
-    const items = buildItems({ providers, accounts, voice });
+    const items = buildItems({ providers, accounts, voice, music });
     const brains = providers ? Object.fromEntries(Object.entries(providers.caps || {}).map(([k, v]) => [k, /** @type {any} */ (v).using])) : {};
     return { items, brains, needsSetup: needsSetup(items), seenAt: (device.get().setup || {}).seenAt || null };
   }
@@ -129,6 +145,13 @@ function createSetup({ bus, device, run, now = Date.now }) {
     if (action === 'signin' && (item === 'claude' || item === 'agy')) {
       run.signIn(item);
       return { ok: true, message: 'A window opened to sign in. When you are done, press "Check again".' };
+    }
+    if (action === 'folder' && item === 'music') {
+      const st2 = await bus.request(TOPICS.MUSIC_GET).catch(() => null);
+      const dir = st2 && st2.extension && st2.extension.dir;
+      if (!dir || !run.folder) return { error: 'The extension folder was not found.' };
+      await run.folder(dir);
+      return { ok: true, message: 'Opened the Tama Companion folder: choose it in "Load unpacked".' };
     }
     if (action === 'open') { run.open(item); return { ok: true }; }
     return { error: 'Unknown step.' };
